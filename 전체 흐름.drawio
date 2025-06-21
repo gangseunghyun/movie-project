@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0" version="27.1.6">
   <diagram name="페이지-1" id="LvskHL0l8MYuoYU3aJJq">
-    <mxGraphModel dx="4597" dy="1515" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#FFB3ED" math="0" shadow="1">
+    <mxGraphModel dx="3013" dy="706" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#FFB3ED" math="0" shadow="1">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -19,8 +19,8 @@
         <mxCell id="G79Pr9Nb0tBNP9RUXyT_-11" value="&lt;h3&gt;&lt;font&gt;별점&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;(별점만 줄 수 있음)&lt;/font&gt;&lt;/div&gt;&lt;div&gt;별점 저장/수정&lt;/div&gt;&lt;div&gt;한번 별점을 주면 그 정보는 저장 돼 있어야 함)&lt;/div&gt;&lt;div&gt;영화별 별점 평균 시각화&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" parent="1" vertex="1">
           <mxGeometry x="-1040" y="660" width="150" height="150" as="geometry" />
         </mxCell>
-        <mxCell id="G79Pr9Nb0tBNP9RUXyT_-12" value="&lt;h3&gt;&lt;font&gt;추천 시스템&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;-장르 기반 추천&lt;/div&gt;&lt;div&gt;-평균 별점 높은 영화&lt;/div&gt;&lt;div&gt;-배우/감독 기반 추천&lt;/div&gt;&lt;div&gt;&lt;font&gt;-태그 기반 추천&lt;/font&gt;&lt;/div&gt;&lt;div&gt;-탑10&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" parent="1" vertex="1">
-          <mxGeometry x="160" y="800" width="140" height="150" as="geometry" />
+        <mxCell id="G79Pr9Nb0tBNP9RUXyT_-12" value="&lt;h3&gt;&lt;font&gt;추천 시스템&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;-장르 기반 추천&lt;/div&gt;&lt;div&gt;-평균 별점 높은 영화&lt;/div&gt;&lt;div&gt;-배우/감독 기반 추천&lt;/div&gt;&lt;div&gt;&lt;font&gt;-태그 기반 추천&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font&gt;-사용자의 데이터 기반 영화 추천&lt;/font&gt;&lt;/div&gt;&lt;div&gt;-TOP 10 영화 추천&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" parent="1" vertex="1">
+          <mxGeometry x="160" y="800" width="180" height="150" as="geometry" />
         </mxCell>
         <mxCell id="G79Pr9Nb0tBNP9RUXyT_-13" value="&lt;h3&gt;&lt;font&gt;클린봇&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;-욕설 탐지&lt;/div&gt;&lt;div&gt;-외부 라이브러리 연동&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="-540" y="820" width="150" height="110" as="geometry" />
@@ -46,7 +46,7 @@
         <mxCell id="G79Pr9Nb0tBNP9RUXyT_-17" value="영화 등록, 수정,삭제" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;" parent="1" vertex="1">
           <mxGeometry x="300" y="290" width="140" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--1" value="&lt;h3&gt;영화 상세 조회&lt;/h3&gt;&lt;div&gt;-기본 정보,감독,배우,&lt;/div&gt;&lt;div&gt;제작진, 주요 장면 스틸컷 등 포함&lt;/div&gt;&lt;div&gt;-영화 관련 태그 노출&lt;/div&gt;&lt;div&gt;-별점 및 코멘트 노출&lt;/div&gt;&lt;div&gt;현재 상영 중인 영화 한에서&lt;/div&gt;&lt;div&gt;지금 예매하기 버튼 노출&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="m5MV5VX6WgENKe0_gjv--1" value="&lt;h3&gt;영화 상세 조회&lt;/h3&gt;&lt;div&gt;-기본 정보,감독,배우,&lt;/div&gt;&lt;div&gt;제작진, 주요 장면 스틸컷 등 포함&lt;/div&gt;&lt;div&gt;-해당 영화 좋아요 토글&lt;/div&gt;&lt;div&gt;-영화 관련 태그 노출&lt;/div&gt;&lt;div&gt;-별점 및 코멘트 노출&lt;/div&gt;&lt;div&gt;현재 상영 중인 영화 한에서&lt;/div&gt;&lt;div&gt;지금 예매하기 버튼 노출&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="-990" y="390" width="160" height="190" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--2" value="영화와 배우/감독&lt;div&gt;태그 관계 설정&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;" parent="1" vertex="1">
