@@ -1,9 +1,15 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0" version="27.1.6">
   <diagram name="페이지-1" id="LvskHL0l8MYuoYU3aJJq">
-    <mxGraphModel dx="3013" dy="706" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#FFB3ED" math="0" shadow="1">
+    <mxGraphModel dx="2958" dy="857" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#FFB3ED" math="0" shadow="1">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="pDhgToD4BfEeac_xiC6f-8" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" target="pDhgToD4BfEeac_xiC6f-9">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-263" y="490" as="sourcePoint" />
+            <mxPoint x="-360" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--46" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.012;entryY=0.042;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.581;exitY=1.013;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="m5MV5VX6WgENKe0_gjv--9" target="m5MV5VX6WgENKe0_gjv--7" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="-350" y="300" as="sourcePoint" />
@@ -43,14 +49,11 @@
             <mxPoint x="60" y="550" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="G79Pr9Nb0tBNP9RUXyT_-17" value="영화 등록, 수정,삭제" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;" parent="1" vertex="1">
-          <mxGeometry x="300" y="290" width="140" height="70" as="geometry" />
+        <mxCell id="G79Pr9Nb0tBNP9RUXyT_-17" value="영화 등록, 수정,비활성화&lt;br&gt;영화 상세페이지에 나오는&lt;div&gt;모든 정보 입력&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;영화&lt;div&gt;태그 설정&lt;/div&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;" parent="1" vertex="1">
+          <mxGeometry x="300" y="290" width="160" height="110" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--1" value="&lt;h3&gt;영화 상세 조회&lt;/h3&gt;&lt;div&gt;-기본 정보,감독,배우,&lt;/div&gt;&lt;div&gt;제작진, 주요 장면 스틸컷 등 포함&lt;/div&gt;&lt;div&gt;-해당 영화 좋아요 토글&lt;/div&gt;&lt;div&gt;-영화 관련 태그 노출&lt;/div&gt;&lt;div&gt;-별점 및 코멘트 노출&lt;/div&gt;&lt;div&gt;현재 상영 중인 영화 한에서&lt;/div&gt;&lt;div&gt;지금 예매하기 버튼 노출&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="-990" y="390" width="160" height="190" as="geometry" />
-        </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--2" value="영화와 배우/감독&lt;div&gt;태그 관계 설정&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;" parent="1" vertex="1">
-          <mxGeometry x="240" y="180" width="130" height="80" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--3" value="박스오피스/명작/&lt;div&gt;평균 별점 높은 영화&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="360" y="615" width="150" height="90" as="geometry" />
@@ -61,8 +64,8 @@
         <mxCell id="m5MV5VX6WgENKe0_gjv--4" value="&lt;h3&gt;코멘트/ 댓글/ 대댓글&lt;/h3&gt;&lt;div&gt;-코멘트 작성,&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;수정, 삭제&lt;/span&gt;&lt;/div&gt;&lt;div&gt;좋아요, 댓글 포함 출력&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;-댓글 작성, 수정, 삭제&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;좋아요(토글 기능)&lt;/span&gt;, 대댓글 포함 출력&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;-대댓글 등록/수정/삭제&lt;/div&gt;&lt;div&gt;-대댓글 리스트&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" parent="1" vertex="1">
           <mxGeometry x="-800" y="615" width="180" height="240" as="geometry" />
         </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--5" value="&lt;h3&gt;유저 기본 정보 &amp;amp; 마이페이지 데이터 제공&lt;/h3&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;- 내가 단 댓글, 내가 단 별점, 내가 좋아요 누른&lt;/div&gt;&lt;div&gt;영화 리스트 제공&lt;/div&gt;&lt;div&gt;-태그 설정 기능&lt;/div&gt;&lt;div&gt;-다크모드 설정 저장(옵션)&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" parent="1" vertex="1">
-          <mxGeometry x="-415.5" y="610" width="257.5" height="160" as="geometry" />
+        <mxCell id="m5MV5VX6WgENKe0_gjv--5" value="&lt;h3&gt;유저 기본 정보 &amp;amp; 마이페이지 데이터 제공&lt;/h3&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;-유저 기본정보(기본 프로필 &amp;amp; 취향 태그 설정)&lt;/div&gt;&lt;div&gt;- 내가 단 댓글, 내가 단 별점, 내가 좋아요 누른&lt;/div&gt;&lt;div&gt;영화 리스트 제공&lt;/div&gt;&lt;div&gt;-예매 목록&lt;/div&gt;&lt;div&gt;-다크모드 설정 저장(옵션)&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" parent="1" vertex="1">
+          <mxGeometry x="-320" y="750" width="257.5" height="160" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--6" value="&lt;h3&gt;결제 올인원 서비스&lt;/h3&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" parent="1" vertex="1">
           <mxGeometry x="-1360" y="350" width="170" height="90" as="geometry" />
@@ -141,20 +144,8 @@
             <mxPoint x="130" y="310" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="m5MV5VX6WgENKe0_gjv--28" target="G79Pr9Nb0tBNP9RUXyT_-17" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="155" y="380" />
-              <mxPoint x="370" y="380" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="m5MV5VX6WgENKe0_gjv--28" target="m5MV5VX6WgENKe0_gjv--2" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="155" y="220" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="pDhgToD4BfEeac_xiC6f-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="m5MV5VX6WgENKe0_gjv--28" target="G79Pr9Nb0tBNP9RUXyT_-17">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--28" value="관리자모드" style="triangle;whiteSpace=wrap;html=1;align=left;fillColor=#FF9933;" parent="1" vertex="1">
           <mxGeometry x="110" y="260" width="90" height="80" as="geometry" />
@@ -188,10 +179,10 @@
         <mxCell id="m5MV5VX6WgENKe0_gjv--49" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1.007;entryY=0.611;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="G79Pr9Nb0tBNP9RUXyT_-14" target="m5MV5VX6WgENKe0_gjv--48" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--50" value="" style="endArrow=classic;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" target="m5MV5VX6WgENKe0_gjv--5" edge="1">
+        <mxCell id="m5MV5VX6WgENKe0_gjv--50" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.549;entryY=-0.004;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="m5MV5VX6WgENKe0_gjv--5" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="-86" y="685" as="sourcePoint" />
-            <mxPoint x="-36" y="635" as="targetPoint" />
+            <mxPoint x="-200" y="740" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="pDhgToD4BfEeac_xiC6f-2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" vertex="1" parent="1">
@@ -211,6 +202,28 @@
         </mxCell>
         <mxCell id="pDhgToD4BfEeac_xiC6f-7" value="&lt;h3&gt;관리자만 접근 가능&lt;/h3&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="625" y="1086" width="135" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="pDhgToD4BfEeac_xiC6f-9" value="검색결과 없을 시&lt;div&gt;검색 결과 없음&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-450" y="550" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pDhgToD4BfEeac_xiC6f-13" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="m5MV5VX6WgENKe0_gjv--5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-320.0000000000002" y="676.67" as="sourcePoint" />
+            <mxPoint x="-288.8234308343083" y="979.9999999999999" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pDhgToD4BfEeac_xiC6f-14" value="결제 완료 영수증" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" vertex="1" parent="1">
+          <mxGeometry x="-350" y="980" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pDhgToD4BfEeac_xiC6f-15" value="결제 취소" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCCCC;" vertex="1" parent="1">
+          <mxGeometry x="-200" y="980" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pDhgToD4BfEeac_xiC6f-16" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" target="pDhgToD4BfEeac_xiC6f-15">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-180" y="910" as="sourcePoint" />
+            <mxPoint x="-130" y="860" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
