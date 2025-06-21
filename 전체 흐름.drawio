@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0" version="27.1.6">
   <diagram name="페이지-1" id="LvskHL0l8MYuoYU3aJJq">
-    <mxGraphModel dx="2831" dy="606" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#FFB3ED" math="0" shadow="1">
+    <mxGraphModel dx="3335" dy="866" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#FFB3ED" math="0" shadow="1">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -43,13 +43,13 @@
             <mxPoint x="60" y="620" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="G79Pr9Nb0tBNP9RUXyT_-17" value="영화 등록, 수정,삭제" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="G79Pr9Nb0tBNP9RUXyT_-17" value="영화 등록, 수정,삭제" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;" parent="1" vertex="1">
           <mxGeometry x="300" y="360" width="140" height="70" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--1" value="&lt;h3&gt;영화 상세 조회&lt;/h3&gt;&lt;div&gt;-기본 정보,감독,배우,&lt;/div&gt;&lt;div&gt;제작진, 주요 장면 스틸컷 등 포함&lt;/div&gt;&lt;div&gt;-영화 관련 태그 노출&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;현재 상영 중인 영화 한에서&lt;/div&gt;&lt;div&gt;지금 예매하기 버튼 노출&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="-990" y="460" width="160" height="190" as="geometry" />
         </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--2" value="영화와 배우/감독&lt;div&gt;태그 관계 설정&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="m5MV5VX6WgENKe0_gjv--2" value="영화와 배우/감독&lt;div&gt;태그 관계 설정&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;" parent="1" vertex="1">
           <mxGeometry x="240" y="250" width="130" height="80" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--3" value="박스오피스/명작/&lt;div&gt;평균 별점 높은 영화&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
@@ -156,7 +156,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="m5MV5VX6WgENKe0_gjv--28" value="관리자모드" style="triangle;whiteSpace=wrap;html=1;align=left;" parent="1" vertex="1">
+        <mxCell id="m5MV5VX6WgENKe0_gjv--28" value="관리자모드" style="triangle;whiteSpace=wrap;html=1;align=left;fillColor=#FF9933;" parent="1" vertex="1">
           <mxGeometry x="110" y="330" width="90" height="80" as="geometry" />
         </mxCell>
         <mxCell id="m5MV5VX6WgENKe0_gjv--35" value="예매하기" style="labelPosition=center;verticalLabelPosition=middle;align=center;html=1;shape=mxgraph.basic.shaded_button;dx=10.26;fillColor=#FFCCCC;strokeColor=none;whiteSpace=wrap;" parent="1" vertex="1">
