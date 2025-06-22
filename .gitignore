@@ -31,3 +31,49 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# Java 빌드 아티팩트
+*.class
+*.jar
+*.war
+*.ear
+
+# 로그파일
+*.log
+logs/
+*.log.*
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# 환경설정 및 민감정보
+.env
+*.env
+*.key
+*.pem
+*.crt
+*.local
+application-*.yml
+application-*.properties
+
+# 테스트 리포트
+test-output/
+jacoco.exec
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
