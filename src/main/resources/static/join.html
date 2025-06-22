@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입 테스트 (이메일 인증 필수)</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+        input { width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { width: 100%; padding: 10px; border: none; background-color: #007bff; color: white; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .id-check-container { display: flex; gap: 10px; }
+        .id-check-container input { flex: 1; }
+        .id-check-container button { width: auto; }
+        #result { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { border: 1px solid green; color: green; background-color: #e9f7ef; }
+        .error { border: 1px solid red; color: red; background-color: #fce8e6; }
+        .info { border: 1px solid blue; color: blue; background-color: #e3f2fd; }
+    </style>
+</head>
+<body>
+
+<h1>회원가입 API 테스트 (이메일 인증 필수)</h1>
+
+<form id="join-form" novalidate>
+    <div>
+        <label for="loginId">아이디:</label>
+        <div class="id-check-container">
+            <input type="text" id="loginId" name="loginId" required>
+            <button type="button" id="check-id-btn">중복확인</button>
+        </div>
+    </div>
+    <div>
+        <label for="password">비밀번호:</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <div>
+        <label for="email">이메일:</label>
+        <input type="email" id="email" name="email" required>
+        <button type="button" id="send-code-btn">인증번호 받기</button>
+    </div>
+    <div>
+        <label for="verification-code">인증 코드:</label>
+        <input type="text" id="verification-code" name="verification-code" placeholder="이메일로 받은 코드를 입력하세요" disabled>
+        <button type="button" id="verify-code-btn" disabled>인증하기</button>
+    </div>
+    <button type="submit" id="join-btn" disabled>가입하기</button>
+</form>
+
+<div id="result"></div>
+<div id="mail-result" style="margin-top: 10px;"></div>
+
+<script>
+    let emailVerified = false;
+    let idChecked = false;
+
+    document.getElementById('join-form').addEventListener('submit', async function(event) {
+        event.preventDefault(); // 폼의 기본 제출 동작을 막습니다.
+
+        if (!idChecked) {
+            document.getElementById('result').textContent = '아이디 중복확인을 먼저 해주세요.';
+            document.getElementById('result').className = 'error';
+            return;
+        }
+
+        if (!emailVerified) {
+            document.getElementById('result').textContent = '이메일 인증을 먼저 완료해주세요.';
+            document.getElementById('result').className = 'error';
+            return;
+        }
+
+        const loginId = document.getElementById('loginId').value;
+        const password = document.getElementById('password').value;
+        const email = document.getElementById('email').value;
+        const resultDiv = document.getElementById('result');
+
+        const data = {
+            loginId: loginId,
+            password: password,
+            email: email
+        };
+
+        try {
+            const response = await fetch('/api/users/join', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const message = await response.text();
+
+            if (response.ok) { // HTTP 상태 코드가 200-299인 경우
+                resultDiv.textContent = message;
+                resultDiv.className = 'success';
+            } else { // 그 외의 경우 (400 Bad Request 등)
+                resultDiv.textContent = message;
+                resultDiv.className = 'error';
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            resultDiv.textContent = '요청 처리 중 오류가 발생했습니다.';
+            resultDiv.className = 'error';
+        }
+    });
+
+    document.getElementById('check-id-btn').addEventListener('click', async function() {
+        const loginId = document.getElementById('loginId').value;
+        const resultDiv = document.getElementById('result');
+
+        if (!loginId) {
+            resultDiv.textContent = '아이디를 먼저 입력해주세요.';
+            resultDiv.className = 'error';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/users/check-login-id?loginId=${encodeURIComponent(loginId)}`, {
+                method: 'GET'
+            });
+
+            const message = await response.text();
+
+            if (response.ok) {
+                resultDiv.textContent = message;
+                resultDiv.className = 'success';
+                idChecked = true;
+                document.getElementById('loginId').disabled = true;
+                document.getElementById('check-id-btn').disabled = true;
+            } else {
+                resultDiv.textContent = message;
+                resultDiv.className = 'error';
+                idChecked = false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            resultDiv.textContent = '아이디 중복확인 중 오류가 발생했습니다.';
+            resultDiv.className = 'error';
+        }
+    });
+
+    document.getElementById('send-code-btn').addEventListener('click', async function() {
+        const email = document.getElementById('email').value;
+        const mailResultDiv = document.getElementById('mail-result');
+
+        if (!email) {
+            mailResultDiv.textContent = '이메일을 먼저 입력해주세요.';
+            mailResultDiv.className = 'error';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/mail/send-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            });
+
+            const message = await response.text();
+            mailResultDiv.textContent = message;
+
+            if (response.ok) {
+                mailResultDiv.className = 'success';
+                document.getElementById('verification-code').disabled = false;
+                document.getElementById('verify-code-btn').disabled = false;
+            } else {
+                mailResultDiv.className = 'error';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mailResultDiv.textContent = '인증 코드 발송 요청 중 오류가 발생했습니다.';
+            mailResultDiv.className = 'error';
+        }
+    });
+
+    document.getElementById('verify-code-btn').addEventListener('click', async function() {
+        const email = document.getElementById('email').value;
+        const verificationCode = document.getElementById('verification-code').value;
+        const mailResultDiv = document.getElementById('mail-result');
+
+        if (!verificationCode) {
+            mailResultDiv.textContent = '인증 코드를 입력해주세요.';
+            mailResultDiv.className = 'error';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/mail/verify-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    email: email, 
+                    verificationCode: verificationCode 
+                })
+            });
+
+            const message = await response.text();
+            mailResultDiv.textContent = message;
+
+            if (response.ok) {
+                mailResultDiv.className = 'success';
+                emailVerified = true;
+                document.getElementById('verification-code').disabled = true;
+                document.getElementById('verify-code-btn').disabled = true;
+                document.getElementById('send-code-btn').disabled = true;
+                
+                // 아이디 중복확인과 이메일 인증이 모두 완료되면 가입하기 버튼 활성화
+                if (idChecked && emailVerified) {
+                    document.getElementById('join-btn').disabled = false;
+                }
+            } else {
+                mailResultDiv.className = 'error';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mailResultDiv.textContent = '인증 코드 검증 중 오류가 발생했습니다.';
+            mailResultDiv.className = 'error';
+        }
+    });
+</script>
+
+</body>
+</html> 
