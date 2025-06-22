@@ -22,7 +22,7 @@
 | 분야       | 기술                                                         |
 |------------|--------------------------------------------------------------|
 | Backend    | Java 17, Spring Boot, Spring Data JPA, Spring Security       |
-| DB         | MySQL, H2(dev), Redis(추천 캐싱용)                           |
+| DB         | MySQL                                                        |
 | Frontend   | React 18, Vite, TypeScript, Tailwind                         |
 | Auth       | Spring Security + OAuth2 (카카오/네이버)                     |
 | DevOps     | Maven, GitHub, GitHub Actions(예정)                          |
@@ -62,7 +62,7 @@
   - 평균 별점 기반 / 사용자 기반 Top10 추천
 - 클린봇(댓글 욕설 필터링)
 - 외부 API 연동 (박스오피스 배치 - KOBIS)
-- Redis 캐싱 처리
+
 
 ---
 
