@@ -21,9 +21,9 @@
 
 | 분야       | 기술                                                         |
 |------------|--------------------------------------------------------------|
-| Backend    | Java 17, Spring Boot, Spring Data JPA, Spring Security       |
+| Backend    | Java 21, Spring Boot, Spring Data JPA, Spring Security       |
 | DB         | MySQL                                                        |
-| Frontend   | React 18, Vite, TypeScript, Tailwind                         |
+| Frontend   | React 18,                        |
 | Auth       | Spring Security + OAuth2 (카카오/네이버)                     |
 | DevOps     | Maven, GitHub, GitHub Actions(예정)                          |
 | 기타       | Swagger/OpenAPI, Lombok, Batch, Scheduler                    |
