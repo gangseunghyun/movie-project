@@ -57,7 +57,7 @@ pom.xml.versionsBackup
 pom.xml.next
 release.properties
 
-# 환경설정 및 민감정
+# 환경설정 및 민감정보
 .env
 *.env
 *.key
