@@ -66,7 +66,6 @@ release.properties
 *.local
 application.yml
 application.properties
-application-*.yml
 application-*.properties
 
 # 테스트 리포트
