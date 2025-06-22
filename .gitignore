@@ -64,6 +64,8 @@ release.properties
 *.pem
 *.crt
 *.local
+application.yml
+application.properties
 application-*.yml
 application-*.properties
 
