@@ -160,6 +160,39 @@
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+        .terms-section {
+            margin: 10px 0 0 0;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            user-select: none;
+            min-height: 32px;
+        }
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            accent-color: #667eea;
+            vertical-align: middle;
+        }
+        .checkbox-label span {
+            flex: none;
+            line-height: 1.5;
+            margin-right: 8px;
+        }
+        .terms-link {
+            margin-left: 8px;
+            color: #667eea;
+            text-decoration: underline;
+            font-size: 0.97em;
+            cursor: pointer;
+            line-height: 1.5;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -235,6 +268,37 @@
                 </div>
             </div>
             
+            <div class="form-group">
+                <label for="nickname">닉네임</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="text" id="nickname" name="nickname" required placeholder="닉네임 입력" style="flex: 1;">
+                    <button type="button" id="recommendNicknameBtn" class="btn" style="width: auto; padding: 0.5rem 1rem; background: #27ae60;">닉네임 추천</button>
+                </div>
+                <div class="error-message" id="nicknameError"></div>
+                <div class="success-message" id="nicknameSuccess"></div>
+            </div>
+            
+            <div class="form-group" id="termsGroup">
+                <label style="font-weight: bold;">약관 동의</label>
+                <div class="terms-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="termsAll">
+                        <span style="font-weight:600; color:#333;">전체 동의</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="termsService" name="termsService" required>
+                        <span>[필수] 서비스 이용약관 동의</span>
+                        <a href="/terms/service" target="_blank" class="terms-link">보기</a>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="termsPrivacy" name="termsPrivacy" required>
+                        <span>[필수] 개인정보 처리방침 동의</span>
+                        <a href="/terms/privacy" target="_blank" class="terms-link">보기</a>
+                    </label>
+                </div>
+                <div class="error-message" id="termsError" style="display:none;"></div>
+            </div>
+            
             <input type="hidden" id="hiddenVerificationCode" name="verificationCode">
 
             <div id="formError" class="alert alert-error" style="display: none; text-align: center; margin-bottom: 1rem;"></div>
@@ -260,6 +324,10 @@
         const verificationCodeInput = document.getElementById('verificationCode');
         const countdownTimer = document.getElementById('countdownTimer');
         const countdownTime = document.getElementById('countdownTime');
+        const nicknameInput = document.getElementById('nickname');
+        const nicknameError = document.getElementById('nicknameError');
+        const nicknameSuccess = document.getElementById('nicknameSuccess');
+        const recommendNicknameBtn = document.getElementById('recommendNicknameBtn');
         
         let emailVerified = false;
         let countdownInterval = null;
@@ -384,6 +452,30 @@
             } catch (error) {
                 console.error('인증 코드 확인 오류:', error);
                 return { success: false, message: '인증 코드 확인에 실패했습니다.' };
+            }
+        }
+        
+        // 닉네임 중복 확인 API
+        async function checkNicknameDuplicate(nickname) {
+            try {
+                const response = await fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+                const data = await response.json();
+                return data.duplicate;
+            } catch (error) {
+                console.error('닉네임 중복 확인 오류:', error);
+                return false;
+            }
+        }
+
+        // 닉네임 추천 API
+        async function getRecommendedNicknames() {
+            try {
+                const response = await fetch('/api/users/recommend-nickname');
+                const data = await response.json();
+                return data.nicknames || [];
+            } catch (error) {
+                console.error('닉네임 추천 오류:', error);
+                return [];
             }
         }
         
@@ -554,6 +646,53 @@
             }
         });
         
+        // 닉네임 입력 시 실시간 중복 확인
+        nicknameInput.addEventListener('input', async function() {
+            const nickname = this.value.trim();
+            if (!nickname) {
+                nicknameError.textContent = '닉네임을 입력해주세요.';
+                nicknameError.style.display = 'block';
+                nicknameSuccess.style.display = 'none';
+                this.classList.remove('success');
+                this.classList.add('error');
+                return;
+            }
+            const isDuplicate = await checkNicknameDuplicate(nickname);
+            if (isDuplicate) {
+                nicknameError.textContent = '이미 사용 중인 닉네임입니다.';
+                nicknameError.style.display = 'block';
+                nicknameSuccess.style.display = 'none';
+                this.classList.remove('success');
+                this.classList.add('error');
+            } else {
+                nicknameError.style.display = 'none';
+                nicknameSuccess.textContent = '✓ 사용 가능한 닉네임입니다.';
+                nicknameSuccess.style.display = 'block';
+                this.classList.remove('error');
+                this.classList.add('success');
+            }
+        });
+
+        // 닉네임 추천 버튼 클릭 시
+        recommendNicknameBtn.addEventListener('click', async function() {
+            recommendNicknameBtn.disabled = true;
+            recommendNicknameBtn.textContent = '추천 중...';
+            const nicknames = await getRecommendedNicknames();
+            if (nicknames.length > 0) {
+                // 랜덤으로 하나 선택
+                const nickname = nicknames[Math.floor(Math.random() * nicknames.length)];
+                nicknameInput.value = nickname;
+                // 입력 이벤트 트리거(중복 확인 자동 실행)
+                nicknameInput.dispatchEvent(new Event('input'));
+            } else {
+                nicknameError.textContent = '추천 닉네임을 가져오지 못했습니다.';
+                nicknameError.style.display = 'block';
+                nicknameSuccess.style.display = 'none';
+            }
+            recommendNicknameBtn.disabled = false;
+            recommendNicknameBtn.textContent = '닉네임 추천';
+        });
+        
         // 폼 제출 검증
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -579,7 +718,22 @@
             const emailValid = validateField(emailInput, /^[^\s@]+@[^\s@]+\.[^\s@]+$/, '올바른 이메일 형식이 아닙니다.');
             console.log('이메일 유효성:', emailValid);
             
+            // 약관 동의 체크박스 검사
+            const termsAll = document.getElementById('termsAll');
+            const termsService = document.getElementById('termsService');
+            const termsPrivacy = document.getElementById('termsPrivacy');
+            const termsError = document.getElementById('termsError');
+
             if (loginIdValid && passwordValid && passwordConfirmValid && emailValid) {
+                // 약관 동의 체크 확인
+                if (!termsAll.checked) {
+                    termsError.textContent = '필수 약관에 모두 동의해야 회원가입이 가능합니다.';
+                    termsError.style.display = 'block';
+                    return;
+                } else {
+                    termsError.style.display = 'none';
+                }
+
                 console.log('1차 동기 유효성 검사 통과.');
                 // 중복 확인
                 const loginIdDuplicate = await checkLoginIdDuplicate(loginIdInput.value);
@@ -674,6 +828,22 @@
                 countdownTime.style.color = '#666';
             }
         }
+
+        // 전체 동의 체크박스 동기화
+        document.addEventListener('DOMContentLoaded', function() {
+            const termsAll = document.getElementById('termsAll');
+            const termsService = document.getElementById('termsService');
+            const termsPrivacy = document.getElementById('termsPrivacy');
+            termsAll.addEventListener('change', function() {
+                termsService.checked = this.checked;
+                termsPrivacy.checked = this.checked;
+            });
+            [termsService, termsPrivacy].forEach(cb => {
+                cb.addEventListener('change', function() {
+                    termsAll.checked = termsService.checked && termsPrivacy.checked;
+                });
+            });
+        });
     </script>
 </body>
 </html> 

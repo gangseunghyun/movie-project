@@ -48,6 +48,12 @@ public class User implements UserDetails {
     
     private LocalDateTime updatedAt;
     
+    @Column(unique = true, nullable = true)
+    private String nickname;
+    
+    @Column(nullable = false)
+    private boolean socialJoinCompleted = false;
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -67,7 +73,7 @@ public class User implements UserDetails {
     
     @Override
     public String getUsername() {
-        return loginId;
+        return nickname != null && !nickname.isBlank() ? nickname : loginId;
     }
     
     @Override
@@ -87,6 +93,6 @@ public class User implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return emailVerified;
+        return emailVerified && socialJoinCompleted;
     }
 } 

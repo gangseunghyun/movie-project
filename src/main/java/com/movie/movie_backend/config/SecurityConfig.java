@@ -1,7 +1,10 @@
 package com.movie.movie_backend.config;
 
 import com.movie.movie_backend.service.UserDetailServiceImpl;
+import com.movie.movie_backend.service.CustomOAuth2UserService;
+import com.movie.movie_backend.handler.CustomAuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,10 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
-
-    private final UserDetailServiceImpl userDetailService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -25,7 +25,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler() {
+        return new CustomAuthenticationSuccessHandler();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(
+        HttpSecurity http,
+        UserDetailServiceImpl userDetailService,
+        CustomOAuth2UserService customOAuth2UserService
+    ) throws Exception {
         AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
         authBuilder.userDetailsService(userDetailService).passwordEncoder(passwordEncoder());
         AuthenticationManager authenticationManager = authBuilder.build();
@@ -35,20 +44,28 @@ public class SecurityConfig {
             .authenticationManager(authenticationManager)
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/", "/join", "/login", "/css/**", "/js/**", "/images/**").permitAll()
-                .requestMatchers("/api/users/**").permitAll() // /api/users 경로 전체 허용으로 간소화
+                .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/mail/**").permitAll()
+                .requestMatchers("/terms/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .loginProcessingUrl("/login") // 로그인 처리 URL 명시
-                .defaultSuccessUrl("/", true) // 로그인 성공 시 항상 홈으로 리디렉션
+                .loginProcessingUrl("/login")
+                .defaultSuccessUrl("/", true)
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutUrl("/logout") // 로그아웃 URL 명시
+                .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout")
                 .permitAll()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .loginPage("/login")
+                .successHandler(customAuthenticationSuccessHandler())
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
             );
 
         return http.build();
