@@ -3,35 +3,90 @@ package com.movie.movie_backend.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
-@Table(name = "temp_user") // 나중에 DB 관리자가 테이블명을 정해주면 이 부분만 바꾸면 됩니다.
-@Getter
-@Setter
+@Table(name = "users")
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class User {
-
+public class User implements UserDetails {
+    
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // DB가 알아서 ID를 1씩 증가시킵니다.
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "temp_login_id", nullable = false, unique = true) // nullable=false: 비어있으면 안됨, unique=true: 중복되면 안됨
+    
+    @Column(unique = true, nullable = false)
     private String loginId;
-
-    @Column(name = "temp_password", nullable = true) // 소셜 로그인을 위해 nullable=true로 변경
+    
+    @Column(nullable = false)
     private String password;
-
-    @Column(name = "temp_email", nullable = false, unique = true)
+    
+    @Column(unique = true, nullable = false)
     private String email;
-
-    @Column(name = "temp_role")
-    private String role; // 예: "USER", "ADMIN"
-
-    private String provider; // 예: "local", "google", "kakao"
-    private String providerId; // 소셜 로그인 공급자가 제공하는 고유 ID
+    
+    @Column(nullable = false)
+    private String role;
+    
+    private String provider;
+    private String providerId;
+    
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+    
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+    
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+    
+    // UserDetails 구현
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+    }
+    
+    @Override
+    public String getUsername() {
+        return loginId;
+    }
+    
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+    
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+    
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+    
+    @Override
+    public boolean isEnabled() {
+        return emailVerified;
+    }
 } 

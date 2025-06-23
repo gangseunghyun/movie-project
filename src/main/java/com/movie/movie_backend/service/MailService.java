@@ -1,93 +1,111 @@
 package com.movie.movie_backend.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.util.HashSet;
-import java.util.Set;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MailService {
+    
+    private final JavaMailSender mailSender;
+    private final CacheManager cacheManager;
 
-    private final JavaMailSender javaMailSender;
-    private final Map<String, String> verificationCodes = new HashMap<>(); // 인증 코드를 임시로 저장할 Map
-    private final Set<String> verifiedEmails = new HashSet<>(); // 인증 완료된 이메일을 저장할 Set
-
-    // 6자리 랜덤 인증 코드 생성
-    private String createVerificationCode() {
-        Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // 100000 ~ 999999
-        return String.valueOf(code);
-    }
-
-    // 이메일 발송 메소드
-    public void sendVerificationEmail(String email) throws MessagingException {
-        log.info("이메일 발송 시작: {}", email);
-        
-        String verificationCode = createVerificationCode();
-        log.info("생성된 인증 코드: {}", verificationCode);
-
+    // 이메일을 보내고, 생성된 코드를 'verificationCodes' 캐시에 저장합니다.
+    public String sendVerificationEmail(String email) {
         try {
-            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+            log.info("이메일 인증 코드 발송 시작: {}", email);
+            String verificationCode = generateVerificationCode();
+            log.info("생성된 인증 코드: {}", verificationCode);
+            
+            // 캐시에 인증 코드 저장
+            Cache cache = cacheManager.getCache("verificationCodes");
+            if (cache != null) {
+                cache.put(email, verificationCode);
+                log.info("인증 코드를 캐시에 저장: email={}, code={}", email, verificationCode);
+            } else {
+                log.error("캐시 'verificationCodes'를 찾을 수 없습니다.");
+            }
+            
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email);
+            message.setSubject("[영화 추천 서비스] 이메일 인증 코드");
+            message.setText("안녕하세요!\n\n" +
+                    "영화 추천 서비스 회원가입을 위한 이메일 인증 코드입니다.\n\n" +
+                    "인증 코드: " + verificationCode + "\n\n" +
+                    "이 코드는 3분간 유효합니다.\n" +
+                    "본인이 요청하지 않은 경우 이 메일을 무시하세요.\n\n" +
+                    "감사합니다.");
+            
+            log.info("이메일 메시지 생성 완료, 발송 시도...");
+            mailSender.send(message);
+            log.info("이메일 발송 완료: {}", email);
 
-            String htmlContent = "<h1>[Movie-Project] 이메일 인증</h1>" +
-                                 "<p>아래 인증 코드를 입력하여 이메일 주소를 인증해 주세요.</p>" +
-                                 "<h2>" + verificationCode + "</h2>";
-
-            helper.setTo(email);
-            helper.setSubject("[Movie-Project] 이메일 인증 코드입니다.");
-            helper.setText(htmlContent, true); // true는 HTML 형식으로 보내겠다는 의미
-
-            log.info("메일 메시지 생성 완료, 발송 시도...");
-            javaMailSender.send(mimeMessage);
-            log.info("이메일 발송 성공: {}", email);
-
-            // 이메일과 인증 코드 저장 (나중에 검증을 위해)
-            verificationCodes.put(email, verificationCode);
+            return verificationCode;
             
         } catch (Exception e) {
-            log.error("이메일 발송 실패: {}", e.getMessage(), e);
-            throw e;
+            log.error("이메일 발송 실패: {}", email, e);
+            throw new RuntimeException("이메일 발송에 실패했습니다: " + e.getMessage(), e);
         }
     }
 
-    // 인증 코드 검증 메소드
-    public boolean verifyCode(String email, String inputCode) {
-        String storedCode = verificationCodes.get(email);
-        
-        if (storedCode == null) {
-            log.warn("이메일 {}에 대한 인증 코드가 존재하지 않습니다.", email);
-            return false;
-        }
-        
-        boolean isValid = storedCode.equals(inputCode);
-        
-        if (isValid) {
-            // 인증 성공 시 저장된 코드 삭제 (보안상 한 번만 사용 가능)
-            verificationCodes.remove(email);
-            // 인증 완료된 이메일 목록에 추가
-            verifiedEmails.add(email);
-            log.info("이메일 {} 인증 성공", email);
+    // 'verificationCodes' 캐시에서 이메일 키에 해당하는 코드를 조회합니다.
+    public String getVerificationCode(String email) {
+        Cache cache = cacheManager.getCache("verificationCodes");
+        if (cache != null) {
+            Cache.ValueWrapper wrapper = cache.get(email);
+            if (wrapper != null) {
+                String code = (String) wrapper.get();
+                log.info("캐시에서 인증 코드 조회: email={}, code={}", email, code);
+                return code;
+            } else {
+                log.warn("캐시에 없는 인증 코드 조회 시도: {}", email);
+                return null;
+            }
         } else {
-            log.warn("이메일 {} 인증 실패 - 입력된 코드: {}, 저장된 코드: {}", email, inputCode, storedCode);
+            log.error("캐시 'verificationCodes'를 찾을 수 없습니다.");
+            return null;
         }
-        
+    }
+
+    // 'verificationCodes' 캐시에서 이메일 키에 해당하는 코드를 삭제합니다.
+    public void removeVerificationCode(String email) {
+        Cache cache = cacheManager.getCache("verificationCodes");
+        if (cache != null) {
+            cache.evict(email);
+            log.info("인증 코드 캐시에서 삭제: {}", email);
+        } else {
+            log.error("캐시 'verificationCodes'를 찾을 수 없습니다.");
+        }
+    }
+
+    public boolean verifyCode(String email, String code) {
+        String savedCode = getVerificationCode(email);
+        log.info("인증 코드 확인: email={}, 입력코드={}, 저장된코드={}", email, code, savedCode);
+        return savedCode != null && savedCode.equals(code);
+    }
+
+    public boolean verifyAndRemoveCode(String email, String code) {
+        boolean isValid = verifyCode(email, code);
+        if (isValid) {
+            removeVerificationCode(email);
+        }
         return isValid;
     }
-
-    // 이메일 인증 완료 여부 확인 메소드
-    public boolean isEmailVerified(String email) {
-        return verifiedEmails.contains(email);
+    
+    private String generateVerificationCode() {
+        Random random = new Random();
+        StringBuilder code = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            code.append(random.nextInt(10));
+        }
+        return code.toString();
     }
 } 

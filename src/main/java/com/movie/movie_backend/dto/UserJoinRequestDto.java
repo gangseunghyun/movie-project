@@ -1,37 +1,31 @@
 package com.movie.movie_backend.dto;
 
-import com.movie.movie_backend.entity.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class UserJoinRequestDto {
-
-    @NotBlank(message = "아이디는 필수 입력 항목입니다.")
-    @Size(min = 4, max = 20, message = "아이디는 4자 이상 20자 이하로 입력해주세요.")
+    
+    @NotBlank(message = "아이디는 필수입니다.")
+    @Size(min = 4, max = 20, message = "아이디는 4~20자 사이여야 합니다.")
+    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "아이디는 영문자와 숫자만 사용 가능합니다.")
     private String loginId;
-
-    @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
-    @Size(min = 8, max = 20, message = "비밀번호는 8자 이상 20자 이하로 입력해주세요.")
+    
+    @NotBlank(message = "비밀번호는 필수입니다.")
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$",
+             message = "비밀번호는 8~20자의 영문, 숫자, 특수문자(!@#$%^&*)를 사용해야 합니다.")
     private String password;
-
-    @NotBlank(message = "이메일은 필수 입력 항목입니다.")
+    
+    @NotBlank(message = "비밀번호 확인은 필수입니다.")
+    private String passwordConfirm;
+    
+    @NotBlank(message = "이메일은 필수입니다.")
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     private String email;
 
-    // DTO를 Entity로 변환하는 메소드.
-    // Service 단에서 이 메소드를 호출하여, 전달받은 DTO를 User 엔티티로 변환한 후 DB에 저장합니다.
-    public User toEntity(String encryptedPassword) {
-        return User.builder()
-                .loginId(this.loginId)
-                .password(encryptedPassword) // 비밀번호는 암호화해서 저장해야 합니다.
-                .email(this.email)
-                .role("USER") // 회원가입 시 기본 역할은 "USER"
-                .provider("local") // 자체 로그인이므로 "local"
-                .build();
-    }
+    @NotBlank(message = "이메일 인증 코드를 입력해주세요.")
+    private String verificationCode;
 } 

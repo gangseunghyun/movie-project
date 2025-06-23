@@ -5,61 +5,102 @@ import com.movie.movie_backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-@RestController // 이 클래스가 RESTful 웹 서비스의 컨트롤러임을 나타냅니다. (데이터를 반환)
-@RequestMapping("/api/users") // 이 컨트롤러의 모든 메소드는 '/api/users' 라는 기본 URL 경로를 갖습니다.
-@RequiredArgsConstructor // final이 붙은 필드를 인자로 받는 생성자를 자동으로 만들어줍니다. (의존성 주입)
+import java.util.HashMap;
+import java.util.Map;
+
+@Controller
+@RequiredArgsConstructor
 public class UserController {
-
-    private final UserService userService; // 생성자를 통해 UserService 의존성을 주입받습니다.
-
+    
+    private final UserService userService;
+    
+    // 로그인 성공 시 보여줄 홈 페이지
+    @GetMapping("/")
+    public String home() {
+        return "index";
+    }
+    
+    // 회원가입 페이지 (테스트용)
+    @GetMapping("/join")
+    public String joinPage() {
+        return "join";
+    }
+    
+    // 회원가입 처리 (테스트용)
     @PostMapping("/join")
-    public ResponseEntity<String> join(@Valid @RequestBody UserJoinRequestDto requestDto, BindingResult bindingResult) {
-        // 유효성 검사 실패 시, 에러 메시지를 조합하여 반환
+    public String join(@Valid UserJoinRequestDto requestDto, 
+                      BindingResult bindingResult, 
+                      Model model) {
+        
         if (bindingResult.hasErrors()) {
-            StringBuilder sb = new StringBuilder();
-            bindingResult.getAllErrors().forEach(error -> {
-                sb.append(error.getDefaultMessage()).append("\n");
-            });
-            return ResponseEntity.badRequest().body(sb.toString());
+            model.addAttribute("errors", bindingResult.getAllErrors());
+            return "join";
         }
-
+        
         try {
             userService.join(requestDto);
-            // 성공 시, HTTP 200 OK 상태 코드와 함께 성공 메시지를 반환합니다.
-            return ResponseEntity.ok("회원가입이 성공적으로 완료되었습니다.");
+            model.addAttribute("message", "회원가입이 완료되었습니다!");
+            return "redirect:/login";
         } catch (IllegalArgumentException e) {
-            // UserService에서 발생시킨 중복 예외를 잡아서,
-            // HTTP 400 Bad Request 상태 코드와 함께 에러 메시지를 반환합니다.
-            return ResponseEntity.badRequest().body(e.getMessage());
+            model.addAttribute("error", e.getMessage());
+            return "join";
         }
     }
-
-    @GetMapping("/check-login-id")
-    public ResponseEntity<String> checkLoginId(@RequestParam String loginId) {
+    
+    // 로그인 페이지
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
+    
+    // REST API - 회원가입
+    @PostMapping("/api/users/join")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> joinApi(@Valid @RequestBody UserJoinRequestDto requestDto) {
+        Map<String, Object> response = new HashMap<>();
+        
         try {
-            boolean isAvailable = userService.isLoginIdAvailable(loginId);
-            if (isAvailable) {
-                return ResponseEntity.ok("사용 가능한 아이디입니다.");
-            } else {
-                return ResponseEntity.badRequest().body("이미 사용 중인 아이디입니다.");
-            }
+            userService.join(requestDto);
+            response.put("success", true);
+            response.put("message", "회원가입이 완료되었습니다.");
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
-
-    // 앞으로 이곳에 회원가입, 로그인, 정보 조회 등
-    // 실제 웹 요청을 처리하는 메소드들을 만들어 나갈 겁니다.
-    //
-    // 예를 들면 이런 모습이 될 거예요.
-    //
-    // @PostMapping("/join")
-    // public ResponseEntity<String> join(@RequestBody UserJoinRequestDto requestDto) {
-    //     userService.join(requestDto);
-    //     return ResponseEntity.ok("회원가입이 성공적으로 완료되었습니다.");
-    // }
-
+    
+    // REST API - 아이디 중복 확인
+    @GetMapping("/api/users/check-login-id")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> checkLoginId(@RequestParam String loginId) {
+        Map<String, Object> response = new HashMap<>();
+        boolean isDuplicate = userService.checkLoginIdDuplicate(loginId);
+        
+        response.put("duplicate", isDuplicate);
+        response.put("available", !isDuplicate);
+        response.put("message", isDuplicate ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다.");
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    // REST API - 이메일 중복 확인
+    @GetMapping("/api/users/check-email")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> checkEmail(@RequestParam String email) {
+        Map<String, Object> response = new HashMap<>();
+        boolean isDuplicate = userService.checkEmailDuplicate(email);
+        
+        response.put("duplicate", isDuplicate);
+        response.put("available", !isDuplicate);
+        response.put("message", isDuplicate ? "이미 사용 중인 이메일입니다." : "사용 가능한 이메일입니다.");
+        
+        return ResponseEntity.ok(response);
+    }
 } 
