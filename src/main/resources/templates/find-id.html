@@ -24,6 +24,12 @@
         .result { text-align: center; margin-top: 2rem; color: #fff; font-size: 1.1rem; }
         .link-section { text-align: center; margin-top: 1rem; }
         .link-section a { color: #667eea; text-decoration: underline; margin: 0 0.5rem; }
+        #popup-overlay { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.32); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        #popup-modal { background: #fff; border-radius: 16px; padding: 2rem 1.5rem 1.2rem 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.18); min-width: 320px; max-width: 90vw; text-align: center; }
+        #popup-message { font-size: 1.08rem; color: #222; margin-bottom: 1.5rem; word-break: keep-all; }
+        #popup-close { background: #667eea; color: #fff; border: none; border-radius: 8px; padding: 0.7rem 2.2rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        #popup-close:hover { background: #4b5fc9; }
+        #popup-goto-login { background:#764ba2; color:#fff; border:none; border-radius:8px; padding:0.7rem 2.2rem; font-size:1rem; font-weight:600; cursor:pointer; transition:background 0.2s; display:none; }
     </style>
 </head>
 <body>
@@ -40,13 +46,16 @@
 
     <!-- 아이디 찾기 탭 -->
     <div id="find-id-tab" class="tab-content active">
-        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <!-- 에러 메시지는 모달로 노출 -->
         <form th:action="@{/find-id}" method="post" th:if="${success != true}">
             <div class="form-group">
                 <label for="email">이메일</label>
                 <input type="email" id="email" name="email" required placeholder="가입 시 입력한 이메일">
             </div>
             <button type="submit" class="btn">아이디 찾기</button>
+            <div class="link-section">
+                <a href="/login" class="btn" style="margin-top:1rem; background:#764ba2; color:#fff;">로그인하러 가기</a>
+            </div>
         </form>
         <div class="result" th:if="${success == true}">
             <span>가입된 아이디는 <b th:text="${maskedLoginId}"></b> 입니다.</span>
@@ -81,7 +90,16 @@
     </div>
 </div>
 
-<script>
+<div id="popup-overlay">
+    <div id="popup-modal">
+        <div id="popup-message"></div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button id="popup-close">확인</button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
 function showTab(tabName, event = null) {
     // 모든 탭 버튼에서 active 클래스 제거
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -114,13 +132,25 @@ function showTab(tabName, event = null) {
 }
 
 // 페이지 로드 시 비밀번호 관련 메시지가 있으면 비밀번호 찾기 탭 활성화
+// 에러 메시지가 있으면 모달로 노출
+
 document.addEventListener('DOMContentLoaded', function() {
     const passwordError = document.querySelector('#find-password-tab .alert-error');
     const passwordMessage = document.querySelector('#find-password-tab .alert-success');
-    
     if (passwordError || passwordMessage) {
         showTab('find-password');
     }
+    // 에러 메시지 모달 처리 (Thymeleaf JS 인라인)
+    /*<![CDATA[*/
+    var errorMsg = [[${error} == null ? '' : '"' + ${error} + '"' ]];
+    if (errorMsg && errorMsg !== '' && errorMsg !== 'null') {
+        document.getElementById('popup-message').textContent = errorMsg.replace(/^"|"$/g, '');
+        document.getElementById('popup-overlay').style.display = 'flex';
+        document.getElementById('popup-close').onclick = function() {
+            document.getElementById('popup-overlay').style.display = 'none';
+        };
+    }
+    /*]]>*/
 });
 </script>
 </body>

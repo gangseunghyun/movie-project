@@ -54,16 +54,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 }
             }
         }
-        // if ("naver".equals(registrationId)) {
-        //     Map<String, Object> response = (Map<String, Object>) attributes.get("response");
-        //     if (response != null) {
-        //         providerId = (String) response.get("id");
-        //         email = (String) response.get("email");
-        //         name = (String) response.get("nickname");
-        //         if (name == null) name = (String) response.get("name");
-        //     }
-        // }
-        // 네이버, 카카오 확장 가능
+        if ("naver".equals(registrationId)) {
+            Map<String, Object> response = (Map<String, Object>) attributes.get("response");
+            if (response != null) {
+                providerId = (String) response.get("id");
+                email = (String) response.get("email");
+                name = (String) response.get("nickname");
+                if (name == null) name = (String) response.get("name");
+                attributes = response; // 네이버는 response 맵을 attributes로 사용
+            }
+        }
+
+        // null 체크 (닉네임은 name, providerId, email 모두)
+        if (email == null || providerId == null || name == null || name.isBlank()) {
+            throw new AuthenticationException("소셜 로그인에서 필수 정보(email, id, nickname)를 받아오지 못했습니다. 소셜 제공 동의 항목을 확인해 주세요.") {};
+        }
 
         String nickname = (name != null && !name.isBlank()) ? name : (email != null ? email.split("@")[0] : "user");
 
@@ -78,7 +83,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     Optional<User> existingByEmail = userRepository.findByEmail(finalEmail);
                     if (existingByEmail.isPresent()) {
                         String existProvider = existingByEmail.get().getProvider();
-                        throw new AuthenticationException("이미 '" + existProvider + "' 소셜 계정으로 가입된 이메일입니다. 해당 소셜로 로그인해 주세요.") {};
+                        throw new AuthenticationException("이 이메일은 '" + existProvider + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.") {};
                     }
                     // 신규 회원이면 생성
                     return User.builder()
@@ -126,12 +131,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         customAttributes.put("nickname", user.getNickname());
         customAttributes.put("provider", provider);
         customAttributes.put("providerId", providerId);
-        customAttributes.put("sub", providerId); // google의 경우 기본 PK
+        // sub는 providerId로 통일
+        if ("naver".equals(registrationId)) {
+            customAttributes.put("sub", providerId);
+        } else {
+            customAttributes.put("sub", providerId); // google, kakao도 동일하게
+        }
 
         return new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
                 customAttributes,
-                "sub" // google의 경우 기본 PK
+                "id".equals(registrationId) ? "id" : "sub" // 네이버는 "id", 그 외는 "sub"
         );
     }
 } 

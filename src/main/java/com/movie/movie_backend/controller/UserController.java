@@ -378,7 +378,12 @@ public class UserController {
             model.addAttribute("success", false);
             return "find-id";
         }
-        
+        // 소셜 계정 분기
+        if (user.getProvider() != null && !user.getProvider().isBlank() && !user.getProvider().equals("local")) {
+            model.addAttribute("error", "이 이메일은 '" + user.getProvider() + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.");
+            model.addAttribute("success", false);
+            return "find-id";
+        }
         // 로그인 ID 마스킹 처리
         String maskedLoginId = maskLoginId(user.getLoginId());
         model.addAttribute("maskedLoginId", maskedLoginId);

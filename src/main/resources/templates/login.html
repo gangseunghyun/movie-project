@@ -140,7 +140,10 @@
         <div id="popup-overlay">
             <div id="popup-modal">
                 <div id="popup-message"></div>
-                <button id="popup-close">확인</button>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button id="popup-close">확인</button>
+                    <button id="popup-goto-login" style="background:#764ba2; color:#fff; border:none; border-radius:8px; padding:0.7rem 2.2rem; font-size:1rem; font-weight:600; cursor:pointer; transition:background 0.2s; display:none;">로그인하러 가기</button>
+                </div>
             </div>
         </div>
         <div id="login-choice">
@@ -150,7 +153,7 @@
             <a href="/oauth2/authorization/google" class="btn" style="background:#4285F4; color:white; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;">
                 <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="height:20px;"> 구글로 시작하기
             </a>
-            <a href="#" class="btn" style="background:#1ec800; color:white; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;">
+            <a href="/oauth2/authorization/naver" class="btn" style="background:#1ec800; color:white; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;">
                 <img src="https://static.nid.naver.com/oauth/small_g_in.PNG" alt="Naver" style="height:20px;"> 네이버로 시작하기
             </a>
             <a href="/oauth2/authorization/kakao" class="btn" style="background:#fee500; color:#3c1e1e; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;">
@@ -203,6 +206,11 @@
                 document.getElementById('popup-overlay').style.display = 'flex';
                 document.getElementById('popup-close').onclick = function() {
                     document.getElementById('popup-overlay').style.display = 'none';
+                };
+                var gotoBtn = document.getElementById('popup-goto-login');
+                gotoBtn.style.display = 'inline-block';
+                gotoBtn.onclick = function() {
+                    window.location.href = '/login';
                 };
             }
         });
