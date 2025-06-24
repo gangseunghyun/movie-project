@@ -4,10 +4,14 @@ import com.movie.movie_backend.dto.UserJoinRequestDto;
 import com.movie.movie_backend.service.UserService;
 import com.movie.movie_backend.repository.UserRepository;
 import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.entity.PasswordResetToken;
+import com.movie.movie_backend.repository.PasswordResetTokenRepository;
+import com.movie.movie_backend.service.MailService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -23,6 +27,9 @@ public class UserController {
     
     private final UserService userService;
     private final UserRepository userRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final MailService mailService;
+    private final PasswordEncoder passwordEncoder;
     
     // 로그인 성공 시 보여줄 홈 페이지
     @GetMapping("/")
@@ -68,18 +75,23 @@ public class UserController {
     public String join(@Valid UserJoinRequestDto requestDto, 
                       BindingResult bindingResult, 
                       Model model) {
-        
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("errors", bindingResult.getAllErrors());
+        if (requestDto.getNickname() == null || requestDto.getNickname().trim().isEmpty()) {
+            model.addAttribute("error", "닉네임을 입력해주세요.");
+            model.addAttribute("requestDto", requestDto); // 기존 입력값 유지
             return "join";
         }
-        
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("errors", bindingResult.getAllErrors());
+            model.addAttribute("requestDto", requestDto);
+            return "join";
+        }
         try {
             userService.join(requestDto);
             model.addAttribute("message", "회원가입이 완료되었습니다!");
             return "redirect:/login";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+            model.addAttribute("requestDto", requestDto);
             return "join";
         }
     }
@@ -210,5 +222,173 @@ public class UserController {
             return "redirect:/social-join";
         }
         throw ex;
+    }
+
+    // 비밀번호 찾기 폼
+    @GetMapping("/forgot-password")
+    public String forgotPasswordPage() {
+        return "forgot-password";
+    }
+
+    // 비밀번호 찾기 요청 처리
+    @PostMapping("/forgot-password")
+    public String forgotPasswordSubmit(@RequestParam String loginId, @RequestParam String email, Model model) {
+        // 아이디로 사용자 찾기
+        User user = userRepository.findByLoginId(loginId).orElse(null);
+        
+        if (user == null) {
+            model.addAttribute("passwordError", "가입된 아이디가 아닙니다.");
+            model.addAttribute("success", false);
+            return "find-id";
+        }
+        
+        // 이메일이 일치하는지 확인
+        if (!user.getEmail().equals(email)) {
+            model.addAttribute("passwordError", "아이디와 이메일이 일치하지 않습니다.");
+            model.addAttribute("success", false);
+            return "find-id";
+        }
+        
+        PasswordResetToken token = userService.createPasswordResetToken(user.getEmail());
+        String resetLink = "http://localhost:8080/reset-password?token=" + token.getToken();
+        mailService.sendResetPasswordEmail(user.getEmail(), resetLink);
+        model.addAttribute("passwordMessage", "비밀번호 재설정 링크가 이메일로 발송되었습니다.");
+        model.addAttribute("success", false);
+        return "find-id";
+    }
+
+    // 비밀번호 재설정 폼
+    @GetMapping("/reset-password")
+    public String resetPasswordPage(@RequestParam String token, Model model) {
+        try {
+            userService.validatePasswordResetToken(token);
+            model.addAttribute("token", token);
+            return "reset-password";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "reset-password";
+        }
+    }
+
+    // 비밀번호 재설정 처리
+    @PostMapping("/reset-password")
+    public String resetPasswordSubmit(@RequestParam String token, @RequestParam String newPassword, @RequestParam String newPasswordConfirm, Model model) {
+        if (!newPassword.equals(newPasswordConfirm)) {
+            model.addAttribute("error", "비밀번호가 일치하지 않습니다.");
+            model.addAttribute("token", token);
+            return "reset-password";
+        }
+        if (!isValidPassword(newPassword)) {
+            model.addAttribute("error", "비밀번호는 8자 이상, 영문/숫자/특수문자를 모두 포함해야 합니다.");
+            model.addAttribute("token", token);
+            return "reset-password";
+        }
+        try {
+            userService.resetPassword(token, newPassword);
+            model.addAttribute("message", "비밀번호가 성공적으로 변경되었습니다. 로그인해 주세요.");
+            return "login";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "reset-password";
+        }
+    }
+
+    // 비밀번호 유효성 검사
+    private boolean isValidPassword(String password) {
+        if (password == null || password.length() < 8) return false;
+        boolean hasLetter = password.matches(".*[a-zA-Z].*");
+        boolean hasDigit = password.matches(".*\\d.*");
+        boolean hasSpecial = password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
+        return hasLetter && hasDigit && hasSpecial;
+    }
+
+    // REST API: 비밀번호 찾기(소셜/자체 분기)
+    @PostMapping("/api/forgot-password")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> forgotPasswordApi(@RequestParam String email) {
+        Map<String, Object> response = new HashMap<>();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            response.put("type", "NOT_FOUND");
+            response.put("message", "가입된 이메일이 아닙니다.");
+            return ResponseEntity.ok(response);
+        }
+        if (user.getProvider() != null && !user.getProvider().isBlank()) {
+            // 소셜 전용 계정
+            response.put("type", "SOCIAL_ONLY");
+            response.put("provider", user.getProvider());
+            response.put("email", user.getEmail());
+            response.put("nickname", user.getNickname());
+            response.put("message", user.getProvider() + " 소셜 로그인 전용 계정입니다. 자체 로그인(비밀번호)도 사용하시겠습니까?");
+            return ResponseEntity.ok(response);
+        }
+        // 자체 회원
+        PasswordResetToken token = userService.createPasswordResetToken(email);
+        String resetLink = "http://localhost:8080/reset-password?token=" + token.getToken();
+        mailService.sendResetPasswordEmail(email, resetLink);
+        response.put("type", "NORMAL");
+        response.put("message", "비밀번호 재설정 링크가 이메일로 발송되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    // REST API: 소셜 전용 계정 → 자체 로그인 통합(비밀번호 설정)
+    @PostMapping("/api/social-password-join")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> socialPasswordJoin(@RequestParam String email,
+                                                                 @RequestParam String nickname,
+                                                                 @RequestParam String password,
+                                                                 @RequestParam String passwordConfirm) {
+        Map<String, Object> response = new HashMap<>();
+        if (!password.equals(passwordConfirm)) {
+            response.put("success", false);
+            response.put("message", "비밀번호가 일치하지 않습니다.");
+            return ResponseEntity.ok(response);
+        }
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "가입된 이메일이 아닙니다.");
+            return ResponseEntity.ok(response);
+        }
+        if (user.getProvider() == null || user.getProvider().isBlank()) {
+            response.put("success", false);
+            response.put("message", "이미 자체 로그인 계정입니다.");
+            return ResponseEntity.ok(response);
+        }
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
+        response.put("success", true);
+        response.put("message", "비밀번호가 설정되었습니다. 이제 자체 로그인도 가능합니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    // 아이디 찾기 폼
+    @GetMapping("/find-id")
+    public String findIdPage(Model model) {
+        model.addAttribute("success", false);
+        return "find-id";
+    }
+
+    // 아이디 찾기 처리
+    @PostMapping("/find-id")
+    public String findIdSubmit(@RequestParam String email, Model model) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            model.addAttribute("error", "가입된 이메일이 아닙니다.");
+            model.addAttribute("success", false);
+            return "find-id";
+        }
+        
+        // 로그인 ID 마스킹 처리
+        String maskedLoginId = maskLoginId(user.getLoginId());
+        model.addAttribute("maskedLoginId", maskedLoginId);
+        model.addAttribute("success", true);
+        return "find-id";
+    }
+
+    // 로그인 ID 마스킹 유틸
+    private String maskLoginId(String loginId) {
+        if (loginId == null || loginId.length() <= 2) return loginId;
+        return loginId.substring(0, 2) + "***" + loginId.substring(loginId.length() - 1);
     }
 } 

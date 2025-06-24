@@ -6,8 +6,11 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import java.util.Random;
 
 @Service
@@ -107,5 +110,39 @@ public class MailService {
             code.append(random.nextInt(10));
         }
         return code.toString();
+    }
+
+    // 비밀번호 재설정 메일 발송 (HTML 형식)
+    public void sendResetPasswordEmail(String email, String resetLink) {
+        try {
+            log.info("비밀번호 재설정 메일 발송 시작: {}", email);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setTo(email);
+            helper.setSubject("[영화 추천 서비스] 비밀번호 재설정 안내");
+            
+            String htmlContent = "<html><body>" +
+                    "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>" +
+                    "<h2 style='color: #333;'>비밀번호 재설정 안내</h2>" +
+                    "<p>안녕하세요!</p>" +
+                    "<p>비밀번호 재설정을 위한 링크입니다. 아래 버튼을 클릭하여 새 비밀번호를 설정해 주세요.</p>" +
+                    "<div style='text-align: center; margin: 30px 0;'>" +
+                    "<a href='" + resetLink + "' style='background-color: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>비밀번호 재설정하기</a>" +
+                    "</div>" +
+                    "<p style='color: #666; font-size: 14px;'>위 버튼이 작동하지 않는 경우, 아래 링크를 복사하여 브라우저에 붙여넣기 해주세요:</p>" +
+                    "<p style='word-break: break-all; color: #667eea;'>" + resetLink + "</p>" +
+                    "<p style='color: #666; font-size: 14px;'>이 링크는 30분간만 유효합니다.</p>" +
+                    "<p style='color: #666; font-size: 14px;'>본인이 요청하지 않은 경우 이 메일을 무시하세요.</p>" +
+                    "<p>감사합니다.</p>" +
+                    "</div></body></html>";
+            
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("비밀번호 재설정 메일 발송 완료: {}", email);
+        } catch (MessagingException e) {
+            log.error("비밀번호 재설정 메일 발송 실패: {}", email, e);
+            throw new RuntimeException("비밀번호 재설정 메일 발송에 실패했습니다: " + e.getMessage(), e);
+        }
     }
 } 

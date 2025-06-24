@@ -54,6 +54,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean socialJoinCompleted = false;
     
+    // TODO: 비밀번호 재설정 토큰 엔티티와 연관관계 추가 예정
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -93,6 +95,6 @@ public class User implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return emailVerified && socialJoinCompleted;
+        return emailVerified;
     }
 } 

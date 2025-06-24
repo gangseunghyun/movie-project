@@ -42,6 +42,26 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             email = (String) attributes.get("email");
             name = (String) attributes.get("name");
         }
+        if ("kakao".equals(registrationId)) {
+            providerId = String.valueOf(attributes.get("id"));
+            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+            if (kakaoAccount != null) {
+                email = (String) kakaoAccount.get("email");
+                Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+                if (profile != null) {
+                    name = (String) profile.get("nickname");
+                }
+            }
+        }
+        // if ("naver".equals(registrationId)) {
+        //     Map<String, Object> response = (Map<String, Object>) attributes.get("response");
+        //     if (response != null) {
+        //         providerId = (String) response.get("id");
+        //         email = (String) response.get("email");
+        //         name = (String) response.get("nickname");
+        //         if (name == null) name = (String) response.get("name");
+        //     }
+        // }
         // 네이버, 카카오 확장 가능
 
         String nickname = (name != null && !name.isBlank()) ? name : (email != null ? email.split("@")[0] : "user");
@@ -71,6 +91,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // 닉네임이 없으면 세션에 소셜 사용자 정보 저장
         if (user.getNickname() == null || user.getNickname().isBlank()) {
+            System.out.println("[DEBUG] 세션 저장: provider=" + provider + ", providerId=" + providerId + ", email=" + email);
             HttpSession session = request.getSession();
             session.setAttribute("SOCIAL_EMAIL", email);
             session.setAttribute("SOCIAL_PROVIDER", provider);
@@ -98,7 +119,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         customAttributes.put("nickname", user.getNickname());
         customAttributes.put("provider", provider);
         customAttributes.put("providerId", providerId);
-        customAttributes.put("sub", providerId); // 구글은 sub가 providerId
+        customAttributes.put("sub", providerId); // google의 경우 기본 PK
 
         return new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),

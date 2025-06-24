@@ -34,6 +34,9 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         } else if (email != null) {
             user = userRepository.findByEmail(email).orElse(null);
         }
+        if (user == null) {
+            System.out.println("[DEBUG] SuccessHandler: user==null, provider=" + provider + ", providerId=" + providerId + ", email=" + email);
+        }
         if (user == null || user.getNickname() == null || !user.isSocialJoinCompleted()) {
             response.sendRedirect("/social-join");
         } else {

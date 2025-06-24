@@ -47,17 +47,22 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/mail/**").permitAll()
                 .requestMatchers("/terms/**").permitAll()
+                .requestMatchers("/forgot-password").permitAll()
+                .requestMatchers("/reset-password").permitAll()
+                .requestMatchers("/find-id").permitAll()
+                .requestMatchers("/social-join").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
                 .defaultSuccessUrl("/", true)
+                .failureUrl("/login?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout")
+                .logoutSuccessUrl("/login")
                 .permitAll()
             )
             .oauth2Login(oauth2 -> oauth2

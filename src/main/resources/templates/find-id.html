@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>아이디/비밀번호 찾기</title>
+    <style>
+        body { background: #181c20; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff; }
+        .container { max-width: 400px; margin: 60px auto; background: #23272b; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); padding: 2rem; }
+        h2 { text-align: center; margin-bottom: 1.5rem; color: #fff; }
+        .tab-container { margin-bottom: 2rem; }
+        .tab-buttons { display: flex; border-bottom: 2px solid #444; margin-bottom: 1.5rem; }
+        .tab-button { flex: 1; padding: 0.75rem; background: none; border: none; color: #888; font-size: 1rem; cursor: pointer; }
+        .tab-button.active { color: #667eea; border-bottom: 2px solid #667eea; margin-bottom: -2px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #eee; font-weight: 500; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 2px solid #444; border-radius: 8px; font-size: 1rem; background: #181c20; color: #fff; }
+        .btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; }
+        .btn:hover { background: #667eea; }
+        .alert { padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.95rem; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .result { text-align: center; margin-top: 2rem; color: #fff; font-size: 1.1rem; }
+        .link-section { text-align: center; margin-top: 1rem; }
+        .link-section a { color: #667eea; text-decoration: underline; margin: 0 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>아이디 찾기/비밀번호 재설정</h2>
+    
+    <!-- 탭 버튼 -->
+    <div class="tab-container">
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="showTab('find-id')">아이디 찾기</button>
+            <button class="tab-button" onclick="showTab('find-password')">비밀번호 재설정</button>
+        </div>
+    </div>
+
+    <!-- 아이디 찾기 탭 -->
+    <div id="find-id-tab" class="tab-content active">
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <form th:action="@{/find-id}" method="post" th:if="${success != true}">
+            <div class="form-group">
+                <label for="email">이메일</label>
+                <input type="email" id="email" name="email" required placeholder="가입 시 입력한 이메일">
+            </div>
+            <button type="submit" class="btn">아이디 찾기</button>
+        </form>
+        <div class="result" th:if="${success == true}">
+            <span>가입된 아이디는 <b th:text="${maskedLoginId}"></b> 입니다.</span>
+            <div class="link-section">
+                <a href="/login">로그인으로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 비밀번호 재설정 탭 -->
+    <div id="find-password-tab" class="tab-content">
+        <div th:if="${passwordError}" class="alert alert-error" th:text="${passwordError}"></div>
+        <div th:if="${passwordMessage}" class="alert alert-success" th:text="${passwordMessage}"></div>
+        
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; color: #666; font-size: 0.9rem;">
+            <strong>비밀번호 재설정 방법</strong><br>
+            가입 시 등록한 아이디와 이메일을 입력하시면,<br>
+            해당 이메일로 비밀번호 재설정 링크를 발송해드립니다.
+        </div>
+        
+        <form th:action="@{/forgot-password}" method="post">
+            <div class="form-group">
+                <label for="loginId">아이디</label>
+                <input type="text" id="loginId" name="loginId" required placeholder="가입 시 입력한 아이디">
+            </div>
+            <div class="form-group">
+                <label for="passwordEmail">이메일</label>
+                <input type="email" id="passwordEmail" name="email" required placeholder="가입 시 입력한 이메일">
+            </div>
+            <button type="submit" class="btn">비밀번호 재설정 링크 발송</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function showTab(tabName, event = null) {
+    // 모든 탭 버튼에서 active 클래스 제거
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // 모든 탭 콘텐츠에서 active 클래스 제거
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // 클릭된 탭 버튼에 active 클래스 추가 (이벤트가 있을 때만)
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // 이벤트가 없으면 해당 탭 버튼을 찾아서 활성화
+        if (tabName === 'find-id') {
+            document.querySelector('.tab-button[onclick*="find-id"]').classList.add('active');
+        } else if (tabName === 'find-password') {
+            document.querySelector('.tab-button[onclick*="find-password"]').classList.add('active');
+        }
+    }
+    
+    // 해당 탭 콘텐츠에 active 클래스 추가
+    if (tabName === 'find-id') {
+        document.getElementById('find-id-tab').classList.add('active');
+    } else if (tabName === 'find-password') {
+        document.getElementById('find-password-tab').classList.add('active');
+    }
+}
+
+// 페이지 로드 시 비밀번호 관련 메시지가 있으면 비밀번호 찾기 탭 활성화
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordError = document.querySelector('#find-password-tab .alert-error');
+    const passwordMessage = document.querySelector('#find-password-tab .alert-success');
+    
+    if (passwordError || passwordMessage) {
+        showTab('find-password');
+    }
+});
+</script>
+</body>
+</html> 

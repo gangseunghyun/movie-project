@@ -271,10 +271,10 @@
             <div class="form-group">
                 <label for="nickname">닉네임</label>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <input type="text" id="nickname" name="nickname" required placeholder="닉네임 입력" style="flex: 1;">
+                    <input type="text" id="nickname" name="nickname" required placeholder="닉네임 입력" style="flex: 1;" th:value="${requestDto != null ? requestDto.nickname : ''}">
                     <button type="button" id="recommendNicknameBtn" class="btn" style="width: auto; padding: 0.5rem 1rem; background: #27ae60;">닉네임 추천</button>
                 </div>
-                <div class="error-message" id="nicknameError"></div>
+                <div class="error-message" id="nicknameError" th:if="${error}" th:text="${error}" style="display:block;"></div>
                 <div class="success-message" id="nicknameSuccess"></div>
             </div>
             

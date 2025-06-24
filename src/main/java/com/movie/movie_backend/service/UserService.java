@@ -2,7 +2,9 @@ package com.movie.movie_backend.service;
 
 import com.movie.movie_backend.dto.UserJoinRequestDto;
 import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.entity.PasswordResetToken;
 import com.movie.movie_backend.repository.UserRepository;
+import com.movie.movie_backend.repository.PasswordResetTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     
     public void join(UserJoinRequestDto requestDto) {
         // 이메일 인증 확인
@@ -125,5 +128,36 @@ public class UserService {
         user.setSocialJoinCompleted(true);
         userRepository.save(user);
         System.out.println("[DEBUG] Nickname updated successfully.");
+    }
+
+    // 비밀번호 재설정 토큰 생성 및 저장
+    public PasswordResetToken createPasswordResetToken(String email) {
+        // 기존 토큰 삭제(1인 1토큰 정책)
+        passwordResetTokenRepository.deleteByEmail(email);
+        String token = java.util.UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.create(token, email, 30); // 30분 유효
+        return passwordResetTokenRepository.save(resetToken);
+    }
+
+    // 토큰 검증
+    public PasswordResetToken validatePasswordResetToken(String token) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다."));
+        if (resetToken.isExpired() || resetToken.isUsed()) {
+            throw new IllegalArgumentException("만료되었거나 이미 사용된 토큰입니다.");
+        }
+        return resetToken;
+    }
+
+    // 비밀번호 변경 및 토큰 무효화
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = validatePasswordResetToken(token);
+        User user = userRepository.findByEmail(resetToken.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+        userRepository.save(user);
     }
 } 

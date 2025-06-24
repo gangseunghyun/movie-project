@@ -109,37 +109,68 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>로그인</h1>
+            <h1>반가워요!<br>계정을 선택해 주세요.</h1>
         </div>
-        
-        <div th:if="${param.error}" class="alert alert-error">
-            아이디 또는 비밀번호가 올바르지 않습니다.
-        </div>
-        
-        <form th:action="@{/login}" method="post">
-            <div class="form-group">
-                <label for="username">아이디</label>
-                <input type="text" id="username" name="username" required>
+        <div id="login-choice">
+            <button class="btn" style="background:#222; color:#fff; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="showLocalLogin()">
+                <span style="font-size:1.3rem; font-weight:bold;">F</span> Filmer ID로 시작하기
+            </button>
+            <a href="/oauth2/authorization/google" class="btn" style="background:#4285F4; color:white; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="height:20px;"> 구글로 시작하기
+            </a>
+            <a href="#" class="btn" style="background:#1ec800; color:white; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;">
+                <img src="https://static.nid.naver.com/oauth/small_g_in.PNG" alt="Naver" style="height:20px;"> 네이버로 시작하기
+            </a>
+            <a href="/oauth2/authorization/kakao" class="btn" style="background:#fee500; color:#3c1e1e; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;">
+                <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png" alt="Kakao" style="height:20px;"> 카카오로 시작하기
+            </a>
+            <div style="text-align:center; margin-top:2rem; color:#bbb;">
+                아이디/비밀번호를 잊으셨나요? <a href="/find-id" style="color:#667eea; font-weight:bold; text-decoration:underline;">바로가기</a>
             </div>
-            
-            <div class="form-group">
-                <label for="password">비밀번호</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            
-            <button type="submit" class="btn">로그인</button>
-        </form>
-        
-        <div style="text-align:center; margin-top: 1.5rem;">
-          <a href="/oauth2/authorization/google" class="btn" style="background:#4285F4; color:white; display:inline-block; padding:0.75rem 1.5rem; border-radius:8px; text-decoration:none;">
-            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="height:20px; vertical-align:middle; margin-right:8px;">
-            구글 로그인
-          </a>
         </div>
-        
-        <div class="join-link">
-            <p>계정이 없으신가요? <a href="/join">회원가입</a></p>
+        <div id="local-login-form" style="display:none;">
+            <div class="header"><h1>로그인</h1></div>
+            <div th:if="${param.error}" class="alert alert-error">
+                아이디 또는 비밀번호가 올바르지 않습니다.
+            </div>
+            <form th:action="@{/login}" method="post">
+                <div class="form-group">
+                    <label for="username">아이디</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn">로그인</button>
+            </form>
+            <div style="text-align:center; margin-top:1.5rem;">
+                <a href="/join" style="color:#667eea; text-decoration:underline;">회원가입</a>
+                <span style="color:#bbb; margin:0 8px;">|</span>
+                <a href="/find-id" style="color:#667eea; text-decoration:underline;">아이디/비밀번호를 잊으셨나요?</a>
+            </div>
+            <div style="text-align:center; margin-top:1.5rem;">
+                <button class="btn" style="background:#eee; color:#333;" onclick="hideLocalLogin()">← 계정 선택으로 돌아가기</button>
+            </div>
         </div>
     </div>
+    <script>
+        function showLocalLogin() {
+            document.getElementById('login-choice').style.display = 'none';
+            document.getElementById('local-login-form').style.display = 'block';
+        }
+        function hideLocalLogin() {
+            document.getElementById('local-login-form').style.display = 'none';
+            document.getElementById('login-choice').style.display = 'block';
+        }
+        
+        // 페이지 로드 시 에러가 있으면 로그인 폼 표시
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('error') || urlParams.has('logout')) {
+                showLocalLogin();
+            }
+        });
+    </script>
 </body>
 </html> 
