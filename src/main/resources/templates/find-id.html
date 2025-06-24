@@ -151,6 +151,22 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     /*]]>*/
+    // 뒤로가기/새로고침 시 쿼리스트링 제거
+    if (window.location.search) {
+        history.replaceState(null, '', window.location.pathname);
+    }
+    // 입력 시 alert/메시지 숨김
+    var alertDiv = document.querySelector('.alert.alert-error');
+    var msgDiv = document.querySelector('.alert.alert-success');
+    ['email','loginId','passwordEmail'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', function() {
+                if (alertDiv) alertDiv.style.display = 'none';
+                if (msgDiv) msgDiv.style.display = 'none';
+            });
+        }
+    });
 });
 </script>
 </body>

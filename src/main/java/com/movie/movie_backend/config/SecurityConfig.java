@@ -41,9 +41,20 @@ public class SecurityConfig {
             @Override
             public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, org.springframework.security.core.AuthenticationException exception) throws IOException, ServletException {
                 String errorMessage = exception.getMessage();
-                // URL 인코딩
+                String provider = null;
+                if (errorMessage != null && errorMessage.startsWith("PROVIDER:")) {
+                    int sep = errorMessage.indexOf('|');
+                    if (sep > 0) {
+                        provider = errorMessage.substring(9, sep);
+                        errorMessage = errorMessage.substring(sep + 1);
+                    }
+                }
                 errorMessage = java.net.URLEncoder.encode(errorMessage, "UTF-8");
-                getRedirectStrategy().sendRedirect(request, response, "/login?error=true&message=" + errorMessage);
+                if (provider == null || provider.equals("local") || provider.isBlank()) {
+                    getRedirectStrategy().sendRedirect(request, response, "/login?error=true&message=" + errorMessage);
+                } else {
+                    getRedirectStrategy().sendRedirect(request, response, "/login?error=true&message=" + errorMessage + "&social=" + provider);
+                }
             }
         };
     }
