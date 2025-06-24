@@ -15,9 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
 import java.util.HashMap;
-
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
+import org.springframework.security.core.AuthenticationException;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +74,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         // 이미 가입된 사용자인지 확인
         User user = userRepository.findByProviderAndProviderId(provider, providerId)
                 .orElseGet(() -> {
+                    // 이메일로 이미 가입된 사용자가 있는지 추가로 확인
+                    Optional<User> existingByEmail = userRepository.findByEmail(finalEmail);
+                    if (existingByEmail.isPresent()) {
+                        String existProvider = existingByEmail.get().getProvider();
+                        throw new AuthenticationException("이미 '" + existProvider + "' 소셜 계정으로 가입된 이메일입니다. 해당 소셜로 로그인해 주세요.") {};
+                    }
                     // 신규 회원이면 생성
                     return User.builder()
                             .loginId(finalEmail)

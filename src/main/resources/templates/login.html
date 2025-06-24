@@ -96,13 +96,39 @@
             text-decoration: underline;
         }
         
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 0.75rem;
+        #popup-overlay {
+            position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.32);
+            display: none; align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        #popup-modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem 1.5rem 1.2rem 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            min-width: 320px; max-width: 90vw;
+            text-align: center;
+        }
+        #popup-message {
+            font-size: 1.08rem;
+            color: #222;
+            margin-bottom: 1.5rem;
+            word-break: keep-all;
+        }
+        #popup-close {
+            background: #667eea;
+            color: #fff;
+            border: none;
             border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
+            padding: 0.7rem 2.2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #popup-close:hover {
+            background: #4b5fc9;
         }
     </style>
 </head>
@@ -110,6 +136,12 @@
     <div class="container">
         <div class="header">
             <h1>반가워요!<br>계정을 선택해 주세요.</h1>
+        </div>
+        <div id="popup-overlay">
+            <div id="popup-modal">
+                <div id="popup-message"></div>
+                <button id="popup-close">확인</button>
+            </div>
         </div>
         <div id="login-choice">
             <button class="btn" style="background:#222; color:#fff; margin-bottom:1rem; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="showLocalLogin()">
@@ -130,9 +162,6 @@
         </div>
         <div id="local-login-form" style="display:none;">
             <div class="header"><h1>로그인</h1></div>
-            <div th:if="${param.error}" class="alert alert-error">
-                아이디 또는 비밀번호가 올바르지 않습니다.
-            </div>
             <form th:action="@{/login}" method="post">
                 <div class="form-group">
                     <label for="username">아이디</label>
@@ -164,11 +193,17 @@
             document.getElementById('login-choice').style.display = 'block';
         }
         
-        // 페이지 로드 시 에러가 있으면 로그인 폼 표시
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('error') || urlParams.has('logout')) {
+            if (urlParams.has('error') || urlParams.has('logout') || urlParams.has('message')) {
                 showLocalLogin();
+            }
+            if (urlParams.has('message')) {
+                document.getElementById('popup-message').textContent = decodeURIComponent(urlParams.get('message'));
+                document.getElementById('popup-overlay').style.display = 'flex';
+                document.getElementById('popup-close').onclick = function() {
+                    document.getElementById('popup-overlay').style.display = 'none';
+                };
             }
         });
     </script>
