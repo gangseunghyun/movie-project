@@ -18,6 +18,8 @@ public class AuthApiController {
 
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> req) {
+        System.out.println("[DEBUG] /api/login 진입");
+        System.out.println("[DEBUG] req = " + req);
         String username = req.get("username");
         String password = req.get("password");
         Map<String, Object> res = new HashMap<>();
@@ -25,6 +27,7 @@ public class AuthApiController {
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
             res.put("success", true);
             res.put("message", "로그인 성공");
+            res.put("nickname", user.getNickname());
             // 실제 서비스에서는 JWT 발급 등 추가
         } else {
             res.put("success", false);

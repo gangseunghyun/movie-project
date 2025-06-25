@@ -20,6 +20,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
@@ -51,10 +53,23 @@ public class SecurityConfig {
                 }
                 errorMessage = java.net.URLEncoder.encode(errorMessage, "UTF-8");
                 if (provider == null || provider.equals("local") || provider.isBlank()) {
-                    getRedirectStrategy().sendRedirect(request, response, "/login?error=true&message=" + errorMessage);
+                    getRedirectStrategy().sendRedirect(request, response, "http://localhost:3000/login?error=true&message=" + errorMessage);
                 } else {
-                    getRedirectStrategy().sendRedirect(request, response, "/login?error=true&message=" + errorMessage + "&social=" + provider);
+                    getRedirectStrategy().sendRedirect(request, response, "http://localhost:3000/login?error=true&message=" + errorMessage + "&social=" + provider);
                 }
+            }
+        };
+    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/api/**")
+                        .allowedOrigins("http://localhost:3000")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowCredentials(true);
             }
         };
     }
@@ -74,13 +89,35 @@ public class SecurityConfig {
             .cors().and()
             .authenticationManager(authenticationManager)
             .authorizeHttpRequests()
-                .requestMatchers("/api/**", "/static/**", "/resources/static/**").permitAll()
+                .requestMatchers(
+                    "/api/login",
+                    "/api/users/join",
+                    "/api/users/check-login-id",
+                    "/api/users/check-email",
+                    "/api/users/check-nickname",
+                    "/api/users/recommend-nickname",
+                    "/api/mail/**",
+                    "/reset-password",
+                    "/api/**",
+                    "/static/**",
+                    "/resources/static/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             .and()
+            .formLogin().disable()
+            .httpBasic().disable()
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login.html")
                 .permitAll()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .loginPage("http://localhost:3000/login")
+                .successHandler(customAuthenticationSuccessHandler())
+                .failureHandler(customAuthenticationFailureHandler())
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
             );
 
         return http.build();

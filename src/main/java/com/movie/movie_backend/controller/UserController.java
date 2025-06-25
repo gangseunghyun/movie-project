@@ -35,6 +35,7 @@ public class UserController {
             userService.join(requestDto);
             response.put("success", true);
             response.put("message", "회원가입이 완료되었습니다.");
+            response.put("nickname", requestDto.getNickname());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             response.put("success", false);
@@ -225,5 +226,51 @@ public class UserController {
         boolean hasDigit = password.matches(".*\\d.*");
         boolean hasSpecial = password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
         return hasLetter && hasDigit && hasSpecial;
+    }
+
+    // REST API - 소셜 회원가입 추가 정보(닉네임, 약관동의)
+    @PostMapping("/api/social-join-complete")
+    public ResponseEntity<Map<String, Object>> socialJoinComplete(@RequestBody Map<String, Object> req, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        String nickname = (String) req.get("nickname");
+        Boolean agree = (Boolean) req.get("agree");
+        if (nickname == null || nickname.isBlank()) {
+            response.put("success", false);
+            response.put("message", "닉네임을 입력해 주세요.");
+            return ResponseEntity.ok(response);
+        }
+        if (agree == null || !agree) {
+            response.put("success", false);
+            response.put("message", "약관에 동의해야 가입이 완료됩니다.");
+            return ResponseEntity.ok(response);
+        }
+        // 세션에서 소셜 사용자 정보 추출
+        String email = (String) session.getAttribute("SOCIAL_EMAIL");
+        String provider = (String) session.getAttribute("SOCIAL_PROVIDER");
+        String providerId = (String) session.getAttribute("SOCIAL_PROVIDER_ID");
+        if (email == null || provider == null || providerId == null) {
+            response.put("success", false);
+            response.put("message", "소셜 로그인 세션이 만료되었습니다. 다시 로그인해 주세요.");
+            return ResponseEntity.ok(response);
+        }
+        // 해당 유저 찾기
+        User user = userRepository.findByProviderAndProviderId(provider, providerId).orElse(null);
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "사용자를 찾을 수 없습니다. 다시 로그인해 주세요.");
+            return ResponseEntity.ok(response);
+        }
+        // 닉네임 중복 체크
+        if (userRepository.existsByNickname(nickname)) {
+            response.put("success", false);
+            response.put("message", "이미 사용 중인 닉네임입니다.");
+            return ResponseEntity.ok(response);
+        }
+        user.setNickname(nickname);
+        user.setSocialJoinCompleted(true);
+        userRepository.save(user);
+        response.put("success", true);
+        response.put("message", "소셜 회원가입이 완료되었습니다. 이제 로그인하세요.");
+        return ResponseEntity.ok(response);
     }
 } 
