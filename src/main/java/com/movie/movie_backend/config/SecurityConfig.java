@@ -70,38 +70,17 @@ public class SecurityConfig {
         AuthenticationManager authenticationManager = authBuilder.build();
 
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf().disable()
+            .cors().and()
             .authenticationManager(authenticationManager)
-            .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/join", "/login", "/css/**", "/js/**", "/images/**").permitAll()
-                .requestMatchers("/api/users/**").permitAll()
-                .requestMatchers("/api/mail/**").permitAll()
-                .requestMatchers("/terms/**").permitAll()
-                .requestMatchers("/forgot-password").permitAll()
-                .requestMatchers("/reset-password").permitAll()
-                .requestMatchers("/find-id").permitAll()
-                .requestMatchers("/social-join").permitAll()
+            .authorizeHttpRequests()
+                .requestMatchers("/api/**", "/static/**", "/resources/static/**").permitAll()
                 .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/", true)
-                .failureUrl("/login?error=true")
-                .permitAll()
-            )
+            .and()
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login")
+                .logoutSuccessUrl("/login.html")
                 .permitAll()
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .loginPage("/login")
-                .successHandler(customAuthenticationSuccessHandler())
-                .failureHandler(customAuthenticationFailureHandler())
-                .userInfoEndpoint(userInfo -> userInfo
-                    .userService(customOAuth2UserService)
-                )
             );
 
         return http.build();

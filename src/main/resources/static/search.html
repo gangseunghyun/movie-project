@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Filmer 검색 테스트</title>
+    <style>
+        body {
+            background: #181c20;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 30px 40px 10px 40px;
+        }
+        .logo {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ffe082;
+            letter-spacing: 2px;
+        }
+        .search-bar {
+            flex: 1;
+            margin-left: 40px;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 18px 50px 18px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #23272b;
+            color: #fff;
+            font-size: 1.2rem;
+            outline: none;
+        }
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #ffe082;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .main {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+        .side-box {
+            width: 320px;
+            background: #23272b;
+            border-radius: 12px;
+            padding: 30px 25px;
+            margin: 0 20px;
+            min-height: 350px;
+        }
+        .side-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 18px;
+            color: #ffe082;
+        }
+        .recent-list, .popular-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .recent-list li, .popular-list li {
+            margin-bottom: 12px;
+            font-size: 1rem;
+            color: #b0b0b0;
+        }
+        .popular-list li span {
+            color: #ffe082;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .content-box {
+            flex: 1;
+            background: #23272b;
+            border-radius: 12px;
+            padding: 30px 35px;
+            min-width: 400px;
+            min-height: 350px;
+        }
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 18px;
+            color: #ffe082;
+        }
+        .result-section {
+            margin-bottom: 30px;
+        }
+        .result-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .result-list li {
+            margin-bottom: 10px;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+        .no-result {
+            color: #888;
+            font-size: 1rem;
+            margin-top: 20px;
+        }
+        .paging {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .paging button {
+            background: #181c20;
+            color: #ffe082;
+            border: none;
+            border-radius: 5px;
+            padding: 7px 15px;
+            margin: 0 3px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .paging button.active {
+            background: #ffe082;
+            color: #23272b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">Filmer</div>
+    <div class="search-bar">
+        <input type="text" id="searchInput" class="search-input" placeholder="제목, 인물명을 입력해보세요." onkeydown="if(event.key==='Enter'){search(0);}">
+        <button class="search-btn" onclick="search(0)">&#128269;</button>
+    </div>
+    <div style="margin-left:40px; color:#ffe082; font-weight:600;">닉네임</div>
+</div>
+<div class="main">
+    <div class="side-box">
+        <div class="side-title">최근 검색어</div>
+        <ul class="recent-list" id="recentList">
+            <li>검색 내역이 없습니다.</li>
+        </ul>
+    </div>
+    <div class="content-box">
+        <div class="result-title">검색 결과</div>
+        <div id="resultArea">
+            <div class="no-result">검색어를 입력하고 검색해보세요.</div>
+        </div>
+        <div class="paging" id="pagingArea"></div>
+    </div>
+    <div class="side-box">
+        <div class="side-title">실시간 인기 검색어</div>
+        <ul class="popular-list">
+            <li><span>1</span>진격의 거인</li>
+            <li><span>2</span>월드 오브 스트릿 우먼 파이터</li>
+            <li><span>3</span>지지고 볶는 여행</li>
+            <li><span>4</span>내 아이의 사생활</li>
+            <li><span>5</span>짱구는 못말려 24</li>
+            <li><span>6</span>언니네 산지직송2</li>
+            <li><span>7</span>성적을 부탁해 : 티처스 2</li>
+            <li><span>8</span>미지의 서울</li>
+            <li><span>9</span>몽쳐야 찬다 4</li>
+            <li><span>10</span>명탐정 코난 Part2 (더빙)</li>
+        </ul>
+        <div style="color:#888; font-size:0.9rem; margin-top:20px;">2025.06.23 오후 05:56 기준</div>
+    </div>
+</div>
+<script>
+    // 최근 검색어 관리
+    function addRecent(query) {
+        let recents = JSON.parse(localStorage.getItem('filmer_recents') || '[]');
+        recents = recents.filter(q => q !== query);
+        recents.unshift(query);
+        if (recents.length > 5) recents = recents.slice(0, 5);
+        localStorage.setItem('filmer_recents', JSON.stringify(recents));
+        renderRecents();
+    }
+    function renderRecents() {
+        let recents = JSON.parse(localStorage.getItem('filmer_recents') || '[]');
+        const list = document.getElementById('recentList');
+        list.innerHTML = '';
+        if (recents.length === 0) {
+            list.innerHTML = '<li>검색 내역이 없습니다.</li>';
+        } else {
+            recents.forEach(q => {
+                const li = document.createElement('li');
+                li.textContent = q;
+                li.style.cursor = 'pointer';
+                li.onclick = () => {
+                    document.getElementById('searchInput').value = q;
+                    search(0);
+                };
+                list.appendChild(li);
+            });
+        }
+    }
+    renderRecents();
+
+    // 검색 및 결과 렌더링
+    function search(page) {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) return;
+        addRecent(query);
+        fetch(`/api/search?query=" + encodeURIComponent(query) + "&page=" + page + "&size=10`)
+            .then(res => res.json())
+            .then(data => renderResult(data, page))
+            .catch(() => {
+                document.getElementById('resultArea').innerHTML = '<div class="no-result">검색 중 오류가 발생했습니다.</div>';
+            });
+    }
+    function renderResult(data, page) {
+        let html = '';
+        if ((data.movies && data.movies.length) || (data.users && data.users.length) || (data.tags && data.tags.length)) {
+            if (data.movies && data.movies.length) {
+                html += '<div class="result-section"><b>영화</b><ul class="result-list">';
+                data.movies.forEach(m => {
+                    html += `<li><b>${m.title}</b> (${m.directorName})<br><span style='color:#ffe082'>배우:</span> ${m.actors ? m.actors.join(', ') : ''} <span style='color:#888'>[${m.tags ? m.tags.join(', ') : ''}]</span></li>`;
+                });
+                html += '</ul></div>';
+            }
+            if (data.users && data.users.length) {
+                html += '<div class="result-section"><b>유저</b><ul class="result-list">';
+                data.users.forEach(u => {
+                    html += `<li><b>${u.nickname}</b> <span style='color:#888'>(${u.userName})</span></li>`;
+                });
+                html += '</ul></div>';
+            }
+            if (data.tags && data.tags.length) {
+                html += '<div class="result-section"><b>태그</b><ul class="result-list">';
+                data.tags.forEach(t => {
+                    html += `<li>#${t.tagName}</li>`;
+                });
+                html += '</ul></div>';
+            }
+        } else {
+            html = '<div class="no-result">검색 결과가 없습니다.</div>';
+        }
+        document.getElementById('resultArea').innerHTML = html;
+        // 페이징
+        let pagingHtml = '';
+        if (data.totalPages && data.totalPages > 1) {
+            for (let i = 0; i < data.totalPages; i++) {
+                pagingHtml += `<button class='${i===page?"active":""}' onclick='search(${i})'>${i+1}</button>`;
+            }
+        }
+        document.getElementById('pagingArea').innerHTML = pagingHtml;
+    }
+</script>
+</body>
+</html> 

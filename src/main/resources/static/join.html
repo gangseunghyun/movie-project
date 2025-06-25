@@ -34,14 +34,32 @@
         <input type="password" id="password" name="password" required>
     </div>
     <div>
+        <label for="passwordConfirm">비밀번호 확인:</label>
+        <input type="password" id="passwordConfirm" name="passwordConfirm" required>
+        <div id="pwCheckMsg" style="color:red; font-size:12px;"></div>
+    </div>
+    <div>
         <label for="email">이메일:</label>
-        <input type="email" id="email" name="email" required>
+        <div class="id-check-container">
+            <input type="email" id="email" name="email" required>
+            <button type="button" id="check-email-btn">중복확인</button>
+        </div>
+        <div id="emailResult"></div>
         <button type="button" id="send-code-btn">인증번호 받기</button>
     </div>
     <div>
         <label for="verification-code">인증 코드:</label>
         <input type="text" id="verification-code" name="verification-code" placeholder="이메일로 받은 코드를 입력하세요" disabled>
         <button type="button" id="verify-code-btn" disabled>인증하기</button>
+    </div>
+    <div>
+        <label for="nickname">닉네임:</label>
+        <div class="id-check-container">
+            <input type="text" id="nickname" name="nickname" required>
+            <button type="button" id="check-nickname-btn">중복확인</button>
+            <button type="button" id="recommend-nickname-btn">추천</button>
+        </div>
+        <div id="nicknameResult"></div>
     </div>
     <button type="submit" id="join-btn" disabled>가입하기</button>
 </form>
@@ -52,33 +70,111 @@
 <script>
     let emailVerified = false;
     let idChecked = false;
+    let nicknameChecked = false;
+    let emailChecked = false;
+
+    function updateJoinButtonState() {
+        const pw = document.getElementById('password').value;
+        const pw2 = document.getElementById('passwordConfirm').value;
+        document.getElementById('join-btn').disabled = !(idChecked && nicknameChecked && emailChecked && emailVerified && pw && pw2 && pw === pw2);
+    }
+
+    // 입력값이 바뀌면 체크 상태 초기화 및 버튼/입력란 활성화
+    document.getElementById('loginId').addEventListener('input', function() {
+        idChecked = false;
+        document.getElementById('loginId').disabled = false;
+        document.getElementById('check-id-btn').disabled = false;
+        updateJoinButtonState();
+    });
+    document.getElementById('nickname').addEventListener('input', function() {
+        nicknameChecked = false;
+        document.getElementById('nickname').disabled = false;
+        document.getElementById('check-nickname-btn').disabled = false;
+        updateJoinButtonState();
+    });
+    document.getElementById('email').addEventListener('input', function() {
+        emailChecked = false;
+        emailVerified = false;
+        document.getElementById('email').disabled = false;
+        document.getElementById('check-email-btn').disabled = false;
+        document.getElementById('verification-code').disabled = true;
+        document.getElementById('verify-code-btn').disabled = true;
+        document.getElementById('send-code-btn').disabled = false;
+        updateJoinButtonState();
+    });
+    document.getElementById('password').addEventListener('input', updateJoinButtonState);
+    document.getElementById('passwordConfirm').addEventListener('input', updateJoinButtonState);
+
+    // 비밀번호 확인 실시간 체크
+    document.getElementById('passwordConfirm').addEventListener('input', function() {
+        const pw = document.getElementById('password').value;
+        const pw2 = document.getElementById('passwordConfirm').value;
+        const msg = document.getElementById('pwCheckMsg');
+        if (pw2.length === 0) {
+            msg.textContent = '';
+        } else if (pw !== pw2) {
+            msg.textContent = '비밀번호가 일치하지 않습니다.';
+            msg.style.color = 'red';
+        } else {
+            msg.textContent = '비밀번호가 일치합니다.';
+            msg.style.color = 'green';
+        }
+        updateJoinButtonState();
+    });
+    document.getElementById('password').addEventListener('input', function() {
+        // 비밀번호가 바뀌면 확인 메시지도 갱신
+        const pw = document.getElementById('password').value;
+        const pw2 = document.getElementById('passwordConfirm').value;
+        const msg = document.getElementById('pwCheckMsg');
+        if (pw2.length === 0) {
+            msg.textContent = '';
+        } else if (pw !== pw2) {
+            msg.textContent = '비밀번호가 일치하지 않습니다.';
+            msg.style.color = 'red';
+        } else {
+            msg.textContent = '비밀번호가 일치합니다.';
+            msg.style.color = 'green';
+        }
+        updateJoinButtonState();
+    });
 
     document.getElementById('join-form').addEventListener('submit', async function(event) {
-        event.preventDefault(); // 폼의 기본 제출 동작을 막습니다.
-
+        event.preventDefault();
         if (!idChecked) {
             document.getElementById('result').textContent = '아이디 중복확인을 먼저 해주세요.';
             document.getElementById('result').className = 'error';
             return;
         }
-
+        if (!nicknameChecked) {
+            document.getElementById('result').textContent = '닉네임 중복확인을 먼저 해주세요.';
+            document.getElementById('result').className = 'error';
+            return;
+        }
+        if (!emailChecked) {
+            document.getElementById('result').textContent = '이메일 중복확인을 먼저 해주세요.';
+            document.getElementById('result').className = 'error';
+            return;
+        }
         if (!emailVerified) {
             document.getElementById('result').textContent = '이메일 인증을 먼저 완료해주세요.';
             document.getElementById('result').className = 'error';
             return;
         }
-
         const loginId = document.getElementById('loginId').value;
         const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('passwordConfirm').value;
         const email = document.getElementById('email').value;
+        const nickname = document.getElementById('nickname').value;
+        const verificationCode = document.getElementById('verification-code').value || '';
         const resultDiv = document.getElementById('result');
-
         const data = {
             loginId: loginId,
             password: password,
-            email: email
+            passwordConfirm: passwordConfirm,
+            email: email,
+            nickname: nickname,
+            verificationCode: verificationCode
         };
-
         try {
             const response = await fetch('/api/users/join', {
                 method: 'POST',
@@ -87,17 +183,14 @@
                 },
                 body: JSON.stringify(data)
             });
-
             const message = await response.text();
-
-            if (response.ok) { // HTTP 상태 코드가 200-299인 경우
+            if (response.ok) {
                 resultDiv.textContent = message;
                 resultDiv.className = 'success';
-            } else { // 그 외의 경우 (400 Bad Request 등)
+            } else {
                 resultDiv.textContent = message;
                 resultDiv.className = 'error';
             }
-
         } catch (error) {
             console.error('Error:', error);
             resultDiv.textContent = '요청 처리 중 오류가 발생했습니다.';
@@ -138,30 +231,27 @@
             resultDiv.textContent = '아이디 중복확인 중 오류가 발생했습니다.';
             resultDiv.className = 'error';
         }
+        updateJoinButtonState();
     });
 
     document.getElementById('send-code-btn').addEventListener('click', async function() {
         const email = document.getElementById('email').value;
         const mailResultDiv = document.getElementById('mail-result');
-
         if (!email) {
             mailResultDiv.textContent = '이메일을 먼저 입력해주세요.';
             mailResultDiv.className = 'error';
             return;
         }
-
         try {
-            const response = await fetch('/api/mail/send-code', {
+            const response = await fetch('/api/mail/send-verification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ email: email })
             });
-
             const message = await response.text();
             mailResultDiv.textContent = message;
-
             if (response.ok) {
                 mailResultDiv.className = 'success';
                 document.getElementById('verification-code').disabled = false;
@@ -188,7 +278,7 @@
         }
 
         try {
-            const response = await fetch('/api/mail/verify-code', {
+            const response = await fetch('/api/mail/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -198,19 +288,16 @@
                     verificationCode: verificationCode 
                 })
             });
-
-            const message = await response.text();
-            mailResultDiv.textContent = message;
-
-            if (response.ok) {
+            const data = await response.json();
+            mailResultDiv.textContent = data.message;
+            if (response.ok && data.success) {
                 mailResultDiv.className = 'success';
                 emailVerified = true;
                 document.getElementById('verification-code').disabled = true;
                 document.getElementById('verify-code-btn').disabled = true;
                 document.getElementById('send-code-btn').disabled = true;
-                
-                // 아이디 중복확인과 이메일 인증이 모두 완료되면 가입하기 버튼 활성화
-                if (idChecked && emailVerified) {
+                // 아이디/닉네임/이메일 인증이 모두 완료되면 가입하기 버튼 활성화
+                if (idChecked && nicknameChecked && emailVerified) {
                     document.getElementById('join-btn').disabled = false;
                 }
             } else {
@@ -218,9 +305,94 @@
             }
         } catch (error) {
             console.error('Error:', error);
-            mailResultDiv.textContent = '인증 코드 검증 중 오류가 발생했습니다.';
+            mailResultDiv.textContent = '인증 코드 확인 중 오류가 발생했습니다.';
             mailResultDiv.className = 'error';
         }
+        updateJoinButtonState();
+    });
+
+    // 닉네임 중복확인
+    document.getElementById('check-nickname-btn').addEventListener('click', async function() {
+        const nickname = document.getElementById('nickname').value;
+        const resultDiv = document.getElementById('nicknameResult');
+        if (!nickname) {
+            resultDiv.textContent = '닉네임을 입력해주세요.';
+            resultDiv.className = 'error';
+            nicknameChecked = false;
+            return;
+        }
+        try {
+            const response = await fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+            const data = await response.json();
+            if (data.available) {
+                resultDiv.textContent = data.message;
+                resultDiv.className = 'success';
+                nicknameChecked = true;
+                document.getElementById('nickname').disabled = true;
+                document.getElementById('check-nickname-btn').disabled = true;
+            } else {
+                resultDiv.textContent = data.message;
+                resultDiv.className = 'error';
+                nicknameChecked = false;
+            }
+        } catch (error) {
+            resultDiv.textContent = '닉네임 중복확인 중 오류가 발생했습니다.';
+            resultDiv.className = 'error';
+            nicknameChecked = false;
+        }
+        updateJoinButtonState();
+    });
+
+    // 닉네임 추천
+    document.getElementById('recommend-nickname-btn').addEventListener('click', async function() {
+        const resultDiv = document.getElementById('nicknameResult');
+        try {
+            const response = await fetch('/api/users/recommend-nickname');
+            const data = await response.json();
+            if (data.nicknames && data.nicknames.length > 0) {
+                document.getElementById('nickname').value = data.nicknames[0];
+                resultDiv.textContent = '추천 닉네임이 입력되었습니다.';
+                resultDiv.className = 'info';
+            } else {
+                resultDiv.textContent = '추천 닉네임을 가져오지 못했습니다.';
+                resultDiv.className = 'error';
+            }
+        } catch (error) {
+            resultDiv.textContent = '추천 닉네임 요청 중 오류가 발생했습니다.';
+            resultDiv.className = 'error';
+        }
+    });
+
+    // 이메일 중복확인
+    document.getElementById('check-email-btn').addEventListener('click', async function() {
+        const email = document.getElementById('email').value;
+        const resultDiv = document.getElementById('emailResult');
+        if (!email) {
+            resultDiv.textContent = '이메일을 입력해주세요.';
+            resultDiv.className = 'error';
+            emailChecked = false;
+            return;
+        }
+        try {
+            const response = await fetch(`/api/users/check-email?email=${encodeURIComponent(email)}`);
+            const data = await response.json();
+            if (data.available) {
+                resultDiv.textContent = data.message;
+                resultDiv.className = 'success';
+                emailChecked = true;
+                document.getElementById('email').disabled = true;
+                document.getElementById('check-email-btn').disabled = true;
+            } else {
+                resultDiv.textContent = data.message;
+                resultDiv.className = 'error';
+                emailChecked = false;
+            }
+        } catch (error) {
+            resultDiv.textContent = '이메일 중복확인 중 오류가 발생했습니다.';
+            resultDiv.className = 'error';
+            emailChecked = false;
+        }
+        updateJoinButtonState();
     });
 </script>
 
