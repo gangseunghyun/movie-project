@@ -1,15 +1,16 @@
 package com.movie.movie_backend.controller;
 
 import com.movie.movie_backend.dto.UserJoinRequestDto;
-import com.movie.movie_backend.service.UserService;
-import com.movie.movie_backend.repository.UserRepository;
-import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.PasswordResetToken;
+import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.service.MailService;
+import com.movie.movie_backend.service.USRUserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,11 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
     
-    private final UserService userService;
-    private final UserRepository userRepository;
+    private final USRUserService userService;
+    private final USRUserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
@@ -32,15 +34,32 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> joinApi(@Valid @RequestBody UserJoinRequestDto requestDto) {
         Map<String, Object> response = new HashMap<>();
         try {
+            log.info("=== 회원가입 요청 시작 ===");
+            log.info("요청 DTO: {}", requestDto);
+            log.info("아이디: {}", requestDto.getLoginId());
+            log.info("이메일: {}", requestDto.getEmail());
+            log.info("닉네임: {}", requestDto.getNickname());
+            
             userService.join(requestDto);
+            
+            log.info("회원가입 성공: {}", requestDto.getLoginId());
             response.put("success", true);
             response.put("message", "회원가입이 완료되었습니다.");
             response.put("nickname", requestDto.getNickname());
+            response.put("loginId", requestDto.getLoginId());
+            response.put("email", requestDto.getEmail());
+            response.put("redirect", "/login"); // 로그인 페이지로 리다이렉트 안내
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.error("회원가입 실패: {}", e.getMessage());
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            log.error("회원가입 중 예상치 못한 오류: {}", e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "회원가입 중 오류가 발생했습니다.");
+            return ResponseEntity.internalServerError().body(response);
         }
     }
     
@@ -96,9 +115,9 @@ public class UserController {
             response.put("message", "가입된 이메일이 아닙니다.");
             return ResponseEntity.ok(response);
         }
-        if (user.getProvider() != null && !user.getProvider().isBlank() && !user.getProvider().equals("local")) {
+        if (user.getProvider() != null && !user.getProvider().name().equals("LOCAL")) {
             response.put("success", false);
-            response.put("message", "이 이메일은 '" + user.getProvider() + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.");
+            response.put("message", "이 이메일은 '" + user.getProvider().getDisplayName() + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.");
             return ResponseEntity.ok(response);
         }
         String maskedLoginId = maskLoginId(user.getLoginId());
@@ -125,12 +144,12 @@ public class UserController {
             response.put("message", "가입된 이메일이 아닙니다.");
             return ResponseEntity.ok(response);
         }
-        if (user.getProvider() != null && !user.getProvider().isBlank()) {
+        if (user.getProvider() != null && user.getProvider().name().equals("LOCAL") == false) {
             response.put("type", "SOCIAL_ONLY");
-            response.put("provider", user.getProvider());
+            response.put("provider", user.getProvider().name());
             response.put("email", user.getEmail());
             response.put("nickname", user.getNickname());
-            response.put("message", user.getProvider() + " 소셜 로그인 전용 계정입니다. 자체 로그인(비밀번호)도 사용하시겠습니까?");
+            response.put("message", user.getProvider().getDisplayName() + " 소셜 로그인 전용 계정입니다. 자체 로그인(비밀번호)도 사용하시겠습니까?");
             return ResponseEntity.ok(response);
         }
         PasswordResetToken token = userService.createPasswordResetToken(email);
@@ -160,7 +179,7 @@ public class UserController {
             response.put("message", "가입된 이메일이 아닙니다.");
             return ResponseEntity.ok(response);
         }
-        if (user.getProvider() == null || user.getProvider().isBlank()) {
+        if (user.getProvider() == null || user.getProvider().name().equals("LOCAL")) {
             response.put("success", false);
             response.put("message", "이미 자체 로그인 계정입니다.");
             return ResponseEntity.ok(response);
@@ -272,5 +291,68 @@ public class UserController {
         response.put("success", true);
         response.put("message", "소셜 회원가입이 완료되었습니다. 이제 로그인하세요.");
         return ResponseEntity.ok(response);
+    }
+
+    // REST API - 로그인
+    @PostMapping("/api/user-login")
+    public ResponseEntity<Map<String, Object>> loginApi(@RequestBody Map<String, String> loginRequest, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        String loginId = loginRequest.get("loginId");
+        String password = loginRequest.get("password");
+        
+        try {
+            User user = userService.authenticate(loginId, password);
+            if (user != null) {
+                session.setAttribute("user", user);
+                response.put("success", true);
+                response.put("message", "로그인 성공");
+                response.put("user", Map.of(
+                    "id", user.getId(),
+                    "loginId", user.getLoginId(),
+                    "nickname", user.getNickname(),
+                    "email", user.getEmail()
+                ));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "아이디 또는 비밀번호가 올바르지 않습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // REST API - 로그아웃
+    @PostMapping("/api/logout")
+    public ResponseEntity<Map<String, Object>> logoutApi(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        session.invalidate();
+        response.put("success", true);
+        response.put("message", "로그아웃 성공");
+        return ResponseEntity.ok(response);
+    }
+
+    // REST API - 현재 로그인된 사용자 정보 조회
+    @GetMapping("/api/users/me")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        User user = (User) session.getAttribute("user");
+        if (user != null) {
+            response.put("success", true);
+            response.put("user", Map.of(
+                "id", user.getId(),
+                "loginId", user.getLoginId(),
+                "nickname", user.getNickname(),
+                "email", user.getEmail()
+            ));
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("success", false);
+            response.put("message", "로그인되지 않은 사용자입니다.");
+            return ResponseEntity.status(401).body(response);
+        }
     }
 } 

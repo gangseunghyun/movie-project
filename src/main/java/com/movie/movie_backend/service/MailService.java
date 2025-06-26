@@ -21,10 +21,10 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final CacheManager cacheManager;
 
-    // 이메일을 보내고, 생성된 코드를 'verificationCodes' 캐시에 저장합니다.
-    public String sendVerificationEmail(String email) {
+    // 인증 코드 생성 및 캐시 저장 (Gmail API와 함께 사용)
+    public String generateAndCacheVerificationCode(String email) {
         try {
-            log.info("이메일 인증 코드 발송 시작: {}", email);
+            log.info("인증 코드 생성 및 캐시 저장 시작: {}", email);
             String verificationCode = generateVerificationCode();
             log.info("생성된 인증 코드: {}", verificationCode);
             
@@ -37,7 +37,23 @@ public class MailService {
                 log.error("캐시 'verificationCodes'를 찾을 수 없습니다.");
             }
             
+            log.info("인증 코드 생성 및 캐시 저장 완료: {}", email);
+            return verificationCode;
+            
+        } catch (Exception e) {
+            log.error("인증 코드 생성 실패: {}", email, e);
+            throw new RuntimeException("인증 코드 생성에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    // 이메일을 보내고, 생성된 코드를 'verificationCodes' 캐시에 저장합니다.
+    public String sendVerificationEmail(String email) {
+        try {
+            log.info("이메일 인증 코드 발송 시작: {}", email);
+            String verificationCode = generateAndCacheVerificationCode(email);
+            
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("kgh9806@naver.com"); // 발신자 주소 명시적 설정
             message.setTo(email);
             message.setSubject("[영화 추천 서비스] 이메일 인증 코드");
             message.setText("안녕하세요!\n\n" +
@@ -119,21 +135,20 @@ public class MailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
+            helper.setFrom("kgh9806@naver.com"); // 발신자 주소 명시적 설정
             helper.setTo(email);
             helper.setSubject("[영화 추천 서비스] 비밀번호 재설정 안내");
             
-            // resetLink의 도메인을 3000포트로 강제 변경
-            String reactResetLink = resetLink.replace("http://localhost:8080/reset-password", "http://localhost:3000/reset-password");
             String htmlContent = "<html><body>" +
                     "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>" +
                     "<h2 style='color: #333;'>비밀번호 재설정 안내</h2>" +
                     "<p>안녕하세요!</p>" +
                     "<p>비밀번호 재설정을 위한 링크입니다. 아래 버튼을 클릭하여 새 비밀번호를 설정해 주세요.</p>" +
                     "<div style='text-align: center; margin: 30px 0;'>" +
-                    "<a href='" + reactResetLink + "' style='background-color: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>비밀번호 재설정하기</a>" +
+                    "<a href='" + resetLink + "' style='background-color: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>비밀번호 재설정하기</a>" +
                     "</div>" +
                     "<p style='color: #666; font-size: 14px;'>위 버튼이 작동하지 않는 경우, 아래 링크를 복사하여 브라우저에 붙여넣기 해주세요:</p>" +
-                    "<p style='word-break: break-all; color: #667eea;'>" + reactResetLink + "</p>" +
+                    "<p style='word-break: break-all; color: #667eea;'>" + resetLink + "</p>" +
                     "<p style='color: #666; font-size: 14px;'>이 링크는 30분간만 유효합니다.</p>" +
                     "<p style='color: #666; font-size: 14px;'>본인이 요청하지 않은 경우 이 메일을 무시하세요.</p>" +
                     "<p>감사합니다.</p>" +

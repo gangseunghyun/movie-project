@@ -3,8 +3,9 @@ package com.movie.movie_backend.service;
 import com.movie.movie_backend.dto.UserJoinRequestDto;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.PasswordResetToken;
-import com.movie.movie_backend.repository.UserRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
+import com.movie.movie_backend.constant.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,18 +13,59 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UserService {
-    
-    private final UserRepository userRepository;
+public class USRUserService {
+    private final USRUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    
+
+    public User register(User user) {
+        // 회원가입 로직
+        return userRepository.save(user);
+    }
+
+    public User login(String username, String password) {
+        // 로그인 로직 (실제 구현 시 비밀번호 암호화/검증 필요)
+        Optional<User> user = userRepository.findByUsername(username);
+        if (user.isPresent() && user.get().getPassword().equals(password)) {
+            return user.orElse(null);
+        }
+        return null;
+    }
+
+    // 로그인 인증 메서드
+    public User authenticate(String loginId, String password) {
+        Optional<User> userOpt = userRepository.findByLoginId(loginId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    public User updateUserInfo(Long userId, User update) {
+        // 회원정보 수정 로직
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            user.setEmail(update.getEmail());
+            user.setPassword(update.getPassword());
+            return userRepository.save(user);
+        }
+        return null;
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
     public void join(UserJoinRequestDto requestDto) {
         // 이메일 인증 확인
         boolean isCodeValid = mailService.verifyAndRemoveCode(requestDto.getEmail(), requestDto.getVerificationCode());
@@ -55,7 +97,7 @@ public class UserService {
                 .password(encodedPassword)
                 .email(requestDto.getEmail())
                 .nickname(requestDto.getNickname())
-                .role("USER")
+                .role(UserRole.USER)
                 .emailVerified(true) // 최종 가입 시 인증 상태를 true로 설정
                 .socialJoinCompleted(true) // 반드시 true로!
                 .build();

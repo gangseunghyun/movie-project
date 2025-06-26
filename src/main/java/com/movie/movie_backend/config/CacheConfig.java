@@ -15,12 +15,10 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("verificationCodes");
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                // 캐시에 데이터가 쓰여진 후 3분이 지나면 자동으로 만료됩니다.
-                .expireAfterWrite(3, TimeUnit.MINUTES)
-                // 메모리에 저장할 인증 코드의 최대 개수를 1000개로 제한합니다.
-                .maximumSize(1000));
+                .expireAfterWrite(3, TimeUnit.MINUTES) // 3분 후 만료
+                .maximumSize(1000)); // 최대 1000개 항목
         return cacheManager;
     }
 } 

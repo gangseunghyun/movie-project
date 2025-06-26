@@ -1,6 +1,6 @@
 package com.movie.movie_backend.service;
 
-import com.movie.movie_backend.repository.UserRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class UserDetailServiceImpl implements UserDetailsService {
+public class USRUserDetailServiceImpl implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final USRUserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String loginId) throws UsernameNotFoundException {

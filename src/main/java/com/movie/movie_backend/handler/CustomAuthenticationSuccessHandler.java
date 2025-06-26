@@ -1,7 +1,8 @@
 package com.movie.movie_backend.handler;
 
 import com.movie.movie_backend.entity.User;
-import com.movie.movie_backend.repository.UserRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.constant.Provider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +14,7 @@ import java.io.IOException;
 
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     @Autowired
-    private UserRepository userRepository;
+    private USRUserRepository userRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -30,7 +31,8 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         // DB에서 회원 여부만 판단
         User user = null;
         if (provider != null && providerId != null) {
-            user = userRepository.findByProviderAndProviderId(provider, providerId).orElse(null);
+            Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+            user = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
         } else if (email != null) {
             user = userRepository.findByEmail(email).orElse(null);
         }
