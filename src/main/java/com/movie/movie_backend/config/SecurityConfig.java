@@ -104,11 +104,17 @@ public class SecurityConfig {
                 .contentTypeOptions().disable()
             )
             .cors().and()
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
+            )
             .authenticationManager(authenticationManager)
             .authorizeHttpRequests()
                 .requestMatchers(
                     "/api/login",
                     "/api/user-login",
+                    "/api/current-user",
                     "/api/logout",
                     "/api/users/join",
                     "/api/users/check-login-id",
