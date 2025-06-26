@@ -136,6 +136,7 @@ public class SecurityConfig {
                     "/api-docs/**",
                     "/v3/api-docs/**"
                 ).permitAll()
+                .requestMatchers("/api/search-history/**").authenticated()
                 .anyRequest().authenticated()
             .and()
             .formLogin().disable()
