@@ -1,0 +1,145 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+  font-size: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.email-group,
+.nickname-group {
+  display: flex;
+  gap: 10px;
+}
+
+.email-group input,
+.nickname-group input {
+  flex: 1;
+}
+
+.send-code-button,
+.recommend-button {
+  padding: 12px 15px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: background-color 0.3s;
+}
+
+.send-code-button:hover,
+.recommend-button:hover {
+  background: #5a6fd8;
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+.login-button:hover:not(:disabled) {
+  background: #5a6fd8;
+}
+
+.login-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.login-footer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.switch-button {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+  transition: color 0.3s;
+}
+
+.switch-button:hover {
+  color: #5a6fd8;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.validation-message {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.validation-message.success {
+  color: #28a745;
+}
+
+.validation-message.error {
+  color: #dc3545;
+} 
