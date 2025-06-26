@@ -98,10 +98,10 @@ public class SecurityConfig {
                     "/api/users/recommend-nickname",
                     "/api/mail/**",
                     "/reset-password",
-                    "/api/**",
                     "/static/**",
                     "/resources/static/**"
                 ).permitAll()
+                .requestMatchers("/api/search-history/**").authenticated()
                 .anyRequest().authenticated()
             .and()
             .formLogin().disable()
