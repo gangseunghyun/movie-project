@@ -1,8 +1,8 @@
-package com.movie.movie_backend.config;
+package com.movie.config;
 
-import com.movie.movie_backend.service.UserDetailServiceImpl;
-import com.movie.movie_backend.service.CustomOAuth2UserService;
-import com.movie.movie_backend.handler.CustomAuthenticationSuccessHandler;
+import com.movie.service.USRUserDetailServiceImpl;
+import com.movie.service.CustomOAuth2UserService;
+import com.movie.handler.CustomAuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -77,7 +77,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(
         HttpSecurity http,
-        UserDetailServiceImpl userDetailService,
+        USRUserDetailServiceImpl userDetailService,
         CustomOAuth2UserService customOAuth2UserService
     ) throws Exception {
         AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
@@ -91,16 +91,23 @@ public class SecurityConfig {
             .authorizeHttpRequests()
                 .requestMatchers(
                     "/api/login",
+                    "/api/logout",
                     "/api/users/join",
                     "/api/users/check-login-id",
                     "/api/users/check-email",
                     "/api/users/check-nickname",
                     "/api/users/recommend-nickname",
                     "/api/mail/**",
+                    "/api/find-id",
+                    "/api/forgot-password",
+                    "/api/social-password-join",
+                    "/api/reset-password/validate-token",
+                    "/api/reset-password",
+                    "/api/social-join-complete",
                     "/reset-password",
-                    "/api/**",
                     "/static/**",
-                    "/resources/static/**"
+                    "/resources/static/**",
+                    "/data/api/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             .and()

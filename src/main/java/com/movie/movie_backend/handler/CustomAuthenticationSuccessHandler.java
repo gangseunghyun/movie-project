@@ -1,7 +1,7 @@
-package com.movie.movie_backend.handler;
+package com.movie.handler;
 
-import com.movie.movie_backend.entity.User;
-import com.movie.movie_backend.repository.UserRepository;
+import com.movie.entity.User;
+import com.movie.repository.USRUserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     @Autowired
-    private UserRepository userRepository;
+    private USRUserRepository userRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -38,24 +38,9 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             System.out.println("[DEBUG] SuccessHandler: user==null, provider=" + provider + ", providerId=" + providerId + ", email=" + email);
         }
         if (user == null || user.getNickname() == null || !user.isSocialJoinCompleted()) {
-            // 세션 값 확인
-            HttpSession session = request.getSession(false);
-            if (session == null) {
-                System.out.println("[DEBUG] SuccessHandler: 세션 없음");
-            } else {
-                Object emailAttr = session.getAttribute("SOCIAL_EMAIL");
-                Object providerAttr = session.getAttribute("SOCIAL_PROVIDER");
-                Object providerIdAttr = session.getAttribute("SOCIAL_PROVIDER_ID");
-                System.out.println("[DEBUG] SuccessHandler 세션: email=" + emailAttr + ", provider=" + providerAttr + ", providerId=" + providerIdAttr);
-                if (emailAttr == null || providerAttr == null || providerIdAttr == null) {
-                    System.out.println("[DEBUG] SuccessHandler: 소셜 세션 정보 없음");
-                }
-            }
-            response.sendRedirect("http://localhost:3000/social-join");
+            response.sendRedirect("/social-join");
         } else {
-            // 닉네임을 쿼리 파라미터로 포함하여 리다이렉트
-            String nickname = user.getNickname() != null ? java.net.URLEncoder.encode(user.getNickname(), "UTF-8") : "";
-            response.sendRedirect("http://localhost:3000/?social=success&nickname=" + nickname);
+            response.sendRedirect("/");
         }
     }
 } 

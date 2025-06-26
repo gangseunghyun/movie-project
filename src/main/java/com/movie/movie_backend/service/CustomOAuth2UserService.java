@@ -1,7 +1,9 @@
-package com.movie.movie_backend.service;
+package com.movie.service;
 
-import com.movie.movie_backend.entity.User;
-import com.movie.movie_backend.repository.UserRepository;
+import com.movie.entity.User;
+import com.movie.repository.USRUserRepository;
+import com.movie.constant.Provider;
+import com.movie.constant.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +25,7 @@ import org.springframework.security.core.AuthenticationException;
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-    private final UserRepository userRepository;
+    private final USRUserRepository userRepository;
     private final @Lazy PasswordEncoder passwordEncoder;
     @Autowired private HttpServletRequest request;
 
@@ -33,7 +35,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String registrationId = userRequest.getClientRegistration().getRegistrationId(); // google, naver, kakao
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        String provider = registrationId;
+        Provider provider = getProviderFromRegistrationId(registrationId);
         String providerId = null;
         String email = null;
         String name = null;
@@ -82,20 +84,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     // 이메일로 이미 가입된 사용자가 있는지 추가로 확인
                     Optional<User> existingByEmail = userRepository.findByEmail(finalEmail);
                     if (existingByEmail.isPresent()) {
-                        String existProvider = existingByEmail.get().getProvider();
-                        if (existProvider == null || existProvider.isBlank() || existProvider.equalsIgnoreCase("local")) {
+                        Provider existProvider = existingByEmail.get().getProvider();
+                        if (existProvider == Provider.LOCAL) {
                             throw new AuthenticationException("PROVIDER:local|이 이메일은 일반 계정으로 가입되어 있습니다. 아이디/비밀번호로 로그인해 주세요.") {};
                         } else {
-                            throw new AuthenticationException("PROVIDER:" + existProvider + "|이 이메일은 '" + existProvider + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.") {};
+                            throw new AuthenticationException("PROVIDER:" + existProvider.name() + "|이 이메일은 '" + existProvider.getDisplayName() + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.") {};
                         }
                     }
                     // 신규 회원이면 생성
                     return User.builder()
                             .loginId(finalEmail)
-                            .password(passwordEncoder.encode(provider + finalProviderId)) // 소셜 로그인은 임의 비번
+                            .password(passwordEncoder.encode(provider.name() + finalProviderId)) // 소셜 로그인은 임의 비번
                             .email(finalEmail)
                             .nickname(null) // 최초 로그인 시 닉네임 없음
-                            .role("USER")
+                            .role(UserRole.USER)
                             .provider(provider)
                             .providerId(finalProviderId)
                             .emailVerified(true)
@@ -110,7 +112,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             System.out.println("[DEBUG] 세션 저장: provider=" + provider + ", providerId=" + providerId + ", email=" + email);
             HttpSession session = request.getSession();
             session.setAttribute("SOCIAL_EMAIL", email);
-            session.setAttribute("SOCIAL_PROVIDER", provider);
+            session.setAttribute("SOCIAL_PROVIDER", provider.name());
             session.setAttribute("SOCIAL_PROVIDER_ID", providerId);
             // SuccessHandler에서 /social-join으로 리다이렉트
         }
@@ -133,7 +135,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         // attributes에 DB의 닉네임, provider, providerId, sub를 반드시 포함시켜서 반환
         Map<String, Object> customAttributes = new HashMap<>(attributes);
         customAttributes.put("nickname", user.getNickname());
-        customAttributes.put("provider", provider);
+        customAttributes.put("provider", provider.name());
         customAttributes.put("providerId", providerId);
         // sub는 providerId로 통일
         if ("naver".equals(registrationId)) {
@@ -147,5 +149,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 customAttributes,
                 "id".equals(registrationId) ? "id" : "sub" // 네이버는 "id", 그 외는 "sub"
         );
+    }
+
+    private Provider getProviderFromRegistrationId(String registrationId) {
+        switch (registrationId.toLowerCase()) {
+            case "google":
+                return Provider.GOOGLE;
+            case "kakao":
+                return Provider.KAKAO;
+            case "naver":
+                return Provider.NAVER;
+            case "facebook":
+                return Provider.FACEBOOK;
+            default:
+                return Provider.LOCAL;
+        }
     }
 } 

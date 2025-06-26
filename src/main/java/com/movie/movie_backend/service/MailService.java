@@ -1,4 +1,4 @@
-package com.movie.movie_backend.service;
+package com.movie.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -122,18 +122,16 @@ public class MailService {
             helper.setTo(email);
             helper.setSubject("[영화 추천 서비스] 비밀번호 재설정 안내");
             
-            // resetLink의 도메인을 3000포트로 강제 변경
-            String reactResetLink = resetLink.replace("http://localhost:8080/reset-password", "http://localhost:3000/reset-password");
             String htmlContent = "<html><body>" +
                     "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>" +
                     "<h2 style='color: #333;'>비밀번호 재설정 안내</h2>" +
                     "<p>안녕하세요!</p>" +
                     "<p>비밀번호 재설정을 위한 링크입니다. 아래 버튼을 클릭하여 새 비밀번호를 설정해 주세요.</p>" +
                     "<div style='text-align: center; margin: 30px 0;'>" +
-                    "<a href='" + reactResetLink + "' style='background-color: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>비밀번호 재설정하기</a>" +
+                    "<a href='" + resetLink + "' style='background-color: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>비밀번호 재설정하기</a>" +
                     "</div>" +
                     "<p style='color: #666; font-size: 14px;'>위 버튼이 작동하지 않는 경우, 아래 링크를 복사하여 브라우저에 붙여넣기 해주세요:</p>" +
-                    "<p style='word-break: break-all; color: #667eea;'>" + reactResetLink + "</p>" +
+                    "<p style='word-break: break-all; color: #667eea;'>" + resetLink + "</p>" +
                     "<p style='color: #666; font-size: 14px;'>이 링크는 30분간만 유효합니다.</p>" +
                     "<p style='color: #666; font-size: 14px;'>본인이 요청하지 않은 경우 이 메일을 무시하세요.</p>" +
                     "<p>감사합니다.</p>" +

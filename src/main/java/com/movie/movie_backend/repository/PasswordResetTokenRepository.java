@@ -1,6 +1,6 @@
-package com.movie.movie_backend.repository;
+package com.movie.repository;
 
-import com.movie.movie_backend.entity.PasswordResetToken;
+import com.movie.entity.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

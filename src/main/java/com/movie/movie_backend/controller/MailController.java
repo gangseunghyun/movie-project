@@ -1,8 +1,8 @@
-package com.movie.movie_backend.controller;
+package com.movie.controller;
 
-import com.movie.movie_backend.dto.EmailRequestDto;
-import com.movie.movie_backend.dto.EmailVerificationRequestDto;
-import com.movie.movie_backend.service.MailService;
+import com.movie.dto.EmailRequestDto;
+import com.movie.dto.EmailVerificationRequestDto;
+import com.movie.service.MailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
