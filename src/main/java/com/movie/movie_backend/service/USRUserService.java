@@ -1,11 +1,11 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.dto.UserJoinRequestDto;
-import com.movie.entity.User;
-import com.movie.entity.PasswordResetToken;
-import com.movie.repository.USRUserRepository;
-import com.movie.repository.PasswordResetTokenRepository;
-import com.movie.constant.UserRole;
+import com.movie.movie_backend.dto.UserJoinRequestDto;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.entity.PasswordResetToken;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.repository.PasswordResetTokenRepository;
+import com.movie.movie_backend.constant.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

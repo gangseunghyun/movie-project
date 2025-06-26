@@ -1,11 +1,11 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.entity.Review;
-import com.movie.entity.User;
-import com.movie.entity.MovieDetail;
-import com.movie.repository.REVReviewRepository;
-import com.movie.repository.USRUserRepository;
-import com.movie.repository.PRDMovieRepository;
+import com.movie.movie_backend.entity.Review;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.repository.REVReviewRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

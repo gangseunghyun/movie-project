@@ -1,6 +1,6 @@
-package com.movie.dto;
+package com.movie.movie_backend.dto;
 
-import com.movie.constant.MovieStatus;
+import com.movie.movie_backend.constant.MovieStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;

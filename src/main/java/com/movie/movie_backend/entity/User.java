@@ -1,12 +1,12 @@
-package com.movie.entity;
+package com.movie.movie_backend.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-import com.movie.constant.Provider;
-import com.movie.constant.UserRole;
+import com.movie.movie_backend.constant.Provider;
+import com.movie.movie_backend.constant.UserRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

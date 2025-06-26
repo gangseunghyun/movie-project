@@ -1,9 +1,9 @@
-package com.movie.entity;
+package com.movie.movie_backend.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import com.movie.constant.MovieStatus;
+import com.movie.movie_backend.constant.MovieStatus;
 
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder

@@ -1,8 +1,8 @@
-package com.movie.dto;
+package com.movie.movie_backend.dto;
 
 import lombok.*;
 import java.time.LocalDate;
-import com.movie.constant.MovieStatus;
+import com.movie.movie_backend.constant.MovieStatus;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class MovieListDto {

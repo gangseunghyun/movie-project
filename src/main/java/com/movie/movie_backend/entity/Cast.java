@@ -1,8 +1,8 @@
-package com.movie.entity;
+package com.movie.movie_backend.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
-import com.movie.constant.RoleType;
+import com.movie.movie_backend.constant.RoleType;
 
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder

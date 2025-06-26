@@ -1,8 +1,8 @@
-package com.movie.mapper;
+package com.movie.movie_backend.mapper;
 
-import com.movie.entity.MovieList;
-import com.movie.dto.MovieListDto;
-import com.movie.constant.MovieStatus;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.dto.MovieListDto;
+import com.movie.movie_backend.constant.MovieStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

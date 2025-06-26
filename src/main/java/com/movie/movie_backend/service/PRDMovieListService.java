@@ -1,9 +1,9 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.dto.MovieListDto;
-import com.movie.entity.MovieList;
-import com.movie.mapper.MovieListMapper;
-import com.movie.repository.PRDMovieListRepository;
+import com.movie.movie_backend.dto.MovieListDto;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.mapper.MovieListMapper;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

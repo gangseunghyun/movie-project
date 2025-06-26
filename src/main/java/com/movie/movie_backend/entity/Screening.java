@@ -1,11 +1,11 @@
-package com.movie.entity;
+package com.movie.movie_backend.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.math.BigDecimal;
-import com.movie.constant.ScreeningStatus;
+import com.movie.movie_backend.constant.ScreeningStatus;
 
 @Entity
 @Getter @Setter @NoArgsConstructor

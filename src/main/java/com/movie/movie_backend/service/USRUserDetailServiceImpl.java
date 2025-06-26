@@ -1,6 +1,6 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.repository.USRUserRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

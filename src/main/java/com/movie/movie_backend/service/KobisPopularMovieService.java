@@ -1,13 +1,18 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movie.dto.MovieListDto;
-import com.movie.entity.MovieDetail;
-import com.movie.repository.PRDMovieRepository;
-import com.movie.repository.PRDDirectorRepository;
-import com.movie.repository.PRDActorRepository;
-import com.movie.repository.CastRepository;
+import com.movie.movie_backend.dto.MovieListDto;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.entity.Actor;
+import com.movie.movie_backend.entity.Cast;
+import com.movie.movie_backend.constant.MovieStatus;
+import com.movie.movie_backend.constant.RoleType;
+import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.PRDDirectorRepository;
+import com.movie.movie_backend.repository.PRDActorRepository;
+import com.movie.movie_backend.repository.CastRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -248,7 +253,7 @@ public class KobisPopularMovieService {
                             .totalAudience(tmdbDetailDto.getTotalAudience())
                             .reservationRate(tmdbDetailDto.getReservationRate())
                             .averageRating(tmdbDetailDto.getAverageRating())
-                            .status(com.movie.constant.MovieStatus.NOW_PLAYING)
+                            .status(MovieStatus.NOW_PLAYING)
                             .build();
                     
                     // TMDB에서 감독과 배우 정보 가져오기
@@ -285,7 +290,7 @@ public class KobisPopularMovieService {
                 for (JsonNode person : crew) {
                     if ("Director".equals(person.get("job").asText())) {
                         String directorName = person.get("name").asText();
-                        com.movie.entity.Director director = saveTmdbDirector(directorName);
+                        Director director = saveTmdbDirector(directorName);
                         movieDetail.setDirector(director);
                         break; // 첫 번째 감독만 저장
                     }
@@ -293,7 +298,7 @@ public class KobisPopularMovieService {
             }
             
             // 영화 저장 (감독 정보 포함)
-            com.movie.entity.MovieDetail savedMovieDetail = movieRepository.save(movieDetail);
+            MovieDetail savedMovieDetail = movieRepository.save(movieDetail);
             
             // 배우 정보 저장
             JsonNode cast = root.get("cast");
@@ -313,10 +318,10 @@ public class KobisPopularMovieService {
     /**
      * TMDB 감독 정보 저장
      */
-    private com.movie.entity.Director saveTmdbDirector(String directorName) {
+    private Director saveTmdbDirector(String directorName) {
         try {
             // 기존 감독이 있는지 확인
-            java.util.Optional<com.movie.entity.Director> existingDirector = 
+            java.util.Optional<Director> existingDirector = 
                 directorRepository.findByName(directorName);
             
             if (existingDirector.isPresent()) {
@@ -325,7 +330,7 @@ public class KobisPopularMovieService {
 
             // 새 감독 생성 (TMDB에서 이미지 URL 조회)
             String photoUrl = fetchTmdbPersonImageUrl(directorName);
-            com.movie.entity.Director director = com.movie.entity.Director.builder()
+            Director director = Director.builder()
                     .name(directorName)
                     .photoUrl(photoUrl)
                     .build();
@@ -342,7 +347,7 @@ public class KobisPopularMovieService {
      * TMDB 배우 정보 저장 (KOBIS API에서 한국어 배역명 우선 사용)
      */
     @Transactional
-    private void saveTmdbActors(JsonNode cast, com.movie.entity.MovieDetail movieDetail) {
+    private void saveTmdbActors(JsonNode cast, MovieDetail movieDetail) {
         log.info("TMDB 배우 정보 저장 시작: 영화={}, 배우 수={}", movieDetail.getMovieNm(), cast.size());
         
         try {
@@ -375,9 +380,9 @@ public class KobisPopularMovieService {
                 log.info("TMDB 배우 처리 중: {}/{} - 이름: {}, 캐릭터: {}", i+1, Math.min(cast.size(), 10), actorName, characterName);
                 
                 // 기존 배우가 있는지 확인
-                java.util.Optional<com.movie.entity.Actor> existingActor = 
+                java.util.Optional<Actor> existingActor = 
                     actorRepository.findByName(actorName);
-                com.movie.entity.Actor actor;
+                Actor actor;
                 
                 if (existingActor.isPresent()) {
                     actor = existingActor.get();
@@ -394,7 +399,7 @@ public class KobisPopularMovieService {
                 } else {
                     // 새 배우 생성 (TMDB에서 이미지 URL 조회)
                     String photoUrl = fetchTmdbPersonImageUrl(actorName);
-                    actor = com.movie.entity.Actor.builder()
+                    actor = Actor.builder()
                             .name(actorName)
                             .photoUrl(photoUrl)
                             .build();
@@ -403,11 +408,11 @@ public class KobisPopularMovieService {
                 }
 
                 // 주연/조연 구분: 상위 3명은 주연, 나머지는 조연
-                com.movie.constant.RoleType roleType = (i < 3) ? 
-                    com.movie.constant.RoleType.LEAD : com.movie.constant.RoleType.SUPPORTING;
+                RoleType roleType = (i < 3) ? 
+                    RoleType.LEAD : RoleType.SUPPORTING;
 
                 // 기존 Cast가 있으면 roleType만 업데이트, 없으면 새로 저장
-                com.movie.entity.Cast existingCast = castRepository.findByMovieDetailAndActor(movieDetail, actor);
+                Cast existingCast = castRepository.findByMovieDetailAndActor(movieDetail, actor);
                 if (existingCast != null) {
                     existingCast.setRoleType(roleType);
                     // 기존 캐릭터명이 없거나 영어이면 한국어로 업데이트
@@ -421,7 +426,7 @@ public class KobisPopularMovieService {
                     castRepository.save(existingCast);
                     log.info("기존 Cast 업데이트: 영화={}, 배우={}, 역할={}", movieDetail.getMovieNm(), actor.getName(), roleType);
                 } else {
-                    com.movie.entity.Cast castEntity = com.movie.entity.Cast.builder()
+                    Cast castEntity = Cast.builder()
                             .movieDetail(movieDetail)
                             .actor(actor)
                             .characterName(characterName)
@@ -435,7 +440,7 @@ public class KobisPopularMovieService {
             }
             
             // 저장 후 Cast 개수 확인
-            List<com.movie.entity.Cast> savedCasts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movieDetail.getMovieCd());
+            List<Cast> savedCasts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movieDetail.getMovieCd());
             log.info("TMDB 배우 정보 저장 완료: 영화={}, 저장된 Cast 수={}", movieDetail.getMovieNm(), savedCasts.size());
             
         } catch (Exception e) {
@@ -515,19 +520,19 @@ public class KobisPopularMovieService {
         log.info("기존 영화들의 캐릭터명을 한국어로 업데이트 시작");
         
         try {
-            List<com.movie.entity.MovieDetail> allMovies = movieRepository.findAll();
+            List<MovieDetail> allMovies = movieRepository.findAll();
             int updatedCount = 0;
             
-            for (com.movie.entity.MovieDetail movie : allMovies) {
+            for (MovieDetail movie : allMovies) {
                 try {
                     // KOBIS API에서 한국어 배역명 가져오기
                     Map<String, String> kobisCharacterNames = getKobisCharacterNames(movie.getMovieCd());
                     
                     if (!kobisCharacterNames.isEmpty()) {
                         // 해당 영화의 모든 Cast 조회
-                        List<com.movie.entity.Cast> casts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movie.getMovieCd());
+                        List<Cast> casts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movie.getMovieCd());
                         
-                        for (com.movie.entity.Cast cast : casts) {
+                        for (Cast cast : casts) {
                             String actorName = cast.getActor().getName();
                             
                             // KOBIS에서 한국어 배역명이 있으면 업데이트

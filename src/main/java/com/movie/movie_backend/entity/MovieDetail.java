@@ -1,4 +1,4 @@
-package com.movie.entity;
+package com.movie.movie_backend.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.movie.constant.MovieStatus;
+import com.movie.movie_backend.constant.MovieStatus;
 
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder

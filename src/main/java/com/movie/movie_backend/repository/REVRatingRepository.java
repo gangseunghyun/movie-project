@@ -1,6 +1,6 @@
-package com.movie.repository;
+package com.movie.movie_backend.repository;
 
-import com.movie.entity.Rating;
+import com.movie.movie_backend.entity.Rating;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

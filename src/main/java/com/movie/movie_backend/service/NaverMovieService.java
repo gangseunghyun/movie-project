@@ -1,8 +1,8 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movie.entity.MovieDetail;
+import com.movie.movie_backend.entity.MovieDetail;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

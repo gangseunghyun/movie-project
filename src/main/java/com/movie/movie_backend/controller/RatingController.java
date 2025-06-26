@@ -1,9 +1,9 @@
-package com.movie.controller;
+package com.movie.movie_backend.controller;
 
-import com.movie.dto.MovieDetailDto;
-import com.movie.entity.MovieDetail;
-import com.movie.mapper.MovieDetailMapper;
-import com.movie.service.TmdbRatingService;
+import com.movie.movie_backend.dto.MovieDetailDto;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.mapper.MovieDetailMapper;
+import com.movie.movie_backend.service.TmdbRatingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

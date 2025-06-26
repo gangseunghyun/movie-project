@@ -1,6 +1,6 @@
-package com.movie.repository;
+package com.movie.movie_backend.repository;
 
-import com.movie.entity.MovieList;
+import com.movie.movie_backend.entity.MovieList;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

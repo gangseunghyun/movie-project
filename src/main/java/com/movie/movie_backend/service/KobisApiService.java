@@ -1,13 +1,15 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movie.entity.Director;
-import com.movie.entity.MovieDetail;
-import com.movie.entity.MovieList;
-import com.movie.repository.PRDDirectorRepository;
-import com.movie.repository.PRDMovieRepository;
-import com.movie.repository.PRDMovieListRepository;
+import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.repository.PRDDirectorRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.dto.MovieListDto;
+import com.movie.movie_backend.constant.MovieStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -385,8 +387,8 @@ public class KobisApiService {
     /**
      * KOBIS에서 개봉예정작 가져오기
      */
-    public List<com.movie.dto.MovieListDto> fetchComingSoonMovies(int limit) {
-        List<com.movie.dto.MovieListDto> comingSoonMovies = new ArrayList<>();
+    public List<MovieListDto> fetchComingSoonMovies(int limit) {
+        List<MovieListDto> comingSoonMovies = new ArrayList<>();
         
         try {
             log.info("KOBIS에서 개봉예정작 가져오기 시작 (제한: {}개)", limit);
@@ -425,7 +427,7 @@ public class KobisApiService {
                     
                     // 개봉예정작 판별 로직 개선
                     if (openDt != null && isComingSoonMovie(openDt, today)) {
-                        com.movie.dto.MovieListDto movieDto = com.movie.dto.MovieListDto.builder()
+                        MovieListDto movieDto = MovieListDto.builder()
                             .movieCd(movie.get("movieCd").asText())
                             .movieNm(movie.get("movieNm").asText())
                             .movieNmEn(movie.has("movieNmEn") ? movie.get("movieNmEn").asText() : "")
@@ -434,7 +436,7 @@ public class KobisApiService {
                             .nationNm(movie.get("nationNm").asText())
                             .watchGradeNm(movie.get("watchGradeNm").asText())
                             .posterUrl("")
-                            .status(com.movie.constant.MovieStatus.COMING_SOON)
+                            .status(MovieStatus.COMING_SOON)
                             .build();
                         
                         comingSoonMovies.add(movieDto);
@@ -483,8 +485,8 @@ public class KobisApiService {
     /**
      * TMDB에서 개봉예정작 가져오기
      */
-    public List<com.movie.dto.MovieListDto> fetchComingSoonMoviesFromTmdb(int limit) {
-        List<com.movie.dto.MovieListDto> comingSoonMovies = new ArrayList<>();
+    public List<MovieListDto> fetchComingSoonMoviesFromTmdb(int limit) {
+        List<MovieListDto> comingSoonMovies = new ArrayList<>();
         
         try {
             log.info("TMDB에서 개봉예정작 가져오기 시작 (제한: {}개)", limit);
@@ -541,7 +543,7 @@ public class KobisApiService {
                         // 고유한 movieCd 생성 (TMDB ID 기반)
                         String movieCd = "TMDB" + movie.get("id").asText();
                         
-                        com.movie.dto.MovieListDto movieDto = com.movie.dto.MovieListDto.builder()
+                        MovieListDto movieDto = MovieListDto.builder()
                             .movieCd(movieCd)
                             .movieNm(movie.get("title").asText())
                             .movieNmEn(movie.has("original_title") ? movie.get("original_title").asText() : "")
@@ -551,7 +553,7 @@ public class KobisApiService {
                             .watchGradeNm("전체관람가")
                             .posterUrl(movie.has("poster_path") && !movie.get("poster_path").isNull() ? 
                                 "https://image.tmdb.org/t/p/w500" + movie.get("poster_path").asText() : "")
-                            .status(com.movie.constant.MovieStatus.COMING_SOON)
+                            .status(MovieStatus.COMING_SOON)
                             .build();
                         
                         comingSoonMovies.add(movieDto);
@@ -643,20 +645,20 @@ public class KobisApiService {
             java.time.LocalDate today = java.time.LocalDate.now();
             log.info("현재 날짜: {}", today);
             
-            List<com.movie.entity.MovieList> allMovieLists = prdMovieListRepository.findAll();
+            List<MovieList> allMovieLists = prdMovieListRepository.findAll();
             int updatedCount = 0;
             int skippedCount = 0;
             int comingSoonCount = 0;
             
-            for (com.movie.entity.MovieList movieList : allMovieLists) {
+            for (MovieList movieList : allMovieLists) {
                 // 개봉예정작 상태인 영화만 확인
-                if (com.movie.constant.MovieStatus.COMING_SOON.equals(movieList.getStatus())) {
+                if (MovieStatus.COMING_SOON.equals(movieList.getStatus())) {
                     java.time.LocalDate openDt = movieList.getOpenDt();
                     
                     if (openDt != null) {
                         // 개봉일이 지난 영화를 상영중으로 변경
                         if (!openDt.isAfter(today)) {
-                            movieList.setStatus(com.movie.constant.MovieStatus.NOW_PLAYING);
+                            movieList.setStatus(MovieStatus.NOW_PLAYING);
                             prdMovieListRepository.save(movieList);
                             updatedCount++;
                             

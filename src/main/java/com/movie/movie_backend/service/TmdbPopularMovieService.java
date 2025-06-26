@@ -1,10 +1,11 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movie.dto.MovieDetailDto;
-import com.movie.entity.MovieDetail;
-import com.movie.mapper.MovieDetailMapper;
+import com.movie.movie_backend.dto.MovieDetailDto;
+import com.movie.movie_backend.dto.MovieListDto;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.mapper.MovieDetailMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,8 +42,8 @@ public class TmdbPopularMovieService {
     /**
      * TMDB에서 인기 영화 100개를 MovieListDto 형태로 가져오기
      */
-    public List<com.movie.dto.MovieListDto> getPopularMoviesAsMovieList(int limit) {
-        List<com.movie.dto.MovieListDto> popularMovies = new ArrayList<>();
+    public List<MovieListDto> getPopularMoviesAsMovieList(int limit) {
+        List<MovieListDto> popularMovies = new ArrayList<>();
         
         try {
             // TMDB Popular API 호출 (한 번에 최대 20개씩, 5페이지까지)
@@ -62,7 +63,7 @@ public class TmdbPopularMovieService {
                         if (popularMovies.size() >= limit) break;
                         
                         try {
-                            com.movie.dto.MovieListDto movieDto = convertTmdbToMovieListDto(movie);
+                            MovieListDto movieDto = convertTmdbToMovieListDto(movie);
                             if (movieDto != null) {
                                 popularMovies.add(movieDto);
                                 log.info("인기 영화 추가: {} ({})", movieDto.getMovieNm(), movieDto.getMovieCd());
@@ -89,7 +90,7 @@ public class TmdbPopularMovieService {
     /**
      * TMDB 영화 데이터를 MovieListDto로 변환
      */
-    private com.movie.dto.MovieListDto convertTmdbToMovieListDto(JsonNode tmdbMovie) {
+    private MovieListDto convertTmdbToMovieListDto(JsonNode tmdbMovie) {
         try {
             String title = tmdbMovie.get("title").asText();
             String originalTitle = tmdbMovie.has("original_title") ? tmdbMovie.get("original_title").asText() : title;
@@ -104,7 +105,7 @@ public class TmdbPopularMovieService {
             String genreNm = kobisMovie != null ? kobisMovie.getGenreNm() : "";
             String nationNm = kobisMovie != null ? kobisMovie.getNationNm() : "";
             
-            return com.movie.dto.MovieListDto.builder()
+            return MovieListDto.builder()
                     .movieCd(movieCd)
                     .movieNm(movieNm)
                     .movieNmEn(originalTitle)

@@ -1,11 +1,11 @@
-package com.movie.mapper;
+package com.movie.movie_backend.mapper;
 
-import com.movie.dto.MovieDetailDto;
-import com.movie.entity.MovieDetail;
-import com.movie.entity.Director;
-import com.movie.entity.Actor;
-import com.movie.entity.Cast;
-import com.movie.constant.MovieStatus;
+import com.movie.movie_backend.dto.MovieDetailDto;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.entity.Actor;
+import com.movie.movie_backend.entity.Cast;
+import com.movie.movie_backend.constant.MovieStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;

@@ -1,4 +1,4 @@
-package com.movie.constant;
+package com.movie.movie_backend.constant;
 
 public enum MovieStatus {
     COMING_SOON("개봉예정"),

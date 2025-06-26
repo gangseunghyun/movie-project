@@ -1,7 +1,8 @@
-package com.movie.handler;
+package com.movie.movie_backend.handler;
 
-import com.movie.entity.User;
-import com.movie.repository.USRUserRepository;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.constant.Provider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,7 +31,8 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         // DB에서 회원 여부만 판단
         User user = null;
         if (provider != null && providerId != null) {
-            user = userRepository.findByProviderAndProviderId(provider, providerId).orElse(null);
+            Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+            user = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
         } else if (email != null) {
             user = userRepository.findByEmail(email).orElse(null);
         }
@@ -38,9 +40,24 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             System.out.println("[DEBUG] SuccessHandler: user==null, provider=" + provider + ", providerId=" + providerId + ", email=" + email);
         }
         if (user == null || user.getNickname() == null || !user.isSocialJoinCompleted()) {
-            response.sendRedirect("/social-join");
+            // 세션 값 확인
+            HttpSession session = request.getSession(false);
+            if (session == null) {
+                System.out.println("[DEBUG] SuccessHandler: 세션 없음");
+            } else {
+                Object emailAttr = session.getAttribute("SOCIAL_EMAIL");
+                Object providerAttr = session.getAttribute("SOCIAL_PROVIDER");
+                Object providerIdAttr = session.getAttribute("SOCIAL_PROVIDER_ID");
+                System.out.println("[DEBUG] SuccessHandler 세션: email=" + emailAttr + ", provider=" + providerAttr + ", providerId=" + providerIdAttr);
+                if (emailAttr == null || providerAttr == null || providerIdAttr == null) {
+                    System.out.println("[DEBUG] SuccessHandler: 소셜 세션 정보 없음");
+                }
+            }
+            response.sendRedirect("http://localhost:3000/social-join");
         } else {
-            response.sendRedirect("/");
+            // 닉네임을 쿼리 파라미터로 포함하여 리다이렉트
+            String nickname = user.getNickname() != null ? java.net.URLEncoder.encode(user.getNickname(), "UTF-8") : "";
+            response.sendRedirect("http://localhost:3000/?social=success&nickname=" + nickname);
         }
     }
 } 

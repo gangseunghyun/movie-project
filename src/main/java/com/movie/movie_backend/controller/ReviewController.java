@@ -1,7 +1,7 @@
-package com.movie.controller;
+package com.movie.movie_backend.controller;
 
-import com.movie.entity.Review;
-import com.movie.service.REVReviewService;
+import com.movie.movie_backend.entity.Review;
+import com.movie.movie_backend.service.REVReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

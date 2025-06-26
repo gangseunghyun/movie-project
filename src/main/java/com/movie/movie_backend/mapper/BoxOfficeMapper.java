@@ -1,14 +1,14 @@
-package com.movie.mapper;
+package com.movie.movie_backend.mapper;
 
-import com.movie.dto.BoxOfficeDto;
-import com.movie.entity.BoxOffice;
-import com.movie.entity.MovieDetail;
-import com.movie.entity.Director;
-import com.movie.entity.Tag;
-import com.movie.constant.MovieStatus;
-import com.movie.entity.MovieList;
-import com.movie.repository.PRDMovieListRepository;
-import com.movie.service.TmdbRatingService;
+import com.movie.movie_backend.dto.BoxOfficeDto;
+import com.movie.movie_backend.entity.BoxOffice;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.entity.Tag;
+import com.movie.movie_backend.constant.MovieStatus;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.service.TmdbRatingService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -194,7 +194,7 @@ public class BoxOfficeMapper {
     /**
      * 영화 상태 표시
      */
-    private String getMovieStatusDisplay(com.movie.constant.MovieStatus status) {
+    private String getMovieStatusDisplay(MovieStatus status) {
         if (status == null) return "상영중";
         return switch (status) {
             case COMING_SOON -> "상영예정";

@@ -1,7 +1,8 @@
-package com.movie.repository;
+package com.movie.movie_backend.repository;
 
-import com.movie.entity.User;
-import com.movie.constant.Provider;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.constant.Provider;
+import com.movie.movie_backend.constant.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,7 +34,7 @@ public interface USRUserRepository extends JpaRepository<User, Long> {
     List<User> findByEmailVerified(boolean emailVerified);
     
     // 권한별 조회
-    List<User> findByRole(com.movie.constant.UserRole role);
+    List<User> findByRole(UserRole role);
     
     // 소셜 회원가입 완료 여부
     List<User> findBySocialJoinCompleted(boolean socialJoinCompleted);

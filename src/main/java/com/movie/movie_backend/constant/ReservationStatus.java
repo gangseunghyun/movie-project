@@ -1,4 +1,4 @@
-package com.movie.constant;
+package com.movie.movie_backend.constant;
 
 public enum ReservationStatus {
     CONFIRMED("예매완료"),

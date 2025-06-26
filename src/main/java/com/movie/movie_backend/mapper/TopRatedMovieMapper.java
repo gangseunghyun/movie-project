@@ -1,10 +1,10 @@
-package com.movie.mapper;
+package com.movie.movie_backend.mapper;
 
-import com.movie.entity.MovieDetail;
-import com.movie.entity.MovieList;
-import com.movie.dto.TopRatedMovieDto;
-import com.movie.repository.PRDMovieListRepository;
-import com.movie.repository.BoxOfficeRepository;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.dto.TopRatedMovieDto;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.repository.BoxOfficeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

@@ -1,4 +1,4 @@
-package com.movie.constant;
+package com.movie.movie_backend.constant;
 
 public enum ScreeningStatus {
     BOOKING_AVAILABLE("예매가능"),

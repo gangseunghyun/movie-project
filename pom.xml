@@ -116,10 +116,38 @@
 			<artifactId>jakarta.mail-api</artifactId>
 		</dependency>
 		
+		<!-- Jakarta Mail Implementation -->
+		<dependency>
+			<groupId>org.eclipse.angus</groupId>
+			<artifactId>jakarta.mail</artifactId>
+			<version>2.0.3</version>
+		</dependency>
+		
 		<!-- Caffeine Cache -->
 		<dependency>
 			<groupId>com.github.ben-manes.caffeine</groupId>
 			<artifactId>caffeine</artifactId>
+		</dependency>
+		
+		<!-- Google API Client Libraries -->
+		<dependency>
+			<groupId>com.google.api-client</groupId>
+			<artifactId>google-api-client</artifactId>
+			<version>2.2.0</version>
+		</dependency>
+		
+		<!-- Google API Services Gmail -->
+		<dependency>
+			<groupId>com.google.apis</groupId>
+			<artifactId>google-api-services-gmail</artifactId>
+			<version>v1-rev20220404-2.0.0</version>
+		</dependency>
+		
+		<!-- Google OAuth2 Client -->
+		<dependency>
+			<groupId>com.google.oauth-client</groupId>
+			<artifactId>google-oauth-client</artifactId>
+			<version>1.34.1</version>
 		</dependency>
 	</dependencies>
 

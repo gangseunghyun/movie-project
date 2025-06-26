@@ -1,4 +1,4 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +21,10 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final CacheManager cacheManager;
 
-    // 이메일을 보내고, 생성된 코드를 'verificationCodes' 캐시에 저장합니다.
-    public String sendVerificationEmail(String email) {
+    // 인증 코드 생성 및 캐시 저장 (Gmail API와 함께 사용)
+    public String generateAndCacheVerificationCode(String email) {
         try {
-            log.info("이메일 인증 코드 발송 시작: {}", email);
+            log.info("인증 코드 생성 및 캐시 저장 시작: {}", email);
             String verificationCode = generateVerificationCode();
             log.info("생성된 인증 코드: {}", verificationCode);
             
@@ -37,7 +37,23 @@ public class MailService {
                 log.error("캐시 'verificationCodes'를 찾을 수 없습니다.");
             }
             
+            log.info("인증 코드 생성 및 캐시 저장 완료: {}", email);
+            return verificationCode;
+            
+        } catch (Exception e) {
+            log.error("인증 코드 생성 실패: {}", email, e);
+            throw new RuntimeException("인증 코드 생성에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    // 이메일을 보내고, 생성된 코드를 'verificationCodes' 캐시에 저장합니다.
+    public String sendVerificationEmail(String email) {
+        try {
+            log.info("이메일 인증 코드 발송 시작: {}", email);
+            String verificationCode = generateAndCacheVerificationCode(email);
+            
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("kgh9806@naver.com"); // 발신자 주소 명시적 설정
             message.setTo(email);
             message.setSubject("[영화 추천 서비스] 이메일 인증 코드");
             message.setText("안녕하세요!\n\n" +
@@ -119,6 +135,7 @@ public class MailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
+            helper.setFrom("kgh9806@naver.com"); // 발신자 주소 명시적 설정
             helper.setTo(email);
             helper.setSubject("[영화 추천 서비스] 비밀번호 재설정 안내");
             

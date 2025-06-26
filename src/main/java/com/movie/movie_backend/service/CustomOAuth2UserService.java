@@ -1,10 +1,11 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.entity.User;
-import com.movie.repository.USRUserRepository;
-import com.movie.constant.Provider;
-import com.movie.constant.UserRole;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.constant.Provider;
+import com.movie.movie_backend.constant.UserRole;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -15,18 +16,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
-import org.springframework.security.core.AuthenticationException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final USRUserRepository userRepository;
     private final @Lazy PasswordEncoder passwordEncoder;
+    private final OAuth2TokenService oAuth2TokenService;
     @Autowired private HttpServletRequest request;
 
     @Override
@@ -69,7 +72,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // null 체크 (닉네임은 name, providerId, email 모두)
         if (email == null || providerId == null || name == null || name.isBlank()) {
-            throw new AuthenticationException("소셜 로그인에서 필수 정보(email, id, nickname)를 받아오지 못했습니다. 소셜 제공 동의 항목을 확인해 주세요.") {};
+            throw new AuthenticationServiceException("소셜 로그인에서 필수 정보(email, id, nickname)를 받아오지 못했습니다. 소셜 제공 동의 항목을 확인해 주세요.");
         }
 
         String nickname = (name != null && !name.isBlank()) ? name : (email != null ? email.split("@")[0] : "user");
@@ -77,6 +80,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         final String finalProviderId = providerId;
         final String finalEmail = email;
         final String finalNickname = nickname;
+
+        // OAuth2 토큰 저장
+        try {
+            String accessToken = userRequest.getAccessToken().getTokenValue();
+            // refreshToken은 OAuth2UserRequest에서 직접 가져올 수 없으므로 null로 설정
+            String refreshToken = null;
+            int expiresIn = userRequest.getAccessToken().getExpiresAt() != null ? 
+                    (int) (userRequest.getAccessToken().getExpiresAt().getEpochSecond() - LocalDateTime.now().toEpochSecond(java.time.ZoneOffset.UTC)) : 3600;
+            
+            oAuth2TokenService.saveToken(email, provider.name(), accessToken, refreshToken, expiresIn);
+            log.info("OAuth2 토큰 저장 완료: email={}, provider={}", email, provider.name());
+        } catch (Exception e) {
+            log.error("OAuth2 토큰 저장 실패: email={}, provider={}", email, provider.name(), e);
+        }
 
         // 이미 가입된 사용자인지 확인
         User user = userRepository.findByProviderAndProviderId(provider, providerId)
@@ -86,9 +103,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     if (existingByEmail.isPresent()) {
                         Provider existProvider = existingByEmail.get().getProvider();
                         if (existProvider == Provider.LOCAL) {
-                            throw new AuthenticationException("PROVIDER:local|이 이메일은 일반 계정으로 가입되어 있습니다. 아이디/비밀번호로 로그인해 주세요.") {};
+                            throw new AuthenticationServiceException("PROVIDER:local|이 이메일은 일반 계정으로 가입되어 있습니다. 아이디/비밀번호로 로그인해 주세요.");
                         } else {
-                            throw new AuthenticationException("PROVIDER:" + existProvider.name() + "|이 이메일은 '" + existProvider.getDisplayName() + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.") {};
+                            throw new AuthenticationServiceException("PROVIDER:" + existProvider.name() + "|이 이메일은 '" + existProvider.name() + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.");
                         }
                     }
                     // 신규 회원이면 생성

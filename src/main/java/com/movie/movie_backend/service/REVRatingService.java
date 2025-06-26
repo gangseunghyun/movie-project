@@ -1,7 +1,7 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.entity.Rating;
-import com.movie.repository.REVRatingRepository;
+import com.movie.movie_backend.entity.Rating;
+import com.movie.movie_backend.repository.REVRatingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

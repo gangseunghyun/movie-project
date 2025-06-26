@@ -1,8 +1,8 @@
-package com.movie.controller;
+package com.movie.movie_backend.controller;
 
-import com.movie.entity.Comment;
-import com.movie.entity.CommentLike;
-import com.movie.service.REVCommentService;
+import com.movie.movie_backend.entity.Comment;
+import com.movie.movie_backend.entity.CommentLike;
+import com.movie.movie_backend.service.REVCommentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

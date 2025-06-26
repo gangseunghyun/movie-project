@@ -37,6 +37,8 @@ build/
 *.jar
 *.war
 *.ear
+out/
+bin/
 
 # 로그파일
 *.log
@@ -66,10 +68,16 @@ release.properties
 application.yml
 application.properties
 application-*.properties
+src/main/resources/gmail-service-account.json
 
-# 테스트 리포트
+# DB 마이그레이션 SQL 파일 (민감한 경우)
+/src/main/resources/resources/db/migration/
+
+# 테스트 리포트 및 클래스
 test-output/
 jacoco.exec
+/test-classes/
+/surefire-reports/
 
 # macOS
 .DS_Store
@@ -85,6 +93,7 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+react-app/
 
 # npm/yarn 로그파일
 npm-debug.log*

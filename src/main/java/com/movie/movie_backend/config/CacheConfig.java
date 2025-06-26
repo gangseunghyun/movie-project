@@ -1,4 +1,4 @@
-package com.movie.config;
+package com.movie.movie_backend.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;

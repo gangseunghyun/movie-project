@@ -1,26 +1,26 @@
-package com.movie.controller;
+package com.movie.movie_backend.controller;
 
-import com.movie.entity.MovieList;
-import com.movie.entity.MovieDetail;
-import com.movie.entity.BoxOffice;
-import com.movie.dto.BoxOfficeDto;
-import com.movie.dto.MovieDetailDto;
-import com.movie.dto.MovieListDto;
-import com.movie.dto.TopRatedMovieDto;
-import com.movie.service.PRDMovieListService;
-import com.movie.service.PRDMovieService;
-import com.movie.service.BoxOfficeService;
-import com.movie.service.TmdbPopularMovieService;
-import com.movie.service.KobisApiService;
-import com.movie.service.DataMigrationService;
-import com.movie.service.NaverMovieService;
-import com.movie.service.TmdbRatingService;
-import com.movie.repository.PRDMovieListRepository;
-import com.movie.repository.PRDMovieRepository;
-import com.movie.repository.BoxOfficeRepository;
-import com.movie.mapper.MovieDetailMapper;
-import com.movie.mapper.MovieListMapper;
-import com.movie.mapper.TopRatedMovieMapper;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.BoxOffice;
+import com.movie.movie_backend.dto.BoxOfficeDto;
+import com.movie.movie_backend.dto.MovieDetailDto;
+import com.movie.movie_backend.dto.MovieListDto;
+import com.movie.movie_backend.dto.TopRatedMovieDto;
+import com.movie.movie_backend.service.PRDMovieListService;
+import com.movie.movie_backend.service.PRDMovieService;
+import com.movie.movie_backend.service.BoxOfficeService;
+import com.movie.movie_backend.service.TmdbPopularMovieService;
+import com.movie.movie_backend.service.KobisApiService;
+import com.movie.movie_backend.service.DataMigrationService;
+import com.movie.movie_backend.service.NaverMovieService;
+import com.movie.movie_backend.service.TmdbRatingService;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.BoxOfficeRepository;
+import com.movie.movie_backend.mapper.MovieDetailMapper;
+import com.movie.movie_backend.mapper.MovieListMapper;
+import com.movie.movie_backend.mapper.TopRatedMovieMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,7 +41,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Set;
 
-import com.movie.constant.MovieStatus;
+import com.movie.movie_backend.constant.MovieStatus;
 
 @Slf4j
 @Controller

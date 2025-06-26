@@ -1,8 +1,8 @@
-package com.movie.config;
+package com.movie.movie_backend.config;
 
-import com.movie.service.USRUserDetailServiceImpl;
-import com.movie.service.CustomOAuth2UserService;
-import com.movie.handler.CustomAuthenticationSuccessHandler;
+import com.movie.movie_backend.service.USRUserDetailServiceImpl;
+import com.movie.movie_backend.service.CustomOAuth2UserService;
+import com.movie.movie_backend.handler.CustomAuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,6 +32,13 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookiePath("/");
+        return repository;
     }
 
     @Bean
@@ -66,10 +75,13 @@ public class SecurityConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                        .allowedOrigins("http://localhost:3000")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowCredentials(true);
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:3000", "http://localhost:80")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+                        .allowedHeaders("*")
+                        .exposedHeaders("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers")
+                        .allowCredentials(true)
+                        .maxAge(3600);
             }
         };
     }
@@ -85,12 +97,18 @@ public class SecurityConfig {
         AuthenticationManager authenticationManager = authBuilder.build();
 
         http
-            .csrf().disable()
+            .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers
+                .frameOptions().disable()
+                .xssProtection().disable()
+                .contentTypeOptions().disable()
+            )
             .cors().and()
             .authenticationManager(authenticationManager)
             .authorizeHttpRequests()
                 .requestMatchers(
                     "/api/login",
+                    "/api/user-login",
                     "/api/logout",
                     "/api/users/join",
                     "/api/users/check-login-id",
@@ -107,7 +125,10 @@ public class SecurityConfig {
                     "/reset-password",
                     "/static/**",
                     "/resources/static/**",
-                    "/data/api/**"
+                    "/data/api/**",
+                    "/swagger-ui/**",
+                    "/api-docs/**",
+                    "/v3/api-docs/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             .and()
@@ -119,7 +140,7 @@ public class SecurityConfig {
                 .permitAll()
             )
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("http://localhost:3000/login")
+                .loginPage("http://localhost:3000")
                 .successHandler(customAuthenticationSuccessHandler())
                 .failureHandler(customAuthenticationFailureHandler())
                 .userInfoEndpoint(userInfo -> userInfo

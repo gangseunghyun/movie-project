@@ -1,4 +1,4 @@
-package com.movie.entity;
+package com.movie.movie_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

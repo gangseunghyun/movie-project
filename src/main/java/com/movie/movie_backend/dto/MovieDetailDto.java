@@ -1,4 +1,4 @@
-package com.movie.dto;
+package com.movie.movie_backend.dto;
 
 import lombok.*;
 import java.util.List;

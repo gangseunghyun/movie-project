@@ -1,10 +1,10 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.entity.MovieDetail;
-import com.movie.entity.MovieList;
-import com.movie.entity.Stillcut;
-import com.movie.repository.PRDMovieListRepository;
-import com.movie.repository.PRDMovieRepository;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.entity.Stillcut;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.movie.config;
+package com.movie.movie_backend.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

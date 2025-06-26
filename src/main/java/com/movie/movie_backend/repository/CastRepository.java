@@ -1,9 +1,9 @@
-package com.movie.repository;
+package com.movie.movie_backend.repository;
 
-import com.movie.entity.Cast;
-import com.movie.entity.MovieDetail;
-import com.movie.entity.Actor;
-import com.movie.constant.RoleType;
+import com.movie.movie_backend.entity.Cast;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Actor;
+import com.movie.movie_backend.constant.RoleType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

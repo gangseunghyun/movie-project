@@ -1,4 +1,4 @@
-package com.movie.constant;
+package com.movie.movie_backend.constant;
 
 public enum PaymentStatus {
     PENDING("대기중"),

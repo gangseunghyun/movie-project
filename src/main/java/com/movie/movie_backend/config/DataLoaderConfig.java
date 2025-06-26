@@ -1,17 +1,24 @@
-package com.movie.config;
+package com.movie.movie_backend.config;
 
-import com.movie.service.DataMigrationService;
-import com.movie.service.KobisApiService;
-import com.movie.service.PRDMovieListService;
-import com.movie.service.TmdbPosterBatchService;
-import com.movie.service.TmdbStillcutService;
-import com.movie.service.TagDataService;
-import com.movie.service.BoxOfficeService;
-import com.movie.service.NaverMovieBatchService;
-import com.movie.service.TmdbPopularMovieService;
-import com.movie.repository.PRDMovieListRepository;
-import com.movie.repository.PRDMovieRepository;
-import com.movie.repository.BoxOfficeRepository;
+import com.movie.movie_backend.service.DataMigrationService;
+import com.movie.movie_backend.service.KobisApiService;
+import com.movie.movie_backend.service.PRDMovieListService;
+import com.movie.movie_backend.service.TmdbPosterBatchService;
+import com.movie.movie_backend.service.TmdbStillcutService;
+import com.movie.movie_backend.service.TagDataService;
+import com.movie.movie_backend.service.BoxOfficeService;
+import com.movie.movie_backend.service.NaverMovieBatchService;
+import com.movie.movie_backend.service.TmdbPopularMovieService;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.BoxOfficeRepository;
+import com.movie.movie_backend.repository.PRDDirectorRepository;
+import com.movie.movie_backend.service.KobisPopularMovieService;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.dto.MovieListDto;
+import com.movie.movie_backend.constant.MovieStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -36,8 +43,8 @@ public class DataLoaderConfig {
     private final NaverMovieBatchService naverMovieBatchService;
     private final TmdbPopularMovieService tmdbPopularMovieService;
     private final PRDMovieListRepository prdMovieListRepository;
-    private final com.movie.repository.PRDDirectorRepository directorRepository;
-    private final com.movie.service.KobisPopularMovieService kobisPopularMovieService;
+    private final PRDDirectorRepository directorRepository;
+    private final KobisPopularMovieService kobisPopularMovieService;
     private final PRDMovieRepository movieRepository;
     private final BoxOfficeRepository boxOfficeRepository;
 
@@ -60,8 +67,8 @@ public class DataLoaderConfig {
                     log.info("MovieDetail이 {}개 누락되었습니다. 누락된 MovieDetail을 채워넣습니다.", missingCount);
                     
                     List<String> missingMovieCds = new ArrayList<>();
-                    List<com.movie.entity.MovieList> allMovieLists = prdMovieListRepository.findAll();
-                    for (com.movie.entity.MovieList movieList : allMovieLists) {
+                    List<MovieList> allMovieLists = prdMovieListRepository.findAll();
+                    for (MovieList movieList : allMovieLists) {
                         if (!movieRepository.existsById(movieList.getMovieCd())) {
                             missingMovieCds.add(movieList.getMovieCd());
                         }
@@ -79,7 +86,7 @@ public class DataLoaderConfig {
                         }
                         
                         try {
-                            com.movie.entity.MovieList movieList = prdMovieListRepository.findById(movieCd).orElse(null);
+                            MovieList movieList = prdMovieListRepository.findById(movieCd).orElse(null);
                             if (movieList == null) {
                                 log.warn("MovieList를 찾을 수 없음: {}", movieCd);
                                 failCount++;
@@ -90,7 +97,7 @@ public class DataLoaderConfig {
                                 movieList.getMovieNm(), movieCd, attemptCount + 1, maxAttempts);
                             
                             // KOBIS API로 MovieDetail 가져오기
-                            com.movie.entity.MovieDetail movieDetail = kobisApiService.fetchAndSaveMovieDetail(movieCd);
+                            MovieDetail movieDetail = kobisApiService.fetchAndSaveMovieDetail(movieCd);
                             
                             if (movieDetail != null) {
                                 successCount++;
@@ -148,14 +155,14 @@ public class DataLoaderConfig {
                 log.info("데이터가 부족합니다. 자동 로딩을 시작합니다.");
                 
                 // KOBIS 박스오피스에서 인기 영화 가져오기 (기존 데이터는 건너뛰기)
-                List<com.movie.dto.MovieListDto> popularMovies = kobisPopularMovieService.getPopularMoviesFromBoxOffice(200);
+                List<MovieListDto> popularMovies = kobisPopularMovieService.getPopularMoviesFromBoxOffice(200);
                 log.info("KOBIS 박스오피스에서 인기 영화 {}개 가져오기 완료", popularMovies.size());
                 
                 // MovieList에 저장 (기존 데이터는 건너뛰기)
                 int successCount = 0;
                 int skippedCount = 0;
                 
-                for (com.movie.dto.MovieListDto movieDto : popularMovies) {
+                for (MovieListDto movieDto : popularMovies) {
                     try {
                         // 기존 데이터가 있으면 건너뛰기
                         if (prdMovieListRepository.findById(movieDto.getMovieCd()).isPresent()) {
@@ -164,7 +171,7 @@ public class DataLoaderConfig {
                         }
                         
                         // MovieList 엔티티로 변환하여 저장
-                        com.movie.entity.MovieList movieList = com.movie.entity.MovieList.builder()
+                        MovieList movieList = MovieList.builder()
                                 .movieCd(movieDto.getMovieCd())
                                 .movieNm(movieDto.getMovieNm())
                                 .movieNmEn(movieDto.getMovieNmEn())
@@ -205,12 +212,12 @@ public class DataLoaderConfig {
     /**
      * 감독 정보 저장
      */
-    private com.movie.entity.Director saveDirector(String directorName) {
+    private Director saveDirector(String directorName) {
         // 기존 감독이 있는지 확인
-        java.util.Optional<com.movie.entity.Director> existingDirector = 
+        java.util.Optional<Director> existingDirector = 
             dataMigrationService.getAllMovieDetails().stream()
                 .filter(movie -> movie.getDirector() != null && movie.getDirector().getName().equals(directorName))
-                .map(com.movie.entity.MovieDetail::getDirector)
+                .map(MovieDetail::getDirector)
                 .findFirst();
         
         if (existingDirector.isPresent()) {
@@ -218,7 +225,7 @@ public class DataLoaderConfig {
         }
 
         // 새 감독 생성
-        com.movie.entity.Director director = com.movie.entity.Director.builder()
+        Director director = Director.builder()
                 .name(directorName)
                 .build();
         
@@ -237,7 +244,7 @@ public class DataLoaderConfig {
             
             // 기존 개봉예정작 개수 확인
             long existingComingSoonCount = prdMovieListRepository.findAll().stream()
-                .filter(movie -> com.movie.constant.MovieStatus.COMING_SOON.equals(movie.getStatus()))
+                .filter(movie -> MovieStatus.COMING_SOON.equals(movie.getStatus()))
                 .count();
             log.info("정리 후 기존 개봉예정작 개수: {}개", existingComingSoonCount);
             
@@ -248,18 +255,18 @@ public class DataLoaderConfig {
             }
             
             // KOBIS에서 개봉예정작 가져오기
-            List<com.movie.dto.MovieListDto> comingSoonMovies = kobisApiService.fetchComingSoonMovies(200);
+            List<MovieListDto> comingSoonMovies = kobisApiService.fetchComingSoonMovies(200);
             log.info("KOBIS에서 개봉예정작 {}개 가져오기 완료", comingSoonMovies.size());
             
             // KOBIS + 기존 데이터가 부족하면 TMDB에서 추가로 가져오기
             long totalComingSoon = existingComingSoonCount + comingSoonMovies.size();
             if (totalComingSoon < 50) {
                 log.info("KOBIS + 기존 데이터가 부족하므로 TMDB에서 추가로 가져옵니다. (현재: {}개, 목표: 50개)", totalComingSoon);
-                List<com.movie.dto.MovieListDto> tmdbMovies = kobisApiService.fetchComingSoonMoviesFromTmdb(200);
+                List<MovieListDto> tmdbMovies = kobisApiService.fetchComingSoonMoviesFromTmdb(200);
                 log.info("TMDB에서 개봉예정작 {}개 가져오기 완료", tmdbMovies.size());
                 
                 // 중복 제거하면서 합치기
-                for (com.movie.dto.MovieListDto tmdbMovie : tmdbMovies) {
+                for (MovieListDto tmdbMovie : tmdbMovies) {
                     boolean isDuplicate = comingSoonMovies.stream()
                         .anyMatch(kobisMovie -> kobisMovie.getMovieNm().equals(tmdbMovie.getMovieNm()));
                     
@@ -276,7 +283,7 @@ public class DataLoaderConfig {
             int successCount = 0;
             int skippedCount = 0;
             
-            for (com.movie.dto.MovieListDto movieDto : comingSoonMovies) {
+            for (MovieListDto movieDto : comingSoonMovies) {
                 try {
                     // 기존 데이터가 있으면 건너뛰기
                     if (prdMovieListRepository.findById(movieDto.getMovieCd()).isPresent()) {
@@ -285,7 +292,7 @@ public class DataLoaderConfig {
                     }
                     
                     // MovieList 엔티티로 변환하여 저장
-                    com.movie.entity.MovieList movieList = com.movie.entity.MovieList.builder()
+                    MovieList movieList = MovieList.builder()
                             .movieCd(movieDto.getMovieCd())
                             .movieNm(movieDto.getMovieNm())
                             .movieNmEn(movieDto.getMovieNmEn())
@@ -294,7 +301,7 @@ public class DataLoaderConfig {
                             .nationNm(movieDto.getNationNm())
                             .watchGradeNm(movieDto.getWatchGradeNm())
                             .posterUrl(movieDto.getPosterUrl())
-                            .status(com.movie.constant.MovieStatus.COMING_SOON) // 개봉예정 상태로 설정
+                            .status(MovieStatus.COMING_SOON) // 개봉예정 상태로 설정
                             .build();
                     
                     prdMovieListRepository.save(movieList);
@@ -332,9 +339,9 @@ public class DataLoaderConfig {
             
             // 실제로 누락된 MovieDetail 찾기
             List<String> missingMovieCds = new ArrayList<>();
-            List<com.movie.entity.MovieList> allMovieLists = prdMovieListRepository.findAll();
+            List<MovieList> allMovieLists = prdMovieListRepository.findAll();
             
-            for (com.movie.entity.MovieList movieList : allMovieLists) {
+            for (MovieList movieList : allMovieLists) {
                 if (!movieRepository.existsById(movieList.getMovieCd())) {
                     missingMovieCds.add(movieList.getMovieCd());
                 }
@@ -359,7 +366,7 @@ public class DataLoaderConfig {
                     }
                     
                     try {
-                        com.movie.entity.MovieList movieList = prdMovieListRepository.findById(movieCd).orElse(null);
+                        MovieList movieList = prdMovieListRepository.findById(movieCd).orElse(null);
                         if (movieList == null) {
                             log.warn("MovieList를 찾을 수 없음: {}", movieCd);
                             failCount++;
@@ -371,7 +378,7 @@ public class DataLoaderConfig {
                             movieList.getMovieNm(), movieCd, attemptCount + 1, maxAttempts);
                         
                         // KOBIS API로 MovieDetail 가져오기
-                        com.movie.entity.MovieDetail movieDetail = kobisApiService.fetchAndSaveMovieDetail(movieCd);
+                        MovieDetail movieDetail = kobisApiService.fetchAndSaveMovieDetail(movieCd);
                         
                         if (movieDetail != null) {
                             successCount++;

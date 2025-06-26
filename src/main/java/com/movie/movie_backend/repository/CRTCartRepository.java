@@ -1,4 +1,4 @@
-package com.movie.repository;
+package com.movie.movie_backend.repository;
 
 import org.springframework.stereotype.Repository;
 

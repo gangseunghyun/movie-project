@@ -1,12 +1,12 @@
-package com.movie.controller;
+package com.movie.movie_backend.controller;
 
-import com.movie.dto.MovieDetailDto;
-import com.movie.entity.MovieDetail;
-import com.movie.entity.MovieList;
-import com.movie.entity.Like;
-import com.movie.entity.User;
-import com.movie.service.MovieManagementService;
-import com.movie.service.USRUserService;
+import com.movie.movie_backend.dto.MovieDetailDto;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.entity.Like;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.service.MovieManagementService;
+import com.movie.movie_backend.service.USRUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

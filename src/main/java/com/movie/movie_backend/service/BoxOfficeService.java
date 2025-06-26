@@ -1,11 +1,11 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.entity.BoxOffice;
-import com.movie.entity.MovieDetail;
-import com.movie.dto.BoxOfficeDto;
-import com.movie.mapper.BoxOfficeMapper;
-import com.movie.repository.BoxOfficeRepository;
-import com.movie.repository.PRDMovieRepository;
+import com.movie.movie_backend.entity.BoxOffice;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.dto.BoxOfficeDto;
+import com.movie.movie_backend.mapper.BoxOfficeMapper;
+import com.movie.movie_backend.repository.BoxOfficeRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

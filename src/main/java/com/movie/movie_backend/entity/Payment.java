@@ -1,9 +1,9 @@
-package com.movie.entity;
+package com.movie.movie_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import com.movie.constant.PaymentMethod;
-import com.movie.constant.PaymentStatus;
+import com.movie.movie_backend.constant.PaymentMethod;
+import com.movie.movie_backend.constant.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

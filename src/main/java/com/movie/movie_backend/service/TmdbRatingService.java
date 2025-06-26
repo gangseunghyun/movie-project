@@ -1,13 +1,13 @@
-package com.movie.service;
+package com.movie.movie_backend.service;
 
-import com.movie.entity.MovieDetail;
-import com.movie.entity.Rating;
-import com.movie.entity.User;
-import com.movie.repository.PRDMovieRepository;
-import com.movie.repository.REVRatingRepository;
-import com.movie.repository.USRUserRepository;
-import com.movie.repository.PRDMovieListRepository;
-import com.movie.constant.UserRole;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Rating;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.REVRatingRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.constant.UserRole;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +22,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import com.movie.mapper.TopRatedMovieMapper;
-import com.movie.dto.TopRatedMovieDto;
+import com.movie.movie_backend.mapper.TopRatedMovieMapper;
+import com.movie.movie_backend.dto.TopRatedMovieDto;
 
 @Slf4j
 @Service
