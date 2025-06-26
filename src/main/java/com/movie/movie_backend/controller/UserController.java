@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -296,14 +298,25 @@ public class UserController {
     // REST API - 로그인
     @PostMapping("/api/user-login")
     public ResponseEntity<Map<String, Object>> loginApi(@RequestBody Map<String, String> loginRequest, HttpSession session) {
+        log.info("=== /api/user-login 호출됨 ===");
+        log.info("세션 ID: {}", session.getId());
+        
         Map<String, Object> response = new HashMap<>();
         String loginId = loginRequest.get("loginId");
         String password = loginRequest.get("password");
         
+        log.info("로그인 시도: {}", loginId);
+        
         try {
             User user = userService.authenticate(loginId, password);
+            log.info("인증 결과: {}", user != null ? "성공" : "실패");
+            
             if (user != null) {
+                log.info("세션에 사용자 정보 저장: {}", user.getLoginId());
                 session.setAttribute("user", user);
+                log.info("사용자 역할: {}", user.getRole());
+                log.info("관리자 여부: {}", user.isAdmin());
+                
                 response.put("success", true);
                 response.put("message", "로그인 성공");
                 response.put("user", Map.of(
@@ -314,11 +327,13 @@ public class UserController {
                 ));
                 return ResponseEntity.ok(response);
             } else {
+                log.warn("로그인 실패: 잘못된 아이디/비밀번호");
                 response.put("success", false);
                 response.put("message", "아이디 또는 비밀번호가 올바르지 않습니다.");
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
+            log.error("로그인 중 예외 발생", e);
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
@@ -335,24 +350,61 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // REST API - 현재 로그인된 사용자 정보 조회
-    @GetMapping("/api/users/me")
+    /**
+     * 현재 로그인한 사용자 정보 조회
+     */
+    @GetMapping("/api/current-user")
     public ResponseEntity<Map<String, Object>> getCurrentUser(HttpSession session) {
-        Map<String, Object> response = new HashMap<>();
-        User user = (User) session.getAttribute("user");
-        if (user != null) {
-            response.put("success", true);
-            response.put("user", Map.of(
-                "id", user.getId(),
-                "loginId", user.getLoginId(),
-                "nickname", user.getNickname(),
-                "email", user.getEmail()
-            ));
-            return ResponseEntity.ok(response);
-        } else {
-            response.put("success", false);
-            response.put("message", "로그인되지 않은 사용자입니다.");
-            return ResponseEntity.status(401).body(response);
+        log.info("=== /api/current-user 호출됨 ===");
+        log.info("세션 ID: {}", session.getId());
+        
+        try {
+            log.info("세션에서 user 속성 조회 시도...");
+            User currentUser = (User) session.getAttribute("user");
+            log.info("세션에서 조회된 사용자: {}", currentUser);
+            
+            if (currentUser == null) {
+                log.warn("세션에 사용자 정보가 없음");
+                return ResponseEntity.status(401)
+                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    .header("Pragma", "no-cache")
+                    .header("Expires", "0")
+                    .body(Map.of(
+                        "success", false,
+                        "message", "로그인이 필요합니다."
+                    ));
+            }
+            
+            log.info("사용자 정보 조회 성공: {}", currentUser.getLoginId());
+            log.info("사용자 역할: {}", currentUser.getRole());
+            log.info("관리자 여부: {}", currentUser.isAdmin());
+            
+            return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .body(Map.of(
+                    "success", true,
+                    "user", Map.of(
+                        "id", currentUser.getId(),
+                        "loginId", currentUser.getLoginId(),
+                        "email", currentUser.getEmail(),
+                        "nickname", currentUser.getNickname(),
+                        "role", currentUser.getRole().name(),
+                        "isAdmin", currentUser.isAdmin(),
+                        "isUser", currentUser.isUser()
+                    )
+                ));
+        } catch (Exception e) {
+            log.error("현재 사용자 정보 조회 실패", e);
+            return ResponseEntity.badRequest()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .body(Map.of(
+                    "success", false,
+                    "message", "사용자 정보 조회에 실패했습니다: " + e.getMessage()
+                ));
         }
     }
 } 
