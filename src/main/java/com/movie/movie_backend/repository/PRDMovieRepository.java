@@ -28,9 +28,15 @@ public interface PRDMovieRepository extends JpaRepository<MovieDetail, String> {
     List<MovieDetail> findByExactGenreNm(@Param("genreNm") String genreNm);
     
     // 띄어쓰기 무시 통합 검색 (제목, 감독, 배우, 장르)
-    @Query(value = "SELECT * FROM movie_detail m WHERE " +
-            "REPLACE(m.movie_nm, ' ', '') LIKE CONCAT('%', :keyword, '%') " +
-            "OR REPLACE(m.genre_nm, ' ', '') LIKE CONCAT('%', :keyword, '%')", nativeQuery = true)
+    @Query(value = "SELECT DISTINCT m.* FROM movie_detail m " +
+            "LEFT JOIN director d ON m.director_id = d.id " +
+            "LEFT JOIN casts c ON c.movie_detail_id = m.movie_cd " +
+            "LEFT JOIN actor a ON c.actor_id = a.id " +
+            "WHERE REPLACE(m.movie_nm, ' ', '') LIKE CONCAT('%', :keyword, '%') " +
+            "OR REPLACE(m.genre_nm, ' ', '') LIKE CONCAT('%', :keyword, '%') " +
+            "OR REPLACE(d.name, ' ', '') LIKE CONCAT('%', :keyword, '%') " +
+            "OR REPLACE(a.name, ' ', '') LIKE CONCAT('%', :keyword, '%')",
+            nativeQuery = true)
     List<MovieDetail> searchIgnoreSpace(@Param("keyword") String keyword);
     
     // 상품 관련 쿼리 메소드 추가 가능
