@@ -65,6 +65,8 @@ function App() {
     averageRating: 0
   });
 
+  const [searchExecuted, setSearchExecuted] = useState(false);
+
   // API 기본 URL
   const API_BASE_URL = 'http://localhost:80/api';
 
@@ -257,6 +259,7 @@ function App() {
 
   // 검색 실행 핸들러
   const handleSearch = () => {
+    setSearchExecuted(true);
     searchMoviesByTitle(searchKeyword, 0);
   };
 
@@ -264,6 +267,7 @@ function App() {
   const handleClearSearch = () => {
     setSearchKeyword('');
     setSearchResults({ data: [], total: 0, page: 0, totalPages: 0 });
+    setSearchExecuted(false);
     fetchMovieDetailDto(0);
   };
 
@@ -702,7 +706,9 @@ function App() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setError(null);
+    setSearchKeyword('');
+    setSearchResults({ data: [], total: 0, page: 0, totalPages: 0 });
+    setSearchExecuted(false);
   };
 
   const handleRefresh = () => {
@@ -722,96 +728,6 @@ function App() {
 
   const renderStats = () => (
     <div>
-      {/* 임시 검색 기능 테스트 */}
-      <div style={{
-        marginBottom: '20px', 
-        padding: '15px', 
-        backgroundColor: '#e3f2fd', 
-        borderRadius: '8px',
-        border: '2px solid #2196f3'
-      }}>
-        <h3 style={{marginBottom: '15px', textAlign: 'center', color: '#1976d2'}}>
-          🔍 영화 검색 (테스트)
-        </h3>
-        <div style={{
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          gap: '10px', 
-          marginBottom: '10px',
-          flexWrap: 'wrap'
-        }}>
-          <input
-            type="text"
-            placeholder="영화 제목을 입력하세요..."
-            value={searchKeyword || ''}
-            onChange={handleSearchChange}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            style={{
-              padding: '10px 15px',
-              border: '2px solid #2196f3',
-              borderRadius: '5px',
-              width: '300px',
-              fontSize: '14px',
-              outline: 'none'
-            }}
-          />
-          <button 
-            onClick={handleSearch}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#2196f3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            🔍 검색
-          </button>
-          <button 
-            onClick={handleClearSearch}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#ff9800',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            초기화
-          </button>
-        </div>
-        
-        {/* 검색 상태 표시 */}
-        {isSearching && (
-          <div style={{
-            color: '#2196f3', 
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            🔍 검색 중...
-          </div>
-        )}
-        
-        {searchKeyword && !isSearching && searchResults.data && (
-          <div style={{
-            color: '#4caf50', 
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            📊 검색 결과: {searchResults.total}개 영화
-          </div>
-        )}
-      </div>
-
       <h2>📊 데이터 통계</h2>
       {stats && (
         <div className="stats-grid">
@@ -830,29 +746,31 @@ function App() {
         </div>
       )}
       
-      <div className="admin-actions">
-        <h3>🔧 관리 기능</h3>
-        <div className="button-grid">
-          <button onClick={handleFetchBoxOfficeData} className="admin-button">
-            📊 박스오피스 데이터 가져오기
-          </button>
-          <button onClick={fetchTmdbRatings} className="admin-button">
-            ⭐ TMDB 평점 가져오기
-          </button>
-          <button onClick={handleReplaceWithPopularMovies} className="admin-button">
-            🎬 인기 영화 100개로 교체
-          </button>
-          <button onClick={handleUpdateCharacterNames} className="admin-button">
-            🇰🇷 캐릭터명 한국어 업데이트
-          </button>
-          <button onClick={handleFetchPosterUrlsFromTmdb} className="admin-button">
-            🎭 TMDB 포스터 URL 가져오기
-          </button>
-          <button onClick={handleFetchPosterUrlsFromNaver} className="admin-button">
-            🎭 네이버 포스터 URL 가져오기
-          </button>
+      {currentUser && currentUser.role === 'ADMIN' && (
+        <div>
+          <h3>🔧 관리 기능</h3>
+          <div className="button-grid">
+            <button onClick={handleFetchBoxOfficeData} className="admin-button">
+              📊 박스오피스 데이터 가져오기
+            </button>
+            <button onClick={fetchTmdbRatings} className="admin-button">
+              ⭐ TMDB 평점 가져오기
+            </button>
+            <button onClick={handleReplaceWithPopularMovies} className="admin-button">
+              🎬 인기 영화 100개로 교체
+            </button>
+            <button onClick={handleUpdateCharacterNames} className="admin-button">
+              🇰🇷 캐릭터명 한국어 업데이트
+            </button>
+            <button onClick={handleFetchPosterUrlsFromTmdb} className="admin-button">
+              🎭 TMDB 포스터 URL 가져오기
+            </button>
+            <button onClick={handleFetchPosterUrlsFromNaver} className="admin-button">
+              🎭 네이버 포스터 URL 가져오기
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -1089,96 +1007,6 @@ function App() {
 
   const renderMovieDetailDto = () => (
     <div>
-      {/* 검색 기능 */}
-      <div style={{
-        marginBottom: '20px', 
-        padding: '15px', 
-        backgroundColor: '#f8f9fa', 
-        borderRadius: '8px',
-        border: '1px solid #dee2e6'
-      }}>
-        <h3 style={{marginBottom: '15px', textAlign: 'center', color: '#495057'}}>
-          🔍 영화 검색
-        </h3>
-        <div style={{
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          gap: '10px', 
-          marginBottom: '10px',
-          flexWrap: 'wrap'
-        }}>
-          <input
-            type="text"
-            placeholder="영화 제목을 입력하세요..."
-            value={searchKeyword}
-            onChange={handleSearchChange}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            style={{
-              padding: '10px 15px',
-              border: '2px solid #007bff',
-              borderRadius: '5px',
-              width: '300px',
-              fontSize: '14px',
-              outline: 'none'
-            }}
-          />
-          <button 
-            onClick={handleSearch}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            🔍 검색
-          </button>
-          <button 
-            onClick={handleClearSearch}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            초기화
-          </button>
-        </div>
-        
-        {/* 검색 상태 표시 */}
-        {isSearching && (
-          <div style={{
-            color: '#007bff', 
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            🔍 검색 중...
-          </div>
-        )}
-        
-        {searchKeyword && !isSearching && searchResults.data && (
-          <div style={{
-            color: '#28a745', 
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            📊 검색 결과: {searchResults.total}개 영화
-          </div>
-        )}
-      </div>
-
       <div style={{marginBottom: '20px', textAlign: 'center'}}>
         <button 
           onClick={handleAddMovie}
@@ -1563,6 +1391,56 @@ function App() {
     );
   };
 
+  // 검색 결과 전용 렌더링 함수
+  const renderSearchResults = () => (
+    <div className="movie-grid">
+      {searchResults.data && searchResults.data.length > 0 ? (
+        searchResults.data.map((item, index) => (
+          <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
+            <div className="movie-poster">
+              {item.posterUrl ? (
+                <img src={item.posterUrl} alt={item.movieNm} />
+              ) : (
+                <div className="no-poster">No Poster</div>
+              )}
+            </div>
+            <div className="movie-info">
+              <h3>{item.movieNm}</h3>
+              <div className="movie-details">
+                <p><strong>개봉일:</strong> {item.openDt || '-'}</p>
+                <p><strong>장르:</strong> {item.genreNm || '-'}</p>
+                <p><strong>제작국가:</strong> {item.nationNm || '-'}</p>
+                <p><strong>상태:</strong> {item.status || '-'}</p>
+              </div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+          {isSearching ? '데이터를 불러오는 중...' : `"${searchKeyword}" 검색 결과가 없습니다.`}
+        </div>
+      )}
+      {/* 페이지네이션 */}
+      {searchResults.data && searchResults.data.length > 0 && (
+        <div className="pagination">
+          <button 
+            onClick={() => searchMoviesByTitle(searchKeyword, searchResults.page - 1)}
+            disabled={searchResults.page === 0}
+          >
+            이전
+          </button>
+          <span>페이지 {searchResults.page + 1} / {searchResults.totalPages}</span>
+          <button 
+            onClick={() => searchMoviesByTitle(searchKeyword, searchResults.page + 1)}
+            disabled={searchResults.page >= searchResults.totalPages - 1}
+          >
+            다음
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="App">
       {showSocialJoin ? (
@@ -1594,6 +1472,75 @@ function App() {
                 </button>
               </div>
             )}
+            {/* 헤더 검색창 */}
+            <div style={{
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '10px', 
+              marginTop: '15px',
+              flexWrap: 'wrap'
+            }}>
+              <input
+                type="text"
+                placeholder="영화 제목을 입력하세요..."
+                value={searchKeyword}
+                onChange={handleSearchChange}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                style={{
+                  padding: '10px 15px',
+                  border: '2px solid #007bff',
+                  borderRadius: '5px',
+                  width: '300px',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+              <button 
+                onClick={handleSearch}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                🔍 검색
+              </button>
+              <button 
+                onClick={handleClearSearch}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                초기화
+              </button>
+            </div>
+            
+            {/* 검색 상태 표시 */}
+            {isSearching && (
+              <div style={{
+                color: '#007bff', 
+                textAlign: 'center',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                marginTop: '10px'
+              }}>
+                🔍 검색 중...
+              </div>
+            )}
+            {/* 검색 결과 개수 메시지 완전 삭제 */}
           </div>
           
           <div className="container">
@@ -1687,282 +1634,217 @@ function App() {
                 </div>
               )}
 
-              {activeTab === 'stats' && renderStats()}
-              {activeTab === 'movie-list' && renderMovieList()}
-              {activeTab === 'movie-detail' && renderMovieDetail()}
-              {activeTab === 'box-office' && renderBoxOffice()}
-              {activeTab === 'box-office-dto' && renderBoxOfficeDto()}
-              {activeTab === 'movie-detail-dto' && renderMovieDetailDto()}
-              {activeTab === 'movie-list-dto' && renderMovieListDto()}
-              {activeTab === 'top-rated' && (
-                <div>
-                  <div style={{marginBottom: '20px'}}>
-                    <button onClick={fetchTopRated} style={{marginRight: '10px'}}>평점 높은 영화 조회</button>
-                    <button onClick={handleRefresh}>새로고침</button>
-                  </div>
-                  <div className="movie-grid">
-                    {topRatedData.length > 0 ? (
-                      topRatedData.map((movie, index) => (
-                        <div key={index} className="movie-card">
-                          <div className="movie-poster">
-                            {movie.posterUrl ? (
-                              <img src={movie.posterUrl} alt={movie.movieNm} />
-                            ) : (
-                              <div className="no-poster">No Poster</div>
-                            )}
-                          </div>
-                          <div className="movie-info">
-                            <h3>{movie.movieNm}</h3>
-                            <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
-                            <div className="movie-details">
-                              <p><strong>평균 평점:</strong> ⭐ {movie.averageRating.toFixed(1)}</p>
-                              <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
-                              <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
-                        평점 높은 영화가 없습니다.
+              {searchExecuted ? (
+                renderSearchResults()
+              ) : (
+                <>
+                  {activeTab === 'stats' && renderStats()}
+                  {activeTab === 'movie-list' && renderMovieList()}
+                  {activeTab === 'movie-detail' && renderMovieDetail()}
+                  {activeTab === 'box-office' && renderBoxOffice()}
+                  {activeTab === 'box-office-dto' && renderBoxOfficeDto()}
+                  {activeTab === 'movie-detail-dto' && renderMovieDetailDto()}
+                  {activeTab === 'movie-list-dto' && renderMovieListDto()}
+                  {activeTab === 'top-rated' && (
+                    <div>
+                      <div style={{marginBottom: '20px'}}>
+                        <button onClick={fetchTopRated} style={{marginRight: '10px'}}>평점 높은 영화 조회</button>
+                        <button onClick={handleRefresh}>새로고침</button>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              {activeTab === 'popular' && (
-                <div>
-                  <div style={{marginBottom: '20px'}}>
-                    <button onClick={fetchPopularMovies} style={{marginRight: '10px'}}>인기 영화 조회</button>
-                    <button onClick={handleRefresh}>새로고침</button>
-                  </div>
-                  <div className="movie-grid">
-                    {popularMoviesData.length > 0 ? (
-                      popularMoviesData.map((movie, index) => (
-                        <div key={index} className="movie-card">
-                          <div className="movie-poster">
-                            {movie.posterUrl ? (
-                              <img src={movie.posterUrl} alt={movie.movieNm} />
-                            ) : (
-                              <div className="no-poster">No Poster</div>
-                            )}
-                          </div>
-                          <div className="movie-info">
-                            <h3>{movie.movieNm}</h3>
-                            <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
-                            <div className="movie-details">
-                              <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
-                              <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
-                              <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
-                        인기 영화가 없습니다.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              {activeTab === 'coming-soon' && (
-                <div>
-                  <div style={{marginBottom: '20px'}}>
-                    <button onClick={() => fetchComingSoon()} style={{marginRight: '10px'}}>개봉예정작 조회</button>
-                    <button onClick={handleRefresh}>새로고침</button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const response = await axios.get('http://localhost:80/data/api/movie-status-counts');
-                          alert('영화 상태별 개수: ' + JSON.stringify(response.data, null, 2));
-                        } catch (err) {
-                          alert('디버깅 정보 조회 실패: ' + err.message);
-                        }
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        fontSize: '14px'
-                      }}
-                    >
-                      🔍 MovieDetail 디버깅
-                    </button>
-                  </div>
-                  <div className="movie-grid">
-                    {comingSoonData.data && comingSoonData.data.length > 0 ? (
-                      comingSoonData.data.map((movie, index) => (
-                        <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
-                          <div className="movie-poster">
-                            {movie.posterUrl ? (
-                              <img src={movie.posterUrl} alt={movie.movieNm} />
-                            ) : (
-                              <div className="no-poster">No Poster</div>
-                            )}
-                          </div>
-                          <div className="movie-info">
-                            <h3>{movie.movieNm}</h3>
-                            <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
-                            <div className="movie-details">
-                              <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
-                              <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
-                              <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
-                              <p><strong>관람등급:</strong> {movie.watchGradeNm || '-'}</p>
-                              <p><strong>상태:</strong> {movie.status || '-'}</p>
-                              {movie.directorName && (
-                                <p><strong>감독:</strong> {movie.directorName}</p>
-                              )}
-                              {movie.showTm > 0 && (
-                                <p><strong>상영시간:</strong> {movie.showTm}분</p>
-                              )}
-                              {movie.companyNm && (
-                                <p><strong>제작사:</strong> {movie.companyNm}</p>
-                              )}
-                              {movie.averageRating > 0 && (
-                                <p><strong>평점:</strong> ⭐ {movie.averageRating.toFixed(1)}</p>
-                              )}
-                              {movie.description && (
-                                <div className="movie-description">
-                                  <p><strong>줄거리:</strong></p>
-                                  <p>{movie.description.length > 100 ? 
-                                    movie.description.substring(0, 100) + '...' : 
-                                    movie.description}</p>
+                      <div className="movie-grid">
+                        {topRatedData.length > 0 ? (
+                          topRatedData.map((movie, index) => (
+                            <div key={index} className="movie-card">
+                              <div className="movie-poster">
+                                {movie.posterUrl ? (
+                                  <img src={movie.posterUrl} alt={movie.movieNm} />
+                                ) : (
+                                  <div className="no-poster">No Poster</div>
+                                )}
+                              </div>
+                              <div className="movie-info">
+                                <h3>{movie.movieNm}</h3>
+                                <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
+                                <div className="movie-details">
+                                  <p><strong>평균 평점:</strong> ⭐ {movie.averageRating.toFixed(1)}</p>
+                                  <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
+                                  <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
                                 </div>
-                              )}
+                              </div>
                             </div>
+                          ))
+                        ) : (
+                          <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+                            평점 높은 영화가 없습니다.
                           </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
-                        {loading ? '데이터를 불러오는 중...' : '개봉예정작이 없습니다.'}
+                        )}
                       </div>
-                    )}
-                  </div>
-                  {comingSoonData.data && comingSoonData.data.length > 0 && (
-                    <div className="pagination">
-                      <button 
-                        onClick={() => fetchComingSoon(comingSoonData.page - 1)}
-                        disabled={comingSoonData.page === 0}
-                      >
-                        이전
-                      </button>
-                      <span>페이지 {comingSoonData.page + 1} / {comingSoonData.totalPages}</span>
-                      <button 
-                        onClick={() => fetchComingSoon(comingSoonData.page + 1)}
-                        disabled={comingSoonData.page >= comingSoonData.totalPages - 1}
-                      >
-                        다음
-                      </button>
                     </div>
                   )}
-                </div>
-              )}
-              {activeTab === 'now-playing' && (
-                <div>
-                  <div className="movie-grid">
-                    {nowPlayingData.data && nowPlayingData.data.length > 0 ? (
-                      nowPlayingData.data.map((movie, index) => (
-                        <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
-                          <div className="movie-poster">
-                            {movie.posterUrl ? (
-                              <img src={movie.posterUrl} alt={movie.movieNm} />
-                            ) : (
-                              <div className="no-poster">No Poster</div>
-                            )}
-                          </div>
-                          <div className="movie-info">
-                            <h3>{movie.movieNm}</h3>
-                            <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
-                            <div className="movie-details">
-                              <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
-                              <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
-                              <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
-                              <p><strong>관람등급:</strong> {movie.watchGradeNm || '-'}</p>
-                              <p><strong>상태:</strong> {movie.status || '-'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
-                        {loading ? '데이터를 불러오는 중...' : '개봉중인 영화가 없습니다.'}
+                  {activeTab === 'popular' && (
+                    <div>
+                      <div style={{marginBottom: '20px'}}>
+                        <button onClick={fetchPopularMovies} style={{marginRight: '10px'}}>인기 영화 조회</button>
+                        <button onClick={handleRefresh}>새로고침</button>
                       </div>
-                    )}
-                  </div>
-                  {nowPlayingData.data && nowPlayingData.data.length > 0 && (
-                    <div className="pagination">
-                      <button 
-                        onClick={() => fetchNowPlaying(nowPlayingData.page - 1)}
-                        disabled={nowPlayingData.page === 0}
-                      >
-                        이전
-                      </button>
-                      <span>페이지 {nowPlayingData.page + 1} / {nowPlayingData.totalPages}</span>
-                      <button 
-                        onClick={() => fetchNowPlaying(nowPlayingData.page + 1)}
-                        disabled={nowPlayingData.page >= nowPlayingData.totalPages - 1}
-                      >
-                        다음
-                      </button>
+                      <div className="movie-grid">
+                        {popularMoviesData.length > 0 ? (
+                          popularMoviesData.map((movie, index) => (
+                            <div key={index} className="movie-card">
+                              <div className="movie-poster">
+                                {movie.posterUrl ? (
+                                  <img src={movie.posterUrl} alt={movie.movieNm} />
+                                ) : (
+                                  <div className="no-poster">No Poster</div>
+                                )}
+                              </div>
+                              <div className="movie-info">
+                                <h3>{movie.movieNm}</h3>
+                                <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
+                                <div className="movie-details">
+                                  <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
+                                  <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
+                                  <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+                            인기 영화가 없습니다.
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                </div>
-              )}
-              {activeTab === 'ended' && (
-                <div>
-                  <div className="movie-grid">
-                    {endedData.data && endedData.data.length > 0 ? (
-                      endedData.data.map((movie, index) => (
-                        <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
-                          <div className="movie-poster">
-                            {movie.posterUrl ? (
-                              <img src={movie.posterUrl} alt={movie.movieNm} />
-                            ) : (
-                              <div className="no-poster">No Poster</div>
-                            )}
-                          </div>
-                          <div className="movie-info">
-                            <h3>{movie.movieNm}</h3>
-                            <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
-                            <div className="movie-details">
-                              <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
-                              <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
-                              <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
-                              <p><strong>관람등급:</strong> {movie.watchGradeNm || '-'}</p>
-                              <p><strong>상태:</strong> {movie.status || '-'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
-                        {loading ? '데이터를 불러오는 중...' : '상영종료된 영화가 없습니다.'}
+                  {activeTab === 'coming-soon' && (
+                    <div>
+                      <div style={{marginBottom: '20px'}}>
+                        <button onClick={() => fetchComingSoon()} style={{marginRight: '10px'}}>개봉예정작 조회</button>
+                        <button onClick={handleRefresh}>새로고침</button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const response = await axios.get('http://localhost:80/data/api/movie-status-counts');
+                              alert('영화 상태별 개수: ' + JSON.stringify(response.data, null, 2));
+                            } catch (err) {
+                              alert('디버깅 정보 조회 실패: ' + err.message);
+                            }
+                          }}
+                          style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          🔍 MovieDetail 디버깅
+                        </button>
                       </div>
-                    )}
-                  </div>
-                  {endedData.data && endedData.data.length > 0 && (
-                    <div className="pagination">
-                      <button 
-                        onClick={() => fetchEnded(endedData.page - 1)}
-                        disabled={endedData.page === 0}
-                      >
-                        이전
-                      </button>
-                      <span>페이지 {endedData.page + 1} / {endedData.totalPages}</span>
-                      <button 
-                        onClick={() => fetchEnded(endedData.page + 1)}
-                        disabled={endedData.page >= endedData.totalPages - 1}
-                      >
-                        다음
-                      </button>
+                      <div className="movie-grid">
+                        {comingSoonData.data && comingSoonData.data.length > 0 ? (
+                          comingSoonData.data.map((movie, index) => (
+                            <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
+                              <div className="movie-poster">
+                                {movie.posterUrl ? (
+                                  <img src={movie.posterUrl} alt={movie.movieNm} />
+                                ) : (
+                                  <div className="no-poster">No Poster</div>
+                                )}
+                              </div>
+                              <div className="movie-info">
+                                <h3>{movie.movieNm}</h3>
+                                <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
+                                <div className="movie-details">
+                                  <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
+                                  <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
+                                  <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
+                                  <p><strong>관람등급:</strong> {movie.watchGradeNm || '-'}</p>
+                                  <p><strong>상태:</strong> {movie.status || '-'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+                            {loading ? '데이터를 불러오는 중...' : '개봉예정작이 없습니다.'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                </div>
+                  {activeTab === 'now-playing' && (
+                    <div>
+                      <div className="movie-grid">
+                        {nowPlayingData.data && nowPlayingData.data.length > 0 ? (
+                          nowPlayingData.data.map((movie, index) => (
+                            <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
+                              <div className="movie-poster">
+                                {movie.posterUrl ? (
+                                  <img src={movie.posterUrl} alt={movie.movieNm} />
+                                ) : (
+                                  <div className="no-poster">No Poster</div>
+                                )}
+                              </div>
+                              <div className="movie-info">
+                                <h3>{movie.movieNm}</h3>
+                                <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
+                                <div className="movie-details">
+                                  <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
+                                  <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
+                                  <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
+                                  <p><strong>관람등급:</strong> {movie.watchGradeNm || '-'}</p>
+                                  <p><strong>상태:</strong> {movie.status || '-'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+                            {loading ? '데이터를 불러오는 중...' : '개봉중인 영화가 없습니다.'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === 'ended' && (
+                    <div>
+                      <div className="movie-grid">
+                        {endedData.data && endedData.data.length > 0 ? (
+                          endedData.data.map((movie, index) => (
+                            <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
+                              <div className="movie-poster">
+                                {movie.posterUrl ? (
+                                  <img src={movie.posterUrl} alt={movie.movieNm} />
+                                ) : (
+                                  <div className="no-poster">No Poster</div>
+                                )}
+                              </div>
+                              <div className="movie-info">
+                                <h3>{movie.movieNm}</h3>
+                                <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
+                                <div className="movie-details">
+                                  <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
+                                  <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
+                                  <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
+                                  <p><strong>관람등급:</strong> {movie.watchGradeNm || '-'}</p>
+                                  <p><strong>상태:</strong> {movie.status || '-'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+                            {loading ? '데이터를 불러오는 중...' : '상영종료 영화가 없습니다.'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
