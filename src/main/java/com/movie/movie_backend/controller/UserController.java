@@ -328,8 +328,19 @@ public class UserController {
 
     // REST API - 로그아웃
     @PostMapping("/api/logout")
-    public ResponseEntity<Map<String, Object>> logoutApi() {
+    public ResponseEntity<Map<String, Object>> logoutApi(HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
+        
+        // 세션에서 소셜 로그인 정보 정리
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.removeAttribute("USER_LOGIN_ID");
+            session.removeAttribute("SOCIAL_USER_ID");
+            session.removeAttribute("SOCIAL_PROVIDER");
+            session.removeAttribute("SOCIAL_PROVIDER_ID");
+            session.removeAttribute("SPRING_SECURITY_CONTEXT");
+            log.info("세션 정보 정리 완료");
+        }
         
         // Spring Security 컨텍스트 클리어
         SecurityContextHolder.clearContext();
@@ -433,9 +444,54 @@ public class UserController {
             // 세션에서 직접 사용자 정보 확인
             HttpSession session = request.getSession(false);
             if (session != null) {
-                String sessionLoginId = (String) session.getAttribute("USER_LOGIN_ID");
-                log.info("세션에서 USER_LOGIN_ID: {}", sessionLoginId);
+                Object sessionLoginIdObj = session.getAttribute("USER_LOGIN_ID");
+                String sessionLoginId = null;
+                if (sessionLoginIdObj != null) {
+                    sessionLoginId = String.valueOf(sessionLoginIdObj);
+                }
+                Object socialUserIdObj = session.getAttribute("SOCIAL_USER_ID");
+                String socialUserId = null;
+                if (socialUserIdObj != null) {
+                    socialUserId = String.valueOf(socialUserIdObj);
+                }
+                String socialProvider = (String) session.getAttribute("SOCIAL_PROVIDER");
+                String socialProviderId = (String) session.getAttribute("SOCIAL_PROVIDER_ID");
                 
+                log.info("세션에서 USER_LOGIN_ID: {}", sessionLoginId);
+                log.info("세션에서 SOCIAL_USER_ID: {}", socialUserId);
+                log.info("세션에서 SOCIAL_PROVIDER: {}", socialProvider);
+                log.info("세션에서 SOCIAL_PROVIDER_ID: {}", socialProviderId);
+                
+                // 소셜 로그인 사용자인 경우
+                if (socialUserId != null && socialProvider != null && socialProviderId != null) {
+                    try {
+                        Provider providerEnum = Provider.valueOf(socialProvider.toUpperCase());
+                        User socialUser = userRepository.findByProviderAndProviderId(providerEnum, socialProviderId).orElse(null);
+                        if (socialUser != null) {
+                            log.info("소셜 사용자 조회 성공: {}", socialUser.getEmail());
+                            return ResponseEntity.ok()
+                                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                                .header("Pragma", "no-cache")
+                                .header("Expires", "0")
+                                .body(Map.of(
+                                    "success", true,
+                                    "user", Map.of(
+                                        "id", socialUser.getId(),
+                                        "loginId", socialUser.getLoginId() != null ? socialUser.getLoginId() : "",
+                                        "email", socialUser.getEmail(),
+                                        "nickname", socialUser.getNickname(),
+                                        "role", socialUser.getRole().name(),
+                                        "isAdmin", socialUser.isAdmin(),
+                                        "isUser", socialUser.isUser()
+                                    )
+                                ));
+                        }
+                    } catch (Exception e) {
+                        log.error("소셜 사용자 조회 실패", e);
+                    }
+                }
+                
+                // 일반 로그인 사용자인 경우
                 if (sessionLoginId != null) {
                     User sessionUser = userRepository.findByLoginId(sessionLoginId).orElse(null);
                     if (sessionUser != null) {
