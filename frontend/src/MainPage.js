@@ -34,10 +34,28 @@ const MainPage = ({
   renderComingSoon,
   renderNowPlaying,
   renderEnded,
+  renderSearchResults,
+  searchExecuted,
   currentUser,
   handleLogout,
   activeMenu,
-  setActiveMenu
+  setActiveMenu,
+  handleMovieClick,
+  handleEditMovie,
+  handleAddMovie,
+  handleDeleteMovie,
+  handleSaveMovie,
+  handleLikeMovie,
+  selectedMovie,
+  showMovieDetail,
+  setShowMovieDetail,
+  showMovieForm,
+  setShowMovieForm,
+  editingMovie,
+  movieForm,
+  setMovieForm,
+  renderMovieDetailModal,
+  renderMovieForm
 }) => {
   // 탭별 렌더링 함수 매핑
   const renderByMenu = {
@@ -55,20 +73,41 @@ const MainPage = ({
     '상영종료': renderEnded,
   };
 
+  // 로그인 버튼 클릭 시 /login으로 이동
+  const handleLoginClick = () => {
+    window.location.href = '/login';
+  };
+
   return (
     <div className="mainpage-root">
       {/* 상단 헤더 */}
       <header className="mainpage-header">
         <span className="mainpage-title">영화 데이터 관리 시스템</span>
-        <div className="mainpage-user-area">
-          {currentUser && (
-            <>
-              <span>안녕하세요, <b>{currentUser.nickname}</b>님!</span>
-              <button className="mainpage-logout-btn" onClick={handleLogout}>로그아웃</button>
-            </>
-          )}
+        <div style={{ flex: 1 }} />
+        {/* 통합 검색창 */}
+        <div className="mainpage-global-search">
+          <input
+            type="text"
+            value={searchKeyword}
+            onChange={e => setSearchKeyword(e.target.value)}
+            placeholder="영화/유저 검색..."
+            className="mainpage-search-input"
+            style={{ width: 220, marginRight: 8 }}
+          />
+          <button onClick={handleSearch} className="mainpage-search-btn">검색</button>
         </div>
       </header>
+      {/* 로그인/로그아웃/환영 메시지 (검색창 아래) */}
+      <div className="mainpage-user-area" style={{ textAlign: 'right', margin: '16px 32px 0 0' }}>
+        {currentUser ? (
+          <>
+            <span>안녕하세요, <b>{currentUser.nickname}</b>님!</span>
+            <button className="mainpage-logout-btn" onClick={handleLogout} style={{ marginLeft: 8 }}>로그아웃</button>
+          </>
+        ) : (
+          <button className="mainpage-login-btn" onClick={handleLoginClick}>로그인</button>
+        )}
+      </div>
       <div className="mainpage-body">
         {/* 좌측 넓은 사이드바 */}
         <aside className="mainpage-sidebar">
@@ -88,42 +127,33 @@ const MainPage = ({
         </aside>
         {/* 메인 콘텐츠 */}
         <main className="mainpage-content">
-          {/* 검색창/등록버튼/검색결과 안내는 영화 상세 DTO 탭에서만 표시 */}
-          {activeMenu === '영화 상세 DTO' && (
+          {searchExecuted && searchKeyword.trim() ? (
+            renderSearchResults && renderSearchResults()
+          ) : (
             <>
-              <section className="mainpage-search-section">
-                <h3 className="mainpage-search-title">🔍 영화 검색</h3>
-                <div className="mainpage-search-row">
-                  <input
-                    type="text"
-                    value={searchKeyword}
-                    onChange={e => setSearchKeyword(e.target.value)}
-                    placeholder="영화 제목을 입력하세요"
-                    className="mainpage-search-input"
-                  />
-                  <button onClick={handleSearch} className="mainpage-search-btn">검색</button>
-                  <button onClick={handleClearSearch} className="mainpage-clear-btn">초기화</button>
-                  <span className="mainpage-search-result-info">
-                    📊 검색 결과: <span style={{ color: '#4baf50', fontWeight: 700 }}>{searchResults?.data?.length || 0}</span>개 영화
-                  </span>
+              {activeMenu === '영화 상세 DTO' && currentUser && currentUser.isAdmin && (
+                <div className="mainpage-register-btn-row">
+                  <button className="mainpage-register-btn" onClick={handleAddMovie}>+ 영화 등록</button>
                 </div>
+              )}
+              <section className="mainpage-movie-list-section">
+                {renderByMenu[activeMenu]
+                  ? renderByMenu[activeMenu]()
+                  : <div style={{marginTop: '80px', textAlign: 'center', color: '#a18cd1', fontSize: '1.3rem'}}>
+                      "{activeMenu}" 페이지는 아직 구현되지 않았습니다.
+                    </div>
+                }
               </section>
-              <div className="mainpage-register-btn-row">
-                <button className="mainpage-register-btn">+ 영화 등록</button>
-              </div>
             </>
           )}
-          {/* 탭별 정보 렌더링 */}
-          <section className="mainpage-movie-list-section">
-            {renderByMenu[activeMenu]
-              ? renderByMenu[activeMenu]()
-              : <div style={{marginTop: '80px', textAlign: 'center', color: '#a18cd1', fontSize: '1.3rem'}}>
-                  "{activeMenu}" 페이지는 아직 구현되지 않았습니다.
-                </div>
-            }
-          </section>
         </main>
       </div>
+      
+      {/* 영화 상세보기 모달 */}
+      {renderMovieDetailModal && renderMovieDetailModal()}
+      
+      {/* 영화 등록/수정 폼 모달 */}
+      {renderMovieForm && renderMovieForm()}
     </div>
   );
 };

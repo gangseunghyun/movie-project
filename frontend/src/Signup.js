@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './Login.css';
+import { useNavigate } from 'react-router-dom';
 
-function Signup({ onSignupSuccess, onSwitchToLogin }) {
+function Signup({ onSignupSuccess }) {
   const [formData, setFormData] = useState({
     loginId: '',
     password: '',
@@ -19,6 +20,7 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
     email: { available: null, message: '' },
     nickname: { available: null, message: '' }
   });
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -109,6 +111,7 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
       const response = await axios.post('http://localhost:80/api/users/join', formData);
       if (response.data.success) {
         onSignupSuccess(response.data);
+        navigate('/login');
       } else {
         setError(response.data.message);
       }
@@ -246,7 +249,7 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
           </button>
         </form>
         <div className="login-footer">
-          <button onClick={onSwitchToLogin} className="switch-button">
+          <button onClick={() => navigate('/login')} className="switch-button">
             로그인으로 돌아가기
           </button>
         </div>

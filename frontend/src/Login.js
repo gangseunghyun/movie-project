@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './Login.css';
+import { useNavigate } from 'react-router-dom';
 
-function Login({ onLoginSuccess, onSwitchToSignup }) {
+function Login({ onLoginSuccess }) {
   const [formData, setFormData] = useState({
     loginId: '',
     password: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -29,6 +31,7 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
 
       if (response.data.success) {
         onLoginSuccess(response.data.user);
+        navigate('/');
       } else {
         setError(response.data.message);
       }
@@ -146,7 +149,7 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
           </button>
         </form>
         <div className="login-footer">
-          <button onClick={onSwitchToSignup} className="switch-button">
+          <button onClick={() => navigate('/signup')} className="switch-button">
             회원가입
           </button>
         </div>
