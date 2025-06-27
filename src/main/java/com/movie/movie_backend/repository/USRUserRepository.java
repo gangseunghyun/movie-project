@@ -57,4 +57,10 @@ public interface USRUserRepository extends JpaRepository<User, Long> {
     default boolean existsByUsername(String username) {
         return existsByLoginId(username);
     }
+
+    // 닉네임 포함 검색 (대소문자 구분 없음)
+    List<User> findByNicknameContainingIgnoreCase(String nickname);
+
+    // 닉네임으로 유저 단일 조회 (유일)
+    Optional<User> findOneByNickname(String nickname);
 }

@@ -530,4 +530,192 @@
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+}
+
+/* 메인페이지 전체 배경 */
+.mainpage-root {
+  min-height: 100vh;
+  background: #f7f7fa;
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', Arial, sans-serif;
+}
+
+/* 상단 헤더 */
+.mainpage-header {
+  width: 100%;
+  background: linear-gradient(90deg, #a18cd1 0%, #fbc2eb 100%);
+  color: #fff;
+  padding: 32px 0 24px 40px;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(160, 140, 209, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mainpage-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.mainpage-user-area {
+  margin-right: 40px;
+  font-size: 1rem;
+}
+
+/* 본문 레이아웃 */
+.mainpage-body {
+  display: flex;
+  min-height: 80vh;
+}
+
+/* 좌측 사이드바 */
+.mainpage-sidebar {
+  width: 220px;
+  background: #fff;
+  border-radius: 16px;
+  margin: 32px 24px 32px 40px;
+  box-shadow: 0 2px 12px rgba(160, 140, 209, 0.07);
+  padding: 32px 0 32px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.mainpage-sidebar ul {
+  list-style: none;
+  padding: 0 0 0 24px;
+  margin: 0;
+  width: 100%;
+}
+.mainpage-sidebar li {
+  font-size: 1.15rem;
+  color: #6c5b7b;
+  padding: 16px 0 16px 0;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  transition: background 0.2s, border 0.2s;
+  width: 100%;
+}
+.mainpage-sidebar li.active {
+  background: #f3e9ff;
+  border-left: 4px solid #a18cd1;
+  color: #a18cd1;
+  font-weight: 700;
+}
+
+/* 메인 콘텐츠 */
+.mainpage-content {
+  flex: 1;
+  margin: 32px 40px 32px 0;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(160, 140, 209, 0.07);
+  padding: 40px 48px 48px 48px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 검색 섹션 */
+.mainpage-search-section {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto 24px auto;
+  text-align: center;
+}
+.mainpage-search-section h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #4b3869;
+}
+.mainpage-search-input {
+  width: 65%;
+  padding: 10px 14px;
+  border: 1.5px solid #a18cd1;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-right: 8px;
+  outline: none;
+  transition: border 0.2s;
+}
+.mainpage-search-input:focus {
+  border: 2px solid #fbc2eb;
+}
+.mainpage-search-btn, .mainpage-clear-btn {
+  padding: 10px 18px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  margin-right: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+.mainpage-search-btn {
+  background: #a18cd1;
+  color: #fff;
+}
+.mainpage-search-btn:hover {
+  background: #7c5fa3;
+}
+.mainpage-clear-btn {
+  background: #e0e0e0;
+  color: #4b3869;
+}
+.mainpage-clear-btn:hover {
+  background: #cfcfcf;
+}
+.mainpage-search-info {
+  margin-top: 10px;
+  color: #a18cd1;
+  font-size: 1rem;
+}
+
+/* 영화 등록 버튼 */
+.mainpage-register-btn {
+  background: #28a745;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0 auto 24px auto;
+  display: block;
+  transition: background 0.2s;
+}
+.mainpage-register-btn:hover {
+  background: #218838;
+}
+
+/* 영화 카드형 목록 영역 */
+.mainpage-movie-list-section {
+  width: 100%;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .mainpage-body {
+    flex-direction: column;
+  }
+  .mainpage-sidebar {
+    width: 100%;
+    margin: 16px 0 0 0;
+    border-radius: 0;
+    box-shadow: none;
+    align-items: center;
+  }
+  .mainpage-content {
+    margin: 16px 0 0 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 24px 8px 32px 8px;
+  }
 } 

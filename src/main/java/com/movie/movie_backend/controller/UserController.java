@@ -686,4 +686,27 @@ public class UserController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    // 유저 닉네임 포함 검색 API
+    @GetMapping("/api/users/search")
+    public ResponseEntity<?> searchUsersByNickname(@RequestParam String nickname) {
+        var users = userRepository.findByNicknameContainingIgnoreCase(nickname);
+        // 닉네임만 리스트로 반환
+        return ResponseEntity.ok(users.stream().map(User::getNickname).toList());
+    }
+
+    // 유저 닉네임 단일 조회 API (마이페이지)
+    @GetMapping("/api/users/nickname/{nickname}")
+    public ResponseEntity<?> getUserByNickname(@PathVariable String nickname) {
+        var userOpt = userRepository.findOneByNickname(nickname);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        var user = userOpt.get();
+        // 심플 마이페이지: 닉네임, 이메일만 반환
+        Map<String, Object> result = new HashMap<>();
+        result.put("nickname", user.getNickname());
+        result.put("email", user.getEmail());
+        return ResponseEntity.ok(result);
+    }
 } 
