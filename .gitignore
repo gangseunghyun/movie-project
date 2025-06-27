@@ -86,14 +86,14 @@ jacoco.exec
 Thumbs.db
 
 # React / Node.js 관련
-node_modules/
-build/
-dist/
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-react-app/
+react-app/node_modules/
+react-app/build/
+react-app/dist/
+react-app/.env.local
+react-app/.env.development.local
+react-app/.env.test.local
+react-app/.env.production.local
+
 
 # npm/yarn 로그파일
 npm-debug.log*
