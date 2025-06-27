@@ -102,10 +102,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     Optional<User> existingByEmail = userRepository.findByEmail(finalEmail);
                     if (existingByEmail.isPresent()) {
                         Provider existProvider = existingByEmail.get().getProvider();
-                        if (existProvider == Provider.LOCAL) {
+                        if (existProvider == null || existProvider == Provider.LOCAL) {
                             throw new AuthenticationServiceException("PROVIDER:local|이 이메일은 일반 계정으로 가입되어 있습니다. 아이디/비밀번호로 로그인해 주세요.");
                         } else {
-                            throw new AuthenticationServiceException("PROVIDER:" + existProvider.name() + "|이 이메일은 '" + existProvider.name() + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.");
+                            String providerName = existProvider != null ? existProvider.name() : "UNKNOWN";
+                            throw new AuthenticationServiceException("PROVIDER:" + providerName + "|이 이메일은 '" + providerName + "' 소셜 계정입니다. 해당 소셜 로그인 버튼을 이용해 주세요.");
                         }
                     }
                     // 신규 회원이면 생성

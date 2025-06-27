@@ -541,9 +541,9 @@ public class UserController {
                     "success", true,
                     "user", Map.of(
                         "id", currentUser.getId(),
-                        "loginId", currentUser.getLoginId(),
-                        "email", currentUser.getEmail(),
-                        "nickname", currentUser.getNickname(),
+                        "loginId", currentUser.getLoginId() != null ? currentUser.getLoginId() : "",
+                        "email", currentUser.getEmail() != null ? currentUser.getEmail() : "",
+                        "nickname", currentUser.getNickname() != null ? currentUser.getNickname() : "",
                         "role", currentUser.getRole().name(),
                         "isAdmin", currentUser.isAdmin(),
                         "isUser", currentUser.isUser()
