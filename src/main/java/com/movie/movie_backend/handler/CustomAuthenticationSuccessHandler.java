@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import java.io.IOException;
+import java.util.Map;
 
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     @Autowired
@@ -26,6 +27,15 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             providerId = oauth2User.getAttribute("providerId");
             if (providerId == null) providerId = oauth2User.getAttribute("sub");
             email = oauth2User.getAttribute("email");
+            
+            // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+            if (email == null && "KAKAO".equals(provider)) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+                if (kakaoAccount != null) {
+                    email = (String) kakaoAccount.get("email");
+                }
+            }
         }
         
         // DB에서 회원 여부만 판단

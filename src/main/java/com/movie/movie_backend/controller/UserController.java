@@ -287,6 +287,15 @@ public class UserController {
         String provider = oauth2User.getAttribute("provider");
         String providerId = oauth2User.getAttribute("providerId");
         
+        // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+        if (email == null && "KAKAO".equals(provider)) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+            if (kakaoAccount != null) {
+                email = (String) kakaoAccount.get("email");
+            }
+        }
+        
         if (email == null || provider == null || providerId == null) {
             response.put("success", false);
             response.put("message", "소셜 로그인 정보가 올바르지 않습니다.");
@@ -327,6 +336,89 @@ public class UserController {
         
         response.put("success", true);
         response.put("message", "로그아웃 성공");
+        return ResponseEntity.ok(response);
+    }
+
+    // REST API - 닉네임 변경
+    @PostMapping("/api/update-nickname")
+    public ResponseEntity<Map<String, Object>> updateNickname(@RequestBody Map<String, String> req) {
+        Map<String, Object> response = new HashMap<>();
+        String newNickname = req.get("nickname");
+        
+        if (newNickname == null || newNickname.isBlank()) {
+            response.put("success", false);
+            response.put("message", "닉네임을 입력해 주세요.");
+            return ResponseEntity.ok(response);
+        }
+        
+        // Spring Security Authentication에서 사용자 정보 추출
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || 
+            "anonymousUser".equals(authentication.getName())) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.ok(response);
+        }
+        
+        User currentUser = null;
+        
+        // OAuth2 사용자인 경우
+        if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User) {
+            org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
+                (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
+            
+            String email = oauth2User.getAttribute("email");
+            String provider = oauth2User.getAttribute("provider");
+            String providerId = oauth2User.getAttribute("providerId");
+            
+            // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+            if (email == null && "KAKAO".equals(provider)) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+                if (kakaoAccount != null) {
+                    email = (String) kakaoAccount.get("email");
+                }
+            }
+            
+            if (email != null && provider != null && providerId != null) {
+                try {
+                    Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+                    currentUser = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
+                } catch (Exception e) {
+                    log.error("OAuth2 사용자 조회 실패", e);
+                }
+            }
+        }
+        // Spring Security로 로그인한 사용자인 경우
+        else if (authentication.getPrincipal() instanceof User) {
+            currentUser = (User) authentication.getPrincipal();
+        }
+        // 기타 경우 (loginId로 조회)
+        else {
+            String loginId = authentication.getName();
+            currentUser = userRepository.findByLoginId(loginId).orElse(null);
+        }
+        
+        if (currentUser == null) {
+            response.put("success", false);
+            response.put("message", "사용자를 찾을 수 없습니다.");
+            return ResponseEntity.ok(response);
+        }
+        
+        // 닉네임 중복 체크 (자신의 기존 닉네임은 제외)
+        if (!newNickname.equals(currentUser.getNickname()) && userRepository.existsByNickname(newNickname)) {
+            response.put("success", false);
+            response.put("message", "이미 사용 중인 닉네임입니다.");
+            return ResponseEntity.ok(response);
+        }
+        
+        // 닉네임 변경
+        currentUser.setNickname(newNickname);
+        userRepository.save(currentUser);
+        
+        response.put("success", true);
+        response.put("message", "닉네임이 성공적으로 변경되었습니다.");
+        response.put("nickname", newNickname);
         return ResponseEntity.ok(response);
     }
 
@@ -391,6 +483,15 @@ public class UserController {
                     String providerId = oauth2User.getAttribute("providerId");
                     
                     log.info("OAuth2 사용자 정보 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
+                    
+                    // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+                    if (email == null && "KAKAO".equals(provider)) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+                        if (kakaoAccount != null) {
+                            email = (String) kakaoAccount.get("email");
+                        }
+                    }
                     
                     if (email != null && provider != null && providerId != null) {
                         try {

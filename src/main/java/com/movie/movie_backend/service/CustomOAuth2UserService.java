@@ -144,6 +144,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         customAttributes.put("nickname", user.getNickname());
         customAttributes.put("provider", provider.name());
         customAttributes.put("providerId", providerId);
+        customAttributes.put("email", email);
         // sub는 providerId로 통일
         if ("naver".equals(registrationId)) {
             customAttributes.put("sub", providerId);

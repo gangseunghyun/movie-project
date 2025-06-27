@@ -206,4 +206,29 @@
 
 .validation-message.error {
   color: #dc3545;
+}
+
+/* 소셜 회원가입 페이지 스타일 */
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.checkbox-label .checkmark {
+  display: none;
 } 
