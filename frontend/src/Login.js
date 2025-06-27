@@ -33,7 +33,31 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
         setError(response.data.message);
       }
     } catch (err) {
-      setError(err.response?.data?.message || '로그인 중 오류가 발생했습니다.');
+      console.error('로그인 실패:', err);
+      if (err.response && err.response.data) {
+        const errorMessage = err.response.data.message;
+        
+        // Provider별 에러 메시지 처리
+        if (errorMessage.includes('PROVIDER:')) {
+          const parts = errorMessage.split('|');
+          if (parts.length >= 2) {
+            const provider = parts[0].replace('PROVIDER:', '');
+            const message = parts[1];
+            
+            if (provider === 'local') {
+              setError('이 이메일은 일반 계정으로 가입되어 있습니다. 아이디/비밀번호로 로그인해 주세요.');
+            } else {
+              setError(`이 이메일은 ${getProviderDisplayName(provider)} 계정입니다. ${getProviderDisplayName(provider)} 로그인을 이용해 주세요.`);
+            }
+          } else {
+            setError(errorMessage);
+          }
+        } else {
+          setError(errorMessage || '로그인에 실패했습니다.');
+        }
+      } else {
+        setError('로그인에 실패했습니다.');
+      }
     } finally {
       setLoading(false);
     }
@@ -41,6 +65,22 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
 
   const handleOAuth2Login = (provider) => {
     window.location.href = `http://localhost:80/oauth2/authorization/${provider}`;
+  };
+
+  // Provider 표시명 변환 함수
+  const getProviderDisplayName = (provider) => {
+    switch (provider.toUpperCase()) {
+      case 'GOOGLE':
+        return 'Google';
+      case 'KAKAO':
+        return 'Kakao';
+      case 'NAVER':
+        return 'Naver';
+      case 'FACEBOOK':
+        return 'Facebook';
+      default:
+        return provider;
+    }
   };
 
   return (

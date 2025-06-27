@@ -25,7 +25,7 @@ public class OAuth2Token {
     @Column(nullable = false)
     private String accessToken;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String refreshToken;
 
     @Column(nullable = false)

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Login from './Login';
 import Signup from './Signup';
+import SocialJoin from './SocialJoin';
 import './App.css';
 import { safeFetch } from './api';
 
@@ -35,6 +36,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showLogin, setShowLogin] = useState(true);
   const [showAuth, setShowAuth] = useState(true);
+  const [showSocialJoin, setShowSocialJoin] = useState(false);
   
   // 영화 관리 시스템 상태
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -69,6 +71,12 @@ function App() {
   // 로그인 상태 확인
   useEffect(() => {
     checkLoginStatus();
+    
+    // URL 경로 확인하여 social-join 페이지 표시
+    if (window.location.pathname === '/social-join') {
+      setShowSocialJoin(true);
+      setShowAuth(false);
+    }
   }, []);
 
   const checkLoginStatus = async () => {
@@ -1557,7 +1565,10 @@ function App() {
 
   return (
     <div className="App">
-      {showAuth ? (
+      {showSocialJoin ? (
+        // 소셜 로그인 닉네임 입력 페이지
+        <SocialJoin />
+      ) : showAuth ? (
         // 로그인/회원가입 화면
         showLogin ? (
           <Login 

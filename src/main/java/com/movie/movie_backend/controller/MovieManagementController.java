@@ -81,6 +81,15 @@ public class MovieManagementController {
             String provider = oauth2User.getAttribute("provider");
             String providerId = oauth2User.getAttribute("providerId");
             
+            // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+            if (email == null && "KAKAO".equals(provider)) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+                if (kakaoAccount != null) {
+                    email = (String) kakaoAccount.get("email");
+                }
+            }
+            
             log.info("OAuth2 속성 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
             
             if (email != null && provider != null && providerId != null) {
