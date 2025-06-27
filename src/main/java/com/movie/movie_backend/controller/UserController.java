@@ -7,6 +7,8 @@ import com.movie.movie_backend.repository.PasswordResetTokenRepository;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.service.MailService;
 import com.movie.movie_backend.service.USRUserService;
+import com.movie.movie_backend.constant.Provider;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -30,6 +34,7 @@ public class UserController {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -251,7 +256,7 @@ public class UserController {
 
     // REST API - 소셜 회원가입 추가 정보(닉네임, 약관동의)
     @PostMapping("/api/social-join-complete")
-    public ResponseEntity<Map<String, Object>> socialJoinComplete(@RequestBody Map<String, Object> req, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> socialJoinComplete(@RequestBody Map<String, Object> req) {
         Map<String, Object> response = new HashMap<>();
         String nickname = (String) req.get("nickname");
         Boolean agree = (Boolean) req.get("agree");
@@ -265,28 +270,45 @@ public class UserController {
             response.put("message", "약관에 동의해야 가입이 완료됩니다.");
             return ResponseEntity.ok(response);
         }
-        // 세션에서 소셜 사용자 정보 추출
-        String email = (String) session.getAttribute("SOCIAL_EMAIL");
-        String provider = (String) session.getAttribute("SOCIAL_PROVIDER");
-        String providerId = (String) session.getAttribute("SOCIAL_PROVIDER_ID");
-        if (email == null || provider == null || providerId == null) {
+        
+        // Spring Security Authentication에서 소셜 사용자 정보 추출
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || 
+            !(authentication.getPrincipal() instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User)) {
             response.put("success", false);
-            response.put("message", "소셜 로그인 세션이 만료되었습니다. 다시 로그인해 주세요.");
+            response.put("message", "소셜 로그인이 필요합니다.");
             return ResponseEntity.ok(response);
         }
+        
+        org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
+            (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
+        
+        String email = oauth2User.getAttribute("email");
+        String provider = oauth2User.getAttribute("provider");
+        String providerId = oauth2User.getAttribute("providerId");
+        
+        if (email == null || provider == null || providerId == null) {
+            response.put("success", false);
+            response.put("message", "소셜 로그인 정보가 올바르지 않습니다.");
+            return ResponseEntity.ok(response);
+        }
+        
         // 해당 유저 찾기
-        User user = userRepository.findByProviderAndProviderId(provider, providerId).orElse(null);
+        Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+        User user = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
         if (user == null) {
             response.put("success", false);
             response.put("message", "사용자를 찾을 수 없습니다. 다시 로그인해 주세요.");
             return ResponseEntity.ok(response);
         }
+        
         // 닉네임 중복 체크
         if (userRepository.existsByNickname(nickname)) {
             response.put("success", false);
             response.put("message", "이미 사용 중인 닉네임입니다.");
             return ResponseEntity.ok(response);
         }
+        
         user.setNickname(nickname);
         user.setSocialJoinCompleted(true);
         userRepository.save(user);
@@ -295,56 +317,14 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // REST API - 로그인
-    @PostMapping("/api/user-login")
-    public ResponseEntity<Map<String, Object>> loginApi(@RequestBody Map<String, String> loginRequest, HttpSession session) {
-        log.info("=== /api/user-login 호출됨 ===");
-        log.info("세션 ID: {}", session.getId());
-        
-        Map<String, Object> response = new HashMap<>();
-        String loginId = loginRequest.get("loginId");
-        String password = loginRequest.get("password");
-        
-        log.info("로그인 시도: {}", loginId);
-        
-        try {
-            User user = userService.authenticate(loginId, password);
-            log.info("인증 결과: {}", user != null ? "성공" : "실패");
-            
-            if (user != null) {
-                log.info("세션에 사용자 정보 저장: {}", user.getLoginId());
-                session.setAttribute("user", user);
-                log.info("사용자 역할: {}", user.getRole());
-                log.info("관리자 여부: {}", user.isAdmin());
-                
-                response.put("success", true);
-                response.put("message", "로그인 성공");
-                response.put("user", Map.of(
-                    "id", user.getId(),
-                    "loginId", user.getLoginId(),
-                    "nickname", user.getNickname(),
-                    "email", user.getEmail()
-                ));
-                return ResponseEntity.ok(response);
-            } else {
-                log.warn("로그인 실패: 잘못된 아이디/비밀번호");
-                response.put("success", false);
-                response.put("message", "아이디 또는 비밀번호가 올바르지 않습니다.");
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            log.error("로그인 중 예외 발생", e);
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
     // REST API - 로그아웃
     @PostMapping("/api/logout")
-    public ResponseEntity<Map<String, Object>> logoutApi(HttpSession session) {
+    public ResponseEntity<Map<String, Object>> logoutApi() {
         Map<String, Object> response = new HashMap<>();
-        session.invalidate();
+        
+        // Spring Security 컨텍스트 클리어
+        SecurityContextHolder.clearContext();
+        
         response.put("success", true);
         response.put("message", "로그아웃 성공");
         return ResponseEntity.ok(response);
@@ -354,17 +334,90 @@ public class UserController {
      * 현재 로그인한 사용자 정보 조회
      */
     @GetMapping("/api/current-user")
-    public ResponseEntity<Map<String, Object>> getCurrentUser(HttpSession session) {
+    public ResponseEntity<Map<String, Object>> getCurrentUser(HttpServletRequest request) {
         log.info("=== /api/current-user 호출됨 ===");
-        log.info("세션 ID: {}", session.getId());
         
         try {
-            log.info("세션에서 user 속성 조회 시도...");
-            User currentUser = (User) session.getAttribute("user");
-            log.info("세션에서 조회된 사용자: {}", currentUser);
+            // 세션에서 직접 사용자 정보 확인
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                String sessionLoginId = (String) session.getAttribute("USER_LOGIN_ID");
+                log.info("세션에서 USER_LOGIN_ID: {}", sessionLoginId);
+                
+                if (sessionLoginId != null) {
+                    User sessionUser = userRepository.findByLoginId(sessionLoginId).orElse(null);
+                    if (sessionUser != null) {
+                        log.info("세션에서 사용자 조회 성공: {}", sessionUser.getLoginId());
+                        return ResponseEntity.ok()
+                            .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                            .header("Pragma", "no-cache")
+                            .header("Expires", "0")
+                            .body(Map.of(
+                                "success", true,
+                                "user", Map.of(
+                                    "id", sessionUser.getId(),
+                                    "loginId", sessionUser.getLoginId(),
+                                    "email", sessionUser.getEmail(),
+                                    "nickname", sessionUser.getNickname(),
+                                    "role", sessionUser.getRole().name(),
+                                    "isAdmin", sessionUser.isAdmin(),
+                                    "isUser", sessionUser.isUser()
+                                )
+                            ));
+                    }
+                }
+            }
+            
+            // Spring Security Authentication에서 사용자 정보 가져오기
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            log.info("Authentication: {}", authentication);
+            log.info("Authentication Principal: {}", authentication.getPrincipal());
+            log.info("Authentication Principal Type: {}", authentication.getPrincipal().getClass().getName());
+            log.info("Authentication Name: {}", authentication.getName());
+            log.info("Authentication isAuthenticated: {}", authentication.isAuthenticated());
+            
+            User currentUser = null;
+            
+            if (authentication != null && authentication.isAuthenticated() && 
+                !"anonymousUser".equals(authentication.getName())) {
+                
+                // OAuth2 사용자인 경우
+                if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User) {
+                    org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
+                        (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
+                    
+                    String email = oauth2User.getAttribute("email");
+                    String provider = oauth2User.getAttribute("provider");
+                    String providerId = oauth2User.getAttribute("providerId");
+                    
+                    log.info("OAuth2 사용자 정보 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
+                    
+                    if (email != null && provider != null && providerId != null) {
+                        try {
+                            Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+                            currentUser = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
+                            log.info("OAuth2 사용자 조회 결과: {}", currentUser);
+                        } catch (Exception e) {
+                            log.error("OAuth2 사용자 조회 실패", e);
+                        }
+                    }
+                }
+                // Spring Security로 로그인한 사용자인 경우 (User 엔티티가 Principal)
+                else if (authentication.getPrincipal() instanceof User) {
+                    currentUser = (User) authentication.getPrincipal();
+                    log.info("Spring Security 사용자 조회: {}", currentUser);
+                }
+                // 기타 경우 (loginId로 조회) - Spring Security의 UserDetails 구현체
+                else {
+                    String loginId = authentication.getName();
+                    log.info("loginId로 사용자 조회 시도: {}", loginId);
+                    currentUser = userRepository.findByLoginId(loginId).orElse(null);
+                    log.info("loginId로 사용자 조회 결과: {}", currentUser);
+                }
+            }
             
             if (currentUser == null) {
-                log.warn("세션에 사용자 정보가 없음");
+                log.warn("인증된 사용자 정보가 없음 - Authentication: {}", authentication);
                 return ResponseEntity.status(401)
                     .header("Cache-Control", "no-cache, no-store, must-revalidate")
                     .header("Pragma", "no-cache")
@@ -405,6 +458,75 @@ public class UserController {
                     "success", false,
                     "message", "사용자 정보 조회에 실패했습니다: " + e.getMessage()
                 ));
+        }
+    }
+
+    // REST API - 자체 로그인
+    @PostMapping("/api/user-login")
+    public ResponseEntity<Map<String, Object>> loginApi(@RequestBody Map<String, String> loginRequest, HttpServletRequest request) {
+        log.info("=== /api/user-login 호출됨 ===");
+        
+        Map<String, Object> response = new HashMap<>();
+        String loginId = loginRequest.get("loginId");
+        String password = loginRequest.get("password");
+        
+        log.info("로그인 시도: {}", loginId);
+        
+        try {
+            // Spring Security AuthenticationManager를 사용한 인증
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginId, password)
+            );
+            
+            log.info("인증 성공: {}", authentication);
+            log.info("인증 Principal: {}", authentication.getPrincipal());
+            log.info("인증 Principal Type: {}", authentication.getPrincipal().getClass().getName());
+            
+            // 인증 성공 시 SecurityContext에 설정
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            
+            // 세션에 인증 정보 저장
+            HttpSession session = request.getSession(true);
+            session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+            
+            // 세션을 즉시 저장
+            session.setMaxInactiveInterval(3600); // 1시간
+            session.setAttribute("USER_LOGIN_ID", loginId);
+            
+            log.info("세션 ID: {}", session.getId());
+            log.info("세션에 SPRING_SECURITY_CONTEXT 저장됨");
+            log.info("세션에 USER_LOGIN_ID 저장됨: {}", loginId);
+            
+            // Authentication에서 User 정보 가져오기
+            User user = (User) authentication.getPrincipal();
+            
+            if (user != null) {
+                log.info("로그인 성공: {}", user.getLoginId());
+                log.info("사용자 역할: {}", user.getRole());
+                log.info("관리자 여부: {}", user.isAdmin());
+                
+                response.put("success", true);
+                response.put("message", "로그인 성공");
+                response.put("user", Map.of(
+                    "id", user.getId(),
+                    "loginId", user.getLoginId(),
+                    "nickname", user.getNickname(),
+                    "email", user.getEmail(),
+                    "role", user.getRole().name(),
+                    "isAdmin", user.isAdmin()
+                ));
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn("사용자 정보를 찾을 수 없음: {}", loginId);
+                response.put("success", false);
+                response.put("message", "사용자 정보를 찾을 수 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            log.error("로그인 실패: {}", e.getMessage());
+            response.put("success", false);
+            response.put("message", "아이디 또는 비밀번호가 올바르지 않습니다.");
+            return ResponseEntity.badRequest().body(response);
         }
     }
 } 

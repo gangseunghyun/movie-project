@@ -124,16 +124,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                             .build();
                 });
 
-        // 닉네임이 없으면 세션에 소셜 사용자 정보 저장
-        if (user.getNickname() == null || user.getNickname().isBlank()) {
-            System.out.println("[DEBUG] 세션 저장: provider=" + provider + ", providerId=" + providerId + ", email=" + email);
-            HttpSession session = request.getSession();
-            session.setAttribute("SOCIAL_EMAIL", email);
-            session.setAttribute("SOCIAL_PROVIDER", provider.name());
-            session.setAttribute("SOCIAL_PROVIDER_ID", providerId);
-            // SuccessHandler에서 /social-join으로 리다이렉트
-        }
-
         // 이미 가입된 경우에도 정보 갱신 (nickname은 덮어쓰지 않음)
         user.setEmail(email);
         user.setProvider(provider);
