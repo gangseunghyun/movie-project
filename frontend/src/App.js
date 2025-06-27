@@ -3,6 +3,10 @@ import axios from 'axios';
 import Login from './Login';
 import Signup from './Signup';
 import './App.css';
+import { safeFetch } from './api';
+
+// axios 기본 설정 - baseURL 제거하고 절대 경로 사용
+axios.defaults.withCredentials = true;
 
 function App() {
   const [activeTab, setActiveTab] = useState('stats');
@@ -20,6 +24,11 @@ function App() {
   const [comingSoonData, setComingSoonData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [nowPlayingData, setNowPlayingData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [endedData, setEndedData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
+  
+  // 영화 검색 상태
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchResults, setSearchResults] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
+  const [isSearching, setIsSearching] = useState(false);
   
   // 로그인/회원가입 상태
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -64,23 +73,40 @@ function App() {
 
   const checkLoginStatus = async () => {
     try {
-      const response = await axios.get('http://localhost:80/api/users/me', {
-        withCredentials: true
-      });
-      if (response.data.success) {
+      console.log("=== 로그인 상태 확인 시작 ===");
+      const response = await safeFetch('http://localhost:80/api/current-user');
+      console.log("API 응답:", response);
+      
+      if (response.success) {
+        console.log("로그인 성공 - 사용자 정보:", response.user);
         setIsLoggedIn(true);
-        setCurrentUser(response.data.user);
+        setCurrentUser(response.user);
         setShowAuth(false);
+        console.log("설정된 currentUser:", response.user);
+        console.log("isAdmin 값:", response.user.isAdmin);
+        console.log("role 값:", response.user.role);
+      } else {
+        console.log("로그인되지 않은 상태:", response.message);
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+        setShowAuth(true);
       }
     } catch (err) {
-      console.log('로그인되지 않은 상태');
+      console.log('로그인 상태 확인 실패:', err);
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      setShowAuth(true);
     }
   };
 
   const handleLoginSuccess = (user) => {
+    console.log("=== 로그인 성공 ===");
+    console.log("받은 사용자 정보:", user);
     setIsLoggedIn(true);
     setCurrentUser(user);
     setShowAuth(false);
+    console.log("설정된 currentUser:", user);
+    console.log("isAdmin 값:", user.isAdmin);
   };
 
   const handleSignupSuccess = (data) => {
@@ -90,9 +116,10 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:80/api/logout', {}, {
-        withCredentials: true
+      const response = await safeFetch('http://localhost:80/api/logout', {
+        method: 'POST'
       });
+      console.log("로그아웃 응답:", response);
       setIsLoggedIn(false);
       setCurrentUser(null);
       setShowAuth(true);
@@ -112,7 +139,7 @@ function App() {
 
   const testApiConnection = async () => {
     try {
-      const response = await axios.get('/data/api/test');
+      const response = await axios.get('http://localhost:80/data/api/test');
       console.log('API 연결 테스트 성공:', response.data);
       return true;
     } catch (err) {
@@ -123,7 +150,7 @@ function App() {
 
   const checkMovieStatusCounts = async () => {
     try {
-      const response = await axios.get('/data/api/movie-status-counts');
+      const response = await axios.get('http://localhost:80/data/api/movie-status-counts');
       console.log('영화 상태별 개수:', response.data);
       return response.data;
     } catch (err) {
@@ -134,31 +161,28 @@ function App() {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('/data/api/stats');
+      const response = await axios.get('http://localhost:80/data/api/stats');
       setStats(response.data);
-    } catch (err) {
-      setError('통계 데이터를 불러오는데 실패했습니다.');
+    } catch (error) {
+      console.error('통계 조회 실패:', error);
+      setError('통계 조회에 실패했습니다.');
     }
   };
 
   const fetchMovieList = async (page = 0) => {
-    setLoading(true);
-    setError(null);
     try {
-      const response = await axios.get(`/data/api/movie-list?page=${page}&size=20`);
+      const response = await axios.get(`http://localhost:80/data/api/movie-list?page=${page}&size=20`);
       setMovieListData(response.data);
-    } catch (err) {
-      console.error('MovieList API Error:', err);
-      setError('MovieList 데이터를 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('영화 목록 조회 실패:', error);
+      setError('영화 목록 조회에 실패했습니다.');
     }
   };
 
   const fetchMovieListDto = async (page = 0) => {
     setLoading(true);
     try {
-      const response = await axios.get(`/data/api/movie-list-dto?page=${page}&size=20`);
+      const response = await axios.get(`http://localhost:80/data/api/movie-list-dto?page=${page}&size=20`);
       console.log('MovieList DTO API Response:', response.data);
       setMovieListDtoData(response.data);
     } catch (err) {
@@ -170,24 +194,20 @@ function App() {
   };
 
   const fetchMovieDetail = async (page = 0) => {
-    setLoading(true);
-    setError(null);
     try {
-      const response = await axios.get(`/data/api/movie-detail?page=${page}&size=20`);
-      console.log('MovieDetail API Response:', response.data);
+      const response = await axios.get(`http://localhost:80/data/api/movie-detail?page=${page}&size=20`);
       setMovieDetailData(response.data);
-    } catch (err) {
-      console.error('MovieDetail API Error:', err);
-      setError('MovieDetail 데이터를 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('영화 상세 조회 실패:', error);
+      setError('영화 상세 조회에 실패했습니다.');
     }
   };
 
   const fetchMovieDetailDto = async (page = 0) => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get(`/data/api/movie-detail-dto?page=${page}&size=20`);
+      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto?page=${page}&size=20`);
       console.log('MovieDetail DTO API Response:', response.data);
       setMovieDetailDtoData(response.data);
     } catch (err) {
@@ -198,24 +218,63 @@ function App() {
     }
   };
 
-  const fetchBoxOffice = async (page = 0) => {
-    setLoading(true);
+  // 영화 제목으로 검색하는 함수
+  const searchMoviesByTitle = async (keyword, page = 0) => {
+    if (!keyword || keyword.trim() === '') {
+      // 검색어가 없으면 전체 목록을 가져옴
+      fetchMovieDetailDto(page);
+      return;
+    }
+
+    setIsSearching(true);
     setError(null);
     try {
-      const response = await axios.get(`/data/api/box-office?page=${page}&size=20`);
-      setBoxOfficeData(response.data);
+      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=20`);
+      console.log('영화 검색 결과:', response.data);
+      setSearchResults(response.data);
     } catch (err) {
-      console.error('BoxOffice API Error:', err);
-      setError('BoxOffice 데이터를 불러오는데 실패했습니다.');
+      console.error('영화 검색 실패:', err);
+      setError('영화 검색에 실패했습니다.');
+      // 검색 실패 시 전체 목록을 가져옴
+      fetchMovieDetailDto(page);
     } finally {
-      setLoading(false);
+      setIsSearching(false);
+    }
+  };
+
+  // 검색어 변경 핸들러
+  const handleSearchChange = (e) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  // 검색 실행 핸들러
+  const handleSearch = () => {
+    searchMoviesByTitle(searchKeyword, 0);
+  };
+
+  // 검색어 초기화 핸들러
+  const handleClearSearch = () => {
+    setSearchKeyword('');
+    setSearchResults({ data: [], total: 0, page: 0, totalPages: 0 });
+    fetchMovieDetailDto(0);
+  };
+
+  const fetchBoxOffice = async (page = 0) => {
+    try {
+      const response = await axios.get(`http://localhost:80/data/api/box-office?page=${page}&size=20`);
+      setBoxOfficeData(response.data);
+    } catch (error) {
+      console.error('박스오피스 조회 실패:', error);
+      setError('박스오피스 조회에 실패했습니다.');
     }
   };
 
   const fetchBoxOfficeDto = async (page = 0) => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get(`/data/api/box-office-dto?page=${page}&size=20`);
+      const response = await axios.get(`http://localhost:80/data/api/box-office-dto?page=${page}&size=20`);
+      console.log('BoxOffice DTO API Response:', response.data);
       setBoxOfficeDtoData(response.data);
     } catch (err) {
       console.error('BoxOffice DTO API Error:', err);
@@ -226,39 +285,22 @@ function App() {
   };
 
   const fetchTopRated = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const response = await axios.get('/data/api/ratings/top-rated?limit=10');
-      if (response.status === 200) {
-        setTopRatedData(response.data);
-      } else {
-        throw new Error('평균 별점이 높은 영화 조회 실패');
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('평균 별점이 높은 영화 조회 오류:', err);
-    } finally {
-      setLoading(false);
+      const response = await axios.get('http://localhost:80/data/api/ratings/top-rated?limit=10');
+      setTopRatedData(response.data);
+    } catch (error) {
+      console.error('평점 높은 영화 조회 실패:', error);
+      setError('평점 높은 영화 조회에 실패했습니다.');
     }
   };
 
   const fetchPopularMovies = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const response = await axios.get('/data/api/popular-movies?limit=100');
-      if (response.status === 200 && response.data.success) {
-        setPopularMoviesData(response.data.data);
-        console.log('인기 영화 데이터:', response.data.data);
-      } else {
-        throw new Error('인기 영화 조회 실패');
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('인기 영화 조회 오류:', err);
-    } finally {
-      setLoading(false);
+      const response = await axios.get('http://localhost:80/data/api/popular-movies?limit=100');
+      setPopularMoviesData(response.data);
+    } catch (error) {
+      console.error('인기 영화 조회 실패:', error);
+      setError('인기 영화 조회에 실패했습니다.');
     }
   };
 
@@ -266,15 +308,12 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/data/api/movies/coming-soon?page=${page}&size=20`);
-      if (response.status === 200) {
-        setComingSoonData(response.data);
-      } else {
-        throw new Error('개봉예정작 조회 실패');
-      }
+      const response = await axios.get(`http://localhost:80/data/api/movies/coming-soon?page=${page}&size=20`);
+      console.log('Coming Soon API Response:', response.data);
+      setComingSoonData(response.data);
     } catch (err) {
-      setError(err.message);
-      console.error('개봉예정작 조회 오류:', err);
+      console.error('Coming Soon API Error:', err);
+      setError('개봉예정작 데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -284,15 +323,12 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/data/api/movies/now-playing?page=${page}&size=20`);
-      if (response.status === 200) {
-        setNowPlayingData(response.data);
-      } else {
-        throw new Error('개봉중인 영화 조회 실패');
-      }
+      const response = await axios.get(`http://localhost:80/data/api/movies/now-playing?page=${page}&size=20`);
+      console.log('Now Playing API Response:', response.data);
+      setNowPlayingData(response.data);
     } catch (err) {
-      setError(err.message);
-      console.error('개봉중인 영화 조회 오류:', err);
+      console.error('Now Playing API Error:', err);
+      setError('개봉중인 영화 데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -302,15 +338,12 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/data/api/movies/ended?page=${page}&size=20`);
-      if (response.status === 200) {
-        setEndedData(response.data);
-      } else {
-        throw new Error('상영종료된 영화 조회 실패');
-      }
+      const response = await axios.get(`http://localhost:80/data/api/movies/ended?page=${page}&size=20`);
+      console.log('Ended Movies API Response:', response.data);
+      setEndedData(response.data);
     } catch (err) {
-      setError(err.message);
-      console.error('상영종료된 영화 조회 오류:', err);
+      console.error('Ended Movies API Error:', err);
+      setError('상영종료된 영화 데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -318,117 +351,69 @@ function App() {
 
   const fetchTmdbRatings = async () => {
     try {
-      const response = await axios.post('/api/ratings/fetch-tmdb');
-      
-      if (response.status === 200) {
-        alert(response.data.message);
-        
-        // 박스오피스 새로고침 (평점 정보가 포함됨)
-        if (activeTab === 'box-office') {
-          fetchBoxOffice();
-        }
-      } else {
-        throw new Error(response.data.message || 'TMDB 평점 가져오기 실패');
-      }
-    } catch (err) {
-      alert('TMDB 평점 가져오기 실패: ' + err.message);
-      console.error('TMDB 평점 가져오기 오류:', err);
+      const response = await axios.post('http://localhost:80/api/admin/ratings/fetch-tmdb');
+      alert('TMDB 평점 가져오기가 완료되었습니다.');
+      handleRefresh();
+    } catch (error) {
+      console.error('TMDB 평점 가져오기 실패:', error);
+      alert('TMDB 평점 가져오기에 실패했습니다.');
     }
   };
 
   const handleFetchBoxOfficeData = async () => {
     try {
-      const response = await axios.post('/api/admin/boxoffice/daily');
-      
-      if (response.status === 200) {
-        alert('박스오피스 데이터 가져오기 완료!');
-        handleRefresh(); // 데이터 새로고침
-      } else {
-        throw new Error(response.data.message || '박스오피스 데이터 가져오기 실패');
-      }
-    } catch (err) {
-      alert('박스오피스 데이터 가져오기 실패: ' + err.message);
-      console.error('박스오피스 데이터 가져오기 오류:', err);
+      const response = await axios.post('http://localhost:80/api/admin/boxoffice/daily');
+      alert('박스오피스 데이터 가져오기가 완료되었습니다.');
+      handleRefresh();
+    } catch (error) {
+      console.error('박스오피스 데이터 가져오기 실패:', error);
+      alert('박스오피스 데이터 가져오기에 실패했습니다.');
     }
   };
 
   const handleReplaceWithPopularMovies = async () => {
-    if (!window.confirm('기존 영화 데이터를 모두 삭제하고 인기 영화 100개로 교체하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) {
-      return;
-    }
-
-    try {
-      const response = await axios.post('/api/admin/movies/replace-with-popular');
-      
-      if (response.status === 200 && response.data.success) {
-        alert('인기 영화 교체 완료!\n\n' + response.data.message);
-        handleRefresh(); // 데이터 새로고침
-      } else {
-        throw new Error(response.data.message || '인기 영화 교체 실패');
+    if (window.confirm('정말로 기존 영화 데이터를 인기 영화 100개로 교체하시겠습니까?')) {
+      try {
+        const response = await axios.post('http://localhost:80/api/admin/movies/replace-with-popular');
+        alert('인기 영화 100개로 교체가 완료되었습니다.');
+        handleRefresh();
+      } catch (error) {
+        console.error('인기 영화 교체 실패:', error);
+        alert('인기 영화 교체에 실패했습니다.');
       }
-    } catch (err) {
-      alert('인기 영화 교체 실패: ' + err.message);
-      console.error('인기 영화 교체 오류:', err);
     }
   };
 
   const handleUpdateCharacterNames = async () => {
-    if (!window.confirm('기존 영화들의 캐릭터명을 한국어로 업데이트하시겠습니까?\n\n이 작업은 시간이 오래 걸릴 수 있습니다.')) {
-      return;
-    }
-
     try {
-      const response = await axios.post('/api/admin/movies/update-character-names');
-      
-      if (response.status === 200 && response.data.success) {
-        alert('캐릭터명 업데이트 완료!\n\n' + response.data.message);
-        handleRefresh(); // 데이터 새로고침
-      } else {
-        throw new Error(response.data.message || '캐릭터명 업데이트 실패');
-      }
-    } catch (err) {
-      alert('캐릭터명 업데이트 실패: ' + err.message);
-      console.error('캐릭터명 업데이트 오류:', err);
+      const response = await axios.post('http://localhost:80/api/admin/movies/update-character-names');
+      alert('캐릭터명 한국어 업데이트가 완료되었습니다.');
+      handleRefresh();
+    } catch (error) {
+      console.error('캐릭터명 업데이트 실패:', error);
+      alert('캐릭터명 업데이트에 실패했습니다.');
     }
   };
 
   const handleFetchPosterUrlsFromTmdb = async () => {
-    if (!window.confirm('TMDB에서 포스터 URL을 가져오시겠습니까?\n\n이 작업은 시간이 오래 걸릴 수 있습니다.')) {
-      return;
-    }
-
     try {
-      const response = await axios.post('/api/admin/posters/fetch-tmdb');
-      
-      if (response.status === 200 && response.data.success) {
-        alert('TMDB 포스터 URL 가져오기 완료!\n\n' + response.data.message);
-        handleRefresh(); // 데이터 새로고침
-      } else {
-        throw new Error(response.data.message || 'TMDB 포스터 URL 가져오기 실패');
-      }
-    } catch (err) {
-      alert('TMDB 포스터 URL 가져오기 실패: ' + err.message);
-      console.error('TMDB 포스터 URL 가져오기 오류:', err);
+      const response = await axios.post('http://localhost:80/api/admin/posters/fetch-tmdb');
+      alert('TMDB 포스터 URL 가져오기가 완료되었습니다.');
+      handleRefresh();
+    } catch (error) {
+      console.error('TMDB 포스터 URL 가져오기 실패:', error);
+      alert('TMDB 포스터 URL 가져오기에 실패했습니다.');
     }
   };
 
   const handleFetchPosterUrlsFromNaver = async () => {
-    if (!window.confirm('네이버에서 포스터 URL을 가져오시겠습니까?\n\n이 작업은 시간이 오래 걸릴 수 있습니다.')) {
-      return;
-    }
-
     try {
-      const response = await axios.post('/api/admin/posters/fetch-naver');
-      
-      if (response.status === 200 && response.data.success) {
-        alert('네이버 포스터 URL 가져오기 완료!\n\n' + response.data.message);
-        handleRefresh(); // 데이터 새로고침
-      } else {
-        throw new Error(response.data.message || '네이버 포스터 URL 가져오기 실패');
-      }
-    } catch (err) {
-      alert('네이버 포스터 URL 가져오기 실패: ' + err.message);
-      console.error('네이버 포스터 URL 가져오기 오류:', err);
+      const response = await axios.post('http://localhost:80/api/admin/posters/fetch-naver');
+      alert('네이버 포스터 URL 가져오기가 완료되었습니다.');
+      handleRefresh();
+    } catch (error) {
+      console.error('네이버 포스터 URL 가져오기 실패:', error);
+      alert('네이버 포스터 URL 가져오기에 실패했습니다.');
     }
   };
 
@@ -496,9 +481,28 @@ function App() {
   const handleDeleteMovie = async (movieCd) => {
     if (window.confirm('정말로 이 영화를 삭제하시겠습니까?')) {
       try {
-        await axios.delete(`/api/movies/${movieCd}`);
-        alert('영화가 삭제되었습니다.');
-        handleRefresh();
+        const response = await axios.delete(`http://localhost:80/api/movies/${movieCd}`, {
+          withCredentials: true,
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        console.log("영화 삭제 응답:", response.data);
+        
+        // 응답이 HTML인지 확인
+        if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+          alert('API 서버 연결에 문제가 있습니다. HTML이 반환되었습니다.');
+          return;
+        }
+        
+        // 응답이 성공인지 확인
+        if (response.data && response.data.success) {
+          alert('영화가 삭제되었습니다.');
+          handleRefresh();
+        } else {
+          alert('영화 삭제에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
+        }
       } catch (error) {
         console.error('영화 삭제 실패:', error);
         alert('영화 삭제에 실패했습니다.');
@@ -507,27 +511,166 @@ function App() {
   };
 
   const handleSaveMovie = async () => {
+    console.log("=== handleSaveMovie 함수 호출됨 ===");
+    console.log("API_BASE_URL:", API_BASE_URL);
+    console.log("현재 movieForm 데이터:", movieForm);
+    console.log("로그인 상태:", isLoggedIn);
+    console.log("현재 사용자:", currentUser);
+    console.log("관리자 여부:", currentUser?.isAdmin);
+    
+    // 프론트엔드에서 로그인 상태 확인 (백엔드 재확인 제거)
+    if (!isLoggedIn || !currentUser) {
+      alert('로그인이 필요합니다. 다시 로그인해주세요.');
+      setShowAuth(true);
+      return;
+    }
+    
+    if (!currentUser.isAdmin) {
+      alert('관리자 권한이 필요합니다.');
+      return;
+    }
+    
+    console.log("인증 확인 완료 - 관리자:", currentUser.loginId);
+    
     try {
+      // 데이터 검증
+      if (!movieForm.movieNm || !movieForm.movieNm.trim()) {
+        alert('영화 제목을 입력해주세요.');
+        return;
+      }
+      
+      console.log("검증 통과, API 호출 시작...");
+      
+      // 데이터 변환
+      const movieData = {
+        movieNm: movieForm.movieNm,
+        movieNmEn: movieForm.movieNmEn,
+        description: movieForm.description,
+        companyNm: movieForm.companyNm,
+        openDt: movieForm.openDt,
+        showTm: parseInt(movieForm.showTm) || 0,
+        genreNm: movieForm.genreNm,
+        nationNm: movieForm.nationNm,
+        watchGradeNm: movieForm.watchGradeNm,
+        prdtYear: movieForm.prdtYear,
+        prdtStatNm: movieForm.prdtStatNm,
+        typeNm: movieForm.typeNm,
+        totalAudience: parseInt(movieForm.totalAudience) || 0,
+        reservationRate: parseFloat(movieForm.reservationRate) || 0.0,
+        averageRating: parseFloat(movieForm.averageRating) || 0.0,
+        directors: movieForm.directorName ? [{
+          peopleNm: movieForm.directorName
+        }] : [],
+        actors: movieForm.actors ? movieForm.actors.split(',').map(actor => ({
+          peopleNm: actor.trim(),
+          cast: actor.trim()
+        })) : []
+      };
+      
+      console.log("변환된 movieData:", movieData);
+      
       if (editingMovie) {
-        await axios.put(`/api/movies/${editingMovie.movieCd}`, movieForm);
-        alert('영화가 수정되었습니다.');
+        const response = await axios.put(`http://localhost:80/api/movies/${editingMovie.movieCd}`, movieData, {
+          withCredentials: true,
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        console.log("영화 수정 응답:", response.data);
+        
+        // 응답이 HTML인지 확인
+        if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+          alert('API 서버 연결에 문제가 있습니다. HTML이 반환되었습니다.');
+          return;
+        }
+        
+        // 응답이 성공인지 확인
+        if (response.data && response.data.success) {
+          alert('영화가 수정되었습니다.');
+        } else {
+          alert('영화 수정에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
+          return;
+        }
       } else {
-        await axios.post('/api/movies', movieForm);
-        alert('영화가 등록되었습니다.');
+        console.log("=== 영화 등록 요청 시작 ===");
+        const requestUrl = 'http://localhost:80/api/movies';
+        console.log("요청 URL:", requestUrl);
+        console.log("요청 데이터:", movieData);
+        
+        const response = await axios.post(requestUrl, movieData, {
+          withCredentials: true,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        console.log("=== 영화 등록 응답 ===");
+        console.log("응답 상태:", response.status);
+        console.log("응답 헤더:", response.headers);
+        console.log("응답 데이터:", response.data);
+        console.log("응답 타입:", typeof response.data);
+        
+        // 응답이 HTML인지 확인
+        if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+          alert('API 서버 연결에 문제가 있습니다. HTML이 반환되었습니다.');
+          return;
+        }
+        
+        // 응답이 성공인지 확인
+        if (response.data && response.data.success) {
+          alert('영화가 등록되었습니다.');
+        } else {
+          alert('영화 등록에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
+          return;
+        }
       }
       setShowMovieForm(false);
       handleRefresh();
     } catch (error) {
       console.error('영화 저장 실패:', error);
-      alert('영화 저장에 실패했습니다.');
+      console.error('에러 응답:', error.response?.data);
+      console.error('요청 URL:', error.config?.url);
+      
+      // 401 오류 시 로그인 페이지로 이동
+      if (error.response?.status === 401) {
+        alert('로그인이 필요합니다. 다시 로그인해주세요.');
+        setShowAuth(true);
+        return;
+      }
+      
+      alert('영화 저장에 실패했습니다: ' + (error.response?.data?.message || error.message));
     }
   };
 
   const handleLikeMovie = async (movieCd) => {
     try {
-      await axios.post(`/api/movies/${movieCd}/like`);
-      alert('좋아요가 추가되었습니다.');
-      handleRefresh();
+      const response = await axios.post(`http://localhost:80/api/movies/${movieCd}/like`, {}, {
+        withCredentials: true,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      console.log("영화 좋아요 응답:", response.data);
+      
+      // 응답이 HTML인지 확인
+      if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+        alert('API 서버 연결에 문제가 있습니다. HTML이 반환되었습니다.');
+        return;
+      }
+      
+      // 응답이 성공인지 확인
+      if (response.data && response.data.success) {
+        alert('좋아요가 추가되었습니다.');
+        handleRefresh();
+      } else {
+        alert('좋아요 추가에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
+      }
     } catch (error) {
       console.error('좋아요 실패:', error);
       alert('좋아요에 실패했습니다.');
@@ -571,6 +714,96 @@ function App() {
 
   const renderStats = () => (
     <div>
+      {/* 임시 검색 기능 테스트 */}
+      <div style={{
+        marginBottom: '20px', 
+        padding: '15px', 
+        backgroundColor: '#e3f2fd', 
+        borderRadius: '8px',
+        border: '2px solid #2196f3'
+      }}>
+        <h3 style={{marginBottom: '15px', textAlign: 'center', color: '#1976d2'}}>
+          🔍 영화 검색 (테스트)
+        </h3>
+        <div style={{
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: '10px', 
+          marginBottom: '10px',
+          flexWrap: 'wrap'
+        }}>
+          <input
+            type="text"
+            placeholder="영화 제목을 입력하세요..."
+            value={searchKeyword || ''}
+            onChange={handleSearchChange}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            style={{
+              padding: '10px 15px',
+              border: '2px solid #2196f3',
+              borderRadius: '5px',
+              width: '300px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          />
+          <button 
+            onClick={handleSearch}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#2196f3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            🔍 검색
+          </button>
+          <button 
+            onClick={handleClearSearch}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#ff9800',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            초기화
+          </button>
+        </div>
+        
+        {/* 검색 상태 표시 */}
+        {isSearching && (
+          <div style={{
+            color: '#2196f3', 
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}>
+            🔍 검색 중...
+          </div>
+        )}
+        
+        {searchKeyword && !isSearching && searchResults.data && (
+          <div style={{
+            color: '#4caf50', 
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}>
+            📊 검색 결과: {searchResults.total}개 영화
+          </div>
+        )}
+      </div>
+
       <h2>📊 데이터 통계</h2>
       {stats && (
         <div className="stats-grid">
@@ -848,6 +1081,96 @@ function App() {
 
   const renderMovieDetailDto = () => (
     <div>
+      {/* 검색 기능 */}
+      <div style={{
+        marginBottom: '20px', 
+        padding: '15px', 
+        backgroundColor: '#f8f9fa', 
+        borderRadius: '8px',
+        border: '1px solid #dee2e6'
+      }}>
+        <h3 style={{marginBottom: '15px', textAlign: 'center', color: '#495057'}}>
+          🔍 영화 검색
+        </h3>
+        <div style={{
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: '10px', 
+          marginBottom: '10px',
+          flexWrap: 'wrap'
+        }}>
+          <input
+            type="text"
+            placeholder="영화 제목을 입력하세요..."
+            value={searchKeyword}
+            onChange={handleSearchChange}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            style={{
+              padding: '10px 15px',
+              border: '2px solid #007bff',
+              borderRadius: '5px',
+              width: '300px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          />
+          <button 
+            onClick={handleSearch}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            🔍 검색
+          </button>
+          <button 
+            onClick={handleClearSearch}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            초기화
+          </button>
+        </div>
+        
+        {/* 검색 상태 표시 */}
+        {isSearching && (
+          <div style={{
+            color: '#007bff', 
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}>
+            🔍 검색 중...
+          </div>
+        )}
+        
+        {searchKeyword && !isSearching && searchResults.data && (
+          <div style={{
+            color: '#28a745', 
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}>
+            📊 검색 결과: {searchResults.total}개 영화
+          </div>
+        )}
+      </div>
+
       <div style={{marginBottom: '20px', textAlign: 'center'}}>
         <button 
           onClick={handleAddMovie}
@@ -864,9 +1187,12 @@ function App() {
           ➕ 영화 등록
         </button>
       </div>
+      
       <div className="movie-grid">
-        {movieDetailDtoData.data && movieDetailDtoData.data.length > 0 ? (
-          movieDetailDtoData.data.map((item, index) => (
+        {/* 검색 결과가 있으면 검색 결과를, 없으면 전체 목록을 표시 */}
+        {(searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data) && 
+         (searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data).length > 0 ? (
+          (searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data).map((item, index) => (
             <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -935,22 +1261,32 @@ function App() {
           ))
         ) : (
           <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
-            {loading ? '데이터를 불러오는 중...' : '데이터가 없습니다.'}
+            {loading || isSearching ? '데이터를 불러오는 중...' : 
+             searchKeyword ? `"${searchKeyword}" 검색 결과가 없습니다.` : '데이터가 없습니다.'}
           </div>
         )}
       </div>
-      {movieDetailDtoData.data && movieDetailDtoData.data.length > 0 && (
+      
+      {/* 페이지네이션 - 검색 결과가 있으면 검색 결과 페이지네이션, 없으면 전체 목록 페이지네이션 */}
+      {(searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data) && 
+       (searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data).length > 0 && (
         <div className="pagination">
           <button 
-            onClick={() => fetchMovieDetailDto(movieDetailDtoData.page - 1)}
-            disabled={movieDetailDtoData.page === 0}
+            onClick={() => searchKeyword ? 
+              searchMoviesByTitle(searchKeyword, (searchKeyword && searchResults.data ? searchResults.page : movieDetailDtoData.page) - 1) :
+              fetchMovieDetailDto(movieDetailDtoData.page - 1)
+            }
+            disabled={(searchKeyword && searchResults.data ? searchResults.page : movieDetailDtoData.page) === 0}
           >
             이전
           </button>
-          <span>페이지 {movieDetailDtoData.page + 1} / {movieDetailDtoData.totalPages}</span>
+          <span>페이지 {(searchKeyword && searchResults.data ? searchResults.page : movieDetailDtoData.page) + 1} / {(searchKeyword && searchResults.data ? searchResults.totalPages : movieDetailDtoData.totalPages)}</span>
           <button 
-            onClick={() => fetchMovieDetailDto(movieDetailDtoData.page + 1)}
-            disabled={movieDetailDtoData.page >= movieDetailDtoData.totalPages - 1}
+            onClick={() => searchKeyword ? 
+              searchMoviesByTitle(searchKeyword, (searchKeyword && searchResults.data ? searchResults.page : movieDetailDtoData.page) + 1) :
+              fetchMovieDetailDto(movieDetailDtoData.page + 1)
+            }
+            disabled={(searchKeyword && searchResults.data ? searchResults.page : movieDetailDtoData.page) >= (searchKeyword && searchResults.data ? searchResults.totalPages : movieDetailDtoData.totalPages) - 1}
           >
             다음
           </button>
@@ -1427,7 +1763,7 @@ function App() {
                     <button
                       onClick={async () => {
                         try {
-                          const response = await axios.get('/data/api/movie-status-counts');
+                          const response = await axios.get('http://localhost:80/data/api/movie-status-counts');
                           alert('영화 상태별 개수: ' + JSON.stringify(response.data, null, 2));
                         } catch (err) {
                           alert('디버깅 정보 조회 실패: ' + err.message);

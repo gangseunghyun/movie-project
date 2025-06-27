@@ -39,11 +39,45 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
     }
   };
 
+  const handleOAuth2Login = (provider) => {
+    window.location.href = `http://localhost:80/oauth2/authorization/${provider}`;
+  };
+
   return (
     <div className="login-container">
       <div className="login-box">
         <h2>로그인</h2>
         {error && <div className="error-message">{error}</div>}
+        
+        {/* OAuth2 로그인 버튼들 */}
+        <div className="oauth-buttons">
+          <button 
+            type="button" 
+            onClick={() => handleOAuth2Login('google')}
+            className="oauth-button google"
+          >
+            Google로 로그인
+          </button>
+          <button 
+            type="button" 
+            onClick={() => handleOAuth2Login('kakao')}
+            className="oauth-button kakao"
+          >
+            Kakao로 로그인
+          </button>
+          <button 
+            type="button" 
+            onClick={() => handleOAuth2Login('naver')}
+            className="oauth-button naver"
+          >
+            Naver로 로그인
+          </button>
+        </div>
+        
+        <div className="divider">
+          <span>또는</span>
+        </div>
+        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="loginId">아이디</label>

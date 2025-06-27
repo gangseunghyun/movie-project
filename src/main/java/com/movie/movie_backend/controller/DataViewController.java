@@ -313,7 +313,7 @@ public class DataViewController {
      * 예시:
      * fetch('/data/api/movie-detail-dto?page=0&size=10')
      *   .then(res => res.json())
-     *   .then(data => console.log(data.content)); // 영화 상세정보 DTO 목록
+     *   .then(data => console.log(data.content)); // 영화 상세정보 목록
      */
     @GetMapping("/api/movie-detail-dto")
     @ResponseBody
@@ -334,7 +334,9 @@ public class DataViewController {
             int end = Math.min(start + size, total);
             
             List<MovieDetail> pagedList = movieDetails.subList(start, end);
-            List<MovieDetailDto> dtoList = movieDetailMapper.toDtoList(pagedList);
+            List<MovieDetailDto> dtoList = pagedList.stream()
+                    .map(movieDetailMapper::toDto)
+                    .collect(Collectors.toList());
             
             return ResponseEntity.ok(Map.of(
                 "data", dtoList,
@@ -345,6 +347,68 @@ public class DataViewController {
             ));
         } catch (Exception e) {
             log.error("MovieDetail DTO 데이터 조회 실패", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * MovieDetail DTO 검색 API (영화 제목으로 검색)
+     * 
+     * React에서 사용법:
+     * - 영화 제목으로 검색할 때 사용
+     * - 키워드가 포함된 영화 제목을 찾습니다
+     * - 기본값: page=0, size=20
+     * 
+     * 예시:
+     * fetch('/data/api/movie-detail-dto/search?keyword=아바타&page=0&size=10')
+     *   .then(res => res.json())
+     *   .then(data => console.log(data.content)); // 검색된 영화 목록
+     */
+    @GetMapping("/api/movie-detail-dto/search")
+    @ResponseBody
+    @Operation(summary = "MovieDetail DTO 검색 API (영화 제목으로 검색)", 
+               description = "영화 제목으로 검색합니다. 키워드가 포함된 영화 제목을 찾습니다. React에서 사용할 때: fetch('/data/api/movie-detail-dto/search?keyword=아바타&page=0&size=10')")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "영화 검색 성공"),
+        @ApiResponse(responseCode = "400", description = "영화 검색 실패")
+    })
+    public ResponseEntity<Map<String, Object>> searchMovieDetailDto(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        try {
+            log.info("영화 검색 요청: keyword={}, page={}, size={}", keyword, page, size);
+            
+            List<MovieDetail> allMovies = movieRepository.findAll();
+            
+            // 키워드로 필터링 (대소문자 구분 없이)
+            List<MovieDetail> filteredMovies = allMovies.stream()
+                    .filter(movie -> movie.getMovieNm() != null && 
+                                   movie.getMovieNm().toLowerCase().contains(keyword.toLowerCase()))
+                    .collect(Collectors.toList());
+            
+            int total = filteredMovies.size();
+            int start = page * size;
+            int end = Math.min(start + size, total);
+            
+            List<MovieDetail> pagedList = filteredMovies.subList(start, end);
+            List<MovieDetailDto> dtoList = pagedList.stream()
+                    .map(movieDetailMapper::toDto)
+                    .collect(Collectors.toList());
+            
+            log.info("영화 검색 결과: keyword={}, total={}, page={}, size={}", keyword, total, page, size);
+            
+            return ResponseEntity.ok(Map.of(
+                "data", dtoList,
+                "total", total,
+                "page", page,
+                "size", size,
+                "totalPages", (int) Math.ceil((double) total / size),
+                "keyword", keyword
+            ));
+        } catch (Exception e) {
+            log.error("영화 검색 실패: keyword={}", keyword, e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

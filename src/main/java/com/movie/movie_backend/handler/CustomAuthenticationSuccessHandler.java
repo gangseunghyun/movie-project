@@ -6,7 +6,6 @@ import com.movie.movie_backend.constant.Provider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -28,6 +27,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             if (providerId == null) providerId = oauth2User.getAttribute("sub");
             email = oauth2User.getAttribute("email");
         }
+        
         // DB에서 회원 여부만 판단
         User user = null;
         if (provider != null && providerId != null) {
@@ -36,23 +36,12 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         } else if (email != null) {
             user = userRepository.findByEmail(email).orElse(null);
         }
+        
         if (user == null) {
             System.out.println("[DEBUG] SuccessHandler: user==null, provider=" + provider + ", providerId=" + providerId + ", email=" + email);
         }
+        
         if (user == null || user.getNickname() == null || !user.isSocialJoinCompleted()) {
-            // 세션 값 확인
-            HttpSession session = request.getSession(false);
-            if (session == null) {
-                System.out.println("[DEBUG] SuccessHandler: 세션 없음");
-            } else {
-                Object emailAttr = session.getAttribute("SOCIAL_EMAIL");
-                Object providerAttr = session.getAttribute("SOCIAL_PROVIDER");
-                Object providerIdAttr = session.getAttribute("SOCIAL_PROVIDER_ID");
-                System.out.println("[DEBUG] SuccessHandler 세션: email=" + emailAttr + ", provider=" + providerAttr + ", providerId=" + providerIdAttr);
-                if (emailAttr == null || providerAttr == null || providerIdAttr == null) {
-                    System.out.println("[DEBUG] SuccessHandler: 소셜 세션 정보 없음");
-                }
-            }
             response.sendRedirect("http://localhost:3000/social-join");
         } else {
             // 닉네임을 쿼리 파라미터로 포함하여 리다이렉트
