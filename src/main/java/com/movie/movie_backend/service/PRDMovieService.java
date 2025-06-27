@@ -54,4 +54,13 @@ public class PRDMovieService {
     public Optional<MovieDetail> getMovieDetailByCode(String movieCd) {
         return movieRepository.findByMovieCd(movieCd);
     }
+
+    /**
+     * 띄어쓰기 무시 통합 검색 (제목, 감독, 배우, 장르)
+     */
+    public List<MovieDetail> searchMoviesIgnoreSpace(String keyword) {
+        if (keyword == null) return List.of();
+        String noSpace = keyword.replaceAll("\\s+", "");
+        return movieRepository.searchIgnoreSpace(noSpace);
+    }
 } 
