@@ -10,6 +10,9 @@ import UserSearch from './UserSearch';
 import UserPage from './UserPage';
 import { userSearch } from './services/userService';
 import MainPage from './MainPage';
+import FindId from './FindId';
+import FindPassword from './FindPassword';
+import ResetPassword from './ResetPassword';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -1973,6 +1976,9 @@ function App() {
         <Route path="/social-join" element={<SocialJoin />} />
         <Route path="/user-search" element={<UserSearch />} />
         <Route path="/user/:nickname" element={<UserPage />} />
+        <Route path="/find-id" element={<FindId />} />
+        <Route path="/find-password" element={<FindPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
       {/* 기존 내용 ... */}
     </>
