@@ -331,8 +331,9 @@ function App() {
   };
 
   // 검색 실행 핸들러
-  const handleSearch = async () => {
-    if (!searchKeyword.trim()) return;
+  const handleSearch = async (customKeyword) => {
+    const keyword = (typeof customKeyword === 'string') ? customKeyword : searchKeyword;
+    if (!keyword.trim()) return;
     setIsSearching(true);
     setError(null);
     setSearchExecuted(true);

@@ -17,20 +17,27 @@ public class SearchHistoryService {
 
     // 검색어 저장 (중복 비허용, 10개 제한)
     public SearchHistory saveSearchHistory(User user, String keyword) {
+        System.out.println("==== saveSearchHistory 호출됨 ====");
+        System.out.println("user: " + user);
+        System.out.println("keyword: " + keyword);
         // 1. 기존에 같은 검색어가 있으면 삭제
         List<SearchHistory> duplicates = searchHistoryRepository.findByUserAndKeyword(user, keyword);
         if (!duplicates.isEmpty()) {
             searchHistoryRepository.deleteAll(duplicates);
         }
-
         // 2. 새로 저장
         SearchHistory history = SearchHistory.builder()
                 .user(user)
                 .keyword(keyword)
                 .searchedAt(LocalDateTime.now())
                 .build();
-        searchHistoryRepository.save(history);
-
+        try {
+            searchHistoryRepository.save(history);
+            System.out.println("==== searchHistoryRepository.save 이후 ====");
+        } catch (Exception e) {
+            System.out.println("==== searchHistoryRepository.save 예외 발생 ====");
+            e.printStackTrace();
+        }
         // 3. 10개 초과 시 오래된 것 삭제
         List<SearchHistory> all = searchHistoryRepository.findTop10ByUserOrderBySearchedAtDesc(user);
         List<SearchHistory> allByUser = searchHistoryRepository.findAllByUserOrderBySearchedAtDesc(user);

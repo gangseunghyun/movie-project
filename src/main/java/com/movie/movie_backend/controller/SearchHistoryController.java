@@ -3,9 +3,12 @@ package com.movie.movie_backend.controller;
 import com.movie.movie_backend.entity.SearchHistory;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.service.SearchHistoryService;
+import com.movie.movie_backend.repository.USRUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.web.bind.annotation.*;
+import com.movie.movie_backend.dto.SearchHistoryDto;
 
 import java.util.List;
 
@@ -15,6 +18,7 @@ import java.util.List;
 public class SearchHistoryController {
 
     private final SearchHistoryService searchHistoryService;
+    private final USRUserRepository userRepository;
 
     // 검색어 저장
     @PostMapping
@@ -23,21 +27,54 @@ public class SearchHistoryController {
         System.out.println("==== keyword: " + keyword);
         System.out.println("==== principal class: " + (principal != null ? principal.getClass() : "null"));
         System.out.println("==== principal: " + principal);
-        if (principal == null) {
-            throw new RuntimeException("로그인한 사용자만 검색어를 저장할 수 있습니다.");
+
+        String email = null;
+        if (principal instanceof DefaultOAuth2User) {
+            DefaultOAuth2User oAuth2User = (DefaultOAuth2User) principal;
+            System.out.println("==== attributes: " + oAuth2User.getAttributes());
+            email = (String) oAuth2User.getAttribute("email");
+        } else if (principal instanceof User) {
+            User userPrincipal = (User) principal;
+            email = userPrincipal.getEmail();
+            System.out.println("==== User principal email: " + email);
+        } else {
+            System.out.println("==== principal은 DefaultOAuth2User도 User도 아님: " + (principal != null ? principal.getClass() : "null"));
         }
-        // 이후 principal에서 User 엔티티를 추출하는 로직을 설계
+        System.out.println("==== email: " + email);
+
+        if (email == null) throw new RuntimeException("이메일 정보를 찾을 수 없습니다.");
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("사용자 정보가 없습니다."));
+        System.out.println("==== user: " + user);
+
+        searchHistoryService.saveSearchHistory(user, keyword);
     }
 
     // 최근 검색어 조회
     @GetMapping
-    public List<SearchHistory> getRecentSearches(@AuthenticationPrincipal Object principal) {
+    public List<SearchHistoryDto> getRecentSearches(@AuthenticationPrincipal Object principal) {
         System.out.println("==== principal class: " + (principal != null ? principal.getClass() : "null"));
         System.out.println("==== principal: " + principal);
-        if (principal == null) {
-            throw new RuntimeException("로그인한 사용자만 최근 검색어를 조회할 수 있습니다.");
+
+        String email = null;
+        if (principal instanceof DefaultOAuth2User) {
+            DefaultOAuth2User oAuth2User = (DefaultOAuth2User) principal;
+            System.out.println("==== attributes: " + oAuth2User.getAttributes());
+            email = (String) oAuth2User.getAttribute("email");
+        } else if (principal instanceof User) {
+            User userPrincipal = (User) principal;
+            email = userPrincipal.getEmail();
+            System.out.println("==== User principal email: " + email);
+        } else {
+            System.out.println("==== principal은 DefaultOAuth2User도 User도 아님: " + (principal != null ? principal.getClass() : "null"));
         }
-        // principal에서 email 등으로 User 엔티티를 조회해서 반환하는 로직 추가 예정
-        return null; // 임시로 null 반환
+        System.out.println("==== email: " + email);
+
+        if (email == null) throw new RuntimeException("이메일 정보를 찾을 수 없습니다.");
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("사용자 정보가 없습니다."));
+        System.out.println("==== user: " + user);
+
+        return searchHistoryService.getRecentSearches(user).stream()
+                .map(h -> new SearchHistoryDto(h.getId(), h.getKeyword(), h.getSearchedAt()))
+                .toList();
     }
 } 
