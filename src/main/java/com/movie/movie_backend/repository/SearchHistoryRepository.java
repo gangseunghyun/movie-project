@@ -34,13 +34,21 @@ public interface SearchHistoryRepository extends JpaRepository<SearchHistory, Lo
         FROM search_history sh
         WHERE sh.searched_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
           AND EXISTS (
-            SELECT 1 FROM movie_detail md 
-            WHERE md.movie_nm LIKE CONCAT('%', sh.keyword, '%')
-               OR md.movie_nm_en LIKE CONCAT('%', sh.keyword, '%')
-               OR md.description LIKE CONCAT('%', sh.keyword, '%')
+            SELECT 1
+            FROM movie_detail md
+            LEFT JOIN director d ON md.director_id = d.id
+            LEFT JOIN cast c ON c.movie_detail_id = md.movieCd
+            LEFT JOIN actor a ON c.actor_id = a.id
+            WHERE
+              md.movieNm LIKE CONCAT('%', sh.keyword, '%')
+              OR md.movieNmEn LIKE CONCAT('%', sh.keyword, '%')
+              OR md.genreNm LIKE CONCAT('%', sh.keyword, '%')
+              OR md.description LIKE CONCAT('%', sh.keyword, '%')
+              OR d.name LIKE CONCAT('%', sh.keyword, '%')
+              OR a.name LIKE CONCAT('%', sh.keyword, '%')
           )
-        GROUP BY sh.keyword 
-        ORDER BY search_count DESC 
+        GROUP BY sh.keyword
+        ORDER BY search_count DESC
         LIMIT 10
         """, nativeQuery = true)
     List<Object[]> findPopularKeywords();
