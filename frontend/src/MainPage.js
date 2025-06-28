@@ -108,7 +108,7 @@ const MainPage = ({
       {currentUser && recentKeywords && recentKeywords.length > 0 && searchFocus && (
         <div className="mainpage-recent-keywords" style={{ margin: '0 0 8px 0', paddingLeft: 32 }}>
           <span style={{ color: '#888', fontSize: '0.95em', marginRight: 8 }}>최근 검색어:</span>
-          {recentKeywords.map((keyword, idx) => (
+          {recentKeywords.filter(keyword => keyword && keyword.trim() !== "").map((keyword, idx) => (
             <button
               key={keyword}
               onClick={() => handleRecentKeywordClick(keyword)}

@@ -339,20 +339,20 @@ function App() {
     setSearchExecuted(true);
     try {
       // 1. 검색 API 호출
-      const movieRes = await safeFetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(searchKeyword)}&page=0&size=20`);
+      const movieRes = await safeFetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(keyword)}&page=0&size=20`);
       setSearchResults(movieRes);
 
       // 2. 최근 검색어 저장 (로그인한 경우만)
       if (currentUser) {
         await axios.post('http://localhost:80/api/search-history', null, {
-          params: { keyword: searchKeyword.trim() },
+          params: { keyword: keyword.trim() },
           withCredentials: true
         });
         fetchRecentKeywords();
       }
 
       // 3. 유저 검색 등 추가 로직
-      const userRes = await userSearch(searchKeyword);
+      const userRes = await userSearch(keyword);
       setUserResults(userRes);
     } catch (err) {
       setError('검색 중 오류가 발생했습니다.');
@@ -1872,9 +1872,7 @@ function App() {
   // 최근 검색어 클릭 시 바로 검색
   const handleRecentKeywordClick = (keyword) => {
     setSearchKeyword(keyword);
-    setTimeout(() => {
-      handleSearch();
-    }, 0);
+    handleSearch(keyword);
   };
 
   return (
