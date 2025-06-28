@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 @Slf4j
 @Service
@@ -350,15 +351,42 @@ public class KobisApiService {
                 }
             }
             
+            // TMDB에서 영어 제목과 장르 정보 보완
+            String movieNmEn = movieList.getMovieNmEn();
+            String genreNm = movieList.getGenreNm();
+            
+            // KOBIS에 영어 제목이 없거나 장르 정보가 부족하면 TMDB에서 보완
+            if ((movieNmEn == null || movieNmEn.isEmpty() || genreNm == null || genreNm.isEmpty()) 
+                && movieList.getOpenDt() != null) {
+                
+                try {
+                    // TMDB에서 영화 검색하여 영어 제목과 장르 정보 가져오기
+                    String tmdbInfo = getTmdbMovieInfo(movieList.getMovieNm(), movieList.getOpenDt());
+                    if (tmdbInfo != null) {
+                        String[] tmdbData = tmdbInfo.split("\\|");
+                        if (tmdbData.length >= 2) {
+                            if (movieNmEn == null || movieNmEn.isEmpty()) {
+                                movieNmEn = tmdbData[0]; // 영어 제목
+                            }
+                            if (genreNm == null || genreNm.isEmpty()) {
+                                genreNm = tmdbData[1]; // 장르
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("TMDB 정보 보완 실패: {} - {}", movieList.getMovieNm(), e.getMessage());
+                }
+            }
+            
             // MovieDetail 엔티티 생성
             MovieDetail movieDetail = MovieDetail.builder()
                 .movieCd(movieCd)
                 .movieNm(movieList.getMovieNm())
-                .movieNmEn(movieList.getMovieNmEn())
+                .movieNmEn(movieNmEn != null ? movieNmEn : "")
                 .description(description)
                 .openDt(movieList.getOpenDt())
                 .showTm(showTm)
-                .genreNm(movieList.getGenreNm())
+                .genreNm(genreNm != null ? genreNm : "")
                 .nationNm(movieList.getNationNm())
                 .watchGradeNm(movieList.getWatchGradeNm())
                 .companyNm(companyNm)
@@ -374,7 +402,8 @@ public class KobisApiService {
             
             // 저장
             MovieDetail savedMovieDetail = movieRepository.save(movieDetail);
-            log.info("KOBIS MovieDetail 저장 완료: {} ({})", savedMovieDetail.getMovieNm(), movieCd);
+            log.info("KOBIS MovieDetail 저장 완료: {} ({}) - 영문제목: {}, 장르: {}", 
+                savedMovieDetail.getMovieNm(), movieCd, movieNmEn, genreNm);
             
             return savedMovieDetail;
             
@@ -382,6 +411,49 @@ public class KobisApiService {
             log.error("KOBIS API로 MovieDetail 가져오기 실패: {} - {}", movieCd, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * TMDB에서 영화 정보 가져오기 (영어 제목, 장르)
+     */
+    private String getTmdbMovieInfo(String movieNm, LocalDate openDt) {
+        try {
+            String query = java.net.URLEncoder.encode(movieNm, java.nio.charset.StandardCharsets.UTF_8);
+            String year = (openDt != null) ? String.valueOf(openDt.getYear()) : null;
+            
+            String url = String.format("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s&language=ko-KR%s", 
+                tmdbApiKey, query, year != null ? "&year=" + year : "");
+            
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JsonNode rootNode = objectMapper.readTree(response.getBody());
+                JsonNode results = rootNode.get("results");
+                
+                if (results != null && results.size() > 0) {
+                    JsonNode movie = results.get(0);
+                    String originalTitle = movie.has("original_title") ? movie.get("original_title").asText() : "";
+                    
+                    // 장르 정보
+                    String genres = "";
+                    if (movie.has("genre_ids") && movie.get("genre_ids").isArray()) {
+                        List<String> genreNames = new ArrayList<>();
+                        for (JsonNode genreId : movie.get("genre_ids")) {
+                            String genreName = getGenreNameById(genreId.asInt());
+                            if (!genreName.isEmpty()) {
+                                genreNames.add(genreName);
+                            }
+                        }
+                        genres = String.join(", ", genreNames);
+                    }
+                    
+                    return originalTitle + "|" + genres;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("TMDB 영화 정보 조회 실패: {} - {}", movieNm, e.getMessage());
+        }
+        
+        return null;
     }
 
     /**

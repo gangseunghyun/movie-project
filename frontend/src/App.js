@@ -78,6 +78,9 @@ function App() {
 
   const [activeMenu, setActiveMenu] = useState('영화 상세 DTO');
 
+  // 1. 상태 추가
+  const [sortOption, setSortOption] = useState('rating');
+
   // 로그인 상태 확인
   useEffect(() => {
     checkLoginStatus();
@@ -88,6 +91,15 @@ function App() {
       setShowAuth(false);
     }
   }, []);
+
+  // 정렬 옵션이 변경될 때마다 현재 활성 탭에 따라 데이터 다시 가져오기
+  useEffect(() => {
+    if (activeMenu === '영화 상세') {
+      fetchMovieDetail(0);
+    } else if (activeMenu === '영화 상세 DTO') {
+      fetchMovieDetailDto(0);
+    }
+  }, [sortOption]);
 
   const checkLoginStatus = async () => {
     try {
@@ -221,7 +233,17 @@ function App() {
 
   const fetchMovieDetail = async (page = 0) => {
     try {
-      const response = await axios.get(`http://localhost:80/data/api/movie-detail?page=${page}&size=20`);
+      // 정렬 옵션에 따라 파라미터 설정
+      let sortParam = 'date'; // 기본값: 개봉일순
+      if (sortOption === 'rating') {
+        sortParam = 'rating';
+      } else if (sortOption === 'nameAsc') {
+        sortParam = 'nameAsc';
+      } else if (sortOption === 'nameDesc') {
+        sortParam = 'nameDesc';
+      }
+      
+      const response = await axios.get(`http://localhost:80/data/api/movie-detail?page=${page}&size=20&sort=${sortParam}`);
       setMovieDetailData(response.data);
     } catch (error) {
       console.error('영화 상세 조회 실패:', error);
@@ -233,7 +255,17 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto?page=${page}&size=20`);
+      // 정렬 옵션에 따라 파라미터 설정
+      let sortParam = 'date'; // 기본값: 개봉일순
+      if (sortOption === 'rating') {
+        sortParam = 'rating';
+      } else if (sortOption === 'nameAsc') {
+        sortParam = 'nameAsc';
+      } else if (sortOption === 'nameDesc') {
+        sortParam = 'nameDesc';
+      }
+      
+      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto?page=${page}&size=20&sort=${sortParam}`);
       console.log('MovieDetail DTO API Response:', response.data);
       setMovieDetailDtoData(response.data);
     } catch (err) {
@@ -759,9 +791,27 @@ function App() {
     setSearchExecuted(false);
   };
 
+  // 2. 정렬 함수 추가
+  const getSortedResults = (data) => {
+    if (!data) return [];
+    const arr = [...data];
+    if (sortOption === 'rating') {
+      return arr.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+    }
+    if (sortOption === 'date') {
+      return arr.sort((a, b) => (b.openDt || '').localeCompare(a.openDt || ''));
+    }
+    if (sortOption === 'nameDesc') {
+      return arr.sort((a, b) => (b.movieNm || '').localeCompare(a.movieNm || ''));
+    }
+    if (sortOption === 'nameAsc') {
+      return arr.sort((a, b) => (a.movieNm || '').localeCompare(b.movieNm || ''));
+    }
+    return arr;
+  };
+
   const renderStats = () => (
     <div>
-      <h2>📊 데이터 통계</h2>
       {stats && (
         <div className="stats-grid">
           <div className="stat-card">
@@ -781,34 +831,42 @@ function App() {
       
       {currentUser && currentUser.role === 'ADMIN' && (
         <div>
-          <h3>🔧 관리 기능</h3>
-          <div className="button-grid">
-            <button onClick={handleFetchBoxOfficeData} className="admin-button">
-              📊 박스오피스 데이터 가져오기
-            </button>
-            <button onClick={fetchTmdbRatings} className="admin-button">
-              ⭐ TMDB 평점 가져오기
-            </button>
-            <button onClick={handleReplaceWithPopularMovies} className="admin-button">
-              🎬 인기 영화 100개로 교체
-            </button>
-            <button onClick={handleUpdateCharacterNames} className="admin-button">
-              🇰🇷 캐릭터명 한국어 업데이트
-            </button>
-            <button onClick={handleFetchPosterUrlsFromTmdb} className="admin-button">
-              🎭 TMDB 포스터 URL 가져오기
-            </button>
-            <button onClick={handleFetchPosterUrlsFromNaver} className="admin-button">
-              🎭 네이버 포스터 URL 가져오기
-            </button>
-          </div>
+        <h3>🔧 관리 기능</h3>
+        <div className="button-grid">
+          <button onClick={handleFetchBoxOfficeData} className="admin-button">
+            📊 박스오피스 데이터 가져오기
+          </button>
+          <button onClick={fetchTmdbRatings} className="admin-button">
+            ⭐ TMDB 평점 가져오기
+          </button>
+          <button onClick={handleReplaceWithPopularMovies} className="admin-button">
+            🎬 인기 영화 100개로 교체
+          </button>
+          <button onClick={handleUpdateCharacterNames} className="admin-button">
+            🇰🇷 캐릭터명 한국어 업데이트
+          </button>
+          <button onClick={handleFetchPosterUrlsFromTmdb} className="admin-button">
+            🎭 TMDB 포스터 URL 가져오기
+          </button>
+          <button onClick={handleFetchPosterUrlsFromNaver} className="admin-button">
+            🎭 네이버 포스터 URL 가져오기
+          </button>
         </div>
+      </div>
       )}
     </div>
   );
 
   const renderMovieList = () => (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <table className="data-table">
         <thead>
           <tr>
@@ -823,7 +881,7 @@ function App() {
         </thead>
         <tbody>
           {movieListData.data && movieListData.data.length > 0 ? (
-            movieListData.data.map((item, index) => (
+            getSortedResults(movieListData.data).map((item, index) => (
               <tr key={index}>
                 <td>{item.id}</td>
                 <td>{item.movieCd}</td>
@@ -865,6 +923,14 @@ function App() {
 
   const renderMovieDetail = () => (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <table className="data-table">
         <thead>
           <tr>
@@ -881,7 +947,7 @@ function App() {
         </thead>
         <tbody>
           {movieDetailData.data && movieDetailData.data.length > 0 ? (
-            movieDetailData.data.map((item, index) => (
+            getSortedResults(movieDetailData.data).map((item, index) => (
               <tr key={index}>
                 <td>{item.movieCd}</td>
                 <td>{item.movieNm}</td>
@@ -925,6 +991,14 @@ function App() {
 
   const renderBoxOffice = () => (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <table className="data-table">
         <thead>
           <tr>
@@ -941,7 +1015,7 @@ function App() {
         </thead>
         <tbody>
           {boxOfficeData.data && boxOfficeData.data.length > 0 ? (
-            boxOfficeData.data.map((item, index) => (
+            getSortedResults(boxOfficeData.data).map((item, index) => (
               <tr key={index}>
                 <td>{item.id}</td>
                 <td>{item.movieCd}</td>
@@ -987,9 +1061,17 @@ function App() {
 
   const renderBoxOfficeDto = () => (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <div className="movie-grid">
         {boxOfficeDtoData.data && boxOfficeDtoData.data.length > 0 ? (
-          boxOfficeDtoData.data.map((item, index) => (
+          getSortedResults(boxOfficeDtoData.data).map((item, index) => (
             <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -1040,27 +1122,17 @@ function App() {
 
   const renderMovieDetailDto = () => (
     <div>
-      <div style={{marginBottom: '20px', textAlign: 'center'}}>
-        <button 
-          onClick={handleAddMovie}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            marginRight: '10px'
-          }}
-        >
-          ➕ 영화 등록
-        </button>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
       </div>
-      
       <div className="movie-grid">
-        {(searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data) && 
-         (searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data).length > 0 ? (
-          (searchKeyword && searchResults.data ? searchResults.data : movieDetailDtoData.data).map((item, index) => (
+        {movieDetailDtoData.data && movieDetailDtoData.data.length > 0 ? (
+          getSortedResults(movieDetailDtoData.data).map((item, index) => (
             <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -1164,9 +1236,17 @@ function App() {
 
   const renderMovieListDto = () => (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <div className="movie-grid">
         {movieListDtoData.data && movieListDtoData.data.length > 0 ? (
-          movieListDtoData.data.map((item, index) => (
+          getSortedResults(movieListDtoData.data).map((item, index) => (
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -1425,49 +1505,59 @@ function App() {
   // 검색 결과 전용 렌더링 함수
   const renderSearchResults = () => {
     return (
-      <div>
-        {/* 영화 결과 */}
-        <h3>영화 결과</h3>
-        {searchResults.data && searchResults.data.length > 0 ? (
-          <div className="movie-grid">
-            {searchResults.data.map(movie => (
-              <div key={movie.movieCd} className="movie-card">
-                <div className="movie-poster">
-                  {movie.posterUrl ? (
-                    <img src={movie.posterUrl} alt={movie.movieNm} />
-                  ) : (
-                    <div className="no-poster">No Poster</div>
-                  )}
-                </div>
-                <div className="movie-info">
-                  <h3>{movie.movieNm}</h3>
-                  <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
-                  <div className="movie-details">
-                    <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
-                    <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
-                    <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
+      <div className="search-section">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+          <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+            <option value="rating">별점순</option>
+            <option value="date">개봉일순</option>
+            <option value="nameAsc">이름 오름차순</option>
+            <option value="nameDesc">이름 내림차순</option>
+          </select>
+        </div>
+        <div className="search-movie-result">
+          <h3>영화 결과</h3>
+          {searchResults.data && searchResults.data.length > 0 ? (
+            <div className="movie-grid">
+              {getSortedResults().map(movie => (
+                <div key={movie.movieCd} className="movie-card">
+                  <div className="movie-poster">
+                    {movie.posterUrl ? (
+                      <img src={movie.posterUrl} alt={movie.movieNm} />
+                    ) : (
+                      <div className="no-poster">No Poster</div>
+                    )}
+                  </div>
+                  <div className="movie-info">
+                    <h3>{movie.movieNm}</h3>
+                    <p className="movie-title-en">{movie.movieNmEn || '-'}</p>
+                    <div className="movie-details">
+                      <p><strong>개봉일:</strong> {movie.openDt || '-'}</p>
+                      <p><strong>장르:</strong> {movie.genreNm || '-'}</p>
+                      <p><strong>제작국가:</strong> {movie.nationNm || '-'}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div>검색 결과가 없습니다.</div>
-        )}
-
-        {/* 유저 결과 */}
-        <h3 style={{ marginTop: 32 }}>유저 결과</h3>
-        {userResults && userResults.length > 0 ? (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {userResults.map(nickname => (
-              <li key={nickname} style={{ padding: 8, borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => handleUserClick(nickname)}>
-                {nickname}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div>검색 결과가 없습니다.</div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div>검색 결과가 없습니다.</div>
+          )}
+        </div>
+        <div className="search-divider"></div>
+        <div className="search-user-result">
+          <h3>유저 결과</h3>
+          {userResults && userResults.length > 0 ? (
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {userResults.map(nickname => (
+                <li key={nickname} style={{ padding: 8, borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => handleUserClick(nickname)}>
+                  {nickname}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div>검색 결과가 없습니다.</div>
+          )}
+        </div>
       </div>
     );
   };
@@ -1481,9 +1571,17 @@ function App() {
   const renderComingSoon = () => (
     <div>
       <h2>개봉예정작</h2>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <div className="movie-grid">
         {comingSoonData.data && comingSoonData.data.length > 0 ? (
-          comingSoonData.data.map((item, index) => (
+          getSortedResults(comingSoonData.data).map((item, index) => (
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -1533,9 +1631,17 @@ function App() {
   const renderNowPlaying = () => (
     <div>
       <h2>개봉중</h2>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <div className="movie-grid">
         {nowPlayingData.data && nowPlayingData.data.length > 0 ? (
-          nowPlayingData.data.map((item, index) => (
+          getSortedResults(nowPlayingData.data).map((item, index) => (
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -1585,9 +1691,17 @@ function App() {
   const renderEnded = () => (
     <div>
       <h2>상영종료</h2>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <div className="movie-grid">
         {endedData.data && endedData.data.length > 0 ? (
-          endedData.data.map((item, index) => (
+          getSortedResults(endedData.data).map((item, index) => (
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -1636,18 +1750,25 @@ function App() {
   // 평점 높은 영화 렌더링
   const renderTopRated = () => (
     <div>
-      <h2>평점 높은 영화</h2>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <div className="movie-grid">
         {topRatedData && topRatedData.length > 0 ? (
-          topRatedData.map((item, index) => (
+          getSortedResults(topRatedData).map((item, index) => (
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
                   <img src={item.posterUrl} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
-                )}
-              </div>
+              )}
+            </div>
               <div className="movie-info">
                 <h3>{item.movieNm}</h3>
                 <p className="movie-title-en">{item.movieNmEn || '-'}</p>
@@ -1655,7 +1776,7 @@ function App() {
                   <p><strong>평점:</strong> {item.averageRating || '-'}</p>
                   <p><strong>개봉일:</strong> {item.openDt || '-'}</p>
                   <p><strong>장르:</strong> {item.genreNm || '-'}</p>
-                </div>
+          </div>
               </div>
             </div>
           ))
@@ -1671,10 +1792,17 @@ function App() {
   // 인기 영화 렌더링
   const renderPopularMovies = () => (
     <div>
-      <h2>인기 영화</h2>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
+        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
+          <option value="rating">별점순</option>
+          <option value="date">개봉일순</option>
+          <option value="nameAsc">이름 오름차순</option>
+          <option value="nameDesc">이름 내림차순</option>
+        </select>
+      </div>
       <div className="movie-grid">
         {popularMoviesData && popularMoviesData.length > 0 ? (
-          popularMoviesData.map((item, index) => (
+          getSortedResults(popularMoviesData).map((item, index) => (
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
@@ -1697,7 +1825,7 @@ function App() {
           <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
             {loading ? '데이터를 불러오는 중...' : '데이터가 없습니다.'}
           </div>
-        )}
+      )}
       </div>
     </div>
   );

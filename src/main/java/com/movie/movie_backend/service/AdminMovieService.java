@@ -6,10 +6,19 @@ import com.movie.movie_backend.constant.MovieStatus;
 import com.movie.movie_backend.dto.AdminMovieDto;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.PRDTagRepository;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.entity.MovieList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -32,6 +41,12 @@ public class AdminMovieService {
     private final TmdbRatingService tmdbRatingService;
     private final DataMigrationService dataMigrationService;
     private final TagDataService tagDataService;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    private final PRDMovieListRepository movieListRepository;
+    
+    @Value("${tmdb.api.key}")
+    private String tmdbApiKey;
 
     /**
      * 영화 등록 (DTO 사용)
@@ -562,5 +577,231 @@ public class AdminMovieService {
         dataMigrationService.replaceWithPopularMovies();
         
         log.info("인기 영화 교체 완료");
+    }
+
+    /**
+     * 기존 영화 데이터의 영어 제목과 장르 정보를 TMDB에서 보완
+     */
+    @Transactional
+    public Map<String, Object> updateMovieEnglishTitlesAndGenres() {
+        log.info("기존 영화 데이터의 영어 제목과 장르 정보 보완 시작");
+        
+        List<MovieDetail> allMovies = movieRepository.findAll();
+        int updatedCount = 0;
+        int failedCount = 0;
+        
+        for (MovieDetail movie : allMovies) {
+            try {
+                boolean needsUpdate = false;
+                String movieNmEn = movie.getMovieNmEn();
+                String genreNm = movie.getGenreNm();
+                
+                // 영어 제목이나 장르가 없으면 TMDB에서 보완
+                if ((movieNmEn == null || movieNmEn.isEmpty() || genreNm == null || genreNm.isEmpty()) 
+                    && movie.getOpenDt() != null) {
+                    
+                    String tmdbInfo = getTmdbMovieInfo(movie.getMovieNm(), movie.getOpenDt());
+                    if (tmdbInfo != null) {
+                        String[] tmdbData = tmdbInfo.split("\\|");
+                        if (tmdbData.length >= 2) {
+                            if (movieNmEn == null || movieNmEn.isEmpty()) {
+                                movie.setMovieNmEn(tmdbData[0]);
+                                needsUpdate = true;
+                            }
+                            if (genreNm == null || genreNm.isEmpty()) {
+                                movie.setGenreNm(tmdbData[1]);
+                                needsUpdate = true;
+                            }
+                        }
+                    }
+                }
+                
+                if (needsUpdate) {
+                    movieRepository.save(movie);
+                    updatedCount++;
+                    log.info("영화 정보 업데이트: {} - 영문제목: {}, 장르: {}", 
+                        movie.getMovieNm(), movie.getMovieNmEn(), movie.getGenreNm());
+                }
+                
+            } catch (Exception e) {
+                failedCount++;
+                log.warn("영화 정보 업데이트 실패: {} - {}", movie.getMovieNm(), e.getMessage());
+            }
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalMovies", allMovies.size());
+        result.put("updatedCount", updatedCount);
+        result.put("failedCount", failedCount);
+        
+        log.info("영화 영어 제목 및 장르 정보 보완 완료: 업데이트={}, 실패={}", updatedCount, failedCount);
+        return result;
+    }
+
+    /**
+     * TMDB에서 영화 정보 가져오기 (영어 제목, 장르)
+     */
+    private String getTmdbMovieInfo(String movieNm, LocalDate openDt) {
+        try {
+            String query = java.net.URLEncoder.encode(movieNm, java.nio.charset.StandardCharsets.UTF_8);
+            String year = (openDt != null) ? String.valueOf(openDt.getYear()) : null;
+            
+            String url = String.format("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s&language=ko-KR%s", 
+                tmdbApiKey, query, year != null ? "&year=" + year : "");
+            
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JsonNode rootNode = objectMapper.readTree(response.getBody());
+                JsonNode results = rootNode.get("results");
+                
+                if (results != null && results.size() > 0) {
+                    JsonNode movie = results.get(0);
+                    String originalTitle = movie.has("original_title") ? movie.get("original_title").asText() : "";
+                    
+                    // 장르 정보
+                    String genres = "";
+                    if (movie.has("genre_ids") && movie.get("genre_ids").isArray()) {
+                        List<String> genreNames = new ArrayList<>();
+                        for (JsonNode genreId : movie.get("genre_ids")) {
+                            String genreName = getGenreNameById(genreId.asInt());
+                            if (!genreName.isEmpty()) {
+                                genreNames.add(genreName);
+                            }
+                        }
+                        genres = String.join(", ", genreNames);
+                    }
+                    
+                    return originalTitle + "|" + genres;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("TMDB 영화 정보 조회 실패: {} - {}", movieNm, e.getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * TMDB 장르 ID를 한국어 장르명으로 변환
+     */
+    private String getGenreNameById(int genreId) {
+        switch (genreId) {
+            case 28: return "액션";
+            case 12: return "모험";
+            case 16: return "애니메이션";
+            case 35: return "코미디";
+            case 80: return "범죄";
+            case 99: return "다큐멘터리";
+            case 18: return "드라마";
+            case 10751: return "가족";
+            case 14: return "판타지";
+            case 36: return "역사";
+            case 27: return "공포";
+            case 10402: return "음악";
+            case 9648: return "미스터리";
+            case 10749: return "로맨스";
+            case 878: return "SF";
+            case 10770: return "TV 영화";
+            case 53: return "스릴러";
+            case 10752: return "전쟁";
+            case 37: return "서부";
+            default: return "";
+        }
+    }
+
+    /**
+     * 애플리케이션 시작 시 기존 영화 데이터 자동 업데이트
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void updateExistingMoviesOnStartup() {
+        try {
+            log.info("=== 애플리케이션 시작 시 기존 영화 데이터 자동 업데이트 시작 ===");
+            
+            List<MovieDetail> allMovies = movieRepository.findAll();
+            int updatedCount = 0;
+            int failedCount = 0;
+            
+            for (MovieDetail movie : allMovies) {
+                try {
+                    boolean needsUpdate = false;
+                    String movieNmEn = movie.getMovieNmEn();
+                    String genreNm = movie.getGenreNm();
+                    
+                    // 영어 제목이나 장르가 없으면 TMDB에서 보완
+                    if ((movieNmEn == null || movieNmEn.isEmpty() || genreNm == null || genreNm.isEmpty()) 
+                        && movie.getOpenDt() != null) {
+                        
+                        String tmdbInfo = getTmdbMovieInfo(movie.getMovieNm(), movie.getOpenDt());
+                        if (tmdbInfo != null) {
+                            String[] tmdbData = tmdbInfo.split("\\|");
+                            if (tmdbData.length >= 2) {
+                                if (movieNmEn == null || movieNmEn.isEmpty()) {
+                                    movie.setMovieNmEn(tmdbData[0]);
+                                    needsUpdate = true;
+                                }
+                                if (genreNm == null || genreNm.isEmpty()) {
+                                    movie.setGenreNm(tmdbData[1]);
+                                    needsUpdate = true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (needsUpdate) {
+                        movieRepository.save(movie);
+                        updatedCount++;
+                        log.info("자동 업데이트: {} - 영문제목: {}, 장르: {}", 
+                            movie.getMovieNm(), movie.getMovieNmEn(), movie.getGenreNm());
+                    }
+                    
+                } catch (Exception e) {
+                    failedCount++;
+                    log.warn("자동 업데이트 실패: {} - {}", movie.getMovieNm(), e.getMessage());
+                }
+            }
+            
+            log.info("=== 자동 업데이트 완료: 업데이트={}, 실패={} ===", updatedCount, failedCount);
+            
+        } catch (Exception e) {
+            log.error("자동 업데이트 중 오류 발생: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * MovieList의 genreNm, movieNmEn을 MovieDetail에서 동기화
+     */
+    @Transactional
+    public Map<String, Object> syncMovieListWithDetail() {
+        List<MovieList> movieLists = movieListRepository.findAll();
+        int updatedCount = 0;
+        int failedCount = 0;
+        for (MovieList movieList : movieLists) {
+            try {
+                MovieDetail detail = movieRepository.findById(movieList.getMovieCd()).orElse(null);
+                if (detail != null) {
+                    boolean needsUpdate = false;
+                    if (movieList.getMovieNmEn() == null || movieList.getMovieNmEn().isEmpty()) {
+                        movieList.setMovieNmEn(detail.getMovieNmEn());
+                        needsUpdate = true;
+                    }
+                    if (movieList.getGenreNm() == null || movieList.getGenreNm().isEmpty()) {
+                        movieList.setGenreNm(detail.getGenreNm());
+                        needsUpdate = true;
+                    }
+                    if (needsUpdate) {
+                        movieListRepository.save(movieList);
+                        updatedCount++;
+                    }
+                }
+            } catch (Exception e) {
+                failedCount++;
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalMovieList", movieLists.size());
+        result.put("updatedCount", updatedCount);
+        result.put("failedCount", failedCount);
+        return result;
     }
 } 

@@ -171,27 +171,50 @@ public class DataViewController {
      * React에서 사용법:
      * - 영화 상세정보를 페이지네이션으로 조회할 때 사용
      * - 감독, 배우, 줄거리 등 상세 정보 포함
-     * - 기본값: page=0, size=20
+     * - 정렬 옵션: sort=date (개봉일순), sort=nameAsc (이름 오름차순), sort=nameDesc (이름 내림차순), sort=rating (별점순)
+     * - 기본값: page=0, size=20, sort=date
      * 
      * 예시:
-     * fetch('/data/api/movie-detail?page=0&size=10')
+     * fetch('/data/api/movie-detail?page=0&size=10&sort=date')
      *   .then(res => res.json())
      *   .then(data => console.log(data.content)); // 영화 상세정보 목록
      */
     @GetMapping("/api/movie-detail")
     @ResponseBody
     @Operation(summary = "MovieDetail 데이터 조회 API", 
-               description = "영화 상세정보를 페이지네이션으로 조회합니다. 감독, 배우, 줄거리 등 포함. React에서 사용할 때: fetch('/data/api/movie-detail?page=0&size=10')")
+               description = "영화 상세정보를 페이지네이션으로 조회합니다. 감독, 배우, 줄거리 등 포함. React에서 사용할 때: fetch('/data/api/movie-detail?page=0&size=10&sort=date')")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "MovieDetail 데이터 조회 성공"),
         @ApiResponse(responseCode = "400", description = "MovieDetail 데이터 조회 실패")
     })
     public ResponseEntity<Map<String, Object>> getMovieDetailData(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "date") String sort) {
         
         try {
-            List<MovieDetail> movieDetails = movieRepository.findAll();
+            List<MovieDetail> movieDetails;
+            
+            // 정렬 옵션에 따라 데이터 조회
+            switch (sort) {
+                case "date":
+                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 개봉일 최신순
+                    break;
+                case "nameAsc":
+                    movieDetails = movieRepository.findAllByOrderByMovieNmAsc(); // 이름 오름차순
+                    break;
+                case "nameDesc":
+                    movieDetails = movieRepository.findAllByOrderByMovieNmDesc(); // 이름 내림차순
+                    break;
+                case "rating":
+                    movieDetails = movieRepository.findAll();
+                    movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                    break;
+                default:
+                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 기본값: 개봉일 최신순
+                    break;
+            }
+            
             int total = movieDetails.size();
             int start = page * size;
             int end = Math.min(start + size, total);
@@ -309,27 +332,50 @@ public class DataViewController {
      * React에서 사용법:
      * - 영화 상세정보를 왓챠피디아 스타일로 조회할 때 사용
      * - 포스터 URL, 감독명, 배우 목록, 줄거리 등 완전한 정보
-     * - 기본값: page=0, size=20
+     * - 정렬 옵션: sort=date (개봉일순), sort=nameAsc (이름 오름차순), sort=nameDesc (이름 내림차순), sort=rating (별점순)
+     * - 기본값: page=0, size=20, sort=date
      * 
      * 예시:
-     * fetch('/data/api/movie-detail-dto?page=0&size=10')
+     * fetch('/data/api/movie-detail-dto?page=0&size=10&sort=date')
      *   .then(res => res.json())
      *   .then(data => console.log(data.content)); // 영화 상세정보 목록
      */
     @GetMapping("/api/movie-detail-dto")
     @ResponseBody
     @Operation(summary = "MovieDetail DTO 데이터 조회 API (왓챠피디아 스타일)", 
-               description = "영화 상세정보를 왓챠피디아 스타일로 조회합니다. 포스터 URL, 감독명, 배우 목록, 줄거리 등 완전한 정보. React에서 사용할 때: fetch('/data/api/movie-detail-dto?page=0&size=10')")
+               description = "영화 상세정보를 왓챠피디아 스타일로 조회합니다. 포스터 URL, 감독명, 배우 목록, 줄거리 등 완전한 정보. React에서 사용할 때: fetch('/data/api/movie-detail-dto?page=0&size=10&sort=date')")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "MovieDetail DTO 데이터 조회 성공"),
         @ApiResponse(responseCode = "400", description = "MovieDetail DTO 데이터 조회 실패")
     })
     public ResponseEntity<Map<String, Object>> getMovieDetailDtoData(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "date") String sort) {
         
         try {
-            List<MovieDetail> movieDetails = movieRepository.findAll();
+            List<MovieDetail> movieDetails;
+            
+            // 정렬 옵션에 따라 데이터 조회
+            switch (sort) {
+                case "date":
+                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 개봉일 최신순
+                    break;
+                case "nameAsc":
+                    movieDetails = movieRepository.findAllByOrderByMovieNmAsc(); // 이름 오름차순
+                    break;
+                case "nameDesc":
+                    movieDetails = movieRepository.findAllByOrderByMovieNmDesc(); // 이름 내림차순
+                    break;
+                case "rating":
+                    movieDetails = movieRepository.findAll();
+                    movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                    break;
+                default:
+                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 기본값: 개봉일 최신순
+                    break;
+            }
+            
             int total = movieDetails.size();
             int start = page * size;
             int end = Math.min(start + size, total);

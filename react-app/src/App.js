@@ -821,7 +821,7 @@ function App() {
     
     // 페이지 제목도 변경
     const tabNames = {
-      'stats': '데이터 통계',
+      'stats': '',
       'movie-list': '영화 목록',
       'movie-detail': '영화 상세',
       'box-office': '박스오피스',
@@ -1082,7 +1082,7 @@ function App() {
       <div className="movie-grid">
         {boxOfficeDtoData.data && boxOfficeDtoData.data.length > 0 ? (
           boxOfficeDtoData.data.map((item, index) => (
-            <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
+            <div key={index} className="movie-card" onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
                   <img src={item.posterUrl} alt={item.movieNm} />
@@ -1202,7 +1202,7 @@ function App() {
       <div className="movie-grid">
         {movieDetailDtoData.data && movieDetailDtoData.data.length > 0 ? (
           movieDetailDtoData.data.map((item, index) => (
-            <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
+            <div key={index} className="movie-card" onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
                   <img src={item.posterUrl} alt={item.movieNm} />
@@ -1703,7 +1703,6 @@ function App() {
                 </div>
               )}
 
-              {activeTab === 'stats' && renderStats()}
               {activeTab === 'movie-list' && renderMovieList()}
               {activeTab === 'movie-detail' && renderMovieDetail()}
               {activeTab === 'box-office' && renderBoxOffice()}
@@ -1812,7 +1811,7 @@ function App() {
                   <div className="movie-grid">
                     {comingSoonData.data && comingSoonData.data.length > 0 ? (
                       comingSoonData.data.map((movie, index) => (
-                        <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
+                        <div key={index} className="movie-card" onClick={() => handleMovieClick(movie)}>
                           <div className="movie-poster">
                             {movie.posterUrl ? (
                               <img src={movie.posterUrl} alt={movie.movieNm} />
@@ -1883,7 +1882,7 @@ function App() {
                   <div className="movie-grid">
                     {nowPlayingData.data && nowPlayingData.data.length > 0 ? (
                       nowPlayingData.data.map((movie, index) => (
-                        <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
+                        <div key={index} className="movie-card" onClick={() => handleMovieClick(movie)}>
                           <div className="movie-poster">
                             {movie.posterUrl ? (
                               <img src={movie.posterUrl} alt={movie.movieNm} />
@@ -1934,7 +1933,7 @@ function App() {
                   <div className="movie-grid">
                     {endedData.data && endedData.data.length > 0 ? (
                       endedData.data.map((movie, index) => (
-                        <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(movie)}>
+                        <div key={index} className="movie-card" onClick={() => handleMovieClick(movie)}>
                           <div className="movie-poster">
                             {movie.posterUrl ? (
                               <img src={movie.posterUrl} alt={movie.movieNm} />

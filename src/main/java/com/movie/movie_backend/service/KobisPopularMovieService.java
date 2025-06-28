@@ -7,12 +7,15 @@ import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.Director;
 import com.movie.movie_backend.entity.Actor;
 import com.movie.movie_backend.entity.Cast;
+import com.movie.movie_backend.entity.MovieList;
 import com.movie.movie_backend.constant.MovieStatus;
 import com.movie.movie_backend.constant.RoleType;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.PRDDirectorRepository;
 import com.movie.movie_backend.repository.PRDActorRepository;
 import com.movie.movie_backend.repository.CastRepository;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.mapper.MovieListMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +44,8 @@ public class KobisPopularMovieService {
     private final PRDDirectorRepository directorRepository;
     private final PRDActorRepository actorRepository;
     private final CastRepository castRepository;
+    private final PRDMovieListRepository movieListRepository;
+    private final MovieListMapper movieListMapper;
 
     @Value("${kobis.api.key}")
     private String kobisApiKey;
@@ -54,6 +59,9 @@ public class KobisPopularMovieService {
      */
     public List<MovieListDto> getPopularMoviesFromBoxOffice(int limit) {
         List<MovieListDto> popularMovies = new ArrayList<>();
+        int saveCount = 0;
+        int skipCount = 0;
+        int failCount = 0;
         
         try {
             // 최근 30주간의 박스오피스 데이터를 수집 (주간 TOP-10씩)
@@ -81,14 +89,22 @@ public class KobisPopularMovieService {
                             MovieListDto movieDto = convertBoxOfficeToMovieListDto(movie);
                             if (movieDto != null && !isDuplicateMovie(popularMovies, movieDto)) {
                                 popularMovies.add(movieDto);
-                                log.info("박스오피스 영화 추가: {} ({}) - 순위: {}, 총 {}개", 
+                                if (!movieListRepository.existsByMovieCd(movieDto.getMovieCd())) {
+                                    MovieList entity = movieListMapper.toEntity(movieDto);
+                                    movieListRepository.save(entity);
+                                    saveCount++;
+                                } else {
+                                    skipCount++;
+                                }
+                                log.debug("박스오피스 영화 추가 및 저장: {} ({}) - 순위: {}, 총 {}개", 
                                     movieDto.getMovieNm(), movieDto.getMovieCd(), 
                                     movie.get("rank").asText(), popularMovies.size());
                             } else if (movieDto != null) {
                                 log.debug("중복 영화 건너뛰기: {} ({})", movieDto.getMovieNm(), movieDto.getMovieCd());
                             }
                         } catch (Exception e) {
-                            log.warn("박스오피스 영화 변환 실패: {}", movie.get("movieNm"), e);
+                            failCount++;
+                            log.debug("박스오피스 영화 변환/저장 실패: {}", movie.get("movieNm"), e);
                         }
                     }
                 }
@@ -97,7 +113,7 @@ public class KobisPopularMovieService {
                 Thread.sleep(200);
             }
             
-            log.info("KOBIS 박스오피스 영화 {}개 가져오기 완료 (목표: {}개)", popularMovies.size(), limit);
+            log.info("최종 KOBIS 박스오피스 저장 요약: 성공 {}개, 중복 {}개, 실패 {}개 (총 {}개)", saveCount, skipCount, failCount, popularMovies.size());
             
             // 만약 100개에 못 미치면 추가로 일일 박스오피스도 수집
             if (popularMovies.size() < limit) {

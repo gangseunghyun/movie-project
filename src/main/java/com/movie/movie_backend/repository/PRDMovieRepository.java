@@ -20,6 +20,15 @@ public interface PRDMovieRepository extends JpaRepository<MovieDetail, String> {
     // 장르별 조회
     List<MovieDetail> findByGenreNmContaining(String genreNm);
     
+    // 개봉일순 정렬 (최신순 - 내림차순)
+    List<MovieDetail> findAllByOrderByOpenDtDesc();
+    
+    // 이름순 정렬 (오름차순)
+    List<MovieDetail> findAllByOrderByMovieNmAsc();
+    
+    // 이름순 정렬 (내림차순)
+    List<MovieDetail> findAllByOrderByMovieNmDesc();
+    
     // 장르 중복 확인을 위한 쿼리들
     @Query("SELECT genreNm, COUNT(*) as count FROM MovieDetail WHERE genreNm IS NOT NULL GROUP BY genreNm HAVING COUNT(*) > 1 ORDER BY count DESC")
     List<Object[]> findDuplicateGenres();

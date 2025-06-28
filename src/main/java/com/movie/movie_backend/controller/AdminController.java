@@ -601,4 +601,19 @@ public class AdminController {
             ));
         }
     }
+
+    /**
+     * 영화 영어 제목과 장르 정보를 TMDB에서 보완
+     */
+    @PostMapping("/movies/update-english-titles-and-genres")
+    public ResponseEntity<Map<String, Object>> updateMovieEnglishTitlesAndGenres() {
+        try {
+            log.info("영화 영어 제목과 장르 정보 보완 시작");
+            Map<String, Object> result = adminMovieService.updateMovieEnglishTitlesAndGenres();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("영화 영어 제목과 장르 정보 보완 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 } 

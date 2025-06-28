@@ -121,7 +121,7 @@ function Login({ onLoginSuccess }) {
           <span>또는</span>
         </div>
         
-        <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="loginId">아이디</label>
             <input
@@ -147,7 +147,7 @@ function Login({ onLoginSuccess }) {
           <button type="submit" disabled={loading} className="login-button">
             {loading ? '로그인 중...' : '로그인'}
           </button>
-        </form>
+      </form>
         <div className="login-footer">
           <button onClick={() => navigate('/signup')} className="switch-button">
             회원가입
@@ -158,4 +158,4 @@ function Login({ onLoginSuccess }) {
   );
 }
 
-export default Login; 
+export default Login;
