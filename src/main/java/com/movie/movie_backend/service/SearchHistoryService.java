@@ -15,14 +15,30 @@ public class SearchHistoryService {
 
     private final SearchHistoryRepository searchHistoryRepository;
 
-    // 검색어 저장
+    // 검색어 저장 (중복 비허용, 10개 제한)
     public SearchHistory saveSearchHistory(User user, String keyword) {
+        // 1. 기존에 같은 검색어가 있으면 삭제
+        List<SearchHistory> duplicates = searchHistoryRepository.findByUserAndKeyword(user, keyword);
+        if (!duplicates.isEmpty()) {
+            searchHistoryRepository.deleteAll(duplicates);
+        }
+
+        // 2. 새로 저장
         SearchHistory history = SearchHistory.builder()
                 .user(user)
                 .keyword(keyword)
                 .searchedAt(LocalDateTime.now())
                 .build();
-        return searchHistoryRepository.save(history);
+        searchHistoryRepository.save(history);
+
+        // 3. 10개 초과 시 오래된 것 삭제
+        List<SearchHistory> all = searchHistoryRepository.findTop10ByUserOrderBySearchedAtDesc(user);
+        List<SearchHistory> allByUser = searchHistoryRepository.findAllByUserOrderBySearchedAtDesc(user);
+        if (allByUser.size() > 10) {
+            List<SearchHistory> toDelete = allByUser.subList(10, allByUser.size());
+            searchHistoryRepository.deleteAll(toDelete);
+        }
+        return history;
     }
 
     // 최근 검색어 조회 (최신 10개)

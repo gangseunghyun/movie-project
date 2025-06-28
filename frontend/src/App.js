@@ -81,6 +81,9 @@ function App() {
   // 1. 상태 추가
   const [sortOption, setSortOption] = useState('rating');
 
+  // 최근 검색어 상태 추가
+  const [recentKeywords, setRecentKeywords] = useState([]);
+
   // 로그인 상태 확인
   useEffect(() => {
     checkLoginStatus();
@@ -100,6 +103,28 @@ function App() {
       fetchMovieDetailDto(0);
     }
   }, [sortOption]);
+
+  // 최근 검색어 불러오기
+  const fetchRecentKeywords = async () => {
+    if (!currentUser) return;
+    try {
+      const res = await axios.get('http://localhost:80/api/search-history', { withCredentials: true });
+      if (Array.isArray(res.data)) {
+        setRecentKeywords(res.data.map(item => item.keyword));
+      }
+    } catch (e) {
+      setRecentKeywords([]);
+    }
+  };
+
+  // 로그인 상태가 바뀌거나, 로그인 시 최근 검색어 불러오기
+  useEffect(() => {
+    if (currentUser) {
+      fetchRecentKeywords();
+    } else {
+      setRecentKeywords([]);
+    }
+  }, [currentUser]);
 
   const checkLoginStatus = async () => {
     try {
@@ -307,14 +332,25 @@ function App() {
 
   // 검색 실행 핸들러
   const handleSearch = async () => {
+    if (!searchKeyword.trim()) return;
     setIsSearching(true);
     setError(null);
     setSearchExecuted(true);
     try {
-      // 영화 검색
-      const movieRes = await safeFetch(`/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(searchKeyword)}&page=0&size=20`);
+      // 1. 검색 API 호출
+      const movieRes = await safeFetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(searchKeyword)}&page=0&size=20`);
       setSearchResults(movieRes);
-      // 유저 검색
+
+      // 2. 최근 검색어 저장 (로그인한 경우만)
+      if (currentUser) {
+        await axios.post('http://localhost:80/api/search-history', null, {
+          params: { keyword: searchKeyword.trim() },
+          withCredentials: true
+        });
+        fetchRecentKeywords();
+      }
+
+      // 3. 유저 검색 등 추가 로직
       const userRes = await userSearch(searchKeyword);
       setUserResults(userRes);
     } catch (err) {
@@ -1504,6 +1540,8 @@ function App() {
 
   // 검색 결과 전용 렌더링 함수
   const renderSearchResults = () => {
+    console.log('렌더링할 searchResults:', searchResults);
+    console.log('렌더링할 userResults:', userResults);
     return (
       <div className="search-section">
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
@@ -1518,7 +1556,7 @@ function App() {
           <h3>영화 결과</h3>
           {searchResults.data && searchResults.data.length > 0 ? (
             <div className="movie-grid">
-              {getSortedResults().map(movie => (
+              {getSortedResults(searchResults.data).map(movie => (
                 <div key={movie.movieCd} className="movie-card">
                   <div className="movie-poster">
                     {movie.posterUrl ? (
@@ -1830,6 +1868,14 @@ function App() {
     </div>
   );
 
+  // 최근 검색어 클릭 시 바로 검색
+  const handleRecentKeywordClick = (keyword) => {
+    setSearchKeyword(keyword);
+    setTimeout(() => {
+      handleSearch();
+    }, 0);
+  };
+
   return (
     <>
       {/* 기존 헤더/네비게이션 등 */}
@@ -1876,6 +1922,8 @@ function App() {
             setMovieForm={setMovieForm}
             renderMovieDetailModal={renderMovieDetailModal}
             renderMovieForm={renderMovieForm}
+            recentKeywords={recentKeywords}
+            handleRecentKeywordClick={handleRecentKeywordClick}
           />
         } />
         <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />

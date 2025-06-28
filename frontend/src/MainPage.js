@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const menuList = [
   { icon: '📊', label: '통계' },
@@ -55,8 +55,13 @@ const MainPage = ({
   movieForm,
   setMovieForm,
   renderMovieDetailModal,
-  renderMovieForm
+  renderMovieForm,
+  recentKeywords,
+  handleRecentKeywordClick
 }) => {
+  // 검색창 포커스 상태 추가
+  const [searchFocus, setSearchFocus] = useState(false);
+
   // 탭별 렌더링 함수 매핑
   const renderByMenu = {
     '통계': renderStats,
@@ -90,6 +95,8 @@ const MainPage = ({
             type="text"
             value={searchKeyword}
             onChange={e => setSearchKeyword(e.target.value)}
+            onFocus={() => setSearchFocus(true)}
+            onBlur={() => setTimeout(() => setSearchFocus(false), 150)}
             placeholder="영화/유저 검색..."
             className="mainpage-search-input"
             style={{ width: 220, marginRight: 8 }}
@@ -97,6 +104,32 @@ const MainPage = ({
           <button onClick={handleSearch} className="mainpage-search-btn">검색</button>
         </div>
       </header>
+      {/* 최근 검색어 (로그인+포커스) */}
+      {currentUser && recentKeywords && recentKeywords.length > 0 && searchFocus && (
+        <div className="mainpage-recent-keywords" style={{ margin: '0 0 8px 0', paddingLeft: 32 }}>
+          <span style={{ color: '#888', fontSize: '0.95em', marginRight: 8 }}>최근 검색어:</span>
+          {recentKeywords.map((keyword, idx) => (
+            <button
+              key={keyword}
+              onClick={() => handleRecentKeywordClick(keyword)}
+              style={{
+                marginRight: 6,
+                padding: '2px 10px',
+                borderRadius: '12px',
+                border: '1px solid #d1c4e9',
+                background: '#f5f5fa',
+                color: '#6a5acd',
+                fontSize: '0.95em',
+                cursor: 'pointer',
+                outline: 'none',
+                marginBottom: 2
+              }}
+            >
+              {keyword}
+            </button>
+          ))}
+        </div>
+      )}
       {/* 로그인/로그아웃/환영 메시지 (검색창 아래) */}
       <div className="mainpage-user-area" style={{ textAlign: 'right', margin: '16px 32px 0 0' }}>
         {currentUser ? (
