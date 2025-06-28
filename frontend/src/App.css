@@ -831,4 +831,43 @@
 }
 .mainpage-search-icon-btn:active {
   color: #7c5fa3;
+}
+
+/* 스틸컷 갤러리 */
+.stillcut-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.stillcut-item {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.stillcut-item:hover {
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+.stillcut-item img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .stillcut-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  
+  .stillcut-item img {
+    height: 80px;
+  }
 } 

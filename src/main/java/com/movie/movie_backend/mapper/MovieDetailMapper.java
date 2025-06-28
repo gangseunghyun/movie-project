@@ -66,6 +66,14 @@ public class MovieDetailMapper {
                 .posterUrl(posterUrl)
                 .directorName(directorName)
                 .averageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0)
+                .stillcuts(movieDetail.getStillcuts() != null ? 
+                    movieDetail.getStillcuts().stream()
+                        .map(stillcut -> MovieDetailDto.Stillcut.builder()
+                            .id(stillcut.getId())
+                            .imageUrl(stillcut.getImageUrl())
+                            .orderInMovie(stillcut.getOrderInMovie())
+                            .build())
+                        .collect(Collectors.toList()) : null)
                 .build();
     }
 

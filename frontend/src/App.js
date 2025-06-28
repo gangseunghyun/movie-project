@@ -1396,6 +1396,22 @@ function App() {
                   <p><strong>예매율:</strong> {selectedMovie.reservationRate ? `${selectedMovie.reservationRate}%` : '-'}</p>
                   <p><strong>누적관객:</strong> {selectedMovie.totalAudience ? selectedMovie.totalAudience.toLocaleString() : '-'}명</p>
                 </div>
+                {selectedMovie.stillcuts && selectedMovie.stillcuts.length > 0 && (
+                  <div className="movie-detail-section">
+                    <h4>스틸컷</h4>
+                    <div className="stillcut-gallery">
+                      {selectedMovie.stillcuts.map((stillcut, index) => (
+                        <div key={stillcut.id || index} className="stillcut-item">
+                          <img 
+                            src={stillcut.imageUrl} 
+                            alt={`${selectedMovie.movieNm} 스틸컷 ${index + 1}`}
+                            onClick={() => window.open(stillcut.imageUrl, '_blank')}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -35,6 +35,7 @@ public class MovieDetailDto {
     private List<Audit> audits;       // 심의정보 목록
     private List<Company> companys;   // 참여 영화사 목록
     private List<Staff> staffs;       // 스텝 목록
+    private List<Stillcut> stillcuts; // 스틸컷 목록
 
     // 내부 DTO들 (필요하면 더 세분화 가능)
 
@@ -87,5 +88,12 @@ public class MovieDetailDto {
         private String peopleNm;
         private String peopleNmEn;
         private String staffRoleNm;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class Stillcut {
+        private Long id;
+        private String imageUrl;
+        private int orderInMovie;
     }
 }
