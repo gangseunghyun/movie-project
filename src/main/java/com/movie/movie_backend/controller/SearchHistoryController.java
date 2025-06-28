@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.web.bind.annotation.*;
 import com.movie.movie_backend.dto.SearchHistoryDto;
+import com.movie.movie_backend.dto.PopularKeywordDto;
 
 import java.util.List;
 
@@ -105,5 +106,14 @@ public class SearchHistoryController {
         
         searchHistoryService.deleteByUserAndKeyword(user, keyword);
         System.out.println("==== deleteSearchHistory 완료 ====");
+    }
+    
+    // 인기 검색어 조회 (인증 불필요)
+    @GetMapping("/popular")
+    public List<PopularKeywordDto> getPopularKeywords() {
+        System.out.println("==== SearchHistoryController.getPopularKeywords 메서드 호출됨 ====");
+        List<PopularKeywordDto> popularKeywords = searchHistoryService.getPopularKeywords();
+        System.out.println("==== getPopularKeywords 완료, 결과 개수: " + popularKeywords.size() + " ====");
+        return popularKeywords;
     }
 } 

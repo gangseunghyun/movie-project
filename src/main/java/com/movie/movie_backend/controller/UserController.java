@@ -160,7 +160,7 @@ public class UserController {
             return ResponseEntity.ok(response);
         }
         PasswordResetToken token = userService.createPasswordResetToken(email);
-        String resetLink = "http://localhost:8080/reset-password?token=" + token.getToken();
+        String resetLink = "http://localhost:3000/reset-password?token=" + token.getToken();
         mailService.sendResetPasswordEmail(email, resetLink);
         response.put("type", "NORMAL");
         response.put("message", "비밀번호 재설정 링크가 이메일로 발송되었습니다.");

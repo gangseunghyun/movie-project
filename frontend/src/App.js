@@ -10,6 +10,9 @@ import UserSearch from './UserSearch';
 import UserPage from './UserPage';
 import { userSearch } from './services/userService';
 import MainPage from './MainPage';
+import FindId from './FindId';
+import FindPassword from './FindPassword';
+import ResetPassword from './ResetPassword';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -84,6 +87,9 @@ function App() {
   // 최근 검색어 상태 추가
   const [recentKeywords, setRecentKeywords] = useState([]);
 
+  // 인기 검색어 상태 추가
+  const [popularKeywords, setPopularKeywords] = useState([]);
+
   // 로그인 상태 확인
   useEffect(() => {
     checkLoginStatus();
@@ -93,6 +99,9 @@ function App() {
       setShowSocialJoin(true);
       setShowAuth(false);
     }
+    
+    // 인기 검색어 불러오기 (로그인 상태와 관계없이)
+    fetchPopularKeywords();
   }, []);
 
   // 정렬 옵션이 변경될 때마다 현재 활성 탭에 따라 데이터 다시 가져오기
@@ -114,6 +123,19 @@ function App() {
       }
     } catch (e) {
       setRecentKeywords([]);
+    }
+  };
+
+  // 인기 검색어 불러오기
+  const fetchPopularKeywords = async () => {
+    try {
+      const res = await axios.get('http://localhost:80/api/search-history/popular');
+      if (Array.isArray(res.data)) {
+        setPopularKeywords(res.data);
+      }
+    } catch (e) {
+      console.error('인기 검색어 불러오기 실패:', e);
+      setPopularKeywords([]);
     }
   };
 
@@ -361,13 +383,15 @@ function App() {
       const movieRes = await safeFetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(keyword)}&page=0&size=20`);
       setSearchResults(movieRes);
 
-      // 2. 최근 검색어 저장 (로그인한 경우만)
-      if (currentUser) {
+      // 2. 검색 결과가 있을 때만 최근 검색어 저장 (로그인한 경우만)
+      if (currentUser && movieRes && movieRes.data && movieRes.data.length > 0) {
         await axios.post('http://localhost:80/api/search-history', null, {
           params: { keyword: keyword.trim() },
           withCredentials: true
         });
         fetchRecentKeywords();
+        // 인기 검색어도 업데이트
+        fetchPopularKeywords();
       }
 
       // 3. 유저 검색 등 추가 로직
@@ -1959,6 +1983,8 @@ function App() {
             recentKeywords={recentKeywords}
             handleRecentKeywordClick={handleRecentKeywordClick}
             handleDeleteRecentKeyword={handleDeleteRecentKeyword}
+            popularKeywords={popularKeywords}
+            handlePopularKeywordClick={handleRecentKeywordClick}
           />
         } />
         <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
@@ -1966,6 +1992,9 @@ function App() {
         <Route path="/social-join" element={<SocialJoin />} />
         <Route path="/user-search" element={<UserSearch />} />
         <Route path="/user/:nickname" element={<UserPage />} />
+        <Route path="/find-id" element={<FindId />} />
+        <Route path="/find-password" element={<FindPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
       {/* 기존 내용 ... */}
     </>

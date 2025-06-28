@@ -152,6 +152,14 @@ function Login({ onLoginSuccess }) {
           <button onClick={() => navigate('/signup')} className="switch-button">
             회원가입
           </button>
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <button onClick={() => navigate('/find-id')} className="find-button">
+              아이디 찾기
+            </button>
+            <button onClick={() => navigate('/find-password')} className="find-button">
+              비밀번호 찾기
+            </button>
+          </div>
         </div>
       </div>
     </div>
