@@ -27,4 +27,21 @@ public interface SearchHistoryRepository extends JpaRepository<SearchHistory, Lo
     @Modifying
     @Query(value = "DELETE FROM search_history WHERE user_id = :userId AND keyword = :keyword", nativeQuery = true)
     void deleteByUserIdAndKeyword(@Param("userId") Long userId, @Param("keyword") String keyword);
+    
+    // 인기 검색어 조회 (검색 결과가 있는 검색어만)
+    @Query(value = """
+        SELECT sh.keyword, COUNT(*) as search_count
+        FROM search_history sh
+        WHERE sh.searched_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+          AND EXISTS (
+            SELECT 1 FROM movie_detail md 
+            WHERE md.movie_nm LIKE CONCAT('%', sh.keyword, '%')
+               OR md.movie_nm_en LIKE CONCAT('%', sh.keyword, '%')
+               OR md.description LIKE CONCAT('%', sh.keyword, '%')
+          )
+        GROUP BY sh.keyword 
+        ORDER BY search_count DESC 
+        LIMIT 10
+        """, nativeQuery = true)
+    List<Object[]> findPopularKeywords();
 } 

@@ -58,7 +58,9 @@ const MainPage = ({
   renderMovieForm,
   recentKeywords,
   handleRecentKeywordClick,
-  handleDeleteRecentKeyword
+  handleDeleteRecentKeyword,
+  popularKeywords,
+  handlePopularKeywordClick
 }) => {
   // 검색창 포커스 상태 추가
   const [searchFocus, setSearchFocus] = useState(false);
@@ -161,6 +163,26 @@ const MainPage = ({
                     }}
                     title="삭제"
                   >×</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          
+          {/* 인기 검색어 드롭다운 */}
+          {popularKeywords && popularKeywords.length > 0 && searchFocus && (
+            <ul className="popular-keywords-dropdown">
+              <li className="popular-keywords-header">
+                📈 인기 검색어 (최근 7일)
+              </li>
+              {popularKeywords.map((item, idx) => (
+                <li
+                  key={item.keyword}
+                  className="popular-keyword-item"
+                  onClick={() => handlePopularKeywordClick(item.keyword)}
+                >
+                  <span className="popular-keyword-rank">{idx + 1}</span>
+                  <span className="popular-keyword-text">{item.keyword}</span>
+                  <span className="popular-keyword-count">({item.searchCount}회)</span>
                 </li>
               ))}
             </ul>

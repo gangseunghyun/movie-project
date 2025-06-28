@@ -3,12 +3,14 @@ package com.movie.movie_backend.service;
 import com.movie.movie_backend.entity.SearchHistory;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.repository.SearchHistoryRepository;
+import com.movie.movie_backend.dto.PopularKeywordDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -72,5 +74,25 @@ public class SearchHistoryService {
         List<SearchHistory> afterDelete = searchHistoryRepository.findByUserAndKeyword(user, keyword);
         System.out.println("삭제 후 검색어 개수: " + afterDelete.size());
         System.out.println("==== deleteByUserAndKeyword 완료 ====");
+    }
+    
+    // 인기 검색어 조회 (검색 결과가 있는 검색어만)
+    @Transactional(readOnly = true)
+    public List<PopularKeywordDto> getPopularKeywords() {
+        System.out.println("==== getPopularKeywords 호출됨 ====");
+        List<Object[]> results = searchHistoryRepository.findPopularKeywords();
+        System.out.println("인기 검색어 조회 결과 개수: " + results.size());
+        
+        List<PopularKeywordDto> popularKeywords = results.stream()
+                .map(result -> {
+                    String keyword = (String) result[0];
+                    Long count = ((Number) result[1]).longValue();
+                    System.out.println("인기 검색어: " + keyword + " (" + count + "회)");
+                    return new PopularKeywordDto(keyword, count);
+                })
+                .collect(Collectors.toList());
+        
+        System.out.println("==== getPopularKeywords 완료 ====");
+        return popularKeywords;
     }
 } 

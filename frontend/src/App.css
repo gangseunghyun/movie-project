@@ -831,4 +831,68 @@
 }
 .mainpage-search-icon-btn:active {
   color: #7c5fa3;
+}
+
+/* 인기 검색어 스타일 */
+.popular-keywords-dropdown {
+  position: absolute;
+  left: 0;
+  top: 44px;
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #dadce0;
+  border-top: none;
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 2px 8px rgba(60,64,67,0.10);
+  z-index: 10;
+  margin: 0;
+  list-style: none;
+  padding: 0;
+  font-size: 0.97em;
+}
+
+.popular-keywords-header {
+  padding: 8px 14px !important;
+  font-size: 0.9em !important;
+  font-weight: 600 !important;
+  color: #666 !important;
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef !important;
+  cursor: default !important;
+}
+
+.popular-keyword-item {
+  padding: 8px 14px !important;
+  font-size: 1em !important;
+  font-weight: 400 !important;
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', '맑은 고딕', Arial, sans-serif !important;
+  min-height: 24px !important;
+  color: #222 !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: background 0.15s !important;
+  cursor: pointer !important;
+}
+
+.popular-keyword-item:hover {
+  background: #f5f5f7 !important;
+}
+
+.popular-keyword-rank {
+  font-weight: 700 !important;
+  color: #a18cd1 !important;
+  margin-right: 8px !important;
+  min-width: 20px !important;
+  text-align: center !important;
+}
+
+.popular-keyword-text {
+  flex: 1 !important;
+  margin-right: 8px !important;
+}
+
+.popular-keyword-count {
+  font-size: 0.85em !important;
+  color: #999 !important;
+  font-weight: 300 !important;
 } 
