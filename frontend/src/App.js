@@ -117,6 +117,25 @@ function App() {
     }
   };
 
+  // 최근 검색어 삭제 후 상태 업데이트
+  const handleDeleteRecentKeyword = async (keyword) => {
+    try {
+      await axios.delete('http://localhost:80/api/search-history', { 
+        params: { keyword }, 
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      // 삭제 후 최근 검색어 다시 불러오기
+      fetchRecentKeywords();
+    } catch (err) {
+      console.error('삭제 실패:', err);
+      alert('삭제에 실패했습니다.');
+    }
+  };
+
   // 로그인 상태가 바뀌거나, 로그인 시 최근 검색어 불러오기
   useEffect(() => {
     if (currentUser) {
@@ -1923,6 +1942,7 @@ function App() {
             renderMovieForm={renderMovieForm}
             recentKeywords={recentKeywords}
             handleRecentKeywordClick={handleRecentKeywordClick}
+            handleDeleteRecentKeyword={handleDeleteRecentKeyword}
           />
         } />
         <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />

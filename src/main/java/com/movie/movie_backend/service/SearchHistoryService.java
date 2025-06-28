@@ -5,12 +5,14 @@ import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.repository.SearchHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class SearchHistoryService {
 
     private final SearchHistoryRepository searchHistoryRepository;
@@ -49,7 +51,26 @@ public class SearchHistoryService {
     }
 
     // 최근 검색어 조회 (최신 10개)
+    @Transactional(readOnly = true)
     public List<SearchHistory> getRecentSearches(User user) {
         return searchHistoryRepository.findTop10ByUserOrderBySearchedAtDesc(user);
+    }
+
+    public void deleteByUserAndKeyword(User user, String keyword) {
+        System.out.println("==== deleteByUserAndKeyword 호출됨 ====");
+        System.out.println("user: " + user);
+        System.out.println("keyword: " + keyword);
+        
+        // 삭제 전 검색어 존재 여부 확인
+        List<SearchHistory> existing = searchHistoryRepository.findByUserAndKeyword(user, keyword);
+        System.out.println("삭제 전 검색어 개수: " + existing.size());
+        
+        // 직접 쿼리로 삭제 (인증 우회)
+        searchHistoryRepository.deleteByUserIdAndKeyword(user.getId(), keyword);
+        
+        // 삭제 후 검색어 존재 여부 확인
+        List<SearchHistory> afterDelete = searchHistoryRepository.findByUserAndKeyword(user, keyword);
+        System.out.println("삭제 후 검색어 개수: " + afterDelete.size());
+        System.out.println("==== deleteByUserAndKeyword 완료 ====");
     }
 } 

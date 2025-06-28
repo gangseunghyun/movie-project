@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const menuList = [
   { icon: '📊', label: '통계' },
@@ -57,10 +57,31 @@ const MainPage = ({
   renderMovieDetailModal,
   renderMovieForm,
   recentKeywords,
-  handleRecentKeywordClick
+  handleRecentKeywordClick,
+  handleDeleteRecentKeyword
 }) => {
   // 검색창 포커스 상태 추가
   const [searchFocus, setSearchFocus] = useState(false);
+  const [localRecentKeywords, setLocalRecentKeywords] = useState(recentKeywords || []);
+
+  // recentKeywords prop이 바뀌면 동기화
+  useEffect(() => {
+    setLocalRecentKeywords(recentKeywords || []);
+  }, [recentKeywords]);
+
+  // 최근 검색어 삭제 핸들러
+  const handleDeleteKeyword = async (keyword, e) => {
+    e.preventDefault();
+    try {
+      // 부모 컴포넌트의 삭제 핸들러 사용
+      await handleDeleteRecentKeyword(keyword);
+      // 로컬 상태도 즉시 업데이트
+      setLocalRecentKeywords(prev => prev.filter(k => k !== keyword));
+    } catch (err) {
+      console.error('삭제 실패:', err);
+      alert('삭제에 실패했습니다.');
+    }
+  };
 
   // 탭별 렌더링 함수 매핑
   const renderByMenu = {
@@ -96,40 +117,56 @@ const MainPage = ({
             value={searchKeyword}
             onChange={e => setSearchKeyword(e.target.value)}
             onFocus={() => setSearchFocus(true)}
-            onBlur={() => setTimeout(() => setSearchFocus(false), 150)}
+            onBlur={e => {
+              // 드롭다운 내부 클릭 시에는 닫히지 않게
+              if (
+                e.relatedTarget &&
+                (e.relatedTarget.classList?.contains('recent-keyword-delete') ||
+                 e.relatedTarget.classList?.contains('recent-keyword-item'))
+              ) {
+                return;
+              }
+              setTimeout(() => setSearchFocus(false), 200);
+            }}
             placeholder="영화/유저 검색..."
             className="mainpage-search-input"
-            style={{ width: 220, marginRight: 8 }}
+            style={{
+              paddingRight: 40
+            }}
           />
-          <button onClick={handleSearch} className="mainpage-search-btn">검색</button>
+          <button
+            className="mainpage-search-icon-btn"
+            onClick={handleSearch}
+            tabIndex={-1}
+            type="button"
+          >
+            <span role="img" aria-label="검색">🔍</span>
+          </button>
+          {/* 최근 검색어 드롭다운 */}
+          {currentUser && localRecentKeywords && localRecentKeywords.length > 0 && searchFocus && (
+            <ul className="recent-keywords-dropdown">
+              {localRecentKeywords.filter(keyword => keyword && keyword.trim().length > 1).map((keyword, idx) => (
+                <li
+                  key={keyword}
+                  className="recent-keyword-item"
+                  onClick={() => handleRecentKeywordClick(keyword)}
+                >
+                  {keyword}
+                  <span
+                    className="recent-keyword-delete"
+                    tabIndex={-1}
+                    onClick={e => {
+                      e.stopPropagation(); // 부모 클릭 이벤트 방지
+                      handleDeleteKeyword(keyword, e);
+                    }}
+                    title="삭제"
+                  >×</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </header>
-      {/* 최근 검색어 (로그인+포커스) */}
-      {currentUser && recentKeywords && recentKeywords.length > 0 && searchFocus && (
-        <div className="mainpage-recent-keywords" style={{ margin: '0 0 8px 0', paddingLeft: 32 }}>
-          <span style={{ color: '#888', fontSize: '0.95em', marginRight: 8 }}>최근 검색어:</span>
-          {recentKeywords.filter(keyword => keyword && keyword.trim() !== "").map((keyword, idx) => (
-            <button
-              key={keyword}
-              onClick={() => handleRecentKeywordClick(keyword)}
-              style={{
-                marginRight: 6,
-                padding: '2px 10px',
-                borderRadius: '12px',
-                border: '1px solid #d1c4e9',
-                background: '#f5f5fa',
-                color: '#6a5acd',
-                fontSize: '0.95em',
-                cursor: 'pointer',
-                outline: 'none',
-                marginBottom: 2
-              }}
-            >
-              {keyword}
-            </button>
-          ))}
-        </div>
-      )}
       {/* 로그인/로그아웃/환영 메시지 (검색창 아래) */}
       <div className="mainpage-user-area" style={{ textAlign: 'right', margin: '16px 32px 0 0' }}>
         {currentUser ? (

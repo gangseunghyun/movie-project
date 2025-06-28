@@ -77,4 +77,33 @@ public class SearchHistoryController {
                 .map(h -> new SearchHistoryDto(h.getId(), h.getKeyword(), h.getSearchedAt()))
                 .toList();
     }
+
+    @DeleteMapping
+    public void deleteSearchHistory(@RequestParam String keyword, @AuthenticationPrincipal Object principal) {
+        System.out.println("==== SearchHistoryController.deleteSearchHistory 메서드 호출됨 ====");
+        System.out.println("==== keyword: " + keyword);
+        System.out.println("==== principal class: " + (principal != null ? principal.getClass() : "null"));
+        System.out.println("==== principal: " + principal);
+        
+        String email = null;
+        if (principal instanceof DefaultOAuth2User) {
+            DefaultOAuth2User oAuth2User = (DefaultOAuth2User) principal;
+            email = (String) oAuth2User.getAttribute("email");
+            System.out.println("==== OAuth2User email: " + email);
+        } else if (principal instanceof User) {
+            User userPrincipal = (User) principal;
+            email = userPrincipal.getEmail();
+            System.out.println("==== User principal email: " + email);
+        } else {
+            System.out.println("==== principal은 DefaultOAuth2User도 User도 아님: " + (principal != null ? principal.getClass() : "null"));
+        }
+        System.out.println("==== email: " + email);
+        
+        if (email == null) throw new RuntimeException("이메일 정보를 찾을 수 없습니다.");
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("사용자 정보가 없습니다."));
+        System.out.println("==== user: " + user);
+        
+        searchHistoryService.deleteByUserAndKeyword(user, keyword);
+        System.out.println("==== deleteSearchHistory 완료 ====");
+    }
 } 

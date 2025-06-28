@@ -116,7 +116,7 @@ public class SecurityConfig {
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session
-                .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
+                .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.ALWAYS)
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
                 .and()
@@ -151,7 +151,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/movies/**").hasRole("ADMIN")
-                .requestMatchers("/api/search-history/**").authenticated()
+                .requestMatchers("/api/search-history").authenticated()
                 .anyRequest().authenticated()
             .and()
             .formLogin().disable()
