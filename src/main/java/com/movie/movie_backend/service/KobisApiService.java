@@ -5,11 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.movie.movie_backend.entity.Director;
 import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.entity.Actor;
+import com.movie.movie_backend.entity.Cast;
 import com.movie.movie_backend.repository.PRDDirectorRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.repository.PRDActorRepository;
+import com.movie.movie_backend.repository.CastRepository;
 import com.movie.movie_backend.dto.MovieListDto;
 import com.movie.movie_backend.constant.MovieStatus;
+import com.movie.movie_backend.constant.RoleType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,12 +37,16 @@ public class KobisApiService {
     private final PRDMovieRepository movieRepository;
     private final PRDMovieListRepository prdMovieListRepository;
     private final PRDDirectorRepository directorRepository;
+    private final PRDActorRepository actorRepository;
+    private final CastRepository castRepository;
 
     @Value("${tmdb.api.key}")
     private String tmdbApiKey;
 
     @Value("${kobis.api.key}")
     private String kobisApiKey;
+
+    private static final String MOVIE_INFO_URL = "http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieInfo.json";
 
     /**
      * MovieList에 있는 영화들의 한글제목/영문제목으로 TMDB에서 검색하여 MovieDetail 보완
@@ -291,33 +300,63 @@ public class KobisApiService {
      */
     public MovieDetail fetchAndSaveMovieDetail(String movieCd) {
         try {
+            // TMDB_ 접두사가 붙은 영화는 처리하지 않음 (KOBIS 데이터만 사용)
+            if (movieCd.startsWith("TMDB_")) {
+                log.warn("TMDB 영화는 처리하지 않음: {} - KOBIS 데이터만 사용", movieCd);
+                return null;
+            }
+            
             log.info("KOBIS API로 MovieDetail 가져오기 시작: {}", movieCd);
             
-            String url = String.format("http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieInfo.json?key=%s&movieCd=%s", 
-                kobisApiKey, movieCd);
-            
-            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                log.error("KOBIS API 호출 실패: status={}", response.getStatusCode());
-                return null;
-            }
-            
-            JsonNode rootNode = objectMapper.readTree(response.getBody());
-            JsonNode movieInfoResult = rootNode.get("movieInfoResult");
-            
-            if (movieInfoResult == null || movieInfoResult.get("movieInfo") == null) {
-                log.warn("KOBIS API 응답에 movieInfo가 없음: {}", movieCd);
-                return null;
-            }
-            
-            JsonNode movieInfo = movieInfoResult.get("movieInfo");
-            
-            // MovieList에서 기본 정보 가져오기
+            // MovieList에서 기본 정보 가져오기 (API 호출 전에 확인)
             MovieList movieList = prdMovieListRepository.findById(movieCd).orElse(null);
             if (movieList == null) {
                 log.warn("MovieList를 찾을 수 없음: {}", movieCd);
                 return null;
             }
+            
+            log.info("KOBIS API 호출: 영화명={}, movieCd={}", movieList.getMovieNm(), movieCd);
+            
+            // KOBIS API 호출
+            String url = String.format("%s?key=%s&movieCd=%s", MOVIE_INFO_URL, kobisApiKey, movieCd);
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.error("KOBIS API 호출 실패: status={}, movieCd={}", response.getStatusCode(), movieCd);
+                return null;
+            }
+            
+            // API 응답 로깅 (디버깅용)
+            String responseBody = response.getBody();
+            log.debug("KOBIS API 응답: {}", responseBody);
+            
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            JsonNode movieInfoResult = rootNode.get("movieInfoResult");
+            
+            if (movieInfoResult == null) {
+                log.warn("KOBIS API 응답에 movieInfoResult가 없음: movieCd={}, 응답={}", movieCd, responseBody);
+                return null;
+            }
+            
+            JsonNode movieInfo = movieInfoResult.get("movieInfo");
+            
+            if (movieInfo == null) {
+                log.warn("KOBIS API 응답에 movieInfo가 없음: movieCd={}, movieInfoResult={}", movieCd, movieInfoResult.toString());
+                
+                // KOBIS에서 실패하면 영화명으로 재검색 시도
+                log.info("movieCd로 실패했으므로 영화명으로 재검색 시도: {}", movieList.getMovieNm());
+                MovieDetail fallbackResult = searchMovieByTitleFromKobis(movieList);
+                if (fallbackResult != null) {
+                    log.info("영화명으로 KOBIS 검색 성공: {}", movieList.getMovieNm());
+                    return fallbackResult;
+                }
+                
+                // KOBIS에서 완전히 실패하면 null 반환 (TMDB fallback 제거)
+                log.warn("KOBIS에서 완전히 실패: {} - TMDB fallback을 사용하지 않음", movieCd);
+                return null;
+            }
+            
+            log.info("KOBIS API에서 영화 정보 발견: {} ({})", movieList.getMovieNm(), movieCd);
             
             // 상세 정보 추출
             String description = "";
@@ -348,6 +387,26 @@ public class KobisApiService {
                 if (directors.size() > 0) {
                     String directorName = directors.get(0).get("peopleNm").asText();
                     director = saveDirectorByName(directorName);
+                }
+            }
+            
+            // 배우 정보 (Actor, Cast)
+            List<Actor> actors = new ArrayList<>();
+            if (movieInfo.has("actors") && movieInfo.get("actors").isArray()) {
+                JsonNode actorsNode = movieInfo.get("actors");
+                log.info("KOBIS에서 배우 정보 {}개 발견: 영화={}", actorsNode.size(), movieList.getMovieNm());
+                
+                for (int i = 0; i < actorsNode.size() && i < 10; i++) { // 최대 10명까지만
+                    JsonNode actorNode = actorsNode.get(i);
+                    String actorName = actorNode.get("peopleNm").asText();
+                    String characterName = actorNode.has("cast") ? actorNode.get("cast").asText() : "";
+                    
+                    // Actor 저장 또는 조회
+                    Actor actor = saveActorByName(actorName);
+                    if (actor != null) {
+                        actors.add(actor);
+                        log.debug("배우 추가: {} - 캐릭터: {}", actorName, characterName);
+                    }
                 }
             }
             
@@ -405,10 +464,18 @@ public class KobisApiService {
             log.info("KOBIS MovieDetail 저장 완료: {} ({}) - 영문제목: {}, 장르: {}", 
                 savedMovieDetail.getMovieNm(), movieCd, movieNmEn, genreNm);
             
+            // Cast 정보 저장
+            if (!actors.isEmpty()) {
+                saveCastInfo(savedMovieDetail, actors, movieInfo);
+            }
+            
             return savedMovieDetail;
             
         } catch (Exception e) {
             log.error("KOBIS API로 MovieDetail 가져오기 실패: {} - {}", movieCd, e.getMessage());
+            
+            // 예외 발생 시에도 TMDB fallback 제거 - KOBIS 데이터만 사용
+            log.warn("KOBIS API 호출 중 예외 발생: {} - TMDB fallback을 사용하지 않음", movieCd);
             return null;
         }
     }
@@ -759,5 +826,253 @@ public class KobisApiService {
         } catch (Exception e) {
             log.error("개봉예정작 데이터 정리 실패", e);
         }
+    }
+
+    /**
+     * 영화명으로 KOBIS에서 검색하여 MovieDetail 가져오기
+     */
+    private MovieDetail searchMovieByTitleFromKobis(MovieList movieList) {
+        try {
+            log.info("KOBIS 영화명 검색 시작: {}", movieList.getMovieNm());
+            
+            // KOBIS 영화목록 API에서 영화명으로 검색
+            String encodedTitle = java.net.URLEncoder.encode(movieList.getMovieNm(), java.nio.charset.StandardCharsets.UTF_8);
+            String url = String.format("http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=%s&movieNm=%s", 
+                kobisApiKey, encodedTitle);
+            
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.warn("KOBIS 영화명 검색 API 호출 실패: status={}", response.getStatusCode());
+                return null;
+            }
+            
+            JsonNode rootNode = objectMapper.readTree(response.getBody());
+            JsonNode movieListResult = rootNode.get("movieListResult");
+            
+            if (movieListResult == null || movieListResult.get("movieList") == null) {
+                log.warn("KOBIS 영화명 검색 결과가 없음: {}", movieList.getMovieNm());
+                return null;
+            }
+            
+            JsonNode movies = movieListResult.get("movieList");
+            
+            // 가장 정확한 매칭 찾기
+            for (JsonNode movie : movies) {
+                String foundMovieCd = movie.get("movieCd").asText();
+                String foundMovieNm = movie.get("movieNm").asText();
+                
+                // 제목이 정확히 일치하거나 포함되는 경우
+                if (foundMovieNm.equals(movieList.getMovieNm()) || 
+                    foundMovieNm.contains(movieList.getMovieNm()) || 
+                    movieList.getMovieNm().contains(foundMovieNm)) {
+                    
+                    log.info("KOBIS에서 매칭된 영화 발견: {} -> {} ({})", 
+                        movieList.getMovieNm(), foundMovieNm, foundMovieCd);
+                    
+                    // 찾은 movieCd로 상세정보 직접 가져오기 (재귀 호출 방지)
+                    return fetchMovieDetailByMovieCd(foundMovieCd, movieList);
+                }
+            }
+            
+            log.warn("KOBIS에서 매칭되는 영화를 찾을 수 없음: {}", movieList.getMovieNm());
+            return null;
+            
+        } catch (Exception e) {
+            log.warn("KOBIS 영화명 검색 실패: {} - {}", movieList.getMovieNm(), e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * movieCd로 KOBIS 상세정보 직접 가져오기 (재귀 호출 방지용)
+     */
+    private MovieDetail fetchMovieDetailByMovieCd(String movieCd, MovieList movieList) {
+        try {
+            log.info("KOBIS 상세정보 직접 가져오기: {} ({})", movieList.getMovieNm(), movieCd);
+            
+            // KOBIS API 호출
+            String url = String.format("%s?key=%s&movieCd=%s", MOVIE_INFO_URL, kobisApiKey, movieCd);
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.error("KOBIS API 호출 실패: status={}, movieCd={}", response.getStatusCode(), movieCd);
+                return null;
+            }
+            
+            JsonNode rootNode = objectMapper.readTree(response.getBody());
+            JsonNode movieInfoResult = rootNode.get("movieInfoResult");
+            
+            if (movieInfoResult == null) {
+                log.warn("KOBIS API 응답에 movieInfoResult가 없음: movieCd={}", movieCd);
+                return null;
+            }
+            
+            JsonNode movieInfo = movieInfoResult.get("movieInfo");
+            
+            if (movieInfo == null) {
+                log.warn("KOBIS API 응답에 movieInfo가 없음: movieCd={}", movieCd);
+                return null;
+            }
+            
+            // 상세 정보 추출
+            String description = "";
+            if (movieInfo.has("plot") && !movieInfo.get("plot").isNull()) {
+                description = movieInfo.get("plot").asText();
+            }
+            
+            int showTm = 0;
+            if (movieInfo.has("showTm") && !movieInfo.get("showTm").isNull()) {
+                showTm = movieInfo.get("showTm").asInt();
+            }
+            
+            String companyNm = "";
+            if (movieInfo.has("companys") && movieInfo.get("companys").isArray()) {
+                JsonNode companys = movieInfo.get("companys");
+                for (JsonNode company : companys) {
+                    if ("제작사".equals(company.get("companyPartNm").asText())) {
+                        companyNm = company.get("companyNm").asText();
+                        break;
+                    }
+                }
+            }
+            
+            // 감독 정보
+            Director director = null;
+            if (movieInfo.has("directors") && movieInfo.get("directors").isArray()) {
+                JsonNode directors = movieInfo.get("directors");
+                if (directors.size() > 0) {
+                    String directorName = directors.get(0).get("peopleNm").asText();
+                    director = saveDirectorByName(directorName);
+                }
+            }
+            
+            // 배우 정보 (Actor, Cast)
+            List<Actor> actors = new ArrayList<>();
+            if (movieInfo.has("actors") && movieInfo.get("actors").isArray()) {
+                JsonNode actorsNode = movieInfo.get("actors");
+                log.info("KOBIS에서 배우 정보 {}개 발견: 영화={}", actorsNode.size(), movieList.getMovieNm());
+                
+                for (int i = 0; i < actorsNode.size() && i < 10; i++) { // 최대 10명까지만
+                    JsonNode actorNode = actorsNode.get(i);
+                    String actorName = actorNode.get("peopleNm").asText();
+                    String characterName = actorNode.has("cast") ? actorNode.get("cast").asText() : "";
+                    
+                    // Actor 저장 또는 조회
+                    Actor actor = saveActorByName(actorName);
+                    if (actor != null) {
+                        actors.add(actor);
+                        log.debug("배우 추가: {} - 캐릭터: {}", actorName, characterName);
+                    }
+                }
+            }
+            
+            // MovieDetail 엔티티 생성
+            MovieDetail movieDetail = MovieDetail.builder()
+                .movieCd(movieCd)
+                .movieNm(movieList.getMovieNm())
+                .movieNmEn(movieList.getMovieNmEn() != null ? movieList.getMovieNmEn() : "")
+                .description(description)
+                .openDt(movieList.getOpenDt())
+                .showTm(showTm)
+                .genreNm(movieList.getGenreNm() != null ? movieList.getGenreNm() : "")
+                .nationNm(movieList.getNationNm() != null ? movieList.getNationNm() : "")
+                .watchGradeNm(movieList.getWatchGradeNm() != null ? movieList.getWatchGradeNm() : "")
+                .companyNm(companyNm)
+                .totalAudience(0)
+                .reservationRate(0.0)
+                .averageRating(0.0)
+                .status(movieList.getStatus())
+                .build();
+            
+            if (director != null) {
+                movieDetail.setDirector(director);
+            }
+            
+            // 저장
+            MovieDetail savedMovieDetail = movieRepository.save(movieDetail);
+            log.info("KOBIS MovieDetail 저장 완료: {} ({})", savedMovieDetail.getMovieNm(), movieCd);
+            
+            // Cast 정보 저장
+            if (!actors.isEmpty()) {
+                saveCastInfo(savedMovieDetail, actors, movieInfo);
+            }
+            
+            return savedMovieDetail;
+            
+        } catch (Exception e) {
+            log.error("KOBIS 상세정보 직접 가져오기 실패: {} - {}", movieCd, e.getMessage());
+            return null;
+        }
+    }
+
+    private void saveCastInfo(MovieDetail movieDetail, List<Actor> actors, JsonNode movieInfo) {
+        JsonNode actorsNode = movieInfo.get("actors");
+        
+        for (int i = 0; i < actors.size() && i < actorsNode.size(); i++) {
+            Actor actor = actors.get(i);
+            JsonNode actorNode = actorsNode.get(i);
+            String characterName = actorNode.has("cast") ? actorNode.get("cast").asText() : "";
+            
+            // 주연/조연 구분: 상위 3명은 주연, 나머지는 조연
+            RoleType roleType = (i < 3) ? RoleType.LEAD : RoleType.SUPPORTING;
+            
+            Cast cast = Cast.builder()
+                .movieDetail(movieDetail)
+                .actor(actor)
+                .characterName(characterName)
+                .orderInCredits(i + 1)
+                .roleType(roleType)
+                .build();
+            
+            castRepository.save(cast);
+            log.debug("Cast 저장: 영화={}, 배우={}, 역할={}, 캐릭터={}", 
+                movieDetail.getMovieNm(), actor.getName(), roleType, characterName);
+        }
+        
+        log.info("KOBIS Cast 정보 저장 완료: 영화={}, 배우 수={}", movieDetail.getMovieNm(), actors.size());
+    }
+
+    private Actor saveActorByName(String actorName) {
+        // 기존 배우가 있는지 확인
+        Optional<Actor> existingActor = actorRepository.findByName(actorName);
+        
+        if (existingActor.isPresent()) {
+            return existingActor.get();
+        }
+
+        // 새 배우 생성 (TMDB에서 이미지 URL 조회)
+        String photoUrl = fetchActorImageUrlFromTmdb(actorName);
+        Actor actor = Actor.builder()
+                .name(actorName)
+                .photoUrl(photoUrl)
+                .build();
+        
+        return actorRepository.save(actor);
+    }
+
+    private String fetchActorImageUrlFromTmdb(String actorName) {
+        try {
+            String encodedName = java.net.URLEncoder.encode(actorName, java.nio.charset.StandardCharsets.UTF_8);
+            String url = String.format("https://api.themoviedb.org/3/search/person?api_key=%s&query=%s&language=ko-KR", 
+                tmdbApiKey, encodedName);
+            
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JsonNode rootNode = objectMapper.readTree(response.getBody());
+                JsonNode results = rootNode.get("results");
+                
+                if (results != null && results.size() > 0) {
+                    JsonNode person = results.get(0);
+                    if (person.has("profile_path") && !person.get("profile_path").isNull()) {
+                        String profilePath = person.get("profile_path").asText();
+                        return "https://image.tmdb.org/t/p/w500" + profilePath;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("TMDB 배우 이미지 URL 조회 실패: {} - {}", actorName, e.getMessage());
+        }
+        
+        return null;
     }
 } 

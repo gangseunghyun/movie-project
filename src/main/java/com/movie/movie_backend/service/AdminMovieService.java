@@ -712,7 +712,6 @@ public class AdminMovieService {
     /**
      * 애플리케이션 시작 시 기존 영화 데이터 자동 업데이트
      */
-    @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void updateExistingMoviesOnStartup() {
         try {
