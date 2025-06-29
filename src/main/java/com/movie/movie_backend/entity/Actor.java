@@ -19,5 +19,5 @@ public class Actor {
 
     @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Cast> casts; // 출연한 영화 목록 (역할 정보 포함)
-    // 테스트
+    // data
 } 

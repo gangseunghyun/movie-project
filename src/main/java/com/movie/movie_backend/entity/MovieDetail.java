@@ -73,7 +73,7 @@ public class MovieDetail {
 
     @OneToMany(mappedBy = "movieDetail", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private List<Stillcut> stillcuts; // 영화의 스틸컷 이미지 목록
+    private List<Stillcut> stillcuts = new java.util.ArrayList<>(); // 영화의 스틸컷 이미지 목록
 
     // 평점 캐시 필드 (성능 최적화용)
     private Double averageRating;     // 평균 평점
