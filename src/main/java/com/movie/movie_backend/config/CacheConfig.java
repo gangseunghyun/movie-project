@@ -16,9 +16,14 @@ public class CacheConfig {
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
-        cacheManager.setCaffeine(Caffeine.newBuilder()
-                .expireAfterWrite(3, TimeUnit.MINUTES) // 3분 후 만료
-                .maximumSize(1000)); // 최대 1000개 항목
+        
+        // 인기검색어 캐시만 유지: 2분 TTL, 최대 100개 항목
+        cacheManager.registerCustomCache("popularKeywords", 
+            Caffeine.newBuilder()
+                .expireAfterWrite(2, TimeUnit.MINUTES)
+                .maximumSize(100)
+                .build());
+        
         return cacheManager;
     }
 } 

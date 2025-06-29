@@ -1,16 +1,16 @@
 package com.movie.movie_backend.service;
 
 import com.movie.movie_backend.entity.SearchHistory;
+import com.movie.movie_backend.entity.SearchLog;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.repository.SearchHistoryRepository;
-import com.movie.movie_backend.dto.PopularKeywordDto;
+import com.movie.movie_backend.repository.SearchLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,38 +18,60 @@ import java.util.stream.Collectors;
 public class SearchHistoryService {
 
     private final SearchHistoryRepository searchHistoryRepository;
+    private final SearchLogRepository searchLogRepository;
 
-    // 검색어 저장 (중복 비허용, 10개 제한)
+    // 검색어 저장 (중복 비허용, 10개 제한) + search_log에도 저장
     public SearchHistory saveSearchHistory(User user, String keyword) {
         System.out.println("==== saveSearchHistory 호출됨 ====");
         System.out.println("user: " + user);
         System.out.println("keyword: " + keyword);
-        // 1. 기존에 같은 검색어가 있으면 삭제
-        List<SearchHistory> duplicates = searchHistoryRepository.findByUserAndKeyword(user, keyword);
-        if (!duplicates.isEmpty()) {
-            searchHistoryRepository.deleteAll(duplicates);
-        }
-        // 2. 새로 저장
-        SearchHistory history = SearchHistory.builder()
-                .user(user)
-                .keyword(keyword)
-                .searchedAt(LocalDateTime.now())
-                .build();
+        
+        // 1. search_log에 저장 (인기검색어 집계용) - 로그인/비로그인 모두 저장
         try {
-            searchHistoryRepository.save(history);
-            System.out.println("==== searchHistoryRepository.save 이후 ====");
+            SearchLog searchLog = new SearchLog();
+            searchLog.setKeyword(keyword);
+            searchLog.setSearchedAt(LocalDateTime.now());
+            searchLog.setUserId(user != null ? user.getId() : null);
+            searchLogRepository.save(searchLog);
+            System.out.println("==== search_log 저장 완료 ====");
         } catch (Exception e) {
-            System.out.println("==== searchHistoryRepository.save 예외 발생 ====");
+            System.out.println("==== search_log 저장 실패 ====");
             e.printStackTrace();
+            // search_log 저장 실패해도 최근검색어는 계속 진행
         }
-        // 3. 10개 초과 시 오래된 것 삭제
-        List<SearchHistory> all = searchHistoryRepository.findTop10ByUserOrderBySearchedAtDesc(user);
-        List<SearchHistory> allByUser = searchHistoryRepository.findAllByUserOrderBySearchedAtDesc(user);
-        if (allByUser.size() > 10) {
-            List<SearchHistory> toDelete = allByUser.subList(10, allByUser.size());
-            searchHistoryRepository.deleteAll(toDelete);
+        
+        // 2. 최근검색어 저장 (로그인한 사용자만)
+        if (user != null) {
+            // 2-1. 기존에 같은 검색어가 있으면 삭제
+            List<SearchHistory> duplicates = searchHistoryRepository.findByUserAndKeyword(user, keyword);
+            if (!duplicates.isEmpty()) {
+                searchHistoryRepository.deleteAll(duplicates);
+            }
+            // 2-2. 새로 저장
+            SearchHistory history = SearchHistory.builder()
+                    .user(user)
+                    .keyword(keyword)
+                    .searchedAt(LocalDateTime.now())
+                    .build();
+            try {
+                searchHistoryRepository.save(history);
+                System.out.println("==== searchHistoryRepository.save 이후 ====");
+            } catch (Exception e) {
+                System.out.println("==== searchHistoryRepository.save 예외 발생 ====");
+                e.printStackTrace();
+            }
+            // 2-3. 10개 초과 시 오래된 것 삭제
+            List<SearchHistory> all = searchHistoryRepository.findTop10ByUserOrderBySearchedAtDesc(user);
+            List<SearchHistory> allByUser = searchHistoryRepository.findAllByUserOrderBySearchedAtDesc(user);
+            if (allByUser.size() > 10) {
+                List<SearchHistory> toDelete = allByUser.subList(10, allByUser.size());
+                searchHistoryRepository.deleteAll(toDelete);
+            }
+            return history;
+        } else {
+            System.out.println("==== 비로그인 사용자이므로 최근검색어 저장하지 않음 ====");
+            return null;
         }
-        return history;
     }
 
     // 최근 검색어 조회 (최신 10개)
@@ -74,25 +96,5 @@ public class SearchHistoryService {
         List<SearchHistory> afterDelete = searchHistoryRepository.findByUserAndKeyword(user, keyword);
         System.out.println("삭제 후 검색어 개수: " + afterDelete.size());
         System.out.println("==== deleteByUserAndKeyword 완료 ====");
-    }
-    
-    // 인기 검색어 조회 (검색 결과가 있는 검색어만)
-    @Transactional(readOnly = true)
-    public List<PopularKeywordDto> getPopularKeywords() {
-        System.out.println("==== getPopularKeywords 호출됨 ====");
-        List<Object[]> results = searchHistoryRepository.findPopularKeywords();
-        System.out.println("인기 검색어 조회 결과 개수: " + results.size());
-        
-        List<PopularKeywordDto> popularKeywords = results.stream()
-                .map(result -> {
-                    String keyword = (String) result[0];
-                    Long count = ((Number) result[1]).longValue();
-                    System.out.println("인기 검색어: " + keyword + " (" + count + "회)");
-                    return new PopularKeywordDto(keyword, count);
-                })
-                .collect(Collectors.toList());
-        
-        System.out.println("==== getPopularKeywords 완료 ====");
-        return popularKeywords;
     }
 } 

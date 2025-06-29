@@ -115,13 +115,24 @@ function App() {
 
   // 최근 검색어 불러오기
   const fetchRecentKeywords = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('사용자가 로그인되지 않아 최근 검색어를 불러오지 않습니다.');
+      return;
+    }
     try {
+      console.log('최근 검색어 불러오기 시작...');
       const res = await axios.get('http://localhost:80/api/search-history', { withCredentials: true });
+      console.log('최근 검색어 API 응답:', res.data);
       if (Array.isArray(res.data)) {
-        setRecentKeywords(res.data.map(item => item.keyword));
+        const keywords = res.data.map(item => item.keyword);
+        setRecentKeywords(keywords);
+        console.log('최근 검색어 설정 완료:', keywords);
+      } else {
+        console.log('최근 검색어 응답이 배열이 아님:', res.data);
+        setRecentKeywords([]);
       }
     } catch (e) {
+      console.error('최근 검색어 불러오기 실패:', e);
       setRecentKeywords([]);
     }
   };
@@ -129,9 +140,19 @@ function App() {
   // 인기 검색어 불러오기
   const fetchPopularKeywords = async () => {
     try {
-      const res = await axios.get('http://localhost:80/api/search-history/popular');
+      console.log('인기 검색어 불러오기 시작...');
+      const res = await axios.get('http://localhost:80/api/popular-keywords');
+      console.log('인기 검색어 API 응답:', res.data);
       if (Array.isArray(res.data)) {
-        setPopularKeywords(res.data);
+        // PopularKeyword 엔티티 구조에 맞게 매핑
+        setPopularKeywords(res.data.map(item => ({
+          keyword: item.keyword,
+          searchCount: item.searchCount
+        })));
+        console.log('인기 검색어 설정 완료:', res.data);
+      } else {
+        console.log('인기 검색어 응답이 배열이 아님:', res.data);
+        setPopularKeywords([]);
       }
     } catch (e) {
       console.error('인기 검색어 불러오기 실패:', e);
@@ -384,7 +405,7 @@ function App() {
       setSearchResults(movieRes);
 
       // 2. 검색 결과가 있을 때만 최근 검색어 저장 (로그인한 경우만)
-      if (currentUser && movieRes && movieRes.data && movieRes.data.length > 0) {
+      if (currentUser) {
         await axios.post('http://localhost:80/api/search-history', null, {
           params: { keyword: keyword.trim() },
           withCredentials: true

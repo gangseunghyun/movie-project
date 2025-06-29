@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -74,6 +75,61 @@ public class PRDMovieListService {
      */
     public List<MovieListDto> searchMoviesByName(String movieNm) {
         return movieListRepository.findByMovieNmContainingIgnoreCase(movieNm).stream()
+                .map(movieListMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 띄어쓰기 무시 통합 검색 (제목, 장르, 국가)
+     */
+    public List<MovieListDto> searchMoviesIgnoreSpace(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        
+        String noSpace = keyword.replaceAll("\\s+", "");
+        List<MovieList> results = new ArrayList<>();
+        
+        // 1. 제목으로 검색
+        List<MovieList> titleResults = movieListRepository.findByMovieNmContainingIgnoreCase(keyword);
+        results.addAll(titleResults);
+        
+        // 2. 장르로 검색
+        List<MovieList> genreResults = movieListRepository.findByGenreNmContaining(keyword);
+        for (MovieList movie : genreResults) {
+            if (!results.contains(movie)) {
+                results.add(movie);
+            }
+        }
+        
+        // 3. 국가로 검색
+        List<MovieList> nationResults = movieListRepository.findByNationNmContaining(keyword);
+        for (MovieList movie : nationResults) {
+            if (!results.contains(movie)) {
+                results.add(movie);
+            }
+        }
+        
+        // 4. 띄어쓰기 제거 후 검색
+        List<MovieList> noSpaceResults = movieListRepository.findAll().stream()
+                .filter(movie -> {
+                    String movieNmNoSpace = movie.getMovieNm() != null ? movie.getMovieNm().replaceAll("\\s+", "") : "";
+                    String genreNmNoSpace = movie.getGenreNm() != null ? movie.getGenreNm().replaceAll("\\s+", "") : "";
+                    String nationNmNoSpace = movie.getNationNm() != null ? movie.getNationNm().replaceAll("\\s+", "") : "";
+                    
+                    return movieNmNoSpace.contains(noSpace) || 
+                           genreNmNoSpace.contains(noSpace) || 
+                           nationNmNoSpace.contains(noSpace);
+                })
+                .collect(Collectors.toList());
+        
+        for (MovieList movie : noSpaceResults) {
+            if (!results.contains(movie)) {
+                results.add(movie);
+            }
+        }
+        
+        return results.stream()
                 .map(movieListMapper::toDto)
                 .collect(Collectors.toList());
     }

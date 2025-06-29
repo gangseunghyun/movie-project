@@ -3,6 +3,7 @@ package com.movie.movie_backend.controller;
 import com.movie.movie_backend.entity.MovieList;
 import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.BoxOffice;
+import com.movie.movie_backend.entity.SearchLog;
 import com.movie.movie_backend.dto.BoxOfficeDto;
 import com.movie.movie_backend.dto.MovieDetailDto;
 import com.movie.movie_backend.dto.MovieListDto;
@@ -18,6 +19,7 @@ import com.movie.movie_backend.service.TmdbRatingService;
 import com.movie.movie_backend.repository.PRDMovieListRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.BoxOfficeRepository;
+import com.movie.movie_backend.repository.SearchLogRepository;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
 import com.movie.movie_backend.mapper.MovieListMapper;
 import com.movie.movie_backend.mapper.TopRatedMovieMapper;
@@ -38,6 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -63,6 +66,8 @@ public class DataViewController {
     private final TmdbRatingService tmdbRatingService;
     private final TopRatedMovieMapper topRatedMovieMapper;
     private final PRDMovieService prdMovieService;
+    private final PRDMovieListService prdMovieListService;
+    private final SearchLogRepository searchLogRepository;
 
     /**
      * 데이터 조회 메인 페이지
@@ -402,8 +407,9 @@ public class DataViewController {
      * MovieDetail DTO 검색 API (띄어쓰기 무시 통합 검색)
      * 
      * React에서 사용법:
-     * - 영화 제목, 감독, 배우, 장르를 띄어쓰기 무시하고 통합 검색할 때 사용
-     * - 키워드가 포함된 영화 제목을 찾습니다
+     * - 영화 제목, 감독, 배우, 장르를 띄어쓰기 무시하고 통합 검색
+     * - movie_detail → movie_list 순서로 검색하여 결과 합치기
+     * - 검색 시 search_log에 자동 저장 (인기검색어 집계용)
      * - 기본값: page=0, size=20
      * 
      * 예시:
@@ -414,7 +420,7 @@ public class DataViewController {
     @GetMapping("/api/movie-detail-dto/search")
     @ResponseBody
     @Operation(summary = "MovieDetail DTO 검색 API (띄어쓰기 무시 통합 검색)", 
-               description = "영화 제목, 감독, 배우, 장르를 띄어쓰기 무시하고 통합 검색합니다. React에서 사용할 때: fetch('/data/api/movie-detail-dto/search?keyword=아바타&page=0&size=10')")
+               description = "영화 제목, 감독, 배우, 장르를 띄어쓰기 무시하고 통합 검색합니다. movie_detail → movie_list 순서로 검색하여 결과 합치기. React에서 사용할 때: fetch('/data/api/movie-detail-dto/search?keyword=아바타&page=0&size=10')")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "영화 검색 성공"),
         @ApiResponse(responseCode = "400", description = "영화 검색 실패")
@@ -425,14 +431,61 @@ public class DataViewController {
             @RequestParam(defaultValue = "20") int size) {
         try {
             log.info("영화 통합 검색 요청(띄어쓰기 무시): keyword={}, page={}, size={}", keyword, page, size);
-            List<MovieDetail> filteredMovies = prdMovieService.searchMoviesIgnoreSpace(keyword);
-            int total = filteredMovies.size();
+            
+            // 2. movie_detail에서 검색 (기존 통합 검색)
+            List<MovieDetail> movieDetailResults = prdMovieService.searchMoviesIgnoreSpace(keyword);
+            log.info("movie_detail 검색 결과: {}개", movieDetailResults.size());
+            
+            // 3. movie_detail에 없으면 movie_list에서 검색
+            List<MovieDetail> movieListResults = new ArrayList<>();
+            if (movieDetailResults.isEmpty()) {
+                log.info("movie_detail에 결과가 없어 movie_list에서 검색 시도");
+                List<MovieListDto> movieListDtos = prdMovieListService.searchMoviesIgnoreSpace(keyword);
+                
+                // MovieListDto를 MovieDetail로 변환 (기본 정보만)
+                for (MovieListDto movieListDto : movieListDtos) {
+                    MovieDetail movieDetail = new MovieDetail();
+                    movieDetail.setMovieCd(movieListDto.getMovieCd());
+                    movieDetail.setMovieNm(movieListDto.getMovieNm());
+                    movieDetail.setMovieNmEn(movieListDto.getMovieNmEn());
+                    movieDetail.setOpenDt(movieListDto.getOpenDt());
+                    movieDetail.setGenreNm(movieListDto.getGenreNm());
+                    movieDetail.setNationNm(movieListDto.getNationNm());
+                    movieDetail.setWatchGradeNm(movieListDto.getWatchGradeNm());
+                    movieDetail.setStatus(movieListDto.getStatus());
+                    movieListResults.add(movieDetail);
+                }
+                log.info("movie_list 검색 결과: {}개", movieListResults.size());
+            }
+            
+            // 4. 두 결과 합치기 (중복 제거)
+            List<MovieDetail> allResults = new ArrayList<>(movieDetailResults);
+            
+            // movie_list 결과 중 movie_detail에 없는 것만 추가
+            Set<String> existingMovieCds = movieDetailResults.stream()
+                    .map(MovieDetail::getMovieCd)
+                    .collect(Collectors.toSet());
+            
+            for (MovieDetail movieListResult : movieListResults) {
+                if (!existingMovieCds.contains(movieListResult.getMovieCd())) {
+                    allResults.add(movieListResult);
+                }
+            }
+            
+            log.info("최종 검색 결과: movie_detail={}개, movie_list={}개, 합계={}개", 
+                    movieDetailResults.size(), movieListResults.size(), allResults.size());
+            
+            // 5. 페이지네이션 처리
+            int total = allResults.size();
             int start = page * size;
             int end = Math.min(start + size, total);
-            List<MovieDetail> pagedList = filteredMovies.subList(start, end);
+            List<MovieDetail> pagedList = allResults.subList(start, end);
+            
+            // 6. DTO 변환
             List<MovieDetailDto> dtoList = pagedList.stream()
                     .map(movieDetailMapper::toDto)
                     .collect(Collectors.toList());
+            
             log.info("영화 통합 검색 결과: keyword={}, total={}, page={}, size={}", keyword, total, page, size);
             return ResponseEntity.ok(Map.of(
                 "data", dtoList,
@@ -440,7 +493,11 @@ public class DataViewController {
                 "page", page,
                 "size", size,
                 "totalPages", (int) Math.ceil((double) total / size),
-                "keyword", keyword
+                "keyword", keyword,
+                "searchSource", Map.of(
+                    "movieDetailCount", movieDetailResults.size(),
+                    "movieListCount", movieListResults.size()
+                )
             ));
         } catch (Exception e) {
             log.error("영화 통합 검색 실패: keyword={}", keyword, e);

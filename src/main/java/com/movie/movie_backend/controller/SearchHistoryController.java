@@ -5,14 +5,17 @@ import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.service.SearchHistoryService;
 import com.movie.movie_backend.repository.USRUserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.web.bind.annotation.*;
 import com.movie.movie_backend.dto.SearchHistoryDto;
-import com.movie.movie_backend.dto.PopularKeywordDto;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/search-history")
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class SearchHistoryController {
     // 검색어 저장
     @PostMapping
     public void saveSearch(@RequestParam String keyword, @AuthenticationPrincipal Object principal) {
+        log.info("검색어 저장 요청: keyword={}", keyword);
         System.out.println("==== SearchHistoryController.saveSearch 메서드 호출됨 ====");
         System.out.println("==== keyword: " + keyword);
         System.out.println("==== principal class: " + (principal != null ? principal.getClass() : "null"));
@@ -48,11 +52,13 @@ public class SearchHistoryController {
         System.out.println("==== user: " + user);
 
         searchHistoryService.saveSearchHistory(user, keyword);
+        log.info("검색어 저장 완료: user={}, keyword={}", user.getEmail(), keyword);
     }
 
     // 최근 검색어 조회
     @GetMapping
     public List<SearchHistoryDto> getRecentSearches(@AuthenticationPrincipal Object principal) {
+        log.info("최근 검색어 조회 요청");
         System.out.println("==== principal class: " + (principal != null ? principal.getClass() : "null"));
         System.out.println("==== principal: " + principal);
 
@@ -74,13 +80,17 @@ public class SearchHistoryController {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("사용자 정보가 없습니다."));
         System.out.println("==== user: " + user);
 
-        return searchHistoryService.getRecentSearches(user).stream()
+        List<SearchHistoryDto> recentSearches = searchHistoryService.getRecentSearches(user).stream()
                 .map(h -> new SearchHistoryDto(h.getId(), h.getKeyword(), h.getSearchedAt()))
                 .toList();
+        
+        log.info("최근 검색어 조회 결과: user={}, count={}", user.getEmail(), recentSearches.size());
+        return recentSearches;
     }
 
     @DeleteMapping
     public void deleteSearchHistory(@RequestParam String keyword, @AuthenticationPrincipal Object principal) {
+        log.info("검색어 삭제 요청: keyword={}", keyword);
         System.out.println("==== SearchHistoryController.deleteSearchHistory 메서드 호출됨 ====");
         System.out.println("==== keyword: " + keyword);
         System.out.println("==== principal class: " + (principal != null ? principal.getClass() : "null"));
@@ -106,14 +116,6 @@ public class SearchHistoryController {
         
         searchHistoryService.deleteByUserAndKeyword(user, keyword);
         System.out.println("==== deleteSearchHistory 완료 ====");
-    }
-    
-    // 인기 검색어 조회 (인증 불필요)
-    @GetMapping("/popular")
-    public List<PopularKeywordDto> getPopularKeywords() {
-        System.out.println("==== SearchHistoryController.getPopularKeywords 메서드 호출됨 ====");
-        List<PopularKeywordDto> popularKeywords = searchHistoryService.getPopularKeywords();
-        System.out.println("==== getPopularKeywords 완료, 결과 개수: " + popularKeywords.size() + " ====");
-        return popularKeywords;
+        log.info("검색어 삭제 완료: user={}, keyword={}", user.getEmail(), keyword);
     }
 } 
