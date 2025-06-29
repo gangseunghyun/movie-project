@@ -141,6 +141,7 @@ public class SecurityConfig {
                     "/api/reset-password/validate-token",
                     "/api/reset-password",
                     "/api/social-join-complete",
+                    "/api/search-history/popular",
                     "/reset-password",
                     "/static/**",
                     "/resources/static/**",

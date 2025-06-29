@@ -130,6 +130,13 @@ const MainPage = ({
               }
               setTimeout(() => setSearchFocus(false), 200);
             }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                handleSearch();
+              } else if (e.key === 'Escape') {
+                setSearchFocus(false);
+              }
+            }}
             placeholder="영화/유저 검색..."
             className="mainpage-search-input"
             style={{
@@ -144,48 +151,64 @@ const MainPage = ({
           >
             <span role="img" aria-label="검색">🔍</span>
           </button>
-          {/* 최근 검색어 드롭다운 */}
-          {currentUser && localRecentKeywords && localRecentKeywords.length > 0 && searchFocus && (
-            <ul className="recent-keywords-dropdown">
-              {localRecentKeywords.filter(keyword => keyword && keyword.trim().length > 1).map((keyword, idx) => (
-                <li
-                  key={keyword}
-                  className="recent-keyword-item"
-                  onClick={() => handleRecentKeywordClick(keyword)}
-                >
-                  {keyword}
-                  <span
-                    className="recent-keyword-delete"
-                    tabIndex={-1}
-                    onClick={e => {
-                      e.stopPropagation(); // 부모 클릭 이벤트 방지
-                      handleDeleteKeyword(keyword, e);
-                    }}
-                    title="삭제"
-                  >×</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          
-          {/* 인기 검색어 드롭다운 */}
-          {popularKeywords && popularKeywords.length > 0 && searchFocus && (
-            <ul className="popular-keywords-dropdown">
-              <li className="popular-keywords-header">
-                📈 인기 검색어 (최근 7일)
-              </li>
-              {popularKeywords.map((item, idx) => (
-                <li
-                  key={item.keyword}
-                  className="popular-keyword-item"
-                  onClick={() => handlePopularKeywordClick(item.keyword)}
-                >
-                  <span className="popular-keyword-rank">{idx + 1}</span>
-                  <span className="popular-keyword-text">{item.keyword}</span>
-                  <span className="popular-keyword-count">({item.searchCount}회)</span>
-                </li>
-              ))}
-            </ul>
+          {/* 2열 드롭다운: 최근 검색어(왼쪽) + 인기 검색어(오른쪽) */}
+          {searchFocus && (
+            <div className="search-dropdown-container">
+              {/* 왼쪽: 최근 검색어 (로그인한 경우에만 표시) */}
+              {currentUser && (
+                <div className="search-dropdown-section">
+                  <div className="search-dropdown-title">최근 검색어</div>
+                  <ul className="search-dropdown-list">
+                    {(!localRecentKeywords || localRecentKeywords.length === 0) && (
+                      <li className="search-dropdown-item" style={{color:'#aaa'}}>기록 없음</li>
+                    )}
+                    {localRecentKeywords && localRecentKeywords.length > 0 &&
+                      localRecentKeywords.filter(keyword => keyword && keyword.trim().length > 0).map((keyword, idx) => (
+                        <li
+                          key={keyword}
+                          className="search-dropdown-item"
+                          onClick={() => handleRecentKeywordClick(keyword)}
+                        >
+                          {keyword}
+                          <span
+                            className="recent-keyword-delete"
+                            tabIndex={-1}
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDeleteKeyword(keyword, e);
+                            }}
+                            title="삭제"
+                            style={{marginLeft:8, color:'#e57373', cursor:'pointer'}}
+                          >×</span>
+                        </li>
+                      ))
+                    }
+                  </ul>
+                </div>
+              )}
+              {/* 오른쪽: 인기 검색어 (항상 표시) */}
+              <div className={`search-dropdown-section ${!currentUser ? 'single-section' : ''}`}>
+                <div className="search-dropdown-title">인기 검색어</div>
+                <ul className="search-dropdown-list">
+                  {(!popularKeywords || popularKeywords.length === 0) && (
+                    <li className="search-dropdown-item" style={{color:'#aaa'}}>데이터 없음</li>
+                  )}
+                  {popularKeywords && popularKeywords.length > 0 &&
+                    popularKeywords.map((item, idx) => (
+                      <li
+                        key={item.keyword || idx}
+                        className="search-dropdown-item"
+                        onClick={() => handlePopularKeywordClick(item.keyword)}
+                      >
+                        <span style={{color:'#a18cd1', fontWeight:700, marginRight:6}}>{idx+1}.</span>
+                        {item.keyword}
+                        <span style={{color:'#bbb', fontSize:'0.95em', marginLeft:6}}>{item.searchCount ? `(${item.searchCount}회)` : ''}</span>
+                      </li>
+                    ))
+                  }
+                </ul>
+              </div>
+            </div>
           )}
         </div>
       </header>
