@@ -1,26 +1,215 @@
 package com.movie.movie_backend.service;
 
 import com.movie.movie_backend.entity.Rating;
+import com.movie.movie_backend.entity.User;
+import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.repository.REVRatingRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.dto.RatingDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class REVRatingService {
     private final REVRatingRepository ratingRepository;
+    private final PRDMovieRepository movieRepository;
+    private final USRUserRepository userRepository;
 
-    public Rating addRating(Rating rating) {
-        return ratingRepository.save(rating);
+    /**
+     * 사용자가 영화에 별점 등록/수정
+     */
+    public RatingDto saveRating(String userEmail, String movieCd, Double score) {
+        log.info("별점 저장 요청: user={}, movie={}, score={}", userEmail, movieCd, score);
+        
+        // 사용자 조회
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        
+        // 영화 조회
+        MovieDetail movie = movieRepository.findById(movieCd)
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다."));
+        
+        // 기존 별점 조회
+        Optional<Rating> existingRating = ratingRepository.findAll().stream()
+                .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
+                                rating.getMovieDetail().getMovieCd().equals(movieCd))
+                .findFirst();
+        
+        Rating rating;
+        if (existingRating.isPresent()) {
+            // 기존 별점 수정
+            rating = existingRating.get();
+            rating.setScore(score);
+            rating.setCreatedAt(LocalDateTime.now());
+            log.info("기존 별점 수정: {}", rating.getId());
+        } else {
+            // 새 별점 등록
+            rating = new Rating();
+            rating.setUser(user);
+            rating.setMovieDetail(movie);
+            rating.setScore(score);
+            rating.setCreatedAt(LocalDateTime.now());
+            log.info("새 별점 등록");
+        }
+        
+        Rating savedRating = ratingRepository.save(rating);
+        
+        // MovieDetail의 평점 캐시 업데이트
+        updateMovieRatingCache(movieCd);
+        
+        return convertToDto(savedRating);
+    }
+    
+    /**
+     * 사용자의 별점 삭제
+     */
+    public void deleteRating(String userEmail, String movieCd) {
+        log.info("별점 삭제 요청: user={}, movie={}", userEmail, movieCd);
+        
+        // 사용자 조회
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        
+        // 기존 별점 조회
+        Optional<Rating> existingRating = ratingRepository.findAll().stream()
+                .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
+                                rating.getMovieDetail().getMovieCd().equals(movieCd))
+                .findFirst();
+        
+        if (existingRating.isPresent()) {
+            ratingRepository.delete(existingRating.get());
+            log.info("별점 삭제 완료: {}", existingRating.get().getId());
+            
+            // MovieDetail의 평점 캐시 업데이트
+            updateMovieRatingCache(movieCd);
+        } else {
+            log.warn("삭제할 별점이 없습니다: user={}, movie={}", userEmail, movieCd);
+        }
+    }
+    
+    /**
+     * 사용자가 특정 영화에 준 별점 조회
+     */
+    @Transactional(readOnly = true)
+    public RatingDto getUserRating(String userEmail, String movieCd) {
+        log.info("사용자 별점 조회: user={}, movie={}", userEmail, movieCd);
+        
+        // 사용자 조회
+        User user = userRepository.findByEmail(userEmail)
+                .orElse(null);
+        
+        if (user == null) {
+            return null;
+        }
+        
+        // 별점 조회
+        Optional<Rating> rating = ratingRepository.findAll().stream()
+                .filter(r -> r.getUser().getId().equals(user.getId()) && 
+                           r.getMovieDetail().getMovieCd().equals(movieCd))
+                .findFirst();
+        
+        return rating.map(this::convertToDto).orElse(null);
+    }
+    
+    /**
+     * 사용자의 모든 별점 조회
+     */
+    @Transactional(readOnly = true)
+    public List<RatingDto> getUserRatings(String userEmail) {
+        log.info("사용자 모든 별점 조회: user={}", userEmail);
+        
+        // 사용자 조회
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        
+        // 별점 조회
+        List<Rating> ratings = ratingRepository.findAll().stream()
+                .filter(rating -> rating.getUser().getId().equals(user.getId()))
+                .toList();
+        
+        return ratings.stream()
+                .map(this::convertToDto)
+                .toList();
     }
 
+    /**
+     * 영화별 평점 조회 (기존 메서드)
+     */
+    @Transactional(readOnly = true)
     public List<Rating> getRatingsByMovieDetail(String movieCd) {
         return ratingRepository.findByMovieDetailMovieCd(movieCd);
     }
 
+    /**
+     * 영화별 평점 개수 조회 (기존 메서드)
+     */
+    @Transactional(readOnly = true)
     public long getRatingCountByMovieDetail(String movieCd) {
         return ratingRepository.countByMovieDetailMovieCd(movieCd);
+    }
+    
+    /**
+     * MovieDetail의 평점 캐시 업데이트
+     */
+    private void updateMovieRatingCache(String movieCd) {
+        try {
+            MovieDetail movie = movieRepository.findById(movieCd).orElse(null);
+            if (movie != null) {
+                Double averageRating = getAverageRating(movieCd);
+                Integer ratingCount = (int) getRatingCountByMovieDetail(movieCd);
+                
+                movie.setAverageRating(averageRating);
+                movie.setRatingCount(ratingCount);
+                movie.setRatingUpdatedAt(LocalDateTime.now());
+                
+                movieRepository.save(movie);
+                
+                log.debug("영화 {}의 평점 캐시 업데이트: 평점={}, 개수={}", 
+                        movie.getMovieNm(), averageRating, ratingCount);
+            }
+        } catch (Exception e) {
+            log.warn("영화 {}의 평점 캐시 업데이트 실패: {}", movieCd, e.getMessage());
+        }
+    }
+    
+    /**
+     * 영화의 평균 평점 조회
+     */
+    @Transactional(readOnly = true)
+    public Double getAverageRating(String movieCd) {
+        List<Rating> ratings = ratingRepository.findByMovieDetailMovieCd(movieCd);
+        if (ratings.isEmpty()) {
+            return null;
+        }
+        double average = ratings.stream()
+                .mapToDouble(Rating::getScore)
+                .average()
+                .orElse(0.0);
+        return Math.round(average * 10.0) / 10.0; // 소수점 첫째자리까지
+    }
+    
+    /**
+     * Rating을 RatingDto로 변환
+     */
+    private RatingDto convertToDto(Rating rating) {
+        return RatingDto.builder()
+                .id(rating.getId())
+                .movieCd(rating.getMovieDetail().getMovieCd())
+                .movieNm(rating.getMovieDetail().getMovieNm())
+                .score(rating.getScore())
+                .createdAt(rating.getCreatedAt())
+                .userEmail(rating.getUser().getEmail())
+                .userNickname(rating.getUser().getNickname())
+                .build();
     }
 } 

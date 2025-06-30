@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 
 @Slf4j
@@ -20,31 +21,31 @@ public class ReviewController {
     private final REVReviewService reviewService;
 
     /**
-     * 리뷰 작성 (댓글만, 평점만, 둘 다 가능)
+     * 리뷰 작성
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createReview(@RequestBody Map<String, Object> request) {
         try {
-            String movieCd = (String) request.get("movieCd");
             Long userId = Long.valueOf(request.get("userId").toString());
+            String movieCd = (String) request.get("movieCd");
             String content = (String) request.get("content");
             Integer rating = request.get("rating") != null ? 
                 Integer.valueOf(request.get("rating").toString()) : null;
 
             Review review = reviewService.createReview(movieCd, userId, content, rating);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "리뷰가 작성되었습니다.",
-                "reviewId", review.getId(),
-                "reviewType", getReviewType(review)
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "리뷰가 작성되었습니다.");
+            response.put("reviewId", review.getId());
+            response.put("reviewType", getReviewType(review));
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("리뷰 작성 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "리뷰 작성에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "리뷰 작성에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -63,18 +64,18 @@ public class ReviewController {
 
             Review review = reviewService.updateReview(reviewId, userId, content, rating);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "리뷰가 수정되었습니다.",
-                "reviewId", review.getId(),
-                "reviewType", getReviewType(review)
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "리뷰가 수정되었습니다.");
+            response.put("reviewId", review.getId());
+            response.put("reviewType", getReviewType(review));
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("리뷰 수정 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "리뷰 수정에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "리뷰 수정에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -90,16 +91,16 @@ public class ReviewController {
             
             reviewService.deleteReview(reviewId, userId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "리뷰가 삭제되었습니다."
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "리뷰가 삭제되었습니다.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("리뷰 삭제 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "리뷰 삭제에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "리뷰 삭제에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -111,17 +112,18 @@ public class ReviewController {
         try {
             List<Review> reviews = reviewService.getReviewsByMovieCd(movieCd);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", reviews,
-                "count", reviews.size()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", reviews);
+            response.put("count", reviews.size());
+            response.put("message", "리뷰 목록을 조회했습니다.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("리뷰 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "리뷰 조회에 실패했습니다: " + e.getMessage()
-            ));
+            log.error("리뷰 목록 조회 실패: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "리뷰 목록 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -208,17 +210,18 @@ public class ReviewController {
         try {
             List<Review> reviews = reviewService.getReviewsByUserId(userId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", reviews,
-                "count", reviews.size()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", reviews);
+            response.put("count", reviews.size());
+            response.put("message", "사용자 리뷰 목록을 조회했습니다.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("사용자 리뷰 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "사용자 리뷰 조회에 실패했습니다: " + e.getMessage()
-            ));
+            log.error("사용자 리뷰 목록 조회 실패: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "사용자 리뷰 목록 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

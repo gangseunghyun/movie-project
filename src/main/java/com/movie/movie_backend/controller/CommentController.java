@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.HashMap;
 
 @Slf4j
 @RestController
@@ -24,7 +25,8 @@ public class CommentController {
      * 댓글 작성
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createComment(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> createComment(
+            @RequestBody Map<String, Object> request) {
         try {
             Long reviewId = Long.valueOf(request.get("reviewId").toString());
             Long userId = Long.valueOf(request.get("userId").toString());
@@ -34,18 +36,18 @@ public class CommentController {
 
             Comment comment = commentService.createComment(reviewId, userId, content, parentId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", comment.isReply() ? "대댓글이 작성되었습니다." : "댓글이 작성되었습니다.",
-                "commentId", comment.getId(),
-                "commentType", comment.isReply() ? "REPLY" : "COMMENT"
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", comment.isReply() ? "대댓글이 작성되었습니다." : "댓글이 작성되었습니다.");
+            response.put("commentId", comment.getId());
+            response.put("commentType", comment.isReply() ? "REPLY" : "COMMENT");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("댓글 작성 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 작성에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "댓글 작성에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -62,17 +64,17 @@ public class CommentController {
 
             Comment comment = commentService.updateComment(commentId, userId, content);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "댓글이 수정되었습니다.",
-                "commentId", comment.getId()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "댓글이 수정되었습니다.");
+            response.put("commentId", comment.getId());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("댓글 수정 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 수정에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "댓글 수정에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -88,16 +90,16 @@ public class CommentController {
             
             commentService.deleteComment(commentId, userId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "댓글이 삭제되었습니다."
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "댓글이 삭제되었습니다.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("댓글 삭제 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 삭제에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "댓글 삭제에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -110,18 +112,18 @@ public class CommentController {
             List<Comment> comments = commentService.getTopLevelCommentsByReviewId(reviewId);
             Long commentCount = commentService.getCommentCountByReviewId(reviewId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", comments,
-                "count", comments.size(),
-                "totalCount", commentCount
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", comments);
+            response.put("count", comments.size());
+            response.put("totalCount", commentCount);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("댓글 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 조회에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "댓글 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -134,18 +136,18 @@ public class CommentController {
             List<Comment> comments = commentService.getAllCommentsByReviewId(reviewId);
             Long commentCount = commentService.getCommentCountByReviewId(reviewId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", comments,
-                "count", comments.size(),
-                "totalCount", commentCount
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", comments);
+            response.put("count", comments.size());
+            response.put("totalCount", commentCount);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("전체 댓글 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "전체 댓글 조회에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "전체 댓글 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -158,18 +160,18 @@ public class CommentController {
             List<Comment> replies = commentService.getRepliesByParentId(commentId);
             Long replyCount = commentService.getReplyCountByParentId(commentId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", replies,
-                "count", replies.size(),
-                "totalCount", replyCount
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", replies);
+            response.put("count", replies.size());
+            response.put("totalCount", replyCount);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("대댓글 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "대댓글 조회에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "대댓글 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -181,17 +183,18 @@ public class CommentController {
         try {
             List<Comment> comments = commentService.getCommentsByUserId(userId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", comments,
-                "count", comments.size()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", comments);
+            response.put("count", comments.size());
+            response.put("message", "사용자 댓글 목록을 조회했습니다.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("사용자 댓글 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "사용자 댓글 조회에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "사용자 댓글 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -208,18 +211,18 @@ public class CommentController {
             CommentLike commentLike = commentService.addCommentLike(commentId, userId);
             Long likeCount = commentService.getCommentLikeCount(commentId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "댓글에 좋아요를 눌렀습니다.",
-                "likeId", commentLike.getId(),
-                "likeCount", likeCount
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "댓글에 좋아요를 눌렀습니다.");
+            response.put("likeId", commentLike.getId());
+            response.put("likeCount", likeCount);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("댓글 좋아요 추가 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 좋아요 추가에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "댓글 좋아요 추가에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -236,17 +239,17 @@ public class CommentController {
             commentService.removeCommentLike(commentId, userId);
             Long likeCount = commentService.getCommentLikeCount(commentId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "댓글 좋아요를 취소했습니다.",
-                "likeCount", likeCount
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "댓글 좋아요를 취소했습니다.");
+            response.put("likeCount", likeCount);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("댓글 좋아요 취소 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 좋아요 취소에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "댓글 좋아요 취소에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -258,17 +261,18 @@ public class CommentController {
         try {
             Long likeCount = commentService.getCommentLikeCount(commentId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "commentId", commentId,
-                "likeCount", likeCount
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("commentId", commentId);
+            response.put("likeCount", likeCount);
+            response.put("message", "댓글 좋아요 개수를 조회했습니다.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("댓글 좋아요 개수 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 좋아요 개수 조회에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "댓글 좋아요 개수 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -282,18 +286,19 @@ public class CommentController {
         try {
             boolean hasLiked = commentService.hasUserLikedComment(commentId, userId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "commentId", commentId,
-                "userId", userId,
-                "hasLiked", hasLiked
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("commentId", commentId);
+            response.put("userId", userId);
+            response.put("hasLiked", hasLiked);
+            response.put("message", "사용자 댓글 좋아요 상태를 확인했습니다.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("댓글 좋아요 상태 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "댓글 좋아요 상태 조회에 실패했습니다: " + e.getMessage()
-            ));
+            log.error("사용자 댓글 좋아요 상태 확인 실패: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "사용자 댓글 좋아요 상태 확인에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 } 

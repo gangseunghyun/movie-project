@@ -167,37 +167,6 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // REST API: 소셜 전용 계정 → 자체 로그인 통합(비밀번호 설정)
-    @PostMapping("/api/social-password-join")
-    public ResponseEntity<Map<String, Object>> socialPasswordJoin(@RequestBody Map<String, String> req) {
-        Map<String, Object> response = new HashMap<>();
-        String email = req.get("email");
-        String nickname = req.get("nickname");
-        String password = req.get("password");
-        String passwordConfirm = req.get("passwordConfirm");
-        if (!password.equals(passwordConfirm)) {
-            response.put("success", false);
-            response.put("message", "비밀번호가 일치하지 않습니다.");
-            return ResponseEntity.ok(response);
-        }
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
-            response.put("success", false);
-            response.put("message", "가입된 이메일이 아닙니다.");
-            return ResponseEntity.ok(response);
-        }
-        if (user.getProvider() == null || user.getProvider().name().equals("LOCAL")) {
-            response.put("success", false);
-            response.put("message", "이미 자체 로그인 계정입니다.");
-            return ResponseEntity.ok(response);
-        }
-        user.setPassword(passwordEncoder.encode(password));
-        userRepository.save(user);
-        response.put("success", true);
-        response.put("message", "비밀번호가 설정되었습니다. 이제 자체 로그인도 가능합니다.");
-        return ResponseEntity.ok(response);
-    }
-
     // REST API - 비밀번호 재설정 토큰 검증
     @PostMapping("/api/reset-password/validate-token")
     public ResponseEntity<Map<String, Object>> validateResetToken(@RequestParam String token) {
@@ -256,7 +225,7 @@ public class UserController {
 
     // REST API - 소셜 회원가입 추가 정보(닉네임, 약관동의)
     @PostMapping("/api/social-join-complete")
-    public ResponseEntity<Map<String, Object>> socialJoinComplete(@RequestBody Map<String, Object> req) {
+    public ResponseEntity<Map<String, Object>> socialJoinComplete(@RequestBody Map<String, Object> req, HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         String nickname = (String) req.get("nickname");
         Boolean agree = (Boolean) req.get("agree");
@@ -321,6 +290,12 @@ public class UserController {
         user.setNickname(nickname);
         user.setSocialJoinCompleted(true);
         userRepository.save(user);
+        
+        // 소셜 회원가입 완료 후 세션에 user 객체 저장
+        HttpSession session = request.getSession(true);
+        session.setAttribute("user", user);
+        session.setMaxInactiveInterval(3600); // 1시간
+        
         response.put("success", true);
         response.put("message", "소셜 회원가입이 완료되었습니다. 이제 로그인하세요.");
         return ResponseEntity.ok(response);
@@ -339,6 +314,7 @@ public class UserController {
             session.removeAttribute("SOCIAL_PROVIDER");
             session.removeAttribute("SOCIAL_PROVIDER_ID");
             session.removeAttribute("SPRING_SECURITY_CONTEXT");
+            session.removeAttribute("user"); // user 세션도 제거
             log.info("세션 정보 정리 완료");
         }
         

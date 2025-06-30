@@ -70,7 +70,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
@@ -134,13 +134,15 @@ public class SecurityConfig {
                     "/api/users/check-email",
                     "/api/users/check-nickname",
                     "/api/users/recommend-nickname",
+                    "/api/social-join-complete",
+                    "/api/social-password-join",
+                    "/api/mail/send-verification",
+                    "/api/mail/verify-code",
                     "/api/mail/**",
                     "/api/find-id",
                     "/api/forgot-password",
-                    "/api/social-password-join",
                     "/api/reset-password/validate-token",
                     "/api/reset-password",
-                    "/api/social-join-complete",
                     "/api/search-history/popular",
                     "/reset-password",
                     "/static/**",
@@ -151,6 +153,7 @@ public class SecurityConfig {
                     "/v3/api-docs/**"
                 ).permitAll()
                 .requestMatchers("/api/user-login").permitAll()
+                .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
                 .requestMatchers("/api/movies/**").hasRole("ADMIN")
                 .requestMatchers("/api/search-history").authenticated()
                 .anyRequest().authenticated()

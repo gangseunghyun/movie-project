@@ -209,7 +209,7 @@ public class TmdbRatingService {
     }
 
     /**
-     * 평균 평점이 높은 영화 TOP-10 조회 (MovieList에도 있는 영화만)
+     * 평균 평점이 높은 영화 TOP-10 조회 (MovieList에도 있는 영화만, 평점 4점 이상)
      */
     public List<MovieDetail> getTopRatedMovies(int limit) {
         List<MovieDetail> allMovies = movieRepository.findAll();
@@ -219,8 +219,11 @@ public class TmdbRatingService {
                     // MovieList에도 있는 영화만 필터링
                     boolean hasMovieList = movieListRepository.findById(movie.getMovieCd()).isPresent();
                     // 평점이 있는 영화만 필터링
-                    boolean hasRating = getAverageRating(movie.getMovieCd()) != null;
-                    return hasMovieList && hasRating;
+                    Double averageRating = getAverageRating(movie.getMovieCd());
+                    boolean hasRating = averageRating != null;
+                    // 평점 4점 이상인 영화만 필터링
+                    boolean hasHighRating = averageRating != null && averageRating >= 4.0;
+                    return hasMovieList && hasRating && hasHighRating;
                 })
                 .sorted((m1, m2) -> {
                     Double rating1 = getAverageRating(m1.getMovieCd());

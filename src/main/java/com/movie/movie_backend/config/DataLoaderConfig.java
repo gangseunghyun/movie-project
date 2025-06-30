@@ -131,6 +131,17 @@ public class DataLoaderConfig {
                 log.info("조건 확인: existingMovieListCount={}, 300과 비교: {} >= 300 = {}", 
                     existingMovieListCount, existingMovieListCount, existingMovieListCount >= 300);
                 
+                // =====================
+                // [중요] 이미 DB에 영화 데이터가 충분하면 외부 API 호출을 건너뜁니다.
+                // - 서버 재시작 시마다 불필요하게 외부 API를 호출하지 않도록 방지
+                // - 최초 데이터 적재 이후에는 DB에 있는 데이터만 사용
+                // - 기준: MovieList 300개, MovieDetail 200개 이상이면 스킵
+                // =====================
+                if (existingMovieListCount >= 300 && existingMovieDetailCount >= 200) {
+                    log.info("DB에 영화 데이터가 충분하므로 외부 API 호출을 건너뜁니다. (MovieList: {}개, MovieDetail: {}개)", existingMovieListCount, existingMovieDetailCount);
+                    return;
+                }
+                
                 // 4. 데이터가 부족한 경우에만 로딩 실행
                 log.info("데이터가 부족합니다. 자동 로딩을 시작합니다.");
                 
