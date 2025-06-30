@@ -10,7 +10,7 @@ public class Rating {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 평점 고유 ID
 
-    private int score; // 평점 점수 (예: 1~5)
+    private double score; // 평점 점수 (예: 0.5~5.0)
     private LocalDateTime createdAt; // 평점 작성 시간
 
     @ManyToOne(fetch = FetchType.LAZY)

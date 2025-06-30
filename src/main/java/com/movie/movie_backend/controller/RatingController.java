@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @RestController
@@ -34,50 +35,45 @@ public class RatingController {
                     .map(movieDetailMapper::toDto)
                     .toList();
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", movieDtos,
-                "count", movieDtos.size()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", movieDtos);
+            response.put("count", movieDtos.size());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("평균 별점이 높은 영화 조회 실패", e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "평균 별점이 높은 영화 조회에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "평균 별점이 높은 영화 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
     /**
      * 특정 영화의 평균 별점 조회
      */
-    @GetMapping("/{movieCd}/average")
-    public ResponseEntity<Map<String, Object>> getAverageRating(@PathVariable String movieCd) {
+    @GetMapping("/movie/{movieCd}/average")
+    public ResponseEntity<Map<String, Object>> getMovieAverageRating(@PathVariable String movieCd) {
         try {
-            log.info("영화 {}의 평균 별점 조회", movieCd);
+            log.info("영화 평균 별점 조회: movie={}", movieCd);
             
             Double averageRating = tmdbRatingService.getAverageRating(movieCd);
+            Integer ratingCount = tmdbRatingService.getRatingCount(movieCd);
             
-            if (averageRating != null) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "movieCd", movieCd,
-                    "averageRating", averageRating
-                ));
-            } else {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "movieCd", movieCd,
-                    "averageRating", null,
-                    "message", "평점 정보가 없습니다."
-                ));
-            }
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("movieCd", movieCd);
+            response.put("averageRating", averageRating);
+            response.put("ratingCount", ratingCount);
+            response.put("message", averageRating != null ? "평균 별점을 조회했습니다." : "별점이 없습니다.");
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("영화 {}의 평균 별점 조회 실패", movieCd, e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "평균 별점 조회에 실패했습니다: " + e.getMessage()
-            ));
+            log.error("영화 평균 별점 조회 실패", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "평균 별점 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

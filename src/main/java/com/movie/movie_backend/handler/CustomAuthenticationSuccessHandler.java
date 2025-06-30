@@ -61,6 +61,8 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             session.setAttribute("SOCIAL_USER_ID", String.valueOf(user.getId()));
             session.setAttribute("SOCIAL_PROVIDER", provider);
             session.setAttribute("SOCIAL_PROVIDER_ID", providerId);
+            // 프론트엔드에서 로그인 상태를 인식할 수 있도록 user 객체도 저장
+            session.setAttribute("user", user);
             session.setMaxInactiveInterval(3600); // 1시간
             
             System.out.println("[DEBUG] SuccessHandler: 세션 업데이트 완료 - USER_LOGIN_ID: " + loginId);
