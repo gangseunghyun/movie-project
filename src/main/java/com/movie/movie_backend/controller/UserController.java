@@ -694,30 +694,6 @@ public class UserController {
         return ResponseEntity.ok(tagRepository.findGenreTags());
     }
 
-    // [1-1] 특징 태그 전체 조회
-    @GetMapping("/api/feature-tags")
-    public ResponseEntity<List<Tag>> getFeatureTags() {
-        return ResponseEntity.ok(tagRepository.findFeatureTags());
-    }
-
-    // [1-2] 연도 태그 전체 조회
-    @GetMapping("/api/year-tags")
-    public ResponseEntity<List<Tag>> getYearTags() {
-        return ResponseEntity.ok(tagRepository.findYearTags());
-    }
-
-    // [1-3] 국가 태그 전체 조회
-    @GetMapping("/api/country-tags")
-    public ResponseEntity<List<Tag>> getCountryTags() {
-        return ResponseEntity.ok(tagRepository.findCountryTags());
-    }
-
-    // [1-4] 모든 카테고리 태그 조회
-    @GetMapping("/api/all-category-tags")
-    public ResponseEntity<List<Tag>> getAllCategoryTags() {
-        return ResponseEntity.ok(tagRepository.findAllCategoryTags());
-    }
-
     // [2-1] 사용자 선호 장르 태그 조회
     @GetMapping("/api/users/{userId}/preferred-genres")
     public ResponseEntity<List<Tag>> getUserPreferredGenres(@PathVariable Long userId) {
@@ -741,6 +717,13 @@ public class UserController {
     @PutMapping("/api/users/{userId}/preferred-tags")
     public ResponseEntity<?> setUserPreferredTags(@PathVariable Long userId, @RequestBody List<String> tagNames) {
         userService.setPreferredTags(userId, tagNames);
+        return ResponseEntity.ok().build();
+    }
+
+    // [2-5] 사용자 특징 태그 제거 (장르 태그만 남김)
+    @DeleteMapping("/api/users/{userId}/feature-tags")
+    public ResponseEntity<?> removeUserFeatureTags(@PathVariable Long userId) {
+        userService.removeFeatureTags(userId);
         return ResponseEntity.ok().build();
     }
 } 

@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   getUserByNickname, 
   getUserPreferredTags, 
-  getGenreTags, 
-  getFeatureTags
+  getGenreTags
 } from './services/userService';
 import axios from 'axios';
 import './UserPage.css';
@@ -16,10 +15,7 @@ const UserPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [preferredTags, setPreferredTags] = useState([]);
-  const [allTags, setAllTags] = useState({
-    genres: [],
-    features: []
-  });
+  const [genreTags, setGenreTags] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -32,17 +28,32 @@ const UserPage = () => {
         const data = await getUserByNickname(nickname);
         setUser(data);
         if (data && data.id) {
-          const [tags, genres, features] = await Promise.all([
+          const [tags, genres] = await Promise.all([
             getUserPreferredTags(data.id),
-            getGenreTags(),
-            getFeatureTags()
+            getGenreTags()
           ]);
-          setPreferredTags(tags);
-          setSelectedTags(tags.map(tag => tag.name));
-          setAllTags({
-            genres,
-            features
-          });
+          
+          // 기존 태그 중 장르 태그만 필터링
+          const genreTagNames = genres.map(tag => tag.name);
+          const filteredTags = tags.filter(tag => genreTagNames.includes(tag.name));
+          
+          // 필터링된 태그가 원본과 다르면 특징 태그가 있었던 것이므로 제거
+          if (filteredTags.length !== tags.length) {
+            try {
+              await axios.delete(`/api/users/${data.id}/feature-tags`);
+              setPreferredTags(filteredTags);
+              setSelectedTags(filteredTags.map(tag => tag.name));
+            } catch (err) {
+              console.error('특징 태그 제거 실패:', err);
+              setPreferredTags(filteredTags);
+              setSelectedTags(filteredTags.map(tag => tag.name));
+            }
+          } else {
+            setPreferredTags(tags);
+            setSelectedTags(tags.map(tag => tag.name));
+          }
+          
+          setGenreTags(genres);
         }
       } catch (err) {
         setError('유저 정보를 불러올 수 없습니다.');
@@ -64,7 +75,7 @@ const UserPage = () => {
     setSaving(true);
     try {
       await axios.put(`/api/users/${user.id}/preferred-tags`, selectedTags);
-      setPreferredTags(Object.values(allTags).flat().filter(tag => selectedTags.includes(tag.name)));
+      setPreferredTags(genreTags.filter(tag => selectedTags.includes(tag.name)));
       setEditMode(false);
       alert('선호 태그가 저장되었습니다!');
     } catch (e) {
@@ -82,20 +93,6 @@ const UserPage = () => {
   const handleGoHome = () => {
     navigate('/');
   };
-
-  // 중복 제거된 태그 리스트 만들기
-  const mergedTags = React.useMemo(() => {
-    const all = [...allTags.genres, ...allTags.features];
-    const unique = [];
-    const seen = new Set();
-    for (const tag of all) {
-      if (!seen.has(tag.name)) {
-        unique.push(tag);
-        seen.add(tag.name);
-      }
-    }
-    return unique;
-  }, [allTags]);
 
   if (loading) return (
     <div className="user-page-container">
@@ -157,37 +154,28 @@ const UserPage = () => {
               {preferredTags.length === 0 ? (
                 <div className="no-tags">
                   <span>설정된 선호 태그가 없습니다.</span>
-                  <p>수정 버튼을 눌러서 선호하는 태그를 설정해보세요!</p>
+                  <p>수정 버튼을 눌러서 선호하는 장르 태그를 설정해보세요!</p>
                 </div>
               ) : (
                 <div className="tag-categories">
-                  {['genres', 'features'].map(category => {
-                    const categoryTags = preferredTags.filter(tag => 
-                      allTags[category].some(catTag => catTag.name === tag.name)
-                    );
-                    if (categoryTags.length === 0) return null;
-                    
-                    return (
-                      <div key={category} className="tag-category">
-                        <h4>{category === 'genres' ? '장르' : '특징'}</h4>
-                        <div className="tag-tags">
-                          {categoryTags.map(tag => (
-                            <span key={tag.id} className="tag-tag">
-                              {tag.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div className="tag-category">
+                    <h4>장르</h4>
+                    <div className="tag-tags">
+                      {preferredTags.map(tag => (
+                        <span key={tag.id} className="tag-tag">
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           ) : (
             <div className="tags-edit">
               <div className="tag-selection">
-                {mergedTags.map(tag => (
-                  <label key={tag.id + '-' + tag.name} className="tag-checkbox">
+                {genreTags.map(tag => (
+                  <label key={tag.id} className="tag-checkbox">
                     <input
                       type="checkbox"
                       checked={selectedTags.includes(tag.name)}

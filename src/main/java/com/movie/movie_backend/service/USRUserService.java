@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -244,15 +245,32 @@ public class USRUserService {
     public void setPreferredTags(Long userId, List<String> tagNames) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        List<Tag> allCategoryTags = tagRepository.findAllCategoryTags();
-        // 입력받은 태그명만 필터링
+        List<Tag> genreTags = tagRepository.findGenreTags();
+        // 입력받은 태그명 중 장르 태그만 필터링
         List<Tag> selectedTags = new ArrayList<>();
-        for (Tag tag : allCategoryTags) {
+        for (Tag tag : genreTags) {
             if (tagNames.contains(tag.getName())) {
                 selectedTags.add(tag);
             }
         }
         user.setPreferredTags(selectedTags);
+        userRepository.save(user);
+    }
+
+    // 사용자 특징 태그 제거 (장르 태그만 남김)
+    @Transactional
+    public void removeFeatureTags(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        List<Tag> genreTags = tagRepository.findGenreTags();
+        List<Tag> currentTags = user.getPreferredTags();
+        
+        // 현재 태그 중 장르 태그만 필터링
+        List<Tag> filteredTags = currentTags.stream()
+                .filter(tag -> genreTags.stream().anyMatch(genreTag -> genreTag.getName().equals(tag.getName())))
+                .collect(Collectors.toList());
+        
+        user.setPreferredTags(filteredTags);
         userRepository.save(user);
     }
 } 
