@@ -48,13 +48,14 @@ public class DataLoaderConfig {
     private final PRDMovieRepository movieRepository;
     private final BoxOfficeRepository boxOfficeRepository;
 
-    // @Bean
-    // public CommandLineRunner loadData() {
-    //     return args -> {
-    //         ...
-    //     };
-    // }
-    
+    @Bean
+    public CommandLineRunner loadMovieDescriptionsOnly() {
+        return args -> {
+            // 영화 줄거리(Description)만 채워넣기
+            fillMissingMovieDetails();
+        };
+    }
+
     /**
      * 감독 정보 저장
      */
@@ -79,82 +80,7 @@ public class DataLoaderConfig {
     }
 
     /**
-     * 개봉예정작 자동 로딩
-     */
-    private void loadComingSoonMovies() {
-        try {
-            log.info("=== 개봉예정작 자동 로딩 시작 ===");
-            
-            // 먼저 기존 개봉예정작 데이터 정리 (과거 개봉 영화들을 상영중으로 변경)
-            kobisApiService.cleanupComingSoonMovies();
-            
-            // 기존 개봉예정작 개수 확인
-            long existingComingSoonCount = prdMovieListRepository.findAll().stream()
-                .filter(movie -> MovieStatus.COMING_SOON.equals(movie.getStatus()))
-                .count();
-            log.info("정리 후 기존 개봉예정작 개수: {}개", existingComingSoonCount);
-            
-            // 이미 충분한 개봉예정작이 있으면 추가 로딩 안 함
-            if (existingComingSoonCount >= 50) {
-                log.info("기존 개봉예정작이 충분합니다 ({}개). 추가 로딩을 건너뜁니다.", existingComingSoonCount);
-                return;
-            }
-            
-            // KOBIS에서 개봉예정작 가져오기
-            List<MovieListDto> comingSoonMovies = kobisApiService.fetchComingSoonMovies(200);
-            log.info("KOBIS에서 개봉예정작 {}개 가져오기 완료", comingSoonMovies.size());
-            
-            // TMDB fallback 제거 - KOBIS 데이터만 사용
-            if (comingSoonMovies.size() < 50) {
-                log.info("KOBIS에서 개봉예정작이 부족합니다 ({}개). TMDB fallback을 사용하지 않고 KOBIS 데이터만 유지합니다.", comingSoonMovies.size());
-            }
-            
-            int successCount = 0;
-            int skippedCount = 0;
-            
-            for (MovieListDto movieDto : comingSoonMovies) {
-                try {
-                    // 기존 데이터가 있으면 건너뛰기
-                    if (prdMovieListRepository.findById(movieDto.getMovieCd()).isPresent()) {
-                        skippedCount++;
-                        continue;
-                    }
-                    
-                    // MovieList 엔티티로 변환하여 저장
-                    MovieList movieList = MovieList.builder()
-                            .movieCd(movieDto.getMovieCd())
-                            .movieNm(movieDto.getMovieNm())
-                            .movieNmEn(movieDto.getMovieNmEn())
-                            .openDt(movieDto.getOpenDt())
-                            .genreNm(movieDto.getGenreNm())
-                            .nationNm(movieDto.getNationNm())
-                            .watchGradeNm(movieDto.getWatchGradeNm())
-                            .posterUrl(movieDto.getPosterUrl())
-                            .status(MovieStatus.COMING_SOON) // 개봉예정 상태로 설정
-                            .build();
-                    
-                    prdMovieListRepository.save(movieList);
-                    successCount++;
-                    
-                    log.info("개봉예정작 저장 완료: {} ({}) - 개봉일: {}", 
-                        movieDto.getMovieNm(), movieDto.getMovieCd(), movieDto.getOpenDt());
-                    
-                } catch (Exception e) {
-                    log.warn("개봉예정작 저장 실패: {} - {}", movieDto.getMovieNm(), e.getMessage());
-                }
-            }
-            
-            log.info("=== 개봉예정작 자동 로딩 완료 ===");
-            log.info("새로 저장된 개봉예정작: {}개", successCount);
-            log.info("건너뛴 개봉예정작: {}개 (기존 데이터)", skippedCount);
-            
-        } catch (Exception e) {
-            log.error("개봉예정작 자동 로딩 실패", e);
-        }
-    }
-
-    /**
-     * MovieDetail 채워넣기
+     * MovieDetail 채워넣기 (누락된 것 + description이 비어있는 것)
      */
     private void fillMissingMovieDetails() {
         try {
@@ -166,29 +92,48 @@ public class DataLoaderConfig {
             log.info("기존 데이터 확인 - MovieList: {}개, MovieDetail: {}개", 
                 existingMovieListCount, existingMovieDetailCount);
             
-            // 실제로 누락된 MovieDetail 찾기
+            // 1. 누락된 MovieDetail 찾기
             List<String> missingMovieCds = new ArrayList<>();
+            // 2. description이 비어있는 MovieDetail 찾기
+            List<String> emptyDescriptionMovieCds = new ArrayList<>();
+            
             List<MovieList> allMovieLists = prdMovieListRepository.findAll();
             
             for (MovieList movieList : allMovieLists) {
-                if (!movieRepository.existsById(movieList.getMovieCd())) {
-                    missingMovieCds.add(movieList.getMovieCd());
+                String movieCd = movieList.getMovieCd();
+                
+                // MovieDetail이 없는 경우
+                if (!movieRepository.existsById(movieCd)) {
+                    missingMovieCds.add(movieCd);
+                } else {
+                    // MovieDetail이 있지만 description이 비어있는 경우
+                    MovieDetail existingDetail = movieRepository.findById(movieCd).orElse(null);
+                    if (existingDetail != null && 
+                        (existingDetail.getDescription() == null || 
+                         existingDetail.getDescription().trim().isEmpty())) {
+                        emptyDescriptionMovieCds.add(movieCd);
+                        log.info("description이 비어있는 영화 발견: {} ({})", movieList.getMovieNm(), movieCd);
+                    }
                 }
             }
             
-            log.info("실제 누락된 MovieDetail: {}개", missingMovieCds.size());
+            log.info("누락된 MovieDetail: {}개", missingMovieCds.size());
+            log.info("description이 비어있는 MovieDetail: {}개", emptyDescriptionMovieCds.size());
             
-            if (!missingMovieCds.isEmpty()) {
-                log.info("누락된 MovieDetail을 채워넣습니다.");
+            // 처리할 영화 목록 합치기
+            List<String> allMovieCdsToProcess = new ArrayList<>();
+            allMovieCdsToProcess.addAll(missingMovieCds);
+            allMovieCdsToProcess.addAll(emptyDescriptionMovieCds);
+            
+            if (!allMovieCdsToProcess.isEmpty()) {
+                log.info("총 {}개의 영화에 대해 줄거리를 채워넣습니다.", allMovieCdsToProcess.size());
                 
                 int successCount = 0;
                 int failCount = 0;
                 int attemptCount = 0;
-                int maxAttempts = missingMovieCds.size(); // 모든 누락된 MovieDetail 처리
+                int maxAttempts = allMovieCdsToProcess.size();
                 
-                log.info("누락된 MovieDetail {}개를 모두 처리합니다.", missingMovieCds.size());
-                
-                for (String movieCd : missingMovieCds) {
+                for (String movieCd : allMovieCdsToProcess) {
                     if (attemptCount >= maxAttempts) {
                         log.info("MovieDetail 채워넣기 시도 횟수 제한에 도달했습니다. (최대 {}회)", maxAttempts);
                         break;
@@ -203,18 +148,23 @@ public class DataLoaderConfig {
                             continue;
                         }
                         
-                        log.info("누락된 MovieDetail 채워넣기 시도: {} ({}) - 시도 {}/{}", 
-                            movieList.getMovieNm(), movieCd, attemptCount + 1, maxAttempts);
+                        boolean isMissing = missingMovieCds.contains(movieCd);
+                        boolean isEmptyDescription = emptyDescriptionMovieCds.contains(movieCd);
+                        
+                        log.info("줄거리 채워넣기 시도: {} ({}) - 시도 {}/{} [누락: {}, 빈설명: {}]", 
+                            movieList.getMovieNm(), movieCd, attemptCount + 1, maxAttempts, isMissing, isEmptyDescription);
                         
                         // KOBIS API로 MovieDetail 가져오기 (Actor, Cast 포함)
                         MovieDetail movieDetail = kobisPopularMovieService.getMovieDetailWithFallback(movieCd, movieList.getMovieNm());
                         
                         if (movieDetail != null) {
                             successCount++;
-                            log.info("MovieDetail 채워넣기 성공: {} ({}) - Actor, Cast 포함", movieList.getMovieNm(), movieCd);
+                            log.info("줄거리 채워넣기 성공: {} ({}) - description 길이: {}", 
+                                movieList.getMovieNm(), movieCd, 
+                                movieDetail.getDescription() != null ? movieDetail.getDescription().length() : 0);
                         } else {
                             failCount++;
-                            log.warn("MovieDetail 채워넣기 실패: {} ({}) - KOBIS에서 데이터를 찾을 수 없음", movieList.getMovieNm(), movieCd);
+                            log.warn("줄거리 채워넣기 실패: {} ({}) - KOBIS에서 데이터를 찾을 수 없음", movieList.getMovieNm(), movieCd);
                         }
                         
                         attemptCount++;
@@ -225,32 +175,28 @@ public class DataLoaderConfig {
                     } catch (Exception e) {
                         failCount++;
                         attemptCount++;
-                        log.error("MovieDetail 채워넣기 실패: {} - {}", movieCd, e.getMessage());
+                        log.error("줄거리 채워넣기 실패: {} - {}", movieCd, e.getMessage());
                     }
                 }
                 
-                log.info("KOBIS로 누락된 MovieDetail 채워넣기 완료: 성공={}, 실패={}", successCount, failCount);
+                log.info("줄거리 채워넣기 완료: 성공={}, 실패={}", successCount, failCount);
                 
                 // 업데이트 후 개수 재확인
                 long updatedMovieDetailCount = movieRepository.count();
-                log.info("KOBIS 업데이트 후 MovieDetail 개수: {}개", updatedMovieDetailCount);
+                log.info("업데이트 후 MovieDetail 개수: {}개", updatedMovieDetailCount);
                 
-                // TMDB fallback 제거 - KOBIS 데이터만 사용
-                if (failCount > 0) {
-                    log.info("KOBIS로 실패한 영화 {}개가 있습니다. TMDB fallback을 사용하지 않고 KOBIS 데이터만 유지합니다.", failCount);
-                }
             } else {
-                log.info("MovieDetail이 충분합니다. 추가 채워넣기가 필요하지 않습니다.");
+                log.info("줄거리를 채워넣을 영화가 없습니다. 모든 MovieDetail이 완성되어 있습니다.");
             }
             
             // Stillcut 업데이트 추가
-            log.info("=== Stillcut 업데이트 시작 ===");
-            try {
-                tmdbStillcutService.updateStillcutsForAllMovies();
-                log.info("=== Stillcut 업데이트 완료 ===");
-            } catch (Exception e) {
-                log.error("Stillcut 업데이트 실패", e);
-            }
+            // log.info("=== Stillcut 업데이트 시작 ===");
+            // try {
+            //     tmdbStillcutService.updateStillcutsForAllMovies();
+            //     log.info("=== Stillcut 업데이트 완료 ===");
+            // } catch (Exception e) {
+            //     log.error("Stillcut 업데이트 실패", e);
+            // }
             
             log.info("=== MovieDetail 채워넣기 완료 ===");
             

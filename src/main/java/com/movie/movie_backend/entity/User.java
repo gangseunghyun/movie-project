@@ -30,6 +30,9 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = true)
     private String nickname; // 닉네임 (표시용 이름)
     
+    @Column(nullable = true)
+    private String profileImageUrl; // 프로필 이미지 URL
+    
     private boolean darkMode = false; // 기본값 false (라이트모드)
 
     @Enumerated(EnumType.STRING)

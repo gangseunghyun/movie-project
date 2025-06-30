@@ -176,6 +176,15 @@ public class KobisApiService {
             int runtime = detailNode.has("runtime") ? detailNode.get("runtime").asInt() : 0;
             double voteAverage = detailNode.has("vote_average") ? detailNode.get("vote_average").asDouble() : 0.0;
             
+            // TMDB overview 필드 로깅 추가
+            if (!overview.isEmpty()) {
+                log.info("TMDB overview 필드 발견: 영화={}, overview 길이={}, overview 내용={}", 
+                    movieList.getMovieNm(), overview.length(), 
+                    overview.length() > 100 ? overview.substring(0, 100) + "..." : overview);
+            } else {
+                log.warn("TMDB overview 필드 없음: 영화={}, TMDB ID={}", movieList.getMovieNm(), tmdbId);
+            }
+            
             // 개봉일 파싱
             java.time.LocalDate releaseDate = null;
             if (!releaseDateStr.isEmpty()) {
@@ -236,7 +245,17 @@ public class KobisApiService {
             // MovieDetail 저장
             MovieDetail savedMovieDetail = movieRepository.save(movieDetail);
             
-            log.info("TMDB MovieDetail 저장 완료: {} ({})", savedMovieDetail.getMovieNm(), savedMovieDetail.getMovieCd());
+            log.info("TMDB MovieDetail 저장 완료: {} ({}) - TMDB ID: {}", 
+                savedMovieDetail.getMovieNm(), movieList.getMovieCd(), tmdbId);
+            
+            // TMDB description 저장 확인 로깅 추가
+            log.info("TMDB description 저장 확인: 영화={}, description 길이={}, description 내용={}", 
+                savedMovieDetail.getMovieNm(), 
+                savedMovieDetail.getDescription() != null ? savedMovieDetail.getDescription().length() : 0,
+                savedMovieDetail.getDescription() != null && savedMovieDetail.getDescription().length() > 100 
+                    ? savedMovieDetail.getDescription().substring(0, 100) + "..." 
+                    : savedMovieDetail.getDescription());
+            
             return savedMovieDetail;
             
         } catch (Exception e) {
@@ -330,6 +349,10 @@ public class KobisApiService {
             String responseBody = response.getBody();
             log.debug("KOBIS API 응답: {}", responseBody);
             
+            // plot 필드 확인을 위한 응답 로깅 추가
+            log.info("KOBIS API 응답 확인: 영화={}, movieCd={}, 응답 길이={}", 
+                movieList.getMovieNm(), movieCd, responseBody != null ? responseBody.length() : 0);
+            
             JsonNode rootNode = objectMapper.readTree(responseBody);
             JsonNode movieInfoResult = rootNode.get("movieInfoResult");
             
@@ -358,10 +381,35 @@ public class KobisApiService {
             
             log.info("KOBIS API에서 영화 정보 발견: {} ({})", movieList.getMovieNm(), movieCd);
             
+            // KOBIS API 응답 전체 로깅 (plot 필드 확인용)
+            log.info("KOBIS movieInfo 전체 응답: {}", movieInfo.toString());
+            
             // 상세 정보 추출
             String description = "";
             if (movieInfo.has("plot") && !movieInfo.get("plot").isNull()) {
                 description = movieInfo.get("plot").asText();
+                log.info("KOBIS plot 필드 발견: 영화={}, plot 길이={}, plot 내용={}", 
+                    movieList.getMovieNm(), description.length(), 
+                    description.length() > 100 ? description.substring(0, 100) + "..." : description);
+            } else {
+                log.warn("KOBIS plot 필드 없음: 영화={}, movieCd={}", movieList.getMovieNm(), movieCd);
+                // plot 필드가 없으면 다른 필드들도 확인
+                log.info("KOBIS movieInfo에서 사용 가능한 필드들: {}", movieInfo.fieldNames());
+                
+                // KOBIS에서 줄거리가 없으면 TMDB에서 가져오기 시도
+                log.info("KOBIS에서 줄거리가 없으므로 TMDB에서 줄거리 가져오기 시도: {}", movieList.getMovieNm());
+                try {
+                    String tmdbOverview = getTmdbOverview(movieList.getMovieNm(), movieList.getOpenDt());
+                    if (tmdbOverview != null && !tmdbOverview.trim().isEmpty()) {
+                        description = tmdbOverview;
+                        log.info("TMDB에서 줄거리 가져오기 성공: 영화={}, 줄거리 길이={}", 
+                            movieList.getMovieNm(), description.length());
+                    } else {
+                        log.warn("TMDB에서도 줄거리를 찾을 수 없음: {}", movieList.getMovieNm());
+                    }
+                } catch (Exception e) {
+                    log.warn("TMDB 줄거리 가져오기 실패: {} - {}", movieList.getMovieNm(), e.getMessage());
+                }
             }
             
             int showTm = 0;
@@ -463,6 +511,14 @@ public class KobisApiService {
             MovieDetail savedMovieDetail = movieRepository.save(movieDetail);
             log.info("KOBIS MovieDetail 저장 완료: {} ({}) - 영문제목: {}, 장르: {}", 
                 savedMovieDetail.getMovieNm(), movieCd, movieNmEn, genreNm);
+            
+            // description 저장 확인 로깅 추가
+            log.info("KOBIS description 저장 확인: 영화={}, description 길이={}, description 내용={}", 
+                savedMovieDetail.getMovieNm(), 
+                savedMovieDetail.getDescription() != null ? savedMovieDetail.getDescription().length() : 0,
+                savedMovieDetail.getDescription() != null && savedMovieDetail.getDescription().length() > 100 
+                    ? savedMovieDetail.getDescription().substring(0, 100) + "..." 
+                    : savedMovieDetail.getDescription());
             
             // Cast 정보 저장
             if (!actors.isEmpty()) {
@@ -914,10 +970,35 @@ public class KobisApiService {
                 return null;
             }
             
+            // KOBIS API 응답 전체 로깅 (plot 필드 확인용)
+            log.info("KOBIS movieInfo 전체 응답: {}", movieInfo.toString());
+            
             // 상세 정보 추출
             String description = "";
             if (movieInfo.has("plot") && !movieInfo.get("plot").isNull()) {
                 description = movieInfo.get("plot").asText();
+                log.info("KOBIS plot 필드 발견: 영화={}, plot 길이={}, plot 내용={}", 
+                    movieList.getMovieNm(), description.length(), 
+                    description.length() > 100 ? description.substring(0, 100) + "..." : description);
+            } else {
+                log.warn("KOBIS plot 필드 없음: 영화={}, movieCd={}", movieList.getMovieNm(), movieCd);
+                // plot 필드가 없으면 다른 필드들도 확인
+                log.info("KOBIS movieInfo에서 사용 가능한 필드들: {}", movieInfo.fieldNames());
+                
+                // KOBIS에서 줄거리가 없으면 TMDB에서 가져오기 시도
+                log.info("KOBIS에서 줄거리가 없으므로 TMDB에서 줄거리 가져오기 시도: {}", movieList.getMovieNm());
+                try {
+                    String tmdbOverview = getTmdbOverview(movieList.getMovieNm(), movieList.getOpenDt());
+                    if (tmdbOverview != null && !tmdbOverview.trim().isEmpty()) {
+                        description = tmdbOverview;
+                        log.info("TMDB에서 줄거리 가져오기 성공: 영화={}, 줄거리 길이={}", 
+                            movieList.getMovieNm(), description.length());
+                    } else {
+                        log.warn("TMDB에서도 줄거리를 찾을 수 없음: {}", movieList.getMovieNm());
+                    }
+                } catch (Exception e) {
+                    log.warn("TMDB 줄거리 가져오기 실패: {} - {}", movieList.getMovieNm(), e.getMessage());
+                }
             }
             
             int showTm = 0;
@@ -991,6 +1072,14 @@ public class KobisApiService {
             // 저장
             MovieDetail savedMovieDetail = movieRepository.save(movieDetail);
             log.info("KOBIS MovieDetail 저장 완료: {} ({})", savedMovieDetail.getMovieNm(), movieCd);
+            
+            // description 저장 확인 로깅 추가
+            log.info("KOBIS description 저장 확인: 영화={}, description 길이={}, description 내용={}", 
+                savedMovieDetail.getMovieNm(), 
+                savedMovieDetail.getDescription() != null ? savedMovieDetail.getDescription().length() : 0,
+                savedMovieDetail.getDescription() != null && savedMovieDetail.getDescription().length() > 100 
+                    ? savedMovieDetail.getDescription().substring(0, 100) + "..." 
+                    : savedMovieDetail.getDescription());
             
             // Cast 정보 저장
             if (!actors.isEmpty()) {
@@ -1071,6 +1160,43 @@ public class KobisApiService {
             }
         } catch (Exception e) {
             log.warn("TMDB 배우 이미지 URL 조회 실패: {} - {}", actorName, e.getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * TMDB에서 영화 줄거리(overview) 가져오기
+     */
+    private String getTmdbOverview(String movieNm, LocalDate openDt) {
+        try {
+            String query = java.net.URLEncoder.encode(movieNm, java.nio.charset.StandardCharsets.UTF_8);
+            String year = (openDt != null) ? String.valueOf(openDt.getYear()) : null;
+            
+            String url = String.format("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s&language=ko-KR%s", 
+                tmdbApiKey, query, year != null ? "&year=" + year : "");
+            
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JsonNode rootNode = objectMapper.readTree(response.getBody());
+                JsonNode results = rootNode.get("results");
+                
+                if (results != null && results.size() > 0) {
+                    JsonNode movie = results.get(0);
+                    String overview = movie.has("overview") ? movie.get("overview").asText() : "";
+                    
+                    if (!overview.isEmpty()) {
+                        log.info("TMDB에서 overview 발견: 영화={}, overview 길이={}", movieNm, overview.length());
+                        return overview;
+                    } else {
+                        log.warn("TMDB에서 overview가 비어있음: 영화={}", movieNm);
+                    }
+                } else {
+                    log.warn("TMDB에서 영화를 찾을 수 없음: 영화={}", movieNm);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("TMDB overview 조회 실패: {} - {}", movieNm, e.getMessage());
         }
         
         return null;
