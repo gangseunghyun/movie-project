@@ -181,6 +181,15 @@ public class TmdbPopularMovieService {
             double voteAverage = tmdbMovie.has("vote_average") ? tmdbMovie.get("vote_average").asDouble() : 0.0;
             int voteCount = tmdbMovie.has("vote_count") ? tmdbMovie.get("vote_count").asInt() : 0;
             
+            // TMDB overview 필드 로깅 추가
+            if (!overview.isEmpty()) {
+                log.info("TMDB Popular Movie overview 필드 발견: 영화={}, overview 길이={}, overview 내용={}", 
+                    title, overview.length(), 
+                    overview.length() > 100 ? overview.substring(0, 100) + "..." : overview);
+            } else {
+                log.warn("TMDB Popular Movie overview 필드 없음: 영화={}", title);
+            }
+            
             // 포스터 URL
             String posterPath = tmdbMovie.has("poster_path") ? tmdbMovie.get("poster_path").asText() : null;
             String posterUrl = null;
