@@ -57,91 +57,91 @@ public class DataLoaderConfig {
     //     };
     // }
 
-    @Bean
-    public CommandLineRunner loadStillcutsOnly() {
-        return args -> {
-            // 스틸컷만 업데이트
-            log.info("=== Stillcut 업데이트 시작 ===");
-            try {
-                // 각 영화별로 개별 트랜잭션 처리
-                List<MovieList> movieLists = prdMovieListRepository.findAll();
-                int totalMovies = movieLists.size();
-                int processed = 0;
-                int success = 0;
-                int failed = 0;
-                
-                log.info("총 {}개의 영화에 대해 스틸컷을 업데이트합니다.", totalMovies);
-                
-                for (MovieList movieList : movieLists) {
-                    processed++;
-                    try {
-                        log.info("스틸컷 처리 중: {}/{} - {} ({})", 
-                            processed, totalMovies, movieList.getMovieNm(), movieList.getMovieCd());
-                        
-                        // 개별 영화에 대해 스틸컷 처리
-                        List<Stillcut> stillcuts = tmdbStillcutService.fetchAndSaveStillcuts(movieList.getMovieCd());
-                        
-                        if (!stillcuts.isEmpty()) {
-                            success++;
-                            log.info("스틸컷 처리 성공: {} -> {}개", movieList.getMovieNm(), stillcuts.size());
-                        } else {
-                            failed++;
-                            log.warn("스틸컷 처리 실패: {} - 스틸컷을 찾을 수 없음", movieList.getMovieNm());
-                        }
-                        
-                        // API 호출 제한을 위한 딜레이
-                        Thread.sleep(100);
-                        
-                    } catch (Exception e) {
-                        failed++;
-                        log.error("스틸컷 처리 오류: {} ({}) - {}", 
-                            movieList.getMovieNm(), movieList.getMovieCd(), e.getMessage());
-                    }
-                }
-                
-                log.info("=== Stillcut 업데이트 완료 ===");
-                log.info("처리 결과: 총 {}개, 성공 {}개, 실패 {}개", totalMovies, success, failed);
-                
-            } catch (Exception e) {
-                log.error("Stillcut 업데이트 실패", e);
-            }
-        };
-    }
+    // @Bean
+    // public CommandLineRunner loadStillcutsOnly() {
+    //     return args -> {
+    //         // 스틸컷만 업데이트
+    //         log.info("=== Stillcut 업데이트 시작 ===");
+    //         try {
+    //             // 각 영화별로 개별 트랜잭션 처리
+    //             List<MovieList> movieLists = prdMovieListRepository.findAll();
+    //             int totalMovies = movieLists.size();
+    //             int processed = 0;
+    //             int success = 0;
+    //             int failed = 0;
+    //             
+    //             log.info("총 {}개의 영화에 대해 스틸컷을 업데이트합니다.", totalMovies);
+    //             
+    //             for (MovieList movieList : movieLists) {
+    //                 processed++;
+    //                 try {
+    //                     log.info("스틸컷 처리 중: {}/{} - {} ({})", 
+    //                         processed, totalMovies, movieList.getMovieNm(), movieList.getMovieCd());
+    //                     
+    //                     // 개별 영화에 대해 스틸컷 처리
+    //                     List<Stillcut> stillcuts = tmdbStillcutService.fetchAndSaveStillcuts(movieList.getMovieCd());
+    //                     
+    //                     if (!stillcuts.isEmpty()) {
+    //                         success++;
+    //                         log.info("스틸컷 처리 성공: {} -> {}개", movieList.getMovieNm(), stillcuts.size());
+    //                     } else {
+    //                         failed++;
+    //                         log.warn("스틸컷 처리 실패: {} - 스틸컷을 찾을 수 없음", movieList.getMovieNm());
+    //                     }
+    //                     
+    //                     // API 호출 제한을 위한 딜레이
+    //                     Thread.sleep(100);
+    //                     
+    //                 } catch (Exception e) {
+    //                     failed++;
+    //                     log.error("스틸컷 처리 오류: {} ({}) - {}", 
+    //                         movieList.getMovieNm(), movieList.getMovieCd(), e.getMessage());
+    //                 }
+    //             }
+    //             
+    //             log.info("=== Stillcut 업데이트 완료 ===");
+    //             log.info("처리 결과: 총 {}개, 성공 {}개, 실패 {}개", totalMovies, success, failed);
+    //             
+    //         } catch (Exception e) {
+    //             log.error("Stillcut 업데이트 실패", e);
+    //         }
+    //     };
+    // }
 
-    @Bean
-    public CommandLineRunner loadKobisMovies() {
-        return args -> {
-            log.info("=== KOBIS 영화 데이터 로드 시작 ===");
-            try {
-                // 1. 매출액 기준 인기영화 500개 가져오기
-                log.info("인기영화 500개 가져오기 시작...");
-                kobisPopularMovieService.getPopularMoviesBySales(500);
-                log.info("인기영화 500개 가져오기 완료");
-                
-                // 2. 최신영화 가져오기 (비활성화)
-                // log.info("최신영화 300개 가져오기 시작...");
-                // kobisPopularMovieService.getRecentMoviesByOpenDate(300);
-                // log.info("최신영화 300개 가져오기 완료");
-                
-                // 3. 박스오피스 데이터 가져오기
-                log.info("박스오피스 데이터 가져오기 시작...");
-                boxOfficeService.fetchDailyBoxOffice();
-                log.info("일일 박스오피스 가져오기 완료");
-                
-                boxOfficeService.fetchWeeklyBoxOffice();
-                log.info("주간 박스오피스 가져오기 완료");
-                
-                // 4. 영화 상세정보 채워넣기
-                log.info("영화 상세정보 채워넣기 시작...");
-                fillMissingMovieDetails();
-                log.info("영화 상세정보 채워넣기 완료");
-                
-                log.info("=== KOBIS 영화 데이터 로드 완료 ===");
-            } catch (Exception e) {
-                log.error("KOBIS 영화 데이터 로드 실패", e);
-            }
-        };
-    }
+    // @Bean
+    // public CommandLineRunner loadKobisMovies() {
+    //     return args -> {
+    //         log.info("=== KOBIS 영화 데이터 로드 시작 ===");
+    //         try {
+    //             // 1. 매출액 기준 인기영화 500개 가져오기
+    //             log.info("인기영화 500개 가져오기 시작...");
+    //             kobisPopularMovieService.getPopularMoviesBySales(500);
+    //             log.info("인기영화 500개 가져오기 완료");
+    //             
+    //             // 2. 최신영화 가져오기 (비활성화)
+    //             // log.info("최신영화 300개 가져오기 시작...");
+    //             // kobisPopularMovieService.getRecentMoviesByOpenDate(300);
+    //             // log.info("최신영화 300개 가져오기 완료");
+    //             
+    //             // 3. 박스오피스 데이터 가져오기
+    //             log.info("박스오피스 데이터 가져오기 시작...");
+    //             boxOfficeService.fetchDailyBoxOffice();
+    //             log.info("일일 박스오피스 가져오기 완료");
+    //             
+    //             boxOfficeService.fetchWeeklyBoxOffice();
+    //             log.info("주간 박스오피스 가져오기 완료");
+    //             
+    //             // 4. 영화 상세정보 채워넣기
+    //             log.info("영화 상세정보 채워넣기 시작...");
+    //             fillMissingMovieDetails();
+    //             log.info("영화 상세정보 채워넣기 완료");
+    //             
+    //             log.info("=== KOBIS 영화 데이터 로드 완료 ===");
+    //         } catch (Exception e) {
+    //             log.error("KOBIS 영화 데이터 로드 실패", e);
+    //         }
+    //     };
+    // }
 
     /**
      * 감독 정보 저장
