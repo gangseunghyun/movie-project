@@ -40,8 +40,8 @@ public class REVRatingService {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
         // 영화 조회
-        MovieDetail movie = movieRepository.findById(movieCd)
-                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다."));
+        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
         // 기존 별점 조회
         Optional<Rating> existingRating = ratingRepository.findAll().stream()
@@ -168,7 +168,7 @@ public class REVRatingService {
      */
     private void updateMovieRatingCache(String movieCd) {
         try {
-            MovieDetail movie = movieRepository.findById(movieCd).orElse(null);
+            MovieDetail movie = movieRepository.findByMovieCd(movieCd).orElse(null);
             if (movie != null) {
                 Double averageRating = getAverageRating(movieCd);
                 Integer ratingCount = (int) getRatingCountByMovieDetail(movieCd);

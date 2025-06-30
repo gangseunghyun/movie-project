@@ -198,7 +198,7 @@ public class DataMigrationService {
         
         List<MovieList> allMovieLists = movieListRepository.findAll();
         for (MovieList movieList : allMovieLists) {
-            if (!movieRepository.existsById(movieList.getMovieCd())) {
+            if (!movieRepository.existsByMovieCd(movieList.getMovieCd())) {
                 movieCdsWithoutDetail.add(movieList.getMovieCd());
             }
         }

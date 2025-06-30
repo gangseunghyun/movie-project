@@ -1,17 +1,21 @@
 package com.movie.movie_backend.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "search_logs")
 public class SearchLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id")
     private Long userId; // 비로그인도 저장 가능
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String keyword;
 
     @Column(nullable = false)

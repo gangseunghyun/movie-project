@@ -51,7 +51,11 @@ function App() {
     watchGradeNm: '',
     companyNm: '',
     posterUrl: '',
-    stillcutUrls: ''
+    stillcutUrls: '',
+    tags: '',
+    prdtYear: '',
+    prdtStatNm: '',
+    typeNm: ''
   });
   const [stats, setStats] = useState({
     totalMovies: 0,
@@ -660,7 +664,11 @@ function App() {
       watchGradeNm: movie.watchGradeNm || '',
       companyNm: movie.companyNm || '',
       posterUrl: movie.posterUrl || '',
-      stillcutUrls: movie.stillcuts ? movie.stillcuts.map(stillcut => stillcut.imageUrl).join(',') : ''
+      stillcutUrls: movie.stillcuts ? movie.stillcuts.map(stillcut => stillcut.imageUrl).join(',') : '',
+      tags: movie.tags || '',
+      prdtYear: movie.prdtYear || '',
+      prdtStatNm: movie.prdtStatNm || '',
+      typeNm: movie.typeNm || ''
     });
     setShowMovieForm(true);
     setShowMovieDetail(false);
@@ -681,7 +689,11 @@ function App() {
       watchGradeNm: '',
       companyNm: '',
       posterUrl: '',
-      stillcutUrls: ''
+      stillcutUrls: '',
+      tags: '',
+      prdtYear: '',
+      prdtStatNm: '',
+      typeNm: ''
     });
     setShowMovieForm(true);
     setShowMovieDetail(false);

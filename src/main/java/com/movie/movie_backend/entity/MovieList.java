@@ -4,12 +4,14 @@ import lombok.*;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import com.movie.movie_backend.constant.MovieStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @Table(name = "movie_list")
 public class MovieList {
     @Id
+    @Column(name = "movie_cd")
     private String movieCd; // 영화코드 (PK, 문자열)
 
     private String movieNm; // 영화 제목 (한글)
@@ -23,4 +25,8 @@ public class MovieList {
 
     @Enumerated(EnumType.STRING)
     private MovieStatus status; // 영화 상태
+
+    @OneToOne(mappedBy = "movieList", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private MovieDetail movieDetail; // 영화 상세정보 (1:1)
 } 

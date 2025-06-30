@@ -63,7 +63,7 @@ public class BoxOfficeService {
                 // 먼저 모든 MovieDetail을 저장
                 for (JsonNode movie : dailyBoxOfficeList) {
                     String movieCd = movie.get("movieCd").asText();
-                    if (movieRepository.findById(movieCd).isEmpty()) {
+                    if (movieRepository.findByMovieCd(movieCd).isEmpty()) {
                         try {
                             log.info("MovieDetail 저장 시작: {}", movieCd);
                             kobisApiService.fetchAndSaveMovieDetail(movieCd);
@@ -74,17 +74,22 @@ public class BoxOfficeService {
                     }
                 }
                 
-                // 그 다음 BoxOffice 저장
+                // 그 다음 BoxOffice 저장 (상위 30개만)
+                int count = 0;
                 for (JsonNode movie : dailyBoxOfficeList) {
+                    if (count >= 30) break; // 상위 30개만 저장
+                    
                     BoxOffice boxOffice = parseBoxOfficeData(movie, yesterday, "DAILY");
                     if (boxOffice != null) {
                         boxOfficeRepository.save(boxOffice);
-                        log.info("BoxOffice 저장 완료: {} - movieDetail: {}", 
+                        count++;
+                        log.info("BoxOffice 저장 완료: {} - movieDetail: {} ({}번째)", 
                                 boxOffice.getMovieCd(), 
-                                boxOffice.getMovieDetail() != null ? boxOffice.getMovieDetail().getMovieCd() : "null");
+                                boxOffice.getMovieDetail() != null ? boxOffice.getMovieDetail().getMovieCd() : "null",
+                                count);
                     }
                 }
-                log.info("일일 박스오피스 데이터 저장 완료: {}개", dailyBoxOfficeList.size());
+                log.info("일일 박스오피스 데이터 저장 완료: {}개 (상위 30개)", count);
             }
         } catch (Exception e) {
             log.error("일일 박스오피스 데이터 가져오기 실패", e);
@@ -113,7 +118,7 @@ public class BoxOfficeService {
                 // 먼저 모든 MovieDetail을 저장
                 for (JsonNode movie : weeklyBoxOfficeList) {
                     String movieCd = movie.get("movieCd").asText();
-                    if (movieRepository.findById(movieCd).isEmpty()) {
+                    if (movieRepository.findByMovieCd(movieCd).isEmpty()) {
                         try {
                             log.info("MovieDetail 저장 시작: {}", movieCd);
                             kobisApiService.fetchAndSaveMovieDetail(movieCd);
@@ -124,17 +129,22 @@ public class BoxOfficeService {
                     }
                 }
                 
-                // 그 다음 BoxOffice 저장
+                // 그 다음 BoxOffice 저장 (상위 30개만)
+                int count = 0;
                 for (JsonNode movie : weeklyBoxOfficeList) {
+                    if (count >= 30) break; // 상위 30개만 저장
+                    
                     BoxOffice boxOffice = parseBoxOfficeData(movie, lastWeek, "WEEKLY");
                     if (boxOffice != null) {
                         boxOfficeRepository.save(boxOffice);
-                        log.info("BoxOffice 저장 완료: {} - movieDetail: {}", 
+                        count++;
+                        log.info("BoxOffice 저장 완료: {} - movieDetail: {} ({}번째)", 
                                 boxOffice.getMovieCd(), 
-                                boxOffice.getMovieDetail() != null ? boxOffice.getMovieDetail().getMovieCd() : "null");
+                                boxOffice.getMovieDetail() != null ? boxOffice.getMovieDetail().getMovieCd() : "null",
+                                count);
                     }
                 }
-                log.info("주간 박스오피스 데이터 저장 완료: {}개", weeklyBoxOfficeList.size());
+                log.info("주간 박스오피스 데이터 저장 완료: {}개 (상위 30개)", count);
             }
         } catch (Exception e) {
             log.error("주간 박스오피스 데이터 가져오기 실패", e);
@@ -154,7 +164,7 @@ public class BoxOfficeService {
             long audiAcc = Long.parseLong(movie.get("audiAcc").asText());
             
             // MovieDetail 찾기 또는 생성
-            MovieDetail movieDetail = movieRepository.findById(movieCd).orElse(null);
+            MovieDetail movieDetail = movieRepository.findByMovieCd(movieCd).orElse(null);
             
             log.info("박스오피스 파싱 - movieCd: {}, movieNm: {}, MovieDetail 존재: {}", 
                     movieCd, movieNm, movieDetail != null);
@@ -165,7 +175,7 @@ public class BoxOfficeService {
                     log.info("MovieDetail이 없어서 KOBIS API로 다시 가져오기 시도: {}", movieCd);
                     movieDetail = kobisApiService.fetchAndSaveMovieDetail(movieCd);
                     // 저장 후 다시 조회
-                    movieDetail = movieRepository.findById(movieCd).orElse(null);
+                    movieDetail = movieRepository.findByMovieCd(movieCd).orElse(null);
                     log.info("KOBIS API 재시도 후 MovieDetail 존재: {}", movieDetail != null);
                 } catch (Exception e) {
                     log.warn("KOBIS API 재시도 실패: {}", movieCd, e);
@@ -257,7 +267,7 @@ public class BoxOfficeService {
         for (BoxOffice boxOffice : boxOffices) {
             if (boxOffice.getMovieDetail() == null) {
                 String movieCd = boxOffice.getMovieCd();
-                Optional<MovieDetail> movieDetailOpt = movieRepository.findById(movieCd);
+                Optional<MovieDetail> movieDetailOpt = movieRepository.findByMovieCd(movieCd);
                 
                 if (movieDetailOpt.isPresent()) {
                     boxOffice.setMovieDetail(movieDetailOpt.get());

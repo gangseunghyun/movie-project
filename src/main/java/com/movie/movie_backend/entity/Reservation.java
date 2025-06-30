@@ -33,6 +33,6 @@ public class Reservation {
         inverseJoinColumns = @JoinColumn(name = "seat_id"))
     private List<Seat> seats; // 예매한 좌석 목록
 
-    @OneToMany(mappedBy = "reservation")
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments; // 이 예매의 결제 목록
 } 

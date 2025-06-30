@@ -13,7 +13,17 @@ import com.movie.movie_backend.constant.MovieStatus;
 @Table(name = "movie_detail")
 public class MovieDetail {
     @Id
-    private String movieCd; // 영화 코드 (KOBIS API의 movieCd)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "movie_detail_id")
+    private Long id; // 자동 생성되는 기본키
+
+    @Column(name = "movie_cd", unique = true, nullable = false)
+    private String movieCd; // 영화 코드 (KOBIS API의 movieCd) - 외래키
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "movie_cd", referencedColumnName = "movie_cd", insertable = false, updatable = false)
+    @JsonIgnore
+    private MovieList movieList; // 영화 목록 정보 (1:1)
 
     private String movieNm; // 영화명
     private String movieNmEn; // 영화 영문명
