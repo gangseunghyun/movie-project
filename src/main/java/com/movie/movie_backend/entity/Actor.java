@@ -2,6 +2,7 @@ package com.movie.movie_backend.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class Actor {
     private String photoUrl; // 배우 사진 URL
 
     @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("actor")
     private List<Cast> casts; // 출연한 영화 목록 (역할 정보 포함)
     // data
 } 

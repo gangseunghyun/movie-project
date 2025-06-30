@@ -54,16 +54,22 @@ public class MovieDetailDto {
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     public static class Director {
+        private Long id;
         private String peopleNm;
         private String peopleNmEn;
+        private String photoUrl; // 감독 사진
+        private String roleType; // '감독'
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     public static class Actor {
+        private Long id;
         private String peopleNm;
         private String peopleNmEn;
         private String cast;    // 배역명
         private String castEn;  // 배역명(영문)
+        private String photoUrl; // 배우 사진
+        private String roleType; // 주연/조연/특별출연 등
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder

@@ -67,6 +67,37 @@ public class MovieDetailMapper {
         dto.setPosterUrl(posterUrl);
         dto.setDirectorName(directorName);
         dto.setAverageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0);
+        
+        // 감독 정보 매핑
+        if (movieDetail.getDirector() != null) {
+            List<MovieDetailDto.Director> directors = List.of(
+                MovieDetailDto.Director.builder()
+                    .id(movieDetail.getDirector().getId())
+                    .peopleNm(movieDetail.getDirector().getName())
+                    .peopleNmEn(movieDetail.getDirector().getName()) // 영문명이 없으면 한글명 사용
+                    .photoUrl(movieDetail.getDirector().getPhotoUrl())
+                    .roleType("감독")
+                    .build()
+            );
+            dto.setDirectors(directors);
+        }
+        
+        // 배우 정보 매핑
+        if (movieDetail.getCasts() != null && !movieDetail.getCasts().isEmpty()) {
+            List<MovieDetailDto.Actor> actors = movieDetail.getCasts().stream()
+                .map(cast -> MovieDetailDto.Actor.builder()
+                    .id(cast.getActor().getId())
+                    .peopleNm(cast.getActor().getName())
+                    .peopleNmEn(cast.getActor().getName()) // 영문명이 없으면 한글명 사용
+                    .cast(cast.getCharacterName())
+                    .castEn(cast.getCharacterName()) // 영문 배역명이 없으면 한글 배역명 사용
+                    .photoUrl(cast.getActor().getPhotoUrl())
+                    .roleType(cast.getRoleType() != null ? cast.getRoleType().name() : "")
+                    .build())
+                .collect(Collectors.toList());
+            dto.setActors(actors);
+        }
+        
         dto.setStillcuts(movieDetail.getStillcuts() != null ? 
             movieDetail.getStillcuts().stream()
                 .map(stillcut -> MovieDetailDto.Stillcut.builder()

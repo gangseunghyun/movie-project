@@ -49,6 +49,9 @@ import com.movie.movie_backend.repository.REVLikeRepository;
 import com.movie.movie_backend.entity.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.movie.movie_backend.repository.USRUserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 @Slf4j
 @Controller
@@ -73,6 +76,7 @@ public class DataViewController {
     private final PRDMovieListService prdMovieListService;
     private final SearchLogRepository searchLogRepository;
     private final REVLikeRepository likeRepository;
+    private final USRUserRepository userRepository;
 
     /**
      * 데이터 조회 메인 페이지
@@ -361,7 +365,8 @@ public class DataViewController {
     public ResponseEntity<Map<String, Object>> getMovieDetailDtoData(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "date") String sort) {
+            @RequestParam(defaultValue = "date") String sort,
+            HttpServletRequest request) {
         
         try {
             List<MovieDetail> movieDetails;
@@ -391,7 +396,7 @@ public class DataViewController {
             int end = Math.min(start + size, total);
             
             List<MovieDetail> pagedList = movieDetails.subList(start, end);
-            User currentUser = getCurrentUser();
+            User currentUser = getCurrentUser(request);
             List<MovieDetailDto> dtoList = pagedList.stream()
                 .map(md -> movieDetailMapper.toDto(
                     md,
@@ -438,7 +443,8 @@ public class DataViewController {
     public ResponseEntity<Map<String, Object>> searchMovieDetailDto(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            HttpServletRequest request) {
         try {
             log.info("영화 통합 검색 요청(띄어쓰기 무시): keyword={}, page={}, size={}", keyword, page, size);
             
@@ -492,7 +498,7 @@ public class DataViewController {
             List<MovieDetail> pagedList = allResults.subList(start, end);
             
             // 6. DTO 변환
-            User currentUser = getCurrentUser();
+            User currentUser = getCurrentUser(request);
             List<MovieDetailDto> dtoList = pagedList.stream()
                 .map(md -> movieDetailMapper.toDto(
                     md,
@@ -1000,15 +1006,143 @@ public class DataViewController {
         }
     }
 
+    /**
+     * API 응답 테스트용 엔드포인트
+     */
+    @GetMapping("/api/test-response")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> testResponse(HttpServletRequest request) {
+        try {
+            User currentUser = getCurrentUser(request);
+            log.info("테스트 - 현재 사용자: {}", currentUser != null ? currentUser.getLoginId() : "null");
+            
+            // 첫 번째 영화 하나만 가져와서 테스트
+            List<MovieDetail> movieDetails = movieRepository.findAll();
+            if (movieDetails.isEmpty()) {
+                return ResponseEntity.ok(Map.of("error", "영화 데이터가 없습니다."));
+            }
+            
+            MovieDetail firstMovie = movieDetails.get(0);
+            int likeCount = likeRepository.countByMovieDetail(firstMovie);
+            boolean likedByMe = currentUser != null && likeRepository.existsByMovieDetailAndUser(firstMovie, currentUser);
+            
+            log.info("테스트 - 영화: {}, 좋아요 수: {}, 내가 좋아요: {}", 
+                firstMovie.getMovieNm(), likeCount, likedByMe);
+            
+            MovieDetailDto dto = movieDetailMapper.toDto(firstMovie, likeCount, likedByMe);
+            
+            return ResponseEntity.ok(Map.of(
+                "testMovie", dto,
+                "currentUser", currentUser != null ? currentUser.getLoginId() : null,
+                "likeCount", likeCount,
+                "likedByMe", likedByMe
+            ));
+        } catch (Exception e) {
+            log.error("테스트 응답 실패", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // 현재 로그인한 사용자 반환 (없으면 null)
-    private User getCurrentUser() {
+    private User getCurrentUser(HttpServletRequest request) {
+        log.info("=== getCurrentUser 호출됨 ===");
+        
+        // 세션에서 직접 사용자 정보 확인
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            String sessionLoginId = (String) session.getAttribute("USER_LOGIN_ID");
+            log.info("세션에서 USER_LOGIN_ID: {}", sessionLoginId);
+            
+            if (sessionLoginId != null) {
+                User sessionUser = userRepository.findByLoginId(sessionLoginId).orElse(null);
+                if (sessionUser != null) {
+                    log.info("세션에서 사용자 조회 성공: {}", sessionUser.getLoginId());
+                    return sessionUser;
+                }
+            }
+        }
+        
+        // Spring Security Authentication에서 사용자 정보 가져오기
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+        log.info("Authentication: {}", authentication);
+        
+        if (authentication == null) {
+            log.error("Authentication이 null입니다.");
             return null;
         }
-        if (authentication.getPrincipal() instanceof User) {
-            return (User) authentication.getPrincipal();
+        
+        log.info("Authentication Principal: {}", authentication.getPrincipal());
+        log.info("Authentication Principal Type: {}", authentication.getPrincipal().getClass().getName());
+        log.info("Authentication Name: {}", authentication.getName());
+        log.info("Authentication isAuthenticated: {}", authentication.isAuthenticated());
+        
+        if (!authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            log.error("인증되지 않은 사용자입니다.");
+            return null;
         }
-        return null;
+        
+        User user = null;
+        
+        // OAuth2 사용자인 경우
+        if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User) {
+            log.info("OAuth2 사용자로 인식됨");
+            org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
+                (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
+            
+            String email = oauth2User.getAttribute("email");
+            String provider = oauth2User.getAttribute("provider");
+            String providerId = oauth2User.getAttribute("providerId");
+            
+            // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+            if (email == null && "KAKAO".equals(provider)) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+                if (kakaoAccount != null) {
+                    email = (String) kakaoAccount.get("email");
+                }
+            }
+            
+            log.info("OAuth2 속성 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
+            
+            if (email != null && provider != null && providerId != null) {
+                try {
+                    com.movie.movie_backend.constant.Provider providerEnum = 
+                        com.movie.movie_backend.constant.Provider.valueOf(provider.toUpperCase());
+                    user = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
+                    log.info("OAuth2 사용자 조회 결과: {}", user);
+                } catch (Exception e) {
+                    log.error("OAuth2 사용자 조회 실패", e);
+                }
+            }
+        }
+        // Spring Security로 로그인한 사용자인 경우 (User 엔티티가 Principal)
+        else if (authentication.getPrincipal() instanceof User) {
+            log.info("Spring Security User 엔티티로 인식됨");
+            user = (User) authentication.getPrincipal();
+            log.info("Spring Security 사용자 조회 결과: {}", user);
+        }
+        // Spring Security의 UserDetails 구현체인 경우
+        else if (authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+            log.info("Spring Security UserDetails로 인식됨");
+            String loginId = authentication.getName();
+            user = userRepository.findByLoginId(loginId).orElse(null);
+            log.info("UserDetails로 사용자 조회 결과: {}", user);
+        }
+        // 기타 경우 (loginId로 조회)
+        else {
+            log.info("기타 타입으로 인식됨: {}", authentication.getPrincipal().getClass().getName());
+            String loginId = authentication.getName();
+            user = userRepository.findByLoginId(loginId).orElse(null);
+            log.info("loginId로 사용자 조회 결과: {}", user);
+        }
+        
+        if (user == null) {
+            log.error("최종적으로 사용자를 찾을 수 없습니다.");
+        } else {
+            log.info("최종 사용자: id={}, loginId={}, role={}, isAdmin={}", 
+                user.getId(), user.getLoginId(), user.getRole(), user.isAdmin());
+        }
+        
+        return user;
     }
 } 
