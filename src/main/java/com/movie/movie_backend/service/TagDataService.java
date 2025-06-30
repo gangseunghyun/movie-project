@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.PostConstruct;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -371,5 +372,10 @@ public class TagDataService {
      */
     public List<Tag> searchTagsByName(String name) {
         return tagRepository.findByNameContainingIgnoreCase(name);
+    }
+
+    @PostConstruct
+    public void init() {
+        setupTagData();
     }
 } 
