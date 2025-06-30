@@ -26,6 +26,7 @@ public class MovieManagementService {
     private final PRDDirectorRepository directorRepository;
     private final PRDTagRepository tagRepository;
     private final REVLikeRepository likeRepository;
+    private final REVRatingRepository ratingRepository;
     private final MovieDetailMapper movieDetailMapper;
 
     /**
@@ -155,11 +156,17 @@ public class MovieManagementService {
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 관련 데이터 삭제 (좋아요, 댓글 등)
+        // 관련 데이터 삭제 (좋아요, 평점, 댓글 등)
         List<Like> likes = likeRepository.findAll().stream()
                 .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd))
                 .toList();
         likeRepository.deleteAll(likes);
+        
+        // 평점 데이터 삭제
+        List<Rating> ratings = ratingRepository.findAll().stream()
+                .filter(rating -> rating.getMovieDetail().getMovieCd().equals(movieCd))
+                .toList();
+        ratingRepository.deleteAll(ratings);
         
         // 영화 삭제
         movieRepository.delete(movie);
