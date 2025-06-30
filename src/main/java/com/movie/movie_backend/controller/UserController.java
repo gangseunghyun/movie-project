@@ -551,14 +551,11 @@ public class UserController {
             
             if (currentUser == null) {
                 log.warn("인증된 사용자 정보가 없음 - Authentication: {}", authentication);
-                return ResponseEntity.status(401)
-                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
-                    .header("Pragma", "no-cache")
-                    .header("Expires", "0")
-                    .body(Map.of(
-                        "success", false,
-                        "message", "로그인이 필요합니다."
-                    ));
+                Map<String, Object> result = new HashMap<>();
+                result.put("success", false);
+                result.put("user", null);
+                result.put("message", "비로그인 상태입니다.");
+                return ResponseEntity.ok(result);
             }
             
             log.info("사용자 정보 조회 성공: {}", currentUser.getLoginId());
@@ -583,14 +580,14 @@ public class UserController {
                 ));
         } catch (Exception e) {
             log.error("현재 사용자 정보 조회 실패", e);
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", false);
+            result.put("message", "사용자 정보 조회에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest()
                 .header("Cache-Control", "no-cache, no-store, must-revalidate")
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
-                .body(Map.of(
-                    "success", false,
-                    "message", "사용자 정보 조회에 실패했습니다: " + e.getMessage()
-                ));
+                .body(result);
         }
     }
 

@@ -24,6 +24,20 @@ public class CacheConfig {
                 .maximumSize(100)
                 .build());
         
+        // 평균 별점 캐시: 5분 TTL, 최대 1000개 항목
+        cacheManager.registerCustomCache("averageRatings", 
+            Caffeine.newBuilder()
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .maximumSize(1000)
+                .build());
+        
+        // 별점 개수 캐시: 5분 TTL, 최대 1000개 항목
+        cacheManager.registerCustomCache("ratingCounts", 
+            Caffeine.newBuilder()
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .maximumSize(1000)
+                .build());
+        
         return cacheManager;
     }
 } 
