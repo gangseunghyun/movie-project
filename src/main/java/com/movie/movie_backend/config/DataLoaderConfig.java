@@ -48,13 +48,13 @@ public class DataLoaderConfig {
     private final PRDMovieRepository movieRepository;
     private final BoxOfficeRepository boxOfficeRepository;
 
-    @Bean
-    public CommandLineRunner loadMovieDescriptionsOnly() {
-        return args -> {
-            // 영화 줄거리(Description)만 채워넣기
-            fillMissingMovieDetails();
-        };
-    }
+    // @Bean
+    // public CommandLineRunner loadMovieDescriptionsOnly() {
+    //     return args -> {
+    //         // 영화 줄거리(Description)만 채워넣기
+    //         fillMissingMovieDetails();
+    //     };
+    // }
 
     /**
      * 감독 정보 저장

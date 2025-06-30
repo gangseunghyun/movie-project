@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface REVLikeRepository extends JpaRepository<Like, Long> {
     // 좋아요 관련 쿼리 메소드 추가 가능
+    boolean existsByMovieDetailAndUser(com.movie.movie_backend.entity.MovieDetail movieDetail, com.movie.movie_backend.entity.User user);
+    int countByMovieDetail(com.movie.movie_backend.entity.MovieDetail movieDetail);
 } 

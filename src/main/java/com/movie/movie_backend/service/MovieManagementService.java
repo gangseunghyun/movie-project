@@ -26,6 +26,7 @@ public class MovieManagementService {
     private final PRDDirectorRepository directorRepository;
     private final PRDTagRepository tagRepository;
     private final REVLikeRepository likeRepository;
+    private final REVRatingRepository ratingRepository;
     private final MovieDetailMapper movieDetailMapper;
 
     /**
@@ -155,11 +156,17 @@ public class MovieManagementService {
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 관련 데이터 삭제 (좋아요, 댓글 등)
+        // 관련 데이터 삭제 (좋아요, 평점, 댓글 등)
         List<Like> likes = likeRepository.findAll().stream()
                 .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd))
                 .toList();
         likeRepository.deleteAll(likes);
+        
+        // 평점 데이터 삭제
+        List<Rating> ratings = ratingRepository.findAll().stream()
+                .filter(rating -> rating.getMovieDetail().getMovieCd().equals(movieCd))
+                .toList();
+        ratingRepository.deleteAll(ratings);
         
         // 영화 삭제
         movieRepository.delete(movie);
@@ -197,15 +204,52 @@ public class MovieManagementService {
     }
 
     /**
-     * 영화 상세 정보 조회
+     * 영화 좋아요 취소
      */
-    public MovieDetailDto getMovieDetail(String movieCd) {
-        log.info("영화 상세 정보 조회: {}", movieCd);
+    @Transactional
+    public void unlikeMovie(String movieCd, Long userId) {
+        log.info("영화 좋아요 취소: {} - 사용자: {}", movieCd, userId);
         
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        return movieDetailMapper.toDto(movie);
+        // 좋아요 찾기
+        List<Like> existingLikes = likeRepository.findAll().stream()
+                .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd) && 
+                               like.getUser().getId().equals(userId))
+                .toList();
+        
+        if (existingLikes.isEmpty()) {
+            log.info("좋아요를 누르지 않았습니다: {} - 사용자: {}", movieCd, userId);
+            return;
+        }
+        
+        // 좋아요 삭제
+        likeRepository.deleteAll(existingLikes);
+        log.info("좋아요 취소 완료: {} - 사용자: {}", movieCd, userId);
+    }
+
+    /**
+     * 영화 상세 정보 조회
+     */
+    public MovieDetailDto getMovieDetail(String movieCd, User currentUser) {
+        log.info("영화 상세 정보 조회: {}", movieCd);
+        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
+        int likeCount = likeRepository.countByMovieDetail(movie);
+        boolean likedByMe = currentUser != null && likeRepository.existsByMovieDetailAndUser(movie, currentUser);
+        return movieDetailMapper.toDto(movie, likeCount, likedByMe);
+    }
+
+    public List<MovieDetailDto> getMovieDetailDtos(User currentUser) {
+        List<MovieDetail> movies = movieRepository.findAll();
+        return movies.stream()
+            .map(movie -> {
+                int likeCount = likeRepository.countByMovieDetail(movie);
+                boolean likedByMe = currentUser != null && likeRepository.existsByMovieDetailAndUser(movie, currentUser);
+                return movieDetailMapper.toDto(movie, likeCount, likedByMe);
+            })
+            .collect(java.util.stream.Collectors.toList());
     }
 
     /**

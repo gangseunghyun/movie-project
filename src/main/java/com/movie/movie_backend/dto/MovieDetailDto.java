@@ -6,6 +6,7 @@ import java.time.LocalDate;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class MovieDetailDto {
+    private String id;                // 영화 ID (movieCd와 동일)
     private String movieCd;           // 영화코드 (PK, 문자열)
     private String movieNm;           // 영화명 (국문)
     private String movieNmEn;         // 영화명 (영문)
@@ -36,6 +37,8 @@ public class MovieDetailDto {
     private List<Company> companys;   // 참여 영화사 목록
     private List<Staff> staffs;       // 스텝 목록
     private List<Stillcut> stillcuts; // 스틸컷 목록
+    private int likeCount;      // 좋아요 수
+    private boolean likedByMe;  // 내가 좋아요를 눌렀는지
 
     // 내부 DTO들 (필요하면 더 세분화 가능)
 
