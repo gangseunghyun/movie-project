@@ -2070,7 +2070,7 @@ function App() {
   const [ratingDistribution, setRatingDistribution] = useState(null);
   useEffect(() => {
     if (showMovieDetail && selectedMovie && selectedMovie.movieCd) {
-      axios.get(`/api/ratings/movie/${selectedMovie.movieCd}/distribution`)
+      axios.get(`/api/user-ratings/movie/${selectedMovie.movieCd}/distribution`)
         .then(res => setRatingDistribution(res.data.distribution))
         .catch(() => setRatingDistribution(null));
     } else {

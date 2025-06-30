@@ -154,7 +154,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
-                .requestMatchers("/api/ratings/movie/*/distribution").permitAll()
+                .requestMatchers("/api/user-ratings/movie/*/distribution").permitAll()
                 .requestMatchers("/api/movies/**").hasRole("ADMIN")
                 .requestMatchers("/api/search-history").authenticated()
                 .anyRequest().authenticated()

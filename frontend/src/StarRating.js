@@ -58,12 +58,20 @@ function StarRating({ movieCd, userRating, onChange, average, count, disabled })
       <div style={{ fontSize: '1.05rem', color: '#888', marginTop: 4 }}>
         {userRating !== undefined && userRating !== null ? `${userRating.toFixed(1)}점` : '평가하기'}
       </div>
-      <div style={{ fontSize: '1.2rem', color: '#333', marginTop: 8, fontWeight: 600 }}>
-        {average !== undefined && average !== null ? average.toFixed(1) : '-'}
-        <span style={{ fontSize: '1rem', color: '#888', marginLeft: 6 }}>
-          {count !== undefined && count !== null ? `평균 별점(${count}명)` : '평균 별점(0명)'}
+      {/* 평균 별점 표시 */}
+      {average !== undefined && average !== null ? (
+        <span>
+          {(() => {
+            // 0.5 단위로 반올림
+            const rounded = Math.round(average * 2) / 2;
+            // x.0이면 정수로, x.5면 그대로
+            return (rounded % 1 === 0) ? rounded.toString().replace('.0', '') : rounded.toFixed(1);
+          })()}
         </span>
-      </div>
+      ) : '-'}
+      <span style={{ fontSize: '1rem', color: '#888', marginLeft: 6 }}>
+        {count !== undefined && count !== null ? `평균 별점(${count}명)` : '평균 별점(0명)'}
+      </span>
     </div>
   );
 }
