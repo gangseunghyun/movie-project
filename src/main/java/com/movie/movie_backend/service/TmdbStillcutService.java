@@ -46,15 +46,22 @@ public class TmdbStillcutService {
 
         for (MovieList movieList : movieLists) {
             try {
-                Optional<MovieDetail> movieDetailOpt = movieRepository.findById(movieList.getMovieCd());
+                Optional<MovieDetail> movieDetailOpt = movieRepository.findByMovieCd(movieList.getMovieCd());
                 if (movieDetailOpt.isPresent()) {
                     MovieDetail movieDetail = movieDetailOpt.get();
                     // 이미 스틸컷이 있으면 건너뜀
                     if (movieDetail.getStillcuts() != null && !movieDetail.getStillcuts().isEmpty()) continue;
                     List<Stillcut> stillcuts = fetchStillcutsFromTmdb(movieList, movieDetail);
                     if (!stillcuts.isEmpty()) {
+                        // 기존 스틸컷 제거
                         movieDetail.getStillcuts().clear();
-                        movieDetail.getStillcuts().addAll(stillcuts);
+                        
+                        // 새 스틸컷들을 MovieDetail에 추가
+                        for (Stillcut stillcut : stillcuts) {
+                            stillcut.setMovieDetail(movieDetail);
+                            movieDetail.getStillcuts().add(stillcut);
+                        }
+                        
                         movieRepository.save(movieDetail);
                         updated++;
                         log.info("스틸컷 매칭 성공: {} ({}) -> {}개", movieList.getMovieNm(), movieList.getOpenDt(), stillcuts.size());
@@ -86,7 +93,7 @@ public class TmdbStillcutService {
         }
 
         MovieList movieList = movieListOpt.get();
-        Optional<MovieDetail> movieDetailOpt = movieRepository.findById(movieCd);
+        Optional<MovieDetail> movieDetailOpt = movieRepository.findByMovieCd(movieCd);
         
         if (movieDetailOpt.isEmpty()) {
             log.warn("MovieDetail을 찾을 수 없음: {}", movieCd);
@@ -97,8 +104,15 @@ public class TmdbStillcutService {
         List<Stillcut> stillcuts = fetchStillcutsFromTmdb(movieList, movieDetail);
         
         if (!stillcuts.isEmpty()) {
+            // 기존 스틸컷 제거
             movieDetail.getStillcuts().clear();
-            movieDetail.getStillcuts().addAll(stillcuts);
+            
+            // 새 스틸컷들을 MovieDetail에 추가
+            for (Stillcut stillcut : stillcuts) {
+                stillcut.setMovieDetail(movieDetail);
+                movieDetail.getStillcuts().add(stillcut);
+            }
+            
             movieRepository.save(movieDetail);
             log.info("스틸컷 저장 완료: {} -> {}개", movieList.getMovieNm(), stillcuts.size());
         }

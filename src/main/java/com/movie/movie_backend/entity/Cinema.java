@@ -18,6 +18,6 @@ public class Cinema {
     @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Theater> theaters; // 영화관 내 상영관 목록
 
-    @OneToMany(mappedBy = "cinema")
+    @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Screening> screenings; // 이 영화관의 상영 정보 목록
 } 

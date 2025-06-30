@@ -21,6 +21,6 @@ public class Theater {
     @OneToMany(mappedBy = "theater", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Seat> seats; // 상영관 내 좌석 목록
 
-    @OneToMany(mappedBy = "theater")
+    @OneToMany(mappedBy = "theater", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Screening> screenings; // 이 상영관의 상영 정보 목록
 } 

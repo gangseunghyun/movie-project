@@ -59,8 +59,8 @@ public class AdminMovieService {
         MovieDetail movieDetail = convertToEntity(movieDto);
         
         // 영화 코드 중복 체크
-        if (movieRepository.existsById(movieDetail.getMovieCd())) {
-            throw new RuntimeException("이미 존재하는 영화 코드입니다: " + movieDetail.getMovieCd());
+        if (movieRepository.existsByMovieCd(movieDetail.getMovieCd())) {
+            throw new RuntimeException("이미 존재하는 영화입니다: " + movieDetail.getMovieCd());
         }
         
         // 기본값 설정
@@ -81,7 +81,7 @@ public class AdminMovieService {
     public AdminMovieDto updateMovie(String movieCd, AdminMovieDto updateDto) {
         log.info("영화 정보 수정 시작: {}", movieCd);
         
-        Optional<MovieDetail> existingMovie = movieRepository.findById(movieCd);
+        Optional<MovieDetail> existingMovie = movieRepository.findByMovieCd(movieCd);
         if (existingMovie.isEmpty()) {
             throw new RuntimeException("존재하지 않는 영화입니다: " + movieCd);
         }
@@ -147,7 +147,7 @@ public class AdminMovieService {
     public MovieDetail deactivateMovie(String movieCd) {
         log.info("영화 비활성화 시작: {}", movieCd);
         
-        Optional<MovieDetail> existingMovie = movieRepository.findById(movieCd);
+        Optional<MovieDetail> existingMovie = movieRepository.findByMovieCd(movieCd);
         if (existingMovie.isEmpty()) {
             throw new RuntimeException("존재하지 않는 영화입니다: " + movieCd);
         }
@@ -168,7 +168,7 @@ public class AdminMovieService {
     public MovieDetail activateMovie(String movieCd) {
         log.info("영화 활성화 시작: {}", movieCd);
         
-        Optional<MovieDetail> existingMovie = movieRepository.findById(movieCd);
+        Optional<MovieDetail> existingMovie = movieRepository.findByMovieCd(movieCd);
         if (existingMovie.isEmpty()) {
             throw new RuntimeException("존재하지 않는 영화입니다: " + movieCd);
         }
@@ -189,7 +189,7 @@ public class AdminMovieService {
     public MovieDetail updateMovieStatus(String movieCd, MovieStatus newStatus) {
         log.info("영화 상태 업데이트 시작: {} -> {}", movieCd, newStatus);
         
-        Optional<MovieDetail> existingMovie = movieRepository.findById(movieCd);
+        Optional<MovieDetail> existingMovie = movieRepository.findByMovieCd(movieCd);
         if (existingMovie.isEmpty()) {
             throw new RuntimeException("존재하지 않는 영화입니다: " + movieCd);
         }
@@ -211,7 +211,7 @@ public class AdminMovieService {
     public MovieDetail setMovieTags(String movieCd, List<String> tagNames) {
         log.info("영화 태그 설정 시작: {} -> {}개 태그", movieCd, tagNames.size());
         
-        Optional<MovieDetail> existingMovie = movieRepository.findById(movieCd);
+        Optional<MovieDetail> existingMovie = movieRepository.findByMovieCd(movieCd);
         if (existingMovie.isEmpty()) {
             throw new RuntimeException("존재하지 않는 영화입니다: " + movieCd);
         }
@@ -249,7 +249,7 @@ public class AdminMovieService {
     public MovieDetail addMovieTag(String movieCd, String tagName) {
         log.info("영화 태그 추가: {} -> {}", movieCd, tagName);
         
-        Optional<MovieDetail> existingMovie = movieRepository.findById(movieCd);
+        Optional<MovieDetail> existingMovie = movieRepository.findByMovieCd(movieCd);
         if (existingMovie.isEmpty()) {
             throw new RuntimeException("존재하지 않는 영화입니다: " + movieCd);
         }
@@ -290,7 +290,7 @@ public class AdminMovieService {
     public MovieDetail removeMovieTag(String movieCd, String tagName) {
         log.info("영화 태그 제거: {} -> {}", movieCd, tagName);
         
-        Optional<MovieDetail> existingMovie = movieRepository.findById(movieCd);
+        Optional<MovieDetail> existingMovie = movieRepository.findByMovieCd(movieCd);
         if (existingMovie.isEmpty()) {
             throw new RuntimeException("존재하지 않는 영화입니다: " + movieCd);
         }
@@ -777,7 +777,7 @@ public class AdminMovieService {
         int failedCount = 0;
         for (MovieList movieList : movieLists) {
             try {
-                MovieDetail detail = movieRepository.findById(movieList.getMovieCd()).orElse(null);
+                MovieDetail detail = movieRepository.findByMovieCd(movieList.getMovieCd()).orElse(null);
                 if (detail != null) {
                     boolean needsUpdate = false;
                     if (movieList.getMovieNmEn() == null || movieList.getMovieNmEn().isEmpty()) {
