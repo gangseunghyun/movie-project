@@ -20,7 +20,8 @@ public class MovieDetailMapper {
     private final PRDMovieListRepository movieListRepository;
     private final BoxOfficeRepository boxOfficeRepository;
 
-    public MovieDetailDto toDto(MovieDetail movieDetail) {
+    public MovieDetailDto toDto(MovieDetail movieDetail, int likeCount, boolean likedByMe) {
+        MovieDetailDto dto = new MovieDetailDto();
         // MovieList에서 포스터 URL 가져오기
         String posterUrl = null;
         String directorName = null;
@@ -44,44 +45,46 @@ public class MovieDetailMapper {
         double reservationRate = calculateReservationRate(reservationRank);
         int totalAudience = getTotalAudience(movieDetail.getMovieCd());
 
-        return MovieDetailDto.builder()
-                .movieCd(movieDetail.getMovieCd())
-                .movieNm(movieDetail.getMovieNm())
-                .movieNmEn(movieDetail.getMovieNmEn())
-                .prdtYear(movieDetail.getPrdtYear())
-                .showTm(movieDetail.getShowTm())
-                .openDt(movieDetail.getOpenDt())
-                .prdtStatNm(movieDetail.getPrdtStatNm())
-                .typeNm(movieDetail.getTypeNm())
-                .genreNm(movieDetail.getGenreNm())
-                .nationNm(movieDetail.getNationNm())
-                .watchGradeNm(movieDetail.getWatchGradeNm())
-                .companyNm(movieDetail.getCompanyNm())
-                .description(movieDetail.getDescription())
-                .status(movieDetail.getStatus() != null ? movieDetail.getStatus().name() : null)
-                .reservationRank(reservationRank)
-                .reservationRate(reservationRate)
-                .daysSinceRelease(calculatedDaysSinceRelease)
-                .totalAudience(totalAudience)
-                .posterUrl(posterUrl)
-                .directorName(directorName)
-                .averageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0)
-                .stillcuts(movieDetail.getStillcuts() != null ? 
-                    movieDetail.getStillcuts().stream()
-                        .map(stillcut -> MovieDetailDto.Stillcut.builder()
-                            .id(stillcut.getId())
-                            .imageUrl(stillcut.getImageUrl())
-                            .orderInMovie(stillcut.getOrderInMovie())
-                            .build())
-                        .collect(Collectors.toList()) : null)
-                .build();
+        dto.setId(movieDetail.getMovieCd());
+        dto.setMovieCd(movieDetail.getMovieCd());
+        dto.setMovieNm(movieDetail.getMovieNm());
+        dto.setMovieNmEn(movieDetail.getMovieNmEn());
+        dto.setPrdtYear(movieDetail.getPrdtYear());
+        dto.setShowTm(movieDetail.getShowTm());
+        dto.setOpenDt(movieDetail.getOpenDt());
+        dto.setPrdtStatNm(movieDetail.getPrdtStatNm());
+        dto.setTypeNm(movieDetail.getTypeNm());
+        dto.setGenreNm(movieDetail.getGenreNm());
+        dto.setNationNm(movieDetail.getNationNm());
+        dto.setWatchGradeNm(movieDetail.getWatchGradeNm());
+        dto.setCompanyNm(movieDetail.getCompanyNm());
+        dto.setDescription(movieDetail.getDescription());
+        dto.setStatus(movieDetail.getStatus() != null ? movieDetail.getStatus().name() : null);
+        dto.setReservationRank(reservationRank);
+        dto.setReservationRate(reservationRate);
+        dto.setDaysSinceRelease(calculatedDaysSinceRelease);
+        dto.setTotalAudience(totalAudience);
+        dto.setPosterUrl(posterUrl);
+        dto.setDirectorName(directorName);
+        dto.setAverageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0);
+        dto.setStillcuts(movieDetail.getStillcuts() != null ? 
+            movieDetail.getStillcuts().stream()
+                .map(stillcut -> MovieDetailDto.Stillcut.builder()
+                    .id(stillcut.getId())
+                    .imageUrl(stillcut.getImageUrl())
+                    .orderInMovie(stillcut.getOrderInMovie())
+                    .build())
+                .collect(Collectors.toList()) : null);
+        dto.setLikeCount(likeCount);
+        dto.setLikedByMe(likedByMe);
+        return dto;
     }
 
-    public List<MovieDetailDto> toDtoList(List<MovieDetail> movieDetails) {
-        return movieDetails.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
+    // public List<MovieDetailDto> toDtoList(List<MovieDetail> movieDetails) {
+    //     return movieDetails.stream()
+    //             .map(this::toDto)
+    //             .collect(Collectors.toList());
+    // }
 
     // ===== 왓챠피디아 스타일 정보 계산 메서드들 =====
 

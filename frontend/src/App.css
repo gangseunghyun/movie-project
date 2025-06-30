@@ -188,12 +188,12 @@
 .movie-card {
   border: 1px solid #ddd !important;
   border-radius: 8px !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   background: white !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
   display: flex !important;
   flex-direction: column !important;
-  height: 420px !important;
+  height: auto !important;
   width: 240px !important;
   margin: 0 auto !important;
 }
@@ -212,11 +212,11 @@
 }
 
 .movie-info {
-  padding: 16px 20px 12px 20px !important;
-  flex: 1 1 auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 0;
 }
 
 .movie-info h3 {
@@ -1044,4 +1044,21 @@
   border-radius: 4px;
   transition: background 0.15s;
   padding: 6px 0;
+}
+
+/* movie-actions 버튼 영역이 항상 보이도록 */
+.movie-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* 버튼 스타일 개선 (선택) */
+.movie-actions button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
 } 

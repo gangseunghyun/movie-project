@@ -923,33 +923,136 @@ function App() {
     }
   };
 
+  // 좋아요 토글 상태 갱신 함수
+  const updateMovieLikeState = (movieCd, liked) => {
+    // movieDetailDtoData 업데이트
+    setMovieDetailDtoData(prev => ({
+      ...prev,
+      data: prev.data.map(movie =>
+        movie.movieCd === movieCd
+          ? {
+              ...movie,
+              likedByMe: liked,
+              likeCount: liked
+                ? (movie.likeCount || 0) + 1
+                : Math.max((movie.likeCount || 1) - 1, 0)
+            }
+          : movie
+      )
+    }));
+
+    // topRatedData 업데이트
+    setTopRatedData(prev => 
+      prev ? prev.map(movie =>
+        movie.movieCd === movieCd
+          ? {
+              ...movie,
+              likedByMe: liked,
+              likeCount: liked
+                ? (movie.likeCount || 0) + 1
+                : Math.max((movie.likeCount || 1) - 1, 0)
+            }
+          : movie
+      ) : prev
+    );
+
+    // popularMoviesData 업데이트
+    setPopularMoviesData(prev => 
+      prev ? prev.map(movie =>
+        movie.movieCd === movieCd
+          ? {
+              ...movie,
+              likedByMe: liked,
+              likeCount: liked
+                ? (movie.likeCount || 0) + 1
+                : Math.max((movie.likeCount || 1) - 1, 0)
+            }
+          : movie
+      ) : prev
+    );
+
+    // comingSoonData 업데이트
+    setComingSoonData(prev => ({
+      ...prev,
+      data: prev.data ? prev.data.map(movie =>
+        movie.movieCd === movieCd
+          ? {
+              ...movie,
+              likedByMe: liked,
+              likeCount: liked
+                ? (movie.likeCount || 0) + 1
+                : Math.max((movie.likeCount || 1) - 1, 0)
+            }
+          : movie
+      ) : prev.data
+    }));
+
+    // nowPlayingData 업데이트
+    setNowPlayingData(prev => ({
+      ...prev,
+      data: prev.data ? prev.data.map(movie =>
+        movie.movieCd === movieCd
+          ? {
+              ...movie,
+              likedByMe: liked,
+              likeCount: liked
+                ? (movie.likeCount || 0) + 1
+                : Math.max((movie.likeCount || 1) - 1, 0)
+            }
+          : movie
+      ) : prev.data
+    }));
+
+    // endedData 업데이트
+    setEndedData(prev => ({
+      ...prev,
+      data: prev.data ? prev.data.map(movie =>
+        movie.movieCd === movieCd
+          ? {
+              ...movie,
+              likedByMe: liked,
+              likeCount: liked
+                ? (movie.likeCount || 0) + 1
+                : Math.max((movie.likeCount || 1) - 1, 0)
+            }
+          : movie
+      ) : prev.data
+    }));
+
+    // searchResults 업데이트 (검색 결과가 있는 경우)
+    setSearchResults(prev => ({
+      ...prev,
+      data: prev.data ? prev.data.map(movie =>
+        movie.movieCd === movieCd
+          ? {
+              ...movie,
+              likedByMe: liked,
+              likeCount: liked
+                ? (movie.likeCount || 0) + 1
+                : Math.max((movie.likeCount || 1) - 1, 0)
+            }
+          : movie
+      ) : prev.data
+    }));
+  };
+
+  // 좋아요 추가
   const handleLikeMovie = async (movieCd) => {
     try {
-      const response = await axios.post(`http://localhost:80/api/movies/${movieCd}/like`, {}, {
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      console.log("영화 좋아요 응답:", response.data);
-      
-      // 응답이 HTML인지 확인
-      if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-        alert('API 서버 연결에 문제가 있습니다. HTML이 반환되었습니다.');
-        return;
-      }
-      
-      // 응답이 성공인지 확인
-      if (response.data && response.data.success) {
-        alert('좋아요가 추가되었습니다.');
-        handleRefresh();
-      } else {
-        alert('좋아요 추가에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
-      }
+      await axios.post(`/api/movies/${movieCd}/like`, {}, { withCredentials: true });
+      updateMovieLikeState(movieCd, true);
     } catch (error) {
-      console.error('좋아요 실패:', error);
       alert('좋아요에 실패했습니다.');
+    }
+  };
+
+  // 좋아요 취소
+  const handleUnlikeMovie = async (movieCd) => {
+    try {
+      await axios.delete(`/api/movies/${movieCd}/like`, { withCredentials: true });
+      updateMovieLikeState(movieCd, false);
+    } catch (error) {
+      alert('좋아요 취소에 실패했습니다.');
     }
   };
 
@@ -1324,7 +1427,7 @@ function App() {
     </div>
   );
 
-  const renderMovieDetailDto = () => (
+  const renderMovieDetailDto = ({ currentUser, handleEditMovie, handleDeleteMovie }) => (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
         <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
@@ -1357,47 +1460,60 @@ function App() {
                   <p><strong>누적관객:</strong> {item.totalAudience ? item.totalAudience.toLocaleString() : '-'}명</p>
                 </div>
                 <div className="movie-actions" style={{marginTop: '10px', display: 'flex', gap: '5px'}}>
-                  <button 
-                    onClick={(e) => {e.stopPropagation(); handleEditMovie(item);}}
+                  {currentUser && (currentUser.isAdmin || currentUser.role === 'ADMIN') && (
+                    <>
+                      <button 
+                        onClick={e => { e.stopPropagation(); handleEditMovie(item); }}
+                        style={{
+                          padding: '5px 10px',
+                          backgroundColor: '#007bff',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        수정
+                      </button>
+                      <button 
+                        onClick={e => { e.stopPropagation(); handleDeleteMovie(item.movieCd); }}
+                        style={{
+                          padding: '5px 10px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        삭제
+                      </button>
+                    </>
+                  )}
+                  {/* 좋아요 버튼 (누르면 토글, 카운트 표시) */}
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (item.likedByMe) {
+                        handleUnlikeMovie(item.movieCd);
+                      } else {
+                        handleLikeMovie(item.movieCd);
+                      }
+                    }}
                     style={{
                       padding: '5px 10px',
-                      backgroundColor: '#007bff',
-                      color: 'white',
+                      backgroundColor: item.likedByMe ? '#ffc107' : '#eee',
+                      color: item.likedByMe ? 'black' : '#333',
                       border: 'none',
                       borderRadius: '3px',
                       cursor: 'pointer',
                       fontSize: '12px'
                     }}
                   >
-                    수정
-                  </button>
-                  <button 
-                    onClick={(e) => {e.stopPropagation(); handleDeleteMovie(item.movieCd);}}
-                    style={{
-                      padding: '5px 10px',
-                      backgroundColor: '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
-                  >
-                    삭제
-                  </button>
-                  <button 
-                    onClick={(e) => {e.stopPropagation(); handleLikeMovie(item.movieCd);}}
-                    style={{
-                      padding: '5px 10px',
-                      backgroundColor: '#ffc107',
-                      color: 'black',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
-                  >
-                    ❤️ 좋아요
+                    {item.likedByMe ? '❤️ 좋아요 ' : '🤍 좋아요 '}
+                    {item.likeCount}
                   </button>
                 </div>
               </div>
@@ -2144,7 +2260,13 @@ function App() {
             renderMovieDetail={renderMovieDetail}
             renderBoxOffice={renderBoxOffice}
             renderBoxOfficeDto={renderBoxOfficeDto}
-            renderMovieDetailDto={renderMovieDetailDto}
+            renderMovieDetailDto={(extraProps) => renderMovieDetailDto({
+              ...extraProps,
+              currentUser,
+              handleEditMovie,
+              handleDeleteMovie,
+              handleLikeMovie
+            })}
             renderMovieListDto={renderMovieListDto}
             renderTopRated={renderTopRated}
             renderPopularMovies={renderPopularMovies}
