@@ -207,6 +207,27 @@ public class UserRatingController {
     }
 
     /**
+     * 영화의 별점 분포 조회 (0.5~5.0, 0.5 단위, Rating 테이블 기준)
+     */
+    @GetMapping("/movie/{movieCd}/distribution")
+    public ResponseEntity<Map<String, Object>> getRatingDistribution(@PathVariable String movieCd) {
+        try {
+            Map<Double, Long> distribution = ratingService.getRatingDistribution(movieCd);
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("movieCd", movieCd);
+            result.put("distribution", distribution);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("별점 분포 조회 실패", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "별점 분포 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
      * 사용자 이메일 추출
      */
     private String extractUserEmail(Object principal) {

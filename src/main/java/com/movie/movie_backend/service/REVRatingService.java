@@ -11,10 +11,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -28,6 +31,7 @@ public class REVRatingService {
     /**
      * 사용자가 영화에 별점 등록/수정
      */
+    @CacheEvict(value = "averageRatings", key = "#movieCd")
     public RatingDto saveRating(String userEmail, String movieCd, Double score) {
         log.info("별점 저장 요청: user={}, movie={}, score={}", userEmail, movieCd, score);
         
@@ -73,6 +77,7 @@ public class REVRatingService {
     /**
      * 사용자의 별점 삭제
      */
+    @CacheEvict(value = "averageRatings", key = "#movieCd")
     public void deleteRating(String userEmail, String movieCd) {
         log.info("별점 삭제 요청: user={}, movie={}", userEmail, movieCd);
         
@@ -186,6 +191,7 @@ public class REVRatingService {
      * 영화의 평균 평점 조회
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "averageRatings", key = "#movieCd")
     public Double getAverageRating(String movieCd) {
         List<Rating> ratings = ratingRepository.findByMovieDetailMovieCd(movieCd);
         if (ratings.isEmpty()) {
@@ -196,6 +202,24 @@ public class REVRatingService {
                 .average()
                 .orElse(0.0);
         return Math.round(average * 10.0) / 10.0; // 소수점 첫째자리까지
+    }
+    
+    /**
+     * 영화의 별점 분포 조회 (0.5~5.0, 0.5 단위, 누락 구간은 0)
+     */
+    public Map<Double, Long> getRatingDistribution(String movieCd) {
+        List<Rating> ratings = ratingRepository.findByMovieDetailMovieCd(movieCd);
+        Map<Double, Long> distribution = new java.util.LinkedHashMap<>();
+        // 0.5~5.0, 0.5 단위로 초기화
+        for (double score = 0.5; score <= 5.0; score += 0.5) {
+            distribution.put(Math.round(score * 10.0) / 10.0, 0L);
+        }
+        // 집계
+        for (Rating rating : ratings) {
+            double score = Math.round(rating.getScore() * 10.0) / 10.0;
+            distribution.put(score, distribution.getOrDefault(score, 0L) + 1);
+        }
+        return distribution;
     }
     
     /**
