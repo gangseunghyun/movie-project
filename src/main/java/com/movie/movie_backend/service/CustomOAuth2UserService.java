@@ -153,10 +153,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             customAttributes.put("sub", providerId); // google, kakao도 동일하게
         }
 
+        // DB의 User 엔티티의 role을 반영하여 권한 부여
         return new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
-                customAttributes,
-                "id".equals(registrationId) ? "id" : "sub" // 네이버는 "id", 그 외는 "sub"
+            Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+            customAttributes,
+            "id".equals(registrationId) ? "id" : "sub"
         );
     }
 
