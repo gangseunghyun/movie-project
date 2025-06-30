@@ -60,7 +60,7 @@ public class KobisApiService {
             List<String> missingMovieCds = new ArrayList<>();
             
             for (MovieList movieList : allMovieLists) {
-                if (!movieRepository.existsById(movieList.getMovieCd())) {
+                if (!movieRepository.existsByMovieCd(movieList.getMovieCd())) {
                     missingMovieCds.add(movieList.getMovieCd());
                 }
             }
@@ -821,13 +821,8 @@ public class KobisApiService {
     /**
      * movieCd로 MovieDetail 찾기
      */
-    public java.util.Optional<MovieDetail> findMovieDetailByCode(String movieCd) {
-        try {
-            return movieRepository.findById(movieCd);
-        } catch (Exception e) {
-            log.warn("MovieDetail 조회 실패: {} - {}", movieCd, e.getMessage());
-            return java.util.Optional.empty();
-        }
+    public Optional<MovieDetail> getMovieDetail(String movieCd) {
+        return movieRepository.findByMovieCd(movieCd);
     }
 
     /**

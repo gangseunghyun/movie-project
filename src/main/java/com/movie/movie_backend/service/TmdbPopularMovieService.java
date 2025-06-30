@@ -311,7 +311,7 @@ public class TmdbPopularMovieService {
                             releaseDate.substring(0, 4).equals(openDt.substring(0, 4))) {
                             
                             // MovieDetail 가져오기
-                            return kobisApiService.findMovieDetailByCode(movieCd).orElse(null);
+                            return kobisApiService.getMovieDetail(movieCd).orElse(null);
                         }
                     }
                 }

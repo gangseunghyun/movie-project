@@ -39,15 +39,42 @@ public class MovieManagementService {
         // 데이터 검증
         validateMovieData(movieDto);
         
-        // MovieDetail 엔티티 생성
-        MovieDetail movieDetail = new MovieDetail();
-        
         // movieCd가 없으면 자동 생성 (현재 시간 기반)
         String movieCd = movieDto.getMovieCd();
         if (movieCd == null || movieCd.trim().isEmpty()) {
             movieCd = "M" + System.currentTimeMillis();
             log.info("자동 생성된 movieCd: {}", movieCd);
         }
+        
+        // MovieList가 이미 존재하는지 확인
+        MovieList movieList = movieListRepository.findByMovieCd(movieCd).orElse(null);
+        
+        if (movieList == null) {
+            // MovieList가 없으면 새로 생성
+            movieList = MovieList.builder()
+                    .movieCd(movieCd)
+                    .movieNm(movieDto.getMovieNm())
+                    .movieNmEn(movieDto.getMovieNmEn())
+                    .openDt(movieDto.getOpenDt())
+                    .genreNm(movieDto.getGenreNm())
+                    .nationNm(movieDto.getNationNm())
+                    .watchGradeNm(movieDto.getWatchGradeNm())
+                    .status(MovieStatus.COMING_SOON)
+                    .build();
+            
+            movieList = movieListRepository.save(movieList);
+            log.info("새로운 MovieList 생성 완료: {}", movieList.getMovieCd());
+        } else {
+            log.info("기존 MovieList 사용: {}", movieList.getMovieCd());
+        }
+        
+        // MovieDetail이 이미 존재하는지 확인
+        if (movieRepository.existsByMovieCd(movieCd)) {
+            throw new RuntimeException("이미 존재하는 영화입니다: " + movieCd);
+        }
+        
+        // MovieDetail 엔티티 생성
+        MovieDetail movieDetail = new MovieDetail();
         
         movieDetail.setMovieCd(movieCd);
         movieDetail.setMovieNm(movieDto.getMovieNm());

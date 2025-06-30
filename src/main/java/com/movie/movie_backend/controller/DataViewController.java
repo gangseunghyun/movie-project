@@ -763,7 +763,7 @@ public class DataViewController {
                 
                 // MovieDetail 정보 추가
                 try {
-                    MovieDetail movieDetail = movieRepository.findById(movieList.getMovieCd()).orElse(null);
+                    MovieDetail movieDetail = movieRepository.findByMovieCd(movieList.getMovieCd()).orElse(null);
                     if (movieDetail != null) {
                         movieData.put("description", movieDetail.getDescription());
                         movieData.put("showTm", movieDetail.getShowTm());
@@ -972,7 +972,7 @@ public class DataViewController {
             // 개봉예정작 중 MovieDetail이 없는 것들
             List<Map<String, Object>> comingSoonWithoutDetail = allMovieLists.stream()
                 .filter(movie -> MovieStatus.COMING_SOON.equals(movie.getStatus()))
-                .filter(movie -> !movieRepository.existsById(movie.getMovieCd()))
+                .filter(movie -> !movieRepository.existsByMovieCd(movie.getMovieCd()))
                 .map(movie -> {
                     Map<String, Object> movieInfo = new HashMap<>();
                     movieInfo.put("movieCd", movie.getMovieCd());
@@ -981,7 +981,7 @@ public class DataViewController {
                     movieInfo.put("status", movie.getStatus());
                     return movieInfo;
                 })
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
             
             return ResponseEntity.ok(Map.of(
                 "totalMovieList", allMovieLists.size(),

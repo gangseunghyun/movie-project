@@ -11,8 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PRDMovieRepository extends JpaRepository<MovieDetail, String> {
+public interface PRDMovieRepository extends JpaRepository<MovieDetail, Long> {
     Optional<MovieDetail> findByMovieCd(String movieCd);
+    boolean existsByMovieCd(String movieCd);
     Optional<MovieDetail> findByMovieNmContaining(String movieNm);
     List<MovieDetail> findByStatus(MovieStatus status);
     List<MovieDetail> findByMovieNmContainingIgnoreCase(String movieNm);
