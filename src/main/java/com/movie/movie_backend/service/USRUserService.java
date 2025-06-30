@@ -230,4 +230,29 @@ public class USRUserService {
         user.setPreferredTags(selectedTags);
         userRepository.save(user);
     }
+
+    // 사용자 선호 태그 조회 (모든 카테고리)
+    @Transactional(readOnly = true)
+    public List<Tag> getPreferredTags(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        return user.getPreferredTags();
+    }
+
+    // 사용자 선호 태그 저장/수정 (모든 카테고리)
+    @Transactional
+    public void setPreferredTags(Long userId, List<String> tagNames) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        List<Tag> allCategoryTags = tagRepository.findAllCategoryTags();
+        // 입력받은 태그명만 필터링
+        List<Tag> selectedTags = new ArrayList<>();
+        for (Tag tag : allCategoryTags) {
+            if (tagNames.contains(tag.getName())) {
+                selectedTags.add(tag);
+            }
+        }
+        user.setPreferredTags(selectedTags);
+        userRepository.save(user);
+    }
 } 

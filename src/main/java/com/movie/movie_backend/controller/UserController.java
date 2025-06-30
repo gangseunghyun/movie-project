@@ -680,8 +680,9 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
         var user = userOpt.get();
-        // 심플 마이페이지: 닉네임, 이메일만 반환
+        // 마이페이지: 닉네임, 이메일, ID 반환
         Map<String, Object> result = new HashMap<>();
+        result.put("id", user.getId());
         result.put("nickname", user.getNickname());
         result.put("email", user.getEmail());
         return ResponseEntity.ok(result);
@@ -691,6 +692,30 @@ public class UserController {
     @GetMapping("/api/genre-tags")
     public ResponseEntity<List<Tag>> getGenreTags() {
         return ResponseEntity.ok(tagRepository.findGenreTags());
+    }
+
+    // [1-1] 특징 태그 전체 조회
+    @GetMapping("/api/feature-tags")
+    public ResponseEntity<List<Tag>> getFeatureTags() {
+        return ResponseEntity.ok(tagRepository.findFeatureTags());
+    }
+
+    // [1-2] 연도 태그 전체 조회
+    @GetMapping("/api/year-tags")
+    public ResponseEntity<List<Tag>> getYearTags() {
+        return ResponseEntity.ok(tagRepository.findYearTags());
+    }
+
+    // [1-3] 국가 태그 전체 조회
+    @GetMapping("/api/country-tags")
+    public ResponseEntity<List<Tag>> getCountryTags() {
+        return ResponseEntity.ok(tagRepository.findCountryTags());
+    }
+
+    // [1-4] 모든 카테고리 태그 조회
+    @GetMapping("/api/all-category-tags")
+    public ResponseEntity<List<Tag>> getAllCategoryTags() {
+        return ResponseEntity.ok(tagRepository.findAllCategoryTags());
     }
 
     // [2-1] 사용자 선호 장르 태그 조회
@@ -703,6 +728,19 @@ public class UserController {
     @PutMapping("/api/users/{userId}/preferred-genres")
     public ResponseEntity<?> setUserPreferredGenres(@PathVariable Long userId, @RequestBody List<String> genreTagNames) {
         userService.setPreferredGenres(userId, genreTagNames);
+        return ResponseEntity.ok().build();
+    }
+
+    // [2-3] 사용자 선호 태그 조회 (모든 카테고리)
+    @GetMapping("/api/users/{userId}/preferred-tags")
+    public ResponseEntity<List<Tag>> getUserPreferredTags(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getPreferredTags(userId));
+    }
+
+    // [2-4] 사용자 선호 태그 저장/수정 (모든 카테고리)
+    @PutMapping("/api/users/{userId}/preferred-tags")
+    public ResponseEntity<?> setUserPreferredTags(@PathVariable Long userId, @RequestBody List<String> tagNames) {
+        userService.setPreferredTags(userId, tagNames);
         return ResponseEntity.ok().build();
     }
 } 
