@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import RatingDistributionChart from './components/RatingDistributionChart';
+import { useNavigate } from 'react-router-dom';
 
 const menuList = [
   { icon: '📊', label: '통계' },
@@ -66,6 +67,7 @@ const MainPage = ({
   // 검색창 포커스 상태 추가
   const [searchFocus, setSearchFocus] = useState(false);
   const [localRecentKeywords, setLocalRecentKeywords] = useState(recentKeywords || []);
+  const navigate = useNavigate();
 
   // recentKeywords prop이 바뀌면 동기화
   useEffect(() => {
@@ -218,6 +220,7 @@ const MainPage = ({
         {currentUser ? (
           <>
             <span>안녕하세요, <b>{currentUser.nickname}</b>님!</span>
+            <button className="mainpage-mypage-btn" style={{ marginLeft: 8 }} onClick={() => navigate(`/user/${currentUser.nickname}`)}>마이페이지</button>
             <button className="mainpage-logout-btn" onClick={handleLogout} style={{ marginLeft: 8 }}>로그아웃</button>
           </>
         ) : (

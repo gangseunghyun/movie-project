@@ -3,8 +3,10 @@ package com.movie.movie_backend.service;
 import com.movie.movie_backend.dto.UserJoinRequestDto;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.PasswordResetToken;
+import com.movie.movie_backend.entity.Tag;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
+import com.movie.movie_backend.repository.PRDTagRepository;
 import com.movie.movie_backend.constant.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +26,7 @@ public class USRUserService {
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PRDTagRepository tagRepository;
 
     public User register(User user) {
         // 회원가입 로직
@@ -200,6 +203,31 @@ public class USRUserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
+        userRepository.save(user);
+    }
+
+    // 사용자 선호 장르 태그 조회
+    @Transactional(readOnly = true)
+    public List<Tag> getPreferredGenres(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        return user.getPreferredTags();
+    }
+
+    // 사용자 선호 장르 태그 저장/수정 (전체 교체)
+    @Transactional
+    public void setPreferredGenres(Long userId, List<String> genreTagNames) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        List<Tag> genreTags = tagRepository.findGenreTags();
+        // 입력받은 태그명만 필터링
+        List<Tag> selectedTags = new ArrayList<>();
+        for (Tag tag : genreTags) {
+            if (genreTagNames.contains(tag.getName())) {
+                selectedTags.add(tag);
+            }
+        }
+        user.setPreferredTags(selectedTags);
         userRepository.save(user);
     }
 } 

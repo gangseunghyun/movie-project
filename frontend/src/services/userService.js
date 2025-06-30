@@ -10,4 +10,16 @@ export const userSearch = async (nickname) => {
 export const getUserByNickname = async (nickname) => {
   const res = await axios.get(`/api/users/nickname/${encodeURIComponent(nickname)}`);
   return res.data; // { nickname, email }
+};
+
+// 장르 태그 전체 조회
+export const getGenreTags = async () => {
+  const res = await axios.get('/api/genre-tags');
+  return res.data; // [{id, name} ...]
+};
+
+// 사용자 선호 장르 태그 조회
+export const getUserPreferredGenres = async (userId) => {
+  const res = await axios.get(`/api/users/${userId}/preferred-genres`);
+  return res.data; // [{id, name} ...]
 }; 
