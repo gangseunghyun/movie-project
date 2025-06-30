@@ -17,11 +17,150 @@ import ResetPassword from './ResetPassword';
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
 
+// 별점 입력 컴포넌트
+function StarRating({ movieCd, userRating, onChange, average, count, disabled }) {
+  const [hovered, setHovered] = useState(0);
+  // 별 5개, 0.5점 단위
+  const getStarType = (index) => {
+    const value = hovered || userRating || 0;
+    if (value >= index + 1) return 'full';
+    if (value >= index + 0.5) return 'half';
+    return 'empty';
+  };
+
+  return (
+    <div style={{ textAlign: 'center', margin: '16px 0 8px 0' }}>
+      <div style={{ fontSize: '2.2rem', color: '#fbc02d', letterSpacing: 2, display: 'inline-block' }}>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const starType = getStarType(i);
+          return (
+            <span
+              key={i}
+              style={{ cursor: disabled ? 'default' : 'pointer', display: 'inline-block', width: '2.2rem' }}
+              onMouseMove={e => {
+                if (disabled) return;
+                const { left, width } = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - left;
+                setHovered(x < width / 2 ? i + 0.5 : i + 1);
+              }}
+              onMouseLeave={() => !disabled && setHovered(0)}
+              onClick={() => !disabled && onChange(hovered || i + 1)}
+              role="button"
+              aria-label={`${i + 1}점`}
+            >
+              {starType === 'full' && <FullStar />}
+              {starType === 'half' && <HalfStar />}
+              {starType === 'empty' && <EmptyStar />}
+            </span>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: '1.05rem', color: '#888', marginTop: 4 }}>
+        {userRating !== undefined && userRating !== null ? `${userRating.toFixed(1)}점` : '평가하기'}
+      </div>
+      <div style={{ fontSize: '1.2rem', color: '#333', marginTop: 8, fontWeight: 600 }}>
+        {average !== undefined && average !== null ? average.toFixed(1) : '-'}
+        <span style={{ fontSize: '1rem', color: '#888', marginLeft: 6 }}>
+          {count !== undefined && count !== null ? `평균 별점(${count}명)` : '평균 별점(0명)'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// SVG 별 아이콘 컴포넌트
+const FullStar = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="#fbc02d" stroke="#fbc02d"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+);
+const HalfStar = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24">
+    <defs>
+      <linearGradient id="half">
+        <stop offset="50%" stopColor="#fbc02d"/>
+        <stop offset="50%" stopColor="#e0e0e0"/>
+      </linearGradient>
+    </defs>
+    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="url(#half)" stroke="#fbc02d"/>
+  </svg>
+);
+const EmptyStar = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#e0e0e0"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+);
+
 function App() {
-  const [activeTab, setActiveTab] = useState('stats');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+  const [showSocialJoin, setShowSocialJoin] = useState(false);
+  const [socialUserInfo, setSocialUserInfo] = useState(null);
+  const [activeTab, setActiveTab] = useState('movieList');
+  const [activeMenu, setActiveMenu] = useState('movieList');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [recentKeywords, setRecentKeywords] = useState([]);
+  const [popularKeywords, setPopularKeywords] = useState([]);
+  const [showMovieDetail, setShowMovieDetail] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [showMovieForm, setShowMovieForm] = useState(false);
+  const [editingMovie, setEditingMovie] = useState(null);
+  const [movieForm, setMovieForm] = useState({
+    movieNm: '',
+    movieNmEn: '',
+    description: '',
+    directorName: '',
+    actorNames: '',
+    genreNm: '',
+    openDt: '',
+    showTm: '',
+    nationNm: '',
+    watchGradeNm: '',
+    companyNm: '',
+    posterUrl: '',
+    stillcutUrls: ''
+  });
+  const [stats, setStats] = useState({
+    totalMovies: 0,
+    nowPlaying: 0,
+    comingSoon: 0,
+    ended: 0
+  });
+  const [movieList, setMovieList] = useState([]);
+  const [movieDetail, setMovieDetail] = useState([]);
+  const [boxOffice, setBoxOffice] = useState([]);
+  const [boxOfficeDto, setBoxOfficeDto] = useState([]);
+  const [movieListDto, setMovieListDto] = useState([]);
+  const [movieDetailDto, setMovieDetailDto] = useState([]);
+  const [topRated, setTopRated] = useState([]);
+  const [popularMovies, setPopularMovies] = useState([]);
+  const [comingSoon, setComingSoon] = useState([]);
+  const [nowPlaying, setNowPlaying] = useState([]);
+  const [ended, setEnded] = useState([]);
+  const [tmdbRatings, setTmdbRatings] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [stats, setStats] = useState(null);
+
+  // 별점 관련 상태 추가
+  const [userRating, setUserRating] = useState(null);
+  const [averageRating, setAverageRating] = useState(null);
+  const [ratingCount, setRatingCount] = useState(null);
+  const [loadingRating, setLoadingRating] = useState(false);
+
+  // API 기본 URL
+  const API_BASE_URL = 'http://localhost:80/api';
+
+  // 1. 정렬 옵션 추가
+  const [sortOption, setSortOption] = useState('rating');
+
+  // 추가로 필요한 상태들 선언
+  const [showAuth, setShowAuth] = useState(false);
+  const [searchExecuted, setSearchExecuted] = useState(false);
+  const [userResults, setUserResults] = useState([]);
+  
+  // 데이터 관련 상태들 (기존 구조 유지)
   const [movieListData, setMovieListData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [movieDetailData, setMovieDetailData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [boxOfficeData, setBoxOfficeData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
@@ -33,62 +172,6 @@ function App() {
   const [comingSoonData, setComingSoonData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [nowPlayingData, setNowPlayingData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [endedData, setEndedData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
-  
-  // 영화 검색 상태
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchResults, setSearchResults] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
-  const [isSearching, setIsSearching] = useState(false);
-  
-  // 로그인/회원가입 상태
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [showLogin, setShowLogin] = useState(true);
-  const [showAuth, setShowAuth] = useState(true);
-  const [showSocialJoin, setShowSocialJoin] = useState(false);
-  
-  // 영화 관리 시스템 상태
-  const [selectedMovie, setSelectedMovie] = useState(null);
-  const [showMovieDetail, setShowMovieDetail] = useState(false);
-  const [showMovieForm, setShowMovieForm] = useState(false);
-  const [editingMovie, setEditingMovie] = useState(null);
-  const [movieForm, setMovieForm] = useState({
-    movieNm: '',
-    movieNmEn: '',
-    description: '',
-    directorName: '',
-    actors: '',
-    tags: '',
-    companyNm: '',
-    openDt: '',
-    showTm: '',
-    genreNm: '',
-    nationNm: '',
-    watchGradeNm: '',
-    prdtYear: '',
-    prdtStatNm: '',
-    typeNm: '',
-    directors: [],
-    totalAudience: 0,
-    reservationRate: 0,
-    averageRating: 0
-  });
-
-  const [searchExecuted, setSearchExecuted] = useState(false);
-  const [userResults, setUserResults] = useState([]);
-
-  // API 기본 URL
-  const API_BASE_URL = 'http://localhost:80/api';
-
-  const [activeMenu, setActiveMenu] = useState('영화 상세 DTO');
-
-  // 1. 상태 추가
-  const [sortOption, setSortOption] = useState('rating');
-
-  // 최근 검색어 상태 추가
-  const [recentKeywords, setRecentKeywords] = useState([]);
-
-  // 인기 검색어 상태 추가
-  const [popularKeywords, setPopularKeywords] = useState([]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -112,6 +195,38 @@ function App() {
       fetchMovieDetailDto(0);
     }
   }, [sortOption]);
+
+  // 별점 정보 불러오기
+  useEffect(() => {
+    if (!selectedMovie) return;
+    setLoadingRating(true);
+    // 내 별점
+    axios.get(`/api/user-ratings/${selectedMovie.movieCd}`)
+      .then(res => {
+        if (res.data.success && res.data.data) {
+          setUserRating(res.data.data.score);
+        } else {
+          setUserRating(null);
+        }
+      })
+      .catch(() => setUserRating(null));
+    // 평균 별점/참여자 수
+    axios.get(`/api/user-ratings/movie/${selectedMovie.movieCd}/average`)
+      .then(res => {
+        if (res.data.success) {
+          setAverageRating(res.data.averageRating);
+          setRatingCount(res.data.ratingCount);
+        } else {
+          setAverageRating(null);
+          setRatingCount(null);
+        }
+      })
+      .catch(() => {
+        setAverageRating(null);
+        setRatingCount(null);
+      })
+      .finally(() => setLoadingRating(false));
+  }, [selectedMovie]);
 
   // 최근 검색어 불러오기
   const fetchRecentKeywords = async () => {
@@ -604,21 +719,15 @@ function App() {
       movieNmEn: movie.movieNmEn || '',
       description: movie.description || '',
       directorName: movie.directorName || '',
-      actors: movie.actors || '',
-      tags: movie.tags || '',
-      companyNm: movie.companyNm || '',
+      actorNames: movie.actors || '',
+      genreNm: movie.genreNm || '',
       openDt: movie.openDt || '',
       showTm: movie.showTm || '',
-      genreNm: movie.genreNm || '',
       nationNm: movie.nationNm || '',
       watchGradeNm: movie.watchGradeNm || '',
-      prdtYear: movie.prdtYear || '',
-      prdtStatNm: movie.prdtStatNm || '',
-      typeNm: movie.typeNm || '',
-      directors: movie.directors || [],
-      totalAudience: movie.totalAudience || 0,
-      reservationRate: movie.reservationRate || 0,
-      averageRating: movie.averageRating || 0
+      companyNm: movie.companyNm || '',
+      posterUrl: movie.posterUrl || '',
+      stillcutUrls: movie.stillcuts ? movie.stillcuts.map(stillcut => stillcut.imageUrl).join(',') : ''
     });
     setShowMovieForm(true);
     setShowMovieDetail(false);
@@ -631,21 +740,15 @@ function App() {
       movieNmEn: '',
       description: '',
       directorName: '',
-      actors: '',
-      tags: '',
-      companyNm: '',
+      actorNames: '',
+      genreNm: '',
       openDt: '',
       showTm: '',
-      genreNm: '',
       nationNm: '',
       watchGradeNm: '',
-      prdtYear: '',
-      prdtStatNm: '',
-      typeNm: '',
-      directors: [],
-      totalAudience: 0,
-      reservationRate: 0,
-      averageRating: 0
+      companyNm: '',
+      posterUrl: '',
+      stillcutUrls: ''
     });
     setShowMovieForm(true);
     setShowMovieDetail(false);
@@ -734,7 +837,7 @@ function App() {
         directors: movieForm.directorName ? [{
           peopleNm: movieForm.directorName
         }] : [],
-        actors: movieForm.actors ? movieForm.actors.split(',').map(actor => ({
+        actors: movieForm.actorNames ? movieForm.actorNames.split(',').map(actor => ({
           peopleNm: actor.trim(),
           cast: actor.trim()
         })) : []
@@ -1395,6 +1498,32 @@ function App() {
     </div>
   );
 
+  // 별점 등록/수정
+  const handleStarChange = (score) => {
+    if (!selectedMovie) return;
+    setLoadingRating(true);
+    axios.post('/api/user-ratings', {
+      movieCd: selectedMovie.movieCd,
+      score
+    }, {
+      withCredentials: true
+    })
+      .then(res => {
+        if (res.data.success) {
+          setUserRating(score);
+          // 평균 별점/참여자 수 갱신
+          return axios.get(`/api/user-ratings/movie/${selectedMovie.movieCd}/average`);
+        }
+      })
+      .then(res => {
+        if (res && res.data.success) {
+          setAverageRating(res.data.averageRating);
+          setRatingCount(res.data.ratingCount);
+        }
+      })
+      .finally(() => setLoadingRating(false));
+  };
+
   // 영화 상세 보기 모달
   const renderMovieDetailModal = () => {
     if (!showMovieDetail || !selectedMovie) return null;
@@ -1419,6 +1548,21 @@ function App() {
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
+                {/* ⭐️ 별점 입력 UI */}
+                <StarRating
+                  movieCd={selectedMovie.movieCd}
+                  userRating={userRating}
+                  onChange={score => {
+                    if (!currentUser) {
+                      setShowLoginAlert(true);
+                      return;
+                    }
+                    handleStarChange(score);
+                  }}
+                  average={averageRating}
+                  count={ratingCount}
+                  disabled={loadingRating}
+                />
               </div>
               <div className="movie-detail-info">
                 <h3>{selectedMovie.movieNmEn}</h3>
@@ -1520,8 +1664,8 @@ function App() {
                 <label>배우 (쉼표로 구분)</label>
                 <input
                   type="text"
-                  value={movieForm.actors}
-                  onChange={(e) => setMovieForm({...movieForm, actors: e.target.value})}
+                  value={movieForm.actorNames}
+                  onChange={(e) => setMovieForm({...movieForm, actorNames: e.target.value})}
                 />
               </div>
               <div className="form-group">
@@ -1892,7 +2036,7 @@ function App() {
                 <h3>{item.movieNm}</h3>
                 <p className="movie-title-en">{item.movieNmEn || '-'}</p>
                 <div className="movie-details">
-                  <p><strong>평점:</strong> {item.averageRating || '-'}</p>
+                  <p><strong>평점:</strong> {item.averageRating ? item.averageRating.toFixed(1) : '-'}</p>
                   <p><strong>개봉일:</strong> {item.openDt || '-'}</p>
                   <p><strong>장르:</strong> {item.genreNm || '-'}</p>
           </div>
@@ -1954,6 +2098,34 @@ function App() {
     setSearchKeyword(keyword);
     handleSearch(keyword);
   };
+
+  // 로그인 안내 모달 컴포넌트
+  const LoginAlertModal = () => (
+    <div className="modal-overlay" onClick={() => setShowLoginAlert(false)}>
+      <div className="modal-content" style={{ maxWidth: 340, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+        <h3 style={{ margin: '24px 0 12px 0' }}>로그인이 필요합니다</h3>
+        <p style={{ marginBottom: 24 }}>별점 평가를 하려면 로그인이 필요합니다.</p>
+        <button
+          style={{
+            background: '#a18cd1', color: 'white', border: 'none', borderRadius: 5,
+            padding: '10px 24px', fontSize: 16, cursor: 'pointer', marginBottom: 12
+          }}
+          onClick={() => { setShowLoginAlert(false); window.location.href = '/login'; }}
+        >
+          로그인 하러가기
+        </button>
+        <br />
+        <button
+          style={{ background: 'none', color: '#888', border: 'none', fontSize: 14, cursor: 'pointer' }}
+          onClick={() => setShowLoginAlert(false)}
+        >
+          닫기
+        </button>
+      </div>
+    </div>
+  );
+
+  const [showLoginAlert, setShowLoginAlert] = useState(false);
 
   return (
     <>
@@ -2018,6 +2190,8 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
       {/* 기존 내용 ... */}
+      {/* 로그인 안내 모달 */}
+      {showLoginAlert && <LoginAlertModal />}
     </>
   );
 }

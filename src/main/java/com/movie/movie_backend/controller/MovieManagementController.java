@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @RestController
@@ -138,26 +139,9 @@ public class MovieManagementController {
      * 영화 등록 (관리자만)
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createMovie(@RequestBody MovieDetailDto movieDto, HttpServletRequest request) {
-        log.info("=== 영화 등록 API 호출 시작 ===");
-        log.info("받은 데이터: {}", movieDto);
-        log.info("movieNm: {}", movieDto.getMovieNm());
-        log.info("movieNmEn: {}", movieDto.getMovieNmEn());
-        log.info("description: {}", movieDto.getDescription());
-        log.info("companyNm: {}", movieDto.getCompanyNm());
-        log.info("openDt: {}", movieDto.getOpenDt());
-        log.info("showTm: {}", movieDto.getShowTm());
-        log.info("genreNm: {}", movieDto.getGenreNm());
-        log.info("nationNm: {}", movieDto.getNationNm());
-        log.info("watchGradeNm: {}", movieDto.getWatchGradeNm());
-        log.info("prdtYear: {}", movieDto.getPrdtYear());
-        log.info("prdtStatNm: {}", movieDto.getPrdtStatNm());
-        log.info("typeNm: {}", movieDto.getTypeNm());
-        log.info("totalAudience: {}", movieDto.getTotalAudience());
-        log.info("reservationRate: {}", movieDto.getReservationRate());
-        log.info("averageRating: {}", movieDto.getAverageRating());
-        log.info("directors: {}", movieDto.getDirectors());
-        log.info("actors: {}", movieDto.getActors());
+    public ResponseEntity<Map<String, Object>> createMovie(
+            @RequestBody MovieDetailDto movieDto,
+            HttpServletRequest request) {
         
         try {
             log.info("=== 사용자 인증 확인 시작 ===");
@@ -165,19 +149,19 @@ public class MovieManagementController {
             
             if (currentUser == null) {
                 log.error("로그인되지 않은 사용자");
-                return ResponseEntity.status(401).body(Map.of(
-                    "success", false,
-                    "message", "로그인이 필요합니다."
-                ));
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.status(401).body(response);
             }
             
             log.info("사용자 권한 확인: isAdmin={}", currentUser.isAdmin());
             if (!currentUser.isAdmin()) {
                 log.error("관리자가 아닌 사용자: {}", currentUser.getLoginId());
-                return ResponseEntity.status(403).body(Map.of(
-                    "success", false,
-                    "message", "관리자 권한이 필요합니다."
-                ));
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "관리자 권한이 필요합니다.");
+                return ResponseEntity.status(403).body(response);
             }
             
             log.info("=== 영화 등록 서비스 호출 시작 ===");
@@ -188,27 +172,26 @@ public class MovieManagementController {
             
             log.info("MovieManagementService.createMovie() 완료: {}", savedMovie.getMovieCd());
             
-            Map<String, Object> response = Map.of(
-                "success", true,
-                "message", "영화가 성공적으로 등록되었습니다.",
-                "movieCd", savedMovie.getMovieCd()
-            );
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "영화가 성공적으로 등록되었습니다.");
+            response.put("movieCd", savedMovie.getMovieCd());
             
             log.info("응답 반환: {}", response);
             return ResponseEntity.ok(response);
             
         } catch (IllegalArgumentException e) {
             log.error("영화 등록 데이터 검증 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "데이터 검증 실패: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "데이터 검증 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             log.error("영화 등록 실패", e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "영화 등록에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "영화 등록에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -220,37 +203,39 @@ public class MovieManagementController {
             @PathVariable String movieCd,
             @RequestBody MovieDetailDto movieDto,
             HttpServletRequest request) {
+        
         try {
             User currentUser = getCurrentUser(request);
             
             if (currentUser == null) {
-                return ResponseEntity.status(401).body(Map.of(
-                    "success", false,
-                    "message", "로그인이 필요합니다."
-                ));
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.status(401).body(response);
             }
             
             if (!currentUser.isAdmin()) {
-                return ResponseEntity.status(403).body(Map.of(
-                    "success", false,
-                    "message", "관리자 권한이 필요합니다."
-                ));
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "관리자 권한이 필요합니다.");
+                return ResponseEntity.status(403).body(response);
             }
             
             log.info("영화 수정 요청: {} - {} (관리자: {})", movieCd, movieDto.getMovieNm(), currentUser.getLoginId());
             MovieDetail updatedMovie = movieManagementService.updateMovie(movieCd, movieDto);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "영화가 성공적으로 수정되었습니다.",
-                "movieCd", updatedMovie.getMovieCd()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "영화가 성공적으로 수정되었습니다.");
+            response.put("movieCd", updatedMovie.getMovieCd());
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            log.error("영화 수정 실패: {}", movieCd, e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "영화 수정에 실패했습니다: " + e.getMessage()
-            ));
+            log.error("영화 수정 실패", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "영화 수정에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -258,37 +243,41 @@ public class MovieManagementController {
      * 영화 삭제 (관리자만)
      */
     @DeleteMapping("/{movieCd}")
-    public ResponseEntity<Map<String, Object>> deleteMovie(@PathVariable String movieCd, HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> deleteMovie(
+            @PathVariable String movieCd,
+            HttpServletRequest request) {
+        
         try {
             User currentUser = getCurrentUser(request);
             
             if (currentUser == null) {
-                return ResponseEntity.status(401).body(Map.of(
-                    "success", false,
-                    "message", "로그인이 필요합니다."
-                ));
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.status(401).body(response);
             }
             
             if (!currentUser.isAdmin()) {
-                return ResponseEntity.status(403).body(Map.of(
-                    "success", false,
-                    "message", "관리자 권한이 필요합니다."
-                ));
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "관리자 권한이 필요합니다.");
+                return ResponseEntity.status(403).body(response);
             }
             
             log.info("영화 삭제 요청: {} (관리자: {})", movieCd, currentUser.getLoginId());
             movieManagementService.deleteMovie(movieCd);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "영화가 성공적으로 삭제되었습니다."
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "영화가 성공적으로 삭제되었습니다.");
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            log.error("영화 삭제 실패: {}", movieCd, e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "영화 삭제에 실패했습니다: " + e.getMessage()
-            ));
+            log.error("영화 삭제 실패", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "영화 삭제에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -332,16 +321,16 @@ public class MovieManagementController {
             log.info("영화 상세 정보 조회: {}", movieCd);
             MovieDetailDto movieDetail = movieManagementService.getMovieDetail(movieCd);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", movieDetail
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", movieDetail);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("영화 상세 정보 조회 실패: {}", movieCd, e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "영화 정보 조회에 실패했습니다: " + e.getMessage()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "영화 정보 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 } 
