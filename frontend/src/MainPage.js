@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import RatingDistributionChart from './components/RatingDistributionChart';
 
 const menuList = [
   { icon: '📊', label: '통계' },
