@@ -45,6 +45,10 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import com.movie.movie_backend.constant.MovieStatus;
+import com.movie.movie_backend.repository.REVLikeRepository;
+import com.movie.movie_backend.entity.User;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Slf4j
 @Controller
@@ -68,6 +72,7 @@ public class DataViewController {
     private final PRDMovieService prdMovieService;
     private final PRDMovieListService prdMovieListService;
     private final SearchLogRepository searchLogRepository;
+    private final REVLikeRepository likeRepository;
 
     /**
      * 데이터 조회 메인 페이지
@@ -386,9 +391,14 @@ public class DataViewController {
             int end = Math.min(start + size, total);
             
             List<MovieDetail> pagedList = movieDetails.subList(start, end);
+            User currentUser = getCurrentUser();
             List<MovieDetailDto> dtoList = pagedList.stream()
-                    .map(movieDetailMapper::toDto)
-                    .collect(Collectors.toList());
+                .map(md -> movieDetailMapper.toDto(
+                    md,
+                    likeRepository.countByMovieDetail(md),
+                    currentUser != null && likeRepository.existsByMovieDetailAndUser(md, currentUser)
+                ))
+                .collect(Collectors.toList());
             
             return ResponseEntity.ok(Map.of(
                 "data", dtoList,
@@ -482,9 +492,14 @@ public class DataViewController {
             List<MovieDetail> pagedList = allResults.subList(start, end);
             
             // 6. DTO 변환
+            User currentUser = getCurrentUser();
             List<MovieDetailDto> dtoList = pagedList.stream()
-                    .map(movieDetailMapper::toDto)
-                    .collect(Collectors.toList());
+                .map(md -> movieDetailMapper.toDto(
+                    md,
+                    likeRepository.countByMovieDetail(md),
+                    currentUser != null && likeRepository.existsByMovieDetailAndUser(md, currentUser)
+                ))
+                .collect(Collectors.toList());
             
             log.info("영화 통합 검색 결과: keyword={}, total={}, page={}, size={}", keyword, total, page, size);
             return ResponseEntity.ok(Map.of(
@@ -983,5 +998,17 @@ public class DataViewController {
             log.error("MovieDetail 디버깅 실패", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // 현재 로그인한 사용자 반환 (없으면 null)
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            return null;
+        }
+        if (authentication.getPrincipal() instanceof User) {
+            return (User) authentication.getPrincipal();
+        }
+        return null;
     }
 } 

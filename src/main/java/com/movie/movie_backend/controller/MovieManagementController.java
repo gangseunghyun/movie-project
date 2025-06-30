@@ -313,24 +313,48 @@ public class MovieManagementController {
     }
 
     /**
+     * 영화 좋아요 취소 (일반 사용자)
+     */
+    @DeleteMapping("/{movieCd}/like")
+    public ResponseEntity<Map<String, Object>> unlikeMovie(@PathVariable String movieCd, HttpServletRequest request) {
+        try {
+            log.info("영화 좋아요 취소 요청: {}", movieCd);
+            
+            User currentUser = getCurrentUser(request);
+            if (currentUser == null) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "message", "로그인이 필요합니다."
+                ));
+            }
+            
+            movieManagementService.unlikeMovie(movieCd, currentUser.getId());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "좋아요가 취소되었습니다."
+            ));
+        } catch (Exception e) {
+            log.error("영화 좋아요 취소 실패: {}", movieCd, e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "좋아요 취소에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * 영화 상세 정보 조회 (모든 사용자)
      */
     @GetMapping("/{movieCd}")
-    public ResponseEntity<Map<String, Object>> getMovieDetail(@PathVariable String movieCd, HttpServletRequest request) {
-        try {
-            log.info("영화 상세 정보 조회: {}", movieCd);
-            MovieDetailDto movieDetail = movieManagementService.getMovieDetail(movieCd);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", movieDetail);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("영화 상세 정보 조회 실패: {}", movieCd, e);
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "영화 정보 조회에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+    public ResponseEntity<?> getMovieDetail(@PathVariable String movieCd, HttpServletRequest request) {
+        User currentUser = getCurrentUser(request);
+        return ResponseEntity.ok(movieManagementService.getMovieDetail(movieCd, currentUser));
+    }
+
+    @GetMapping("/detail-dto")
+    public ResponseEntity<?> getMovieDetailDtos(HttpServletRequest request) {
+        User currentUser = getCurrentUser(request);
+        return ResponseEntity.ok(movieManagementService.getMovieDetailDtos(currentUser));
     }
 } 

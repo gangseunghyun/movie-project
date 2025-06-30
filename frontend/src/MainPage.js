@@ -257,7 +257,14 @@ const MainPage = ({
               )}
               <section className="mainpage-movie-list-section">
                 {renderByMenu[activeMenu]
-                  ? renderByMenu[activeMenu]()
+                  ? (activeMenu === '영화 상세 DTO'
+                      ? renderByMenu[activeMenu]({
+                          currentUser,
+                          handleEditMovie,
+                          handleDeleteMovie,
+                          handleLikeMovie
+                        })
+                      : renderByMenu[activeMenu]())
                   : <div style={{marginTop: '80px', textAlign: 'center', color: '#a18cd1', fontSize: '1.3rem'}}>
                       "{activeMenu}" 페이지는 아직 구현되지 않았습니다.
                     </div>

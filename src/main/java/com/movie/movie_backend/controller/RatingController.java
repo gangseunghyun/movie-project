@@ -2,11 +2,15 @@ package com.movie.movie_backend.controller;
 
 import com.movie.movie_backend.dto.MovieDetailDto;
 import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
+import com.movie.movie_backend.repository.REVLikeRepository;
 import com.movie.movie_backend.service.TmdbRatingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +25,19 @@ public class RatingController {
 
     private final TmdbRatingService tmdbRatingService;
     private final MovieDetailMapper movieDetailMapper;
+    private final REVLikeRepository likeRepository;
+
+    // 현재 로그인한 사용자 반환 (없으면 null)
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            return null;
+        }
+        if (authentication.getPrincipal() instanceof User) {
+            return (User) authentication.getPrincipal();
+        }
+        return null;
+    }
 
     /**
      * 평균 별점이 높은 영화 TOP-10 조회
@@ -31,8 +48,13 @@ public class RatingController {
             log.info("평균 별점이 높은 영화 TOP-{} 조회", limit);
             
             List<MovieDetail> topRatedMovies = tmdbRatingService.getTopRatedMovies(limit);
+            User currentUser = getCurrentUser();
             List<MovieDetailDto> movieDtos = topRatedMovies.stream()
-                    .map(movieDetailMapper::toDto)
+                    .map(md -> movieDetailMapper.toDto(
+                        md,
+                        likeRepository.countByMovieDetail(md),
+                        currentUser != null && likeRepository.existsByMovieDetailAndUser(md, currentUser)
+                    ))
                     .toList();
             
             Map<String, Object> response = new HashMap<>();
