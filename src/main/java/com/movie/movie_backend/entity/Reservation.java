@@ -27,11 +27,8 @@ public class Reservation {
     @JoinColumn(name = "screening_id")
     private Screening screening; // 예매한 상영
 
-    @ManyToMany
-    @JoinTable(name = "reservation_seat",
-        joinColumns = @JoinColumn(name = "reservation_id"),
-        inverseJoinColumns = @JoinColumn(name = "seat_id"))
-    private List<Seat> seats; // 예매한 좌석 목록
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL)
+    private List<ScreeningSeat> reservedSeats; // 예매한 좌석들
 
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments; // 이 예매의 결제 목록

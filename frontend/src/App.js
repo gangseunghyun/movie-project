@@ -16,6 +16,7 @@ import ResetPassword from './ResetPassword';
 import StarRating from './StarRating';
 import RatingDistributionChart from './components/RatingDistributionChart';
 import PersonDetail from './PersonDetail';
+import BookingModal from './BookingModal';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -38,6 +39,7 @@ function App() {
   const [showMovieDetail, setShowMovieDetail] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [showMovieForm, setShowMovieForm] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
   const [movieForm, setMovieForm] = useState({
     movieNm: '',
@@ -1592,6 +1594,20 @@ function App() {
       .finally(() => setLoadingRating(false));
   };
 
+  // 예매 모달 핸들러
+  const handleBookingClick = () => {
+    if (!currentUser) {
+      setShowLoginAlert(true);
+      return;
+    }
+    setShowBookingModal(true);
+  };
+
+  const handleBookingComplete = (bookingData) => {
+    console.log('예매 완료:', bookingData);
+    // 예매 완료 후 필요한 처리 (예: 예매 내역 페이지로 이동 등)
+  };
+
   // 영화 상세 보기 모달
   const renderMovieDetailModal = () => {
     if (!showMovieDetail || !selectedMovie) return null;
@@ -1637,6 +1653,35 @@ function App() {
                     <RatingDistributionChart distribution={ratingDistribution} />
                   </div>
                 )}
+                
+                {/* 예매하기 버튼 */}
+                <button 
+                  className="booking-button"
+                  onClick={handleBookingClick}
+                  style={{
+                    marginTop: '16px',
+                    padding: '12px 24px',
+                    backgroundColor: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    width: '100%'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = '#5a6fd8';
+                    e.target.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = '#667eea';
+                    e.target.style.transform = 'translateY(0)';
+                  }}
+                >
+                  🎬 예매하기
+                </button>
               </div>
               <div className="movie-detail-info">
                 <h3>{selectedMovie.movieNmEn}</h3>
@@ -2339,6 +2384,15 @@ function App() {
       {/* 기존 내용 ... */}
       {/* 로그인 안내 모달 */}
       {showLoginAlert && <LoginAlertModal />}
+      
+      {/* 예매 모달 */}
+      {showBookingModal && selectedMovie && (
+        <BookingModal
+          movie={selectedMovie}
+          onClose={() => setShowBookingModal(false)}
+          onBookingComplete={handleBookingComplete}
+        />
+      )}
     </>
   );
 }
