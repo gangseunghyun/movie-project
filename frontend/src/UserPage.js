@@ -64,11 +64,19 @@ const UserPage = () => {
   }, [nickname]);
 
   const handleTagChange = (tagName) => {
-    setSelectedTags(prev =>
-      prev.includes(tagName)
-        ? prev.filter(name => name !== tagName)
-        : [...prev, tagName]
-    );
+    setSelectedTags(prev => {
+      if (prev.includes(tagName)) {
+        // 이미 선택된 태그는 해제 가능
+        return prev.filter(name => name !== tagName);
+      } else {
+        // 5개 이상 선택 불가
+        if (prev.length >= 5) {
+          alert('최대 5개까지만 선택할 수 있습니다.');
+          return prev;
+        }
+        return [...prev, tagName];
+      }
+    });
   };
 
   const handleSaveTags = async () => {
@@ -173,6 +181,9 @@ const UserPage = () => {
             </div>
           ) : (
             <div className="tags-edit">
+              <div style={{ marginBottom: 10, color: '#a18cd1', fontWeight: 'bold', fontSize: '15px' }}>
+                선택: {selectedTags.length}/5
+              </div>
               <div className="tag-selection">
                 {genreTags.map(tag => (
                   <label key={tag.id} className="tag-checkbox">

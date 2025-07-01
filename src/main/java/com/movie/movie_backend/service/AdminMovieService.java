@@ -580,6 +580,84 @@ public class AdminMovieService {
     }
 
     /**
+     * movie_detail의 genre_nm에서 장르 태그 생성
+     */
+    @Transactional
+    public Map<String, Object> generateTagsFromMovieGenres() {
+        log.info("movie_detail의 genre_nm에서 장르 태그 생성 시작");
+        
+        Map<String, Object> result = new HashMap<>();
+        List<MovieDetail> allMovies = movieRepository.findAll();
+        Set<String> allGenres = new HashSet<>();
+        int moviesWithGenres = 0;
+        
+        // 모든 영화에서 장르 추출
+        for (MovieDetail movie : allMovies) {
+            if (movie.getGenreNm() != null && !movie.getGenreNm().isEmpty()) {
+                moviesWithGenres++;
+                String[] genres = movie.getGenreNm().split(",");
+                for (String genre : genres) {
+                    String trimmedGenre = genre.trim();
+                    if (!trimmedGenre.isEmpty()) {
+                        allGenres.add(trimmedGenre);
+                    }
+                }
+            }
+        }
+        
+        log.info("발견된 장르들: {}", allGenres);
+        
+        // 태그 생성
+        int createdTags = 0;
+        for (String genreName : allGenres) {
+            if (!tagRepository.existsByName(genreName)) {
+                Tag tag = new Tag();
+                tag.setName(genreName);
+                tagRepository.save(tag);
+                createdTags++;
+                log.info("태그 생성: {}", genreName);
+            }
+        }
+        
+        // 영화별 태그 매핑
+        int mappedMovies = 0;
+        for (MovieDetail movie : allMovies) {
+            try {
+                if (movie.getGenreNm() != null && !movie.getGenreNm().isEmpty()) {
+                    List<Tag> movieTags = new ArrayList<>();
+                    String[] genres = movie.getGenreNm().split(",");
+                    for (String genre : genres) {
+                        String genreName = genre.trim();
+                        tagRepository.findByName(genreName).ifPresent(movieTags::add);
+                    }
+                    
+                    if (!movieTags.isEmpty()) {
+                        if (movie.getTags() == null) {
+                            movie.setTags(new ArrayList<>());
+                        }
+                        movie.getTags().clear();
+                        movie.getTags().addAll(movieTags);
+                        movieRepository.save(movie);
+                        mappedMovies++;
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("영화 태그 매핑 실패: {} - {}", movie.getMovieNm(), e.getMessage());
+            }
+        }
+        
+        result.put("totalMovies", allMovies.size());
+        result.put("moviesWithGenres", moviesWithGenres);
+        result.put("uniqueGenres", allGenres.size());
+        result.put("createdTags", createdTags);
+        result.put("mappedMovies", mappedMovies);
+        result.put("genres", new ArrayList<>(allGenres));
+        
+        log.info("장르 태그 생성 완료: {}개 태그 생성, {}개 영화 매핑", createdTags, mappedMovies);
+        return result;
+    }
+
+    /**
      * 기존 영화 데이터의 영어 제목과 장르 정보를 TMDB에서 보완
      */
     @Transactional

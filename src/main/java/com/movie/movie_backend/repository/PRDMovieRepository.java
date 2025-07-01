@@ -1,6 +1,7 @@
 package com.movie.movie_backend.repository;
 
 import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Tag;
 import com.movie.movie_backend.constant.MovieStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -50,4 +51,15 @@ public interface PRDMovieRepository extends JpaRepository<MovieDetail, Long> {
     List<MovieDetail> searchIgnoreSpace(@Param("keyword") String keyword);
     
     // 상품 관련 쿼리 메소드 추가 가능
+    
+    // 관객수 기준 상위 20개 영화 조회
+    List<MovieDetail> findTop20ByOrderByTotalAudienceDesc();
+    
+    // 태그를 가진 영화들 조회
+    @Query("SELECT DISTINCT m FROM MovieDetail m JOIN m.tags t WHERE t IN :tags ORDER BY m.totalAudience DESC")
+    List<MovieDetail> findMoviesByTags(@Param("tags") List<Tag> tags);
+
+    // 추천 영화 리스트를 fetch join으로 tags까지 한 번에 가져오기
+    @Query("SELECT DISTINCT m FROM MovieDetail m LEFT JOIN FETCH m.tags WHERE m IN :movies")
+    List<MovieDetail> fetchMoviesWithTags(@Param("movies") List<MovieDetail> movies);
 } 
