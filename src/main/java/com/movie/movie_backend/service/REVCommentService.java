@@ -1,5 +1,6 @@
 package com.movie.movie_backend.service;
 
+import com.movie.movie_backend.dto.CommentDto;
 import com.movie.movie_backend.entity.Comment;
 import com.movie.movie_backend.entity.CommentLike;
 import com.movie.movie_backend.entity.Review;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -115,29 +117,41 @@ public class REVCommentService {
     /**
      * 리뷰의 최상위 댓글 조회
      */
-    public List<Comment> getTopLevelCommentsByReviewId(Long reviewId) {
-        return commentRepository.findByReviewIdAndParentIsNullOrderByCreatedAtDesc(reviewId);
+    public List<CommentDto> getTopLevelCommentsByReviewId(Long reviewId) {
+        List<Comment> comments = commentRepository.findByReviewIdAndParentIsNullOrderByCreatedAtDesc(reviewId);
+        return comments.stream()
+                .map(CommentDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * 리뷰의 모든 댓글 조회
      */
-    public List<Comment> getAllCommentsByReviewId(Long reviewId) {
-        return commentRepository.findByReviewIdOrderByCreatedAtDesc(reviewId);
+    public List<CommentDto> getAllCommentsByReviewId(Long reviewId) {
+        List<Comment> comments = commentRepository.findByReviewIdOrderByCreatedAtDesc(reviewId);
+        return comments.stream()
+                .map(CommentDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * 특정 댓글의 대댓글 조회
      */
-    public List<Comment> getRepliesByParentId(Long parentId) {
-        return commentRepository.findByParentIdOrderByCreatedAtAsc(parentId);
+    public List<CommentDto> getRepliesByParentId(Long parentId) {
+        List<Comment> comments = commentRepository.findByParentIdOrderByCreatedAtAsc(parentId);
+        return comments.stream()
+                .map(CommentDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * 사용자의 댓글 조회
      */
-    public List<Comment> getCommentsByUserId(Long userId) {
-        return commentRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<CommentDto> getCommentsByUserId(Long userId) {
+        List<Comment> comments = commentRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return comments.stream()
+                .map(CommentDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**

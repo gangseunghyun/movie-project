@@ -1,5 +1,6 @@
 package com.movie.movie_backend.service;
 
+import com.movie.movie_backend.dto.UserDto;
 import com.movie.movie_backend.dto.UserJoinRequestDto;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.Tag;
@@ -71,8 +72,11 @@ public class USRUserService {
         return null;
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDto> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(UserDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     public void join(UserJoinRequestDto requestDto) {
@@ -214,10 +218,12 @@ public class USRUserService {
 
     // 사용자 선호 장르 태그 조회
     @Transactional(readOnly = true)
-    public List<Tag> getPreferredGenres(Long userId) {
+    public List<String> getPreferredGenres(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        return user.getPreferredTags();
+        return user.getPreferredTags().stream()
+                .map(Tag::getName)
+                .collect(Collectors.toList());
     }
 
     // 사용자 선호 장르 태그 저장/수정 (전체 교체)
@@ -239,10 +245,12 @@ public class USRUserService {
 
     // 사용자 선호 태그 조회 (모든 카테고리)
     @Transactional(readOnly = true)
-    public List<Tag> getPreferredTags(Long userId) {
+    public List<String> getPreferredTags(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        return user.getPreferredTags();
+        return user.getPreferredTags().stream()
+                .map(Tag::getName)
+                .collect(Collectors.toList());
     }
 
     // 사용자 선호 태그 저장/수정 (모든 카테고리)
@@ -281,7 +289,7 @@ public class USRUserService {
 
     // 사용자 선호 태그 기반 영화 추천
     @Transactional(readOnly = true)
-    public List<MovieDetail> getRecommendedMovies(Long userId) {
+    public List<String> getRecommendedMovies(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
@@ -295,6 +303,9 @@ public class USRUserService {
         // 선호 태그를 가진 영화들을 모두 모아서 랜덤으로 20개 추출
         List<MovieDetail> allCandidates = movieRepository.findMoviesByTags(preferredTags);
         Collections.shuffle(allCandidates); // 무작위 섞기
-        return allCandidates.stream().limit(20).collect(Collectors.toList());
+        return allCandidates.stream()
+                .limit(20)
+                .map(MovieDetail::getMovieCd)
+                .collect(Collectors.toList());
     }
 } 

@@ -248,12 +248,16 @@
   border-radius: 4px;
 }
 
-.seat-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+.seat-map {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  max-width: 400px;
-  margin: 0 auto 20px auto;
+  align-items: flex-start;
+}
+
+.seat-row {
+  display: flex;
+  gap: 8px;
 }
 
 .seat {

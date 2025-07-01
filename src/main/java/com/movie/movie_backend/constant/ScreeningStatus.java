@@ -1,9 +1,9 @@
 package com.movie.movie_backend.constant;
 
 public enum ScreeningStatus {
-    BOOKING_AVAILABLE("예매가능"),
-    BOOKING_CLOSED("예매마감"),
-    SCREENING_COMPLETED("상영완료"),
+    AVAILABLE("예매가능"),
+    CLOSED("예매마감"),
+    COMPLETED("상영완료"),
     CANCELLED("취소됨");
 
     private final String displayName;

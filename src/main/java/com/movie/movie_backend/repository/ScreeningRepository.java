@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface ScreeningRepository extends JpaRepository<Screening, Long> {
     List<Screening> findByTheaterId(Long theaterId);
-    List<Screening> findByTheaterIdAndMovieId(Long theaterId, String movieId);
+    List<Screening> findByTheaterIdAndMovieDetail_MovieCd(Long theaterId, String movieCd);
+    List<Screening> findByTheaterIdAndMovieDetailId(Long theaterId, Long movieDetailId);
 } 

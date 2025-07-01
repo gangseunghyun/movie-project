@@ -1,16 +1,19 @@
 package com.movie.movie_backend.controller;
 
-import com.movie.movie_backend.entity.Cinema;
-import com.movie.movie_backend.entity.Theater;
+import com.movie.movie_backend.dto.CinemaDto;
+import com.movie.movie_backend.dto.TheaterDto;
 import com.movie.movie_backend.entity.Screening;
 import com.movie.movie_backend.entity.ScreeningSeat;
 import com.movie.movie_backend.service.BookingService;
+import com.movie.movie_backend.dto.ScreeningDto;
+import com.movie.movie_backend.dto.ScreeningSeatDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -22,9 +25,9 @@ public class BookingController {
 
     // 영화관 목록 조회
     @GetMapping("/cinemas")
-    public ResponseEntity<List<Cinema>> getCinemas() {
+    public ResponseEntity<List<CinemaDto>> getCinemas() {
         try {
-            List<Cinema> cinemas = bookingService.getAllCinemas();
+            List<CinemaDto> cinemas = bookingService.getAllCinemas();
             return ResponseEntity.ok(cinemas);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -33,9 +36,9 @@ public class BookingController {
 
     // 특정 영화관의 상영관 목록 조회
     @GetMapping("/cinemas/{cinemaId}/theaters")
-    public ResponseEntity<List<Theater>> getTheatersByCinema(@PathVariable Long cinemaId) {
+    public ResponseEntity<List<TheaterDto>> getTheatersByCinema(@PathVariable Long cinemaId) {
         try {
-            List<Theater> theaters = bookingService.getTheatersByCinema(cinemaId);
+            List<TheaterDto> theaters = bookingService.getTheatersByCinema(cinemaId);
             return ResponseEntity.ok(theaters);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -44,12 +47,12 @@ public class BookingController {
 
     // 특정 상영관의 상영 스케줄 조회 (영화별 필터링)
     @GetMapping("/theaters/{theaterId}/screenings")
-    public ResponseEntity<List<Screening>> getScreeningsByTheater(
+    public ResponseEntity<List<ScreeningDto>> getScreeningsByTheater(
             @PathVariable Long theaterId,
             @RequestParam(required = false) String movieId) {
         try {
-            List<Screening> screenings = bookingService.getScreeningsByTheater(theaterId, movieId);
-            return ResponseEntity.ok(screenings);
+            List<ScreeningDto> dtos = bookingService.getScreeningsByTheater(theaterId, movieId);
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -57,10 +60,10 @@ public class BookingController {
 
     // 특정 상영의 좌석 정보 조회
     @GetMapping("/screenings/{screeningId}/seats")
-    public ResponseEntity<List<ScreeningSeat>> getSeatsByScreening(@PathVariable Long screeningId) {
+    public ResponseEntity<List<ScreeningSeatDto>> getSeatsByScreening(@PathVariable Long screeningId) {
         try {
-            List<ScreeningSeat> seats = bookingService.getSeatsByScreening(screeningId);
-            return ResponseEntity.ok(seats);
+            List<ScreeningSeatDto> dtos = bookingService.getSeatsByScreening(screeningId);
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

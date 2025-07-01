@@ -1,5 +1,6 @@
 package com.movie.movie_backend.service;
 
+import com.movie.movie_backend.dto.ReviewDto;
 import com.movie.movie_backend.entity.Review;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.MovieDetail;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -111,22 +113,31 @@ public class REVReviewService {
     /**
      * 영화의 모든 리뷰 조회
      */
-    public List<Review> getReviewsByMovieCd(String movieCd) {
-        return reviewRepository.findByMovieDetailMovieCdOrderByCreatedAtDesc(movieCd);
+    public List<ReviewDto> getReviewsByMovieCd(String movieCd) {
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdOrderByCreatedAtDesc(movieCd);
+        return reviews.stream()
+                .map(ReviewDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * 영화의 평점이 있는 리뷰만 조회
      */
-    public List<Review> getRatedReviewsByMovieCd(String movieCd) {
-        return reviewRepository.findByMovieDetailMovieCdAndRatingIsNotNullOrderByCreatedAtDesc(movieCd);
+    public List<ReviewDto> getRatedReviewsByMovieCd(String movieCd) {
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndRatingIsNotNullOrderByCreatedAtDesc(movieCd);
+        return reviews.stream()
+                .map(ReviewDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * 영화의 댓글만 있는 리뷰 조회 (평점 없음)
      */
-    public List<Review> getContentOnlyReviewsByMovieCd(String movieCd) {
-        return reviewRepository.findByMovieDetailMovieCdAndRatingIsNullOrderByCreatedAtDesc(movieCd);
+    public List<ReviewDto> getContentOnlyReviewsByMovieCd(String movieCd) {
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndRatingIsNullOrderByCreatedAtDesc(movieCd);
+        return reviews.stream()
+                .map(ReviewDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -176,15 +187,19 @@ public class REVReviewService {
     /**
      * 사용자의 모든 리뷰 조회
      */
-    public List<Review> getReviewsByUserId(Long userId) {
-        return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<ReviewDto> getReviewsByUserId(Long userId) {
+        List<Review> reviews = reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return reviews.stream()
+                .map(ReviewDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * 사용자가 특정 영화에 작성한 리뷰 조회
      */
-    public Optional<Review> getReviewByUserAndMovie(Long userId, String movieCd) {
-        return Optional.ofNullable(reviewRepository.findByUserIdAndMovieDetailMovieCd(userId, movieCd));
+    public Optional<ReviewDto> getReviewByUserAndMovie(Long userId, String movieCd) {
+        Review review = reviewRepository.findByUserIdAndMovieDetailMovieCd(userId, movieCd);
+        return Optional.ofNullable(review != null ? ReviewDto.fromEntity(review) : null);
     }
 
     /**

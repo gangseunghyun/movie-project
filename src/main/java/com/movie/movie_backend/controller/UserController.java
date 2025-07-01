@@ -699,13 +699,17 @@ public class UserController {
 
     // [1] 장르 태그 전체 조회
     @GetMapping("/api/genre-tags")
-    public ResponseEntity<List<Tag>> getGenreTags() {
-        return ResponseEntity.ok(tagRepository.findGenreTags());
+    public ResponseEntity<List<String>> getGenreTags() {
+        List<Tag> tags = tagRepository.findGenreTags();
+        List<String> tagNames = tags.stream()
+                .map(Tag::getName)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(tagNames);
     }
 
     // [2-1] 사용자 선호 장르 태그 조회
     @GetMapping("/api/users/{userId}/preferred-genres")
-    public ResponseEntity<List<Tag>> getUserPreferredGenres(@PathVariable Long userId) {
+    public ResponseEntity<List<String>> getUserPreferredGenres(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getPreferredGenres(userId));
     }
 
@@ -718,7 +722,7 @@ public class UserController {
 
     // [2-3] 사용자 선호 태그 조회 (모든 카테고리)
     @GetMapping("/api/users/{userId}/preferred-tags")
-    public ResponseEntity<List<Tag>> getUserPreferredTags(@PathVariable Long userId) {
+    public ResponseEntity<List<String>> getUserPreferredTags(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getPreferredTags(userId));
     }
 

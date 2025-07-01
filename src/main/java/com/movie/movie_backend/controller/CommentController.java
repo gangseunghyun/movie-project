@@ -1,5 +1,6 @@
 package com.movie.movie_backend.controller;
 
+import com.movie.movie_backend.dto.CommentDto;
 import com.movie.movie_backend.entity.Comment;
 import com.movie.movie_backend.entity.CommentLike;
 import com.movie.movie_backend.service.REVCommentService;
@@ -109,7 +110,7 @@ public class CommentController {
     @GetMapping("/review/{reviewId}")
     public ResponseEntity<Map<String, Object>> getTopLevelComments(@PathVariable Long reviewId) {
         try {
-            List<Comment> comments = commentService.getTopLevelCommentsByReviewId(reviewId);
+            List<CommentDto> comments = commentService.getTopLevelCommentsByReviewId(reviewId);
             Long commentCount = commentService.getCommentCountByReviewId(reviewId);
             
             Map<String, Object> response = new HashMap<>();
@@ -133,7 +134,7 @@ public class CommentController {
     @GetMapping("/review/{reviewId}/all")
     public ResponseEntity<Map<String, Object>> getAllComments(@PathVariable Long reviewId) {
         try {
-            List<Comment> comments = commentService.getAllCommentsByReviewId(reviewId);
+            List<CommentDto> comments = commentService.getAllCommentsByReviewId(reviewId);
             Long commentCount = commentService.getCommentCountByReviewId(reviewId);
             
             Map<String, Object> response = new HashMap<>();
@@ -157,7 +158,7 @@ public class CommentController {
     @GetMapping("/{commentId}/replies")
     public ResponseEntity<Map<String, Object>> getReplies(@PathVariable Long commentId) {
         try {
-            List<Comment> replies = commentService.getRepliesByParentId(commentId);
+            List<CommentDto> replies = commentService.getRepliesByParentId(commentId);
             Long replyCount = commentService.getReplyCountByParentId(commentId);
             
             Map<String, Object> response = new HashMap<>();
@@ -181,7 +182,7 @@ public class CommentController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserComments(@PathVariable Long userId) {
         try {
-            List<Comment> comments = commentService.getCommentsByUserId(userId);
+            List<CommentDto> comments = commentService.getCommentsByUserId(userId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

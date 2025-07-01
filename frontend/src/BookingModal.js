@@ -13,6 +13,9 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  const MAX_SELECT = 2;
 
   // 영화관 데이터 로드
   useEffect(() => {
@@ -23,24 +26,41 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   const fetchCinemas = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:80/api/cinemas');
-      setCinemas(response.data);
-      if (response.data.length > 0) {
-        setSelectedCinema(response.data[0]);
-        fetchTheaters(response.data[0].id);
+      setError(null);
+      const response = await axios.get('http://localhost:80/api/cinemas', {
+        withCredentials: true
+      });
+      console.log('영화관 데이터:', response.data);
+      
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        setCinemas(response.data);
+        const firstCinema = response.data[0];
+        if (firstCinema && firstCinema.id) {
+          setSelectedCinema(firstCinema);
+          fetchTheaters(firstCinema.id);
+        }
+      } else {
+        setCinemas([]);
+        setError('영화관 정보가 없습니다.');
       }
     } catch (error) {
       console.error('영화관 목록 로드 실패:', error);
-      setError('영화관 정보를 불러오는데 실패했습니다.');
+      setError('영화관 정보를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setCinemas([]);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
   // 상영관 목록 가져오기
   const fetchTheaters = async (cinemaId) => {
     try {
-      const response = await axios.get(`http://localhost:80/api/cinemas/${cinemaId}/theaters`);
+      setError(null);
+      const response = await axios.get(`http://localhost:80/api/cinemas/${cinemaId}/theaters`, {
+        withCredentials: true
+      });
+      console.log('상영관 데이터:', response.data);
       setTheaters(response.data);
       if (response.data.length > 0) {
         setSelectedTheater(response.data[0]);
@@ -55,7 +75,9 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   // 상영 스케줄 가져오기
   const fetchScreenings = async (theaterId) => {
     try {
+      setError(null);
       const response = await axios.get(`http://localhost:80/api/theaters/${theaterId}/screenings?movieId=${movie.movieCd}`);
+      console.log('상영 스케줄 데이터:', response.data);
       setScreenings(response.data);
     } catch (error) {
       console.error('상영 스케줄 로드 실패:', error);
@@ -66,7 +88,9 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   // 좌석 정보 가져오기
   const fetchSeats = async (screeningId) => {
     try {
+      setError(null);
       const response = await axios.get(`http://localhost:80/api/screenings/${screeningId}/seats`);
+      console.log('좌석 데이터:', response.data);
       setSeats(response.data);
     } catch (error) {
       console.error('좌석 정보 로드 실패:', error);
@@ -74,36 +98,71 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
     }
   };
 
+  // 좌석 데이터를 행별로 그룹화 (예: A1~A5, B1~B5 ...)
+  const groupSeatsByRow = (seats) => {
+    const rows = {};
+    seats.forEach(seat => {
+      const row = seat.seatNumber[0];
+      if (!rows[row]) rows[row] = [];
+      rows[row].push(seat);
+    });
+    return Object.keys(rows)
+      .sort()
+      .map(rowKey => rows[rowKey].sort((a, b) => {
+        return parseInt(a.seatNumber.slice(1)) - parseInt(b.seatNumber.slice(1));
+      }));
+  };
+
   // 영화관 선택 핸들러
   const handleCinemaChange = (cinema) => {
+    if (!cinema || !cinema.id) {
+      console.error('유효하지 않은 영화관 정보:', cinema);
+      return;
+    }
     setSelectedCinema(cinema);
     setSelectedTheater(null);
     setSelectedScreening(null);
     setSelectedSeats([]);
+    setScreenings([]);
+    setSeats([]);
     fetchTheaters(cinema.id);
   };
 
   // 상영관 선택 핸들러
   const handleTheaterChange = (theater) => {
+    if (!theater || !theater.id) {
+      console.error('유효하지 않은 상영관 정보:', theater);
+      return;
+    }
     setSelectedTheater(theater);
     setSelectedScreening(null);
     setSelectedSeats([]);
+    setScreenings([]);
+    setSeats([]);
     fetchScreenings(theater.id);
   };
 
   // 상영시간 선택 핸들러
   const handleScreeningChange = (screening) => {
+    if (!screening || !screening.id) {
+      console.error('유효하지 않은 상영 정보:', screening);
+      return;
+    }
     setSelectedScreening(screening);
     setSelectedSeats([]);
+    setSeats([]);
     fetchSeats(screening.id);
   };
 
   // 좌석 선택 핸들러
   const handleSeatClick = (seat) => {
-    if (seat.status !== 'BOOKING_AVAILABLE') return;
-    
+    if (seat.status !== 'AVAILABLE') return;
+    const isSelected = selectedSeats.find(s => s.id === seat.id);
+    if (!isSelected && selectedSeats.length >= MAX_SELECT) {
+      alert('최대 2좌석까지만 선택할 수 있습니다.');
+      return;
+    }
     setSelectedSeats(prev => {
-      const isSelected = prev.find(s => s.id === seat.id);
       if (isSelected) {
         return prev.filter(s => s.id !== seat.id);
       } else {
@@ -148,21 +207,24 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   // 좌석 상태에 따른 클래스명
   const getSeatClassName = (seat) => {
     let className = 'seat';
-    if (seat.status === 'BOOKED') {
+    if (seat.status === 'RESERVED' || seat.status === 'BOOKED' || seat.status === 'LOCKED' || seat.status === 'CLOSED' || seat.status === 'UNAVAILABLE' || seat.status === 'COMPLETED') {
       className += ' booked';
     } else if (selectedSeats.find(s => s.id === seat.id)) {
       className += ' selected';
-    } else {
+    } else if (seat.status === 'AVAILABLE') {
       className += ' available';
+    } else {
+      className += ' unavailable';
     }
     return className;
   };
 
-  if (loading && !cinemas.length) {
+  // 초기 로딩 중일 때
+  if (initialLoading) {
     return (
       <div className="booking-modal-overlay">
         <div className="booking-modal-content">
-          <div className="loading">로딩 중...</div>
+          <div className="loading">영화관 정보를 불러오는 중...</div>
         </div>
       </div>
     );
@@ -177,7 +239,25 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
         </div>
 
         <div className="booking-modal-body">
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="error-message">
+              {error}
+              <button 
+                onClick={fetchCinemas}
+                style={{
+                  marginLeft: '10px',
+                  padding: '5px 10px',
+                  background: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                다시 시도
+              </button>
+            </div>
+          )}
 
           {/* 영화 정보 */}
           <div className="movie-info">
@@ -192,15 +272,19 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
           <div className="selection-section">
             <h4>영화관 선택</h4>
             <div className="cinema-list">
-              {cinemas.map(cinema => (
-                <button
-                  key={cinema.id}
-                  className={`cinema-btn ${selectedCinema?.id === cinema.id ? 'selected' : ''}`}
-                  onClick={() => handleCinemaChange(cinema)}
-                >
-                  {cinema.name}
-                </button>
-              ))}
+              {Array.isArray(cinemas) && cinemas.length > 0 ? (
+                cinemas.map(cinema => (
+                  <button
+                    key={cinema.id}
+                    className={`cinema-btn ${selectedCinema?.id === cinema.id ? 'selected' : ''}`}
+                    onClick={() => handleCinemaChange(cinema)}
+                  >
+                    {cinema.name}
+                  </button>
+                ))
+              ) : (
+                <p>영화관 정보를 불러올 수 없습니다.</p>
+              )}
             </div>
           </div>
 
@@ -209,15 +293,19 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
             <div className="selection-section">
               <h4>상영관 선택</h4>
               <div className="theater-list">
-                {theaters.map(theater => (
-                  <button
-                    key={theater.id}
-                    className={`theater-btn ${selectedTheater?.id === theater.id ? 'selected' : ''}`}
-                    onClick={() => handleTheaterChange(theater)}
-                  >
-                    {theater.name}
-                  </button>
-                ))}
+                {Array.isArray(theaters) && theaters.length > 0 ? (
+                  theaters.map(theater => (
+                    <button
+                      key={theater.id}
+                      className={`theater-btn ${selectedTheater?.id === theater.id ? 'selected' : ''}`}
+                      onClick={() => handleTheaterChange(theater)}
+                    >
+                      {theater.name}
+                    </button>
+                  ))
+                ) : (
+                  <p>상영관 정보를 불러올 수 없습니다.</p>
+                )}
               </div>
             </div>
           )}
@@ -227,20 +315,19 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
             <div className="selection-section">
               <h4>상영시간 선택</h4>
               <div className="screening-list">
-                {screenings.map(screening => (
-                  <button
-                    key={screening.id}
-                    className={`screening-btn ${selectedScreening?.id === screening.id ? 'selected' : ''}`}
-                    onClick={() => handleScreeningChange(screening)}
-                  >
-                    {new Date(screening.screeningTime).toLocaleString('ko-KR', {
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </button>
-                ))}
+                {Array.isArray(screenings) && screenings.length > 0 ? (
+                  screenings.map(screening => (
+                    <button
+                      key={screening.id}
+                      className={`screening-btn ${selectedScreening?.id === screening.id ? 'selected' : ''}`}
+                      onClick={() => handleScreeningChange(screening)}
+                    >
+                      {new Date(screening.startTime).toLocaleString()}
+                    </button>
+                  ))
+                ) : (
+                  <p>해당 영화의 상영 스케줄이 없습니다.</p>
+                )}
               </div>
             </div>
           )}
@@ -249,48 +336,50 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
           {selectedScreening && (
             <div className="selection-section">
               <h4>좌석 선택</h4>
-              <div className="seat-selection">
-                <div className="seat-legend">
-                  <div className="legend-item">
-                    <div className="seat-legend-available"></div>
-                    <span>선택 가능</span>
-                  </div>
-                  <div className="legend-item">
-                    <div className="seat-legend-selected"></div>
-                    <span>선택됨</span>
-                  </div>
-                  <div className="legend-item">
-                    <div className="seat-legend-booked"></div>
-                    <span>예매됨</span>
-                  </div>
-                </div>
-                <div className="seat-grid">
-                  {seats.map(seat => (
-                    <button
-                      key={seat.id}
-                      className={getSeatClassName(seat)}
-                      onClick={() => handleSeatClick(seat)}
-                      disabled={seat.status === 'BOOKED'}
-                    >
-                      {seat.seatNumber}
-                    </button>
-                  ))}
-                </div>
-                {selectedSeats.length > 0 && (
-                  <div className="selected-seats-info">
-                    <p>선택된 좌석: {selectedSeats.map(seat => seat.seatNumber).join(', ')}</p>
-                    <p>총 금액: {(selectedSeats.length * 12000).toLocaleString()}원</p>
-                  </div>
+              <div className="seat-map">
+                {Array.isArray(seats) && seats.length > 0 ? (
+                  groupSeatsByRow(seats).map((rowSeats, rowIdx) => (
+                    <div className="seat-row" key={rowIdx}>
+                      {rowSeats.map(seat => (
+                        <button
+                          key={seat.id}
+                          className={getSeatClassName(seat)}
+                          onClick={() => handleSeatClick(seat)}
+                          disabled={seat.status === 'BOOKED'}
+                        >
+                          {seat.seatNumber}
+                        </button>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <p>좌석 정보를 불러올 수 없습니다.</p>
                 )}
+              </div>
+              <div className="seat-legend">
+                <span className="legend-item">
+                  <span className="legend-seat available"></span>
+                  예매 가능
+                </span>
+                <span className="legend-item">
+                  <span className="legend-seat selected"></span>
+                  선택됨
+                </span>
+                <span className="legend-item">
+                  <span className="legend-seat booked"></span>
+                  예매됨
+                </span>
               </div>
             </div>
           )}
 
           {/* 예매 버튼 */}
-          {selectedSeats.length > 0 && (
-            <div className="booking-actions">
+          {Array.isArray(selectedSeats) && selectedSeats.length > 0 && (
+            <div className="booking-summary">
+              <p>선택된 좌석: {selectedSeats.map(seat => seat.seatNumber).join(', ')}</p>
+              <p>총 금액: {selectedSeats.length * 12000}원</p>
               <button 
-                className="booking-btn"
+                className="booking-confirm-btn"
                 onClick={handleBooking}
                 disabled={loading}
               >
