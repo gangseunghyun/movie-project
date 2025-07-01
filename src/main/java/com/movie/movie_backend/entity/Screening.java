@@ -35,4 +35,7 @@ public class Screening {
 
     @OneToMany(mappedBy = "screening")
     private List<Reservation> reservations; // 이 상영의 예매 목록
+
+    @OneToMany(mappedBy = "screening", cascade = CascadeType.ALL)
+    private List<ScreeningSeat> screeningSeats; // 이 상영의 전체 좌석 상태
 } 

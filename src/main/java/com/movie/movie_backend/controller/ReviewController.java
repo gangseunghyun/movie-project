@@ -1,5 +1,6 @@
 package com.movie.movie_backend.controller;
 
+import com.movie.movie_backend.dto.ReviewDto;
 import com.movie.movie_backend.entity.Review;
 import com.movie.movie_backend.service.REVReviewService;
 import lombok.RequiredArgsConstructor;
@@ -110,7 +111,7 @@ public class ReviewController {
     @GetMapping("/movie/{movieCd}")
     public ResponseEntity<Map<String, Object>> getReviewsByMovie(@PathVariable String movieCd) {
         try {
-            List<Review> reviews = reviewService.getReviewsByMovieCd(movieCd);
+            List<ReviewDto> reviews = reviewService.getReviewsByMovieCd(movieCd);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -133,7 +134,7 @@ public class ReviewController {
     @GetMapping("/movie/{movieCd}/content-only")
     public ResponseEntity<Map<String, Object>> getContentOnlyReviews(@PathVariable String movieCd) {
         try {
-            List<Review> reviews = reviewService.getContentOnlyReviewsByMovieCd(movieCd);
+            List<ReviewDto> reviews = reviewService.getContentOnlyReviewsByMovieCd(movieCd);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -185,13 +186,13 @@ public class ReviewController {
             @PathVariable String movieCd,
             @PathVariable Long userId) {
         try {
-            Optional<Review> review = reviewService.getReviewByUserAndMovie(userId, movieCd);
+            Optional<ReviewDto> review = reviewService.getReviewByUserAndMovie(userId, movieCd);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", review.orElse(null),
                 "exists", review.isPresent(),
-                "reviewType", review.map(this::getReviewType).orElse(null)
+                "reviewType", getReviewTypeFromDto(review.orElse(null))
             ));
         } catch (Exception e) {
             log.error("사용자 리뷰 조회 실패: {}", e.getMessage());
@@ -208,7 +209,7 @@ public class ReviewController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserReviews(@PathVariable Long userId) {
         try {
-            List<Review> reviews = reviewService.getReviewsByUserId(userId);
+            List<ReviewDto> reviews = reviewService.getReviewsByUserId(userId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -226,7 +227,7 @@ public class ReviewController {
     }
 
     /**
-     * 리뷰 타입 확인 메서드
+     * 리뷰 타입 확인 메서드 (Review 엔티티용)
      */
     private String getReviewType(Review review) {
         if (review.hasContent() && review.hasRating()) {
@@ -234,6 +235,21 @@ public class ReviewController {
         } else if (review.hasContent()) {
             return "CONTENT_ONLY";
         } else if (review.hasRating()) {
+            return "RATING_ONLY";
+        } else {
+            return "EMPTY";
+        }
+    }
+
+    /**
+     * 리뷰 타입 확인 메서드 (ReviewDto용)
+     */
+    private String getReviewTypeFromDto(ReviewDto review) {
+        if (review.getContent() != null && !review.getContent().isEmpty() && review.getRating() != null) {
+            return "FULL_REVIEW";
+        } else if (review.getContent() != null && !review.getContent().isEmpty()) {
+            return "CONTENT_ONLY";
+        } else if (review.getRating() != null) {
             return "RATING_ONLY";
         } else {
             return "EMPTY";

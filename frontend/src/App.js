@@ -16,6 +16,7 @@ import ResetPassword from './ResetPassword';
 import StarRating from './StarRating';
 import RatingDistributionChart from './components/RatingDistributionChart';
 import PersonDetail from './PersonDetail';
+import BookingModal from './BookingModal';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -38,6 +39,7 @@ function App() {
   const [showMovieDetail, setShowMovieDetail] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [showMovieForm, setShowMovieForm] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
   const [movieForm, setMovieForm] = useState({
     movieNm: '',
@@ -1676,6 +1678,20 @@ function App() {
       .finally(() => setLoadingRating(false));
   };
 
+  // 예매 모달 핸들러
+  const handleBookingClick = () => {
+    if (!currentUser) {
+      setShowLoginAlert(true);
+      return;
+    }
+    setShowBookingModal(true);
+  };
+
+  const handleBookingComplete = (bookingData) => {
+    console.log('예매 완료:', bookingData);
+    // 예매 완료 후 필요한 처리 (예: 예매 내역 페이지로 이동 등)
+  };
+
   // 영화 상세 보기 모달
   const renderMovieDetailModal = () => {
     if (!showMovieDetail || !selectedMovie) return null;
@@ -1693,6 +1709,49 @@ function App() {
             </button>
           </div>
           <div className="modal-body">
+            {/* 예매하기 버튼 - 맨 위에 배치 */}
+            {currentUser && (
+              <div style={{ 
+                textAlign: 'center', 
+                marginBottom: '20px',
+                padding: '16px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px'
+              }}>
+                <button 
+                  className="booking-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBookingClick();
+                  }}
+                  style={{
+                    padding: '16px 32px',
+                    backgroundColor: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '1.2rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = '#5a6fd8';
+                    e.target.style.transform = 'translateY(-3px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = '#667eea';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                  }}
+                >
+                  🎬 예매하기
+                </button>
+              </div>
+            )}
+            
             <div className="movie-detail-grid">
               <div className="movie-detail-poster">
                 {selectedMovie.posterUrl ? (
@@ -1757,7 +1816,7 @@ function App() {
                           console.error('감독 ID가 없습니다:', selectedMovie.directors[0]);
                         }
                       }}>
-                        <img src={selectedMovie.directors[0].photoUrl || 'https://via.placeholder.com/120x180/cccccc/666666?text=감독'} alt={selectedMovie.directors[0].peopleNm} />
+                        <img src={selectedMovie.directors[0].photoUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDEyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjQ0NDQ0NDIi8+Cjx0ZXh0IHg9IjYwIiB5PSI5MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2NjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6rWQ7ZmU8L3RleHQ+Cjwvc3ZnPgo='} alt={selectedMovie.directors[0].peopleNm} />
                         <div>{selectedMovie.directors[0].peopleNm}</div>
                         <div className="credit-role">감독</div>
                       </div>
@@ -1772,7 +1831,7 @@ function App() {
                           console.error('배우 ID가 없습니다:', actor);
                         }
                       }}>
-                        <img src={actor.photoUrl || 'https://via.placeholder.com/120x180/cccccc/666666?text=Actor'} alt={actor.peopleNm} />
+                        <img src={actor.photoUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDEyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjQ0NDQ0NDIi8+Cjx0ZXh0IHg9IjYwIiB5PSI5MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2NjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QWN0b3I8L3RleHQ+Cjwvc3ZnPgo='} alt={actor.peopleNm} />
                         <div>{actor.peopleNm}</div>
                         <div className="credit-role">주연</div>
                       </div>
@@ -1787,7 +1846,7 @@ function App() {
                           console.error('배우 ID가 없습니다:', actor);
                         }
                       }}>
-                        <img src={actor.photoUrl || 'https://via.placeholder.com/120x180/cccccc/666666?text=Actor'} alt={actor.peopleNm} />
+                        <img src={actor.photoUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDEyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjQ0NDQ0NDIi8+Cjx0ZXh0IHg9IjYwIiB5PSI5MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2NjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QWN0b3I8L3RleHQ+Cjwvc3ZnPgo='} alt={actor.peopleNm} />
                         <div>{actor.peopleNm}</div>
                         <div className="credit-role">조연</div>
                       </div>
@@ -2550,6 +2609,15 @@ function App() {
       {/* 기존 내용 ... */}
       {/* 로그인 안내 모달 */}
       {showLoginAlert && <LoginAlertModal />}
+      
+      {/* 예매 모달 */}
+      {showBookingModal && selectedMovie && (
+        <BookingModal
+          movie={selectedMovie}
+          onClose={() => setShowBookingModal(false)}
+          onBookingComplete={handleBookingComplete}
+        />
+      )}
     </>
   );
 }
