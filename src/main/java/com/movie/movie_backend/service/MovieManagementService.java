@@ -184,7 +184,7 @@ public class MovieManagementService {
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 관련 데이터 삭제 (좋아요, 평점, 댓글 등)
+        // 관련 데이터 삭제 (찜, 평점, 댓글 등)
         List<Like> likes = likeRepository.findAll().stream()
                 .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd))
                 .toList();
@@ -202,11 +202,11 @@ public class MovieManagementService {
     }
 
     /**
-     * 영화 좋아요
+     * 영화 찜
      */
     @Transactional
     public void likeMovie(String movieCd, Long userId) {
-        log.info("영화 좋아요: {} - 사용자: {}", movieCd, userId);
+        log.info("영화 찜: {} - 사용자: {}", movieCd, userId);
         
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
@@ -215,51 +215,51 @@ public class MovieManagementService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userId));
         
-        // 이미 좋아요를 눌렀는지 확인 (null 체크 추가)
+        // 이미 찜을 눌렀는지 확인 (null 체크 추가)
         List<Like> existingLikes = likeRepository.findAll().stream()
                 .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd) && 
                                like.getUser() != null && like.getUser().getId().equals(userId))
                 .toList();
         
         if (!existingLikes.isEmpty()) {
-            log.info("이미 좋아요를 눌렀습니다: {} - 사용자: {}", movieCd, userId);
+            log.info("이미 찜을 눌렀습니다: {} - 사용자: {}", movieCd, userId);
             return;
         }
         
-        // 좋아요 추가
+        // 찜 추가
         Like like = new Like();
         like.setMovieDetail(movie);
         like.setUser(user);
         like.setCreatedAt(LocalDateTime.now());
         
         likeRepository.save(like);
-        log.info("좋아요 추가 완료: {} - 사용자: {}", movieCd, userId);
+        log.info("찜 추가 완료: {} - 사용자: {}", movieCd, userId);
     }
 
     /**
-     * 영화 좋아요 취소
+     * 영화 찜 취소
      */
     @Transactional
     public void unlikeMovie(String movieCd, Long userId) {
-        log.info("영화 좋아요 취소: {} - 사용자: {}", movieCd, userId);
+        log.info("영화 찜 취소: {} - 사용자: {}", movieCd, userId);
         
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 좋아요 찾기 (null 체크 추가)
+        // 찜 찾기 (null 체크 추가)
         List<Like> existingLikes = likeRepository.findAll().stream()
                 .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd) && 
                                like.getUser() != null && like.getUser().getId().equals(userId))
                 .toList();
         
         if (existingLikes.isEmpty()) {
-            log.info("좋아요를 누르지 않았습니다: {} - 사용자: {}", movieCd, userId);
+            log.info("찜을 누르지 않았습니다: {} - 사용자: {}", movieCd, userId);
             return;
         }
         
-        // 좋아요 삭제
+        // 찜 삭제
         likeRepository.deleteAll(existingLikes);
-        log.info("좋아요 취소 완료: {} - 사용자: {}", movieCd, userId);
+        log.info("찜 취소 완료: {} - 사용자: {}", movieCd, userId);
     }
 
     /**

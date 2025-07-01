@@ -37,8 +37,8 @@ public class MovieDetailDto {
     private List<Company> companys;   // 참여 영화사 목록
     private List<Staff> staffs;       // 스텝 목록
     private List<Stillcut> stillcuts; // 스틸컷 목록
-    private int likeCount;      // 좋아요 수
-    private boolean likedByMe;  // 내가 좋아요를 눌렀는지
+    private int likeCount;      // 찜 수
+    private boolean likedByMe;  // 내가 찜을 눌렀는지
 
     // 내부 DTO들 (필요하면 더 세분화 가능)
 

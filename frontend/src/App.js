@@ -931,7 +931,7 @@ function App() {
     }
   };
 
-  // 좋아요 토글 상태 갱신 함수
+      // 찜 토글 상태 갱신 함수
   const updateMovieLikeState = (movieCd, liked) => {
     // movieDetailDtoData 업데이트
     setMovieDetailDtoData(prev => ({
@@ -1044,28 +1044,28 @@ function App() {
     }));
   };
 
-  // 좋아요 추가
+  // 찜 추가
   const handleLikeMovie = async (movieCd) => {
     try {
       await axios.post(`/api/movies/${movieCd}/like`, {}, { withCredentials: true });
       updateMovieLikeState(movieCd, true);
     } catch (error) {
-      alert('좋아요에 실패했습니다.');
+      alert('찜에 실패했습니다.');
     }
   };
 
-  // 좋아요 취소
+  // 찜 취소
   const handleUnlikeMovie = async (movieCd) => {
     try {
       await axios.delete(`/api/movies/${movieCd}/like`, { withCredentials: true });
       updateMovieLikeState(movieCd, false);
     } catch (error) {
-      alert('좋아요 취소에 실패했습니다.');
+      alert('찜 취소에 실패했습니다.');
     }
   };
 
   useEffect(() => {
-    if (activeMenu === '통계') fetchStats();
+    if (activeMenu === '메인 페이지') fetchStats();
     else if (activeMenu === '영화 목록') fetchMovieList();
     else if (activeMenu === '영화 상세') fetchMovieDetail();
     else if (activeMenu === '박스오피스') fetchBoxOffice();
@@ -1086,7 +1086,7 @@ function App() {
   };
 
   const handleRefresh = () => {
-    if (activeMenu === '통계') fetchStats();
+    if (activeMenu === '메인 페이지') fetchStats();
     else if (activeMenu === '영화 목록') fetchMovieList();
     else if (activeMenu === '영화 상세') fetchMovieDetail();
     else if (activeMenu === '박스오피스') fetchBoxOffice();
@@ -1105,7 +1105,7 @@ function App() {
     setSearchExecuted(false);
     setSearchKeyword('');
     
-    if (menu === '통계') {
+    if (menu === '메인 페이지') {
       fetchStats();
     } else if (menu === '영화 목록') {
       fetchMovieList(0);
@@ -1528,7 +1528,7 @@ function App() {
                       </button>
                     </>
                   )}
-                  {/* 좋아요 버튼 (누르면 토글, 카운트 표시) */}
+                  {/* 찜 버튼 (누르면 토글, 카운트 표시) */}
                   <button
                     onClick={e => {
                       e.stopPropagation();
@@ -1548,7 +1548,7 @@ function App() {
                       fontSize: '12px'
                     }}
                   >
-                    {item.likedByMe ? '❤️ 좋아요 ' : '🤍 좋아요 '}
+                                          {item.likedByMe ? '❤️ 찜 ' : '🤍 찜 '}
                     {item.likeCount}
                   </button>
                 </div>

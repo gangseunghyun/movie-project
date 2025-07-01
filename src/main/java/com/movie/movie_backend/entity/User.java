@@ -65,7 +65,7 @@ public class User implements UserDetails {
     private List<Comment> comments; // 사용자가 작성한 댓글 목록
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Like> likes; // 사용자가 누른 좋아요 목록
+    private List<Like> likes; // 사용자가 누른 찜 목록
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SearchHistory> searchHistories; // 사용자의 검색 기록
