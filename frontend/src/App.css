@@ -1120,4 +1120,11 @@
   color: #888;
   font-size: 14px;
   margin-top: 2px;
+}
+
+.credit-card:hover {
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(60,64,67,0.15);
+  transform: translateY(-2px) scale(1.03);
+  transition: box-shadow 0.15s, transform 0.15s;
 } 
