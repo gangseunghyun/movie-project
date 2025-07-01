@@ -5,6 +5,7 @@ import com.movie.movie_backend.repository.OAuth2TokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -12,10 +13,12 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class OAuth2TokenService {
     
     private final OAuth2TokenRepository oAuth2TokenRepository;
     
+    @Transactional
     public void saveToken(String email, String provider, String accessToken, String refreshToken, int expiresInSeconds) {
         try {
             // 기존 토큰 삭제
@@ -64,6 +67,7 @@ public class OAuth2TokenService {
         }
     }
     
+    @Transactional
     public void deleteToken(String email, String provider) {
         try {
             oAuth2TokenRepository.deleteByEmailAndProvider(email, provider);

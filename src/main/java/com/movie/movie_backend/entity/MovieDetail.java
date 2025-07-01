@@ -63,7 +63,7 @@ public class MovieDetail {
             joinColumns = @JoinColumn(name = "movie_detail_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
     @JsonIgnore
-    private List<Tag> tags; // 영화 태그 목록 (N:M)
+    private List<Tag> tags = new java.util.ArrayList<>(); // 영화 태그 목록 (N:M)
 
     @OneToMany(mappedBy = "movieDetail")
     @JsonIgnore

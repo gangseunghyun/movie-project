@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@Table(name = "search_logs")
+@Table(name = "search_log")
 public class SearchLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

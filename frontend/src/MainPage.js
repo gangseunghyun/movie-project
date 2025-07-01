@@ -15,6 +15,7 @@ const menuList = [
   { icon: '🎬', label: '개봉예정작' },
   { icon: '🎬', label: '개봉중' },
   { icon: '🎬', label: '상영종료' },
+  { icon: '🎯', label: '태그추천영화', requireLogin: true },
 ];
 
 const MainPage = ({
@@ -33,6 +34,7 @@ const MainPage = ({
   renderMovieListDto,
   renderTopRated,
   renderPopularMovies,
+  renderRecommendedMovies,
   renderComingSoon,
   renderNowPlaying,
   renderEnded,
@@ -99,6 +101,7 @@ const MainPage = ({
     '영화 목록 DTO': renderMovieListDto,
     '평점 높은 영화': renderTopRated,
     '인기 영화': renderPopularMovies,
+    '태그추천영화': renderRecommendedMovies,
     '개봉예정작': renderComingSoon,
     '개봉중': renderNowPlaying,
     '상영종료': renderEnded,
@@ -232,15 +235,18 @@ const MainPage = ({
         <aside className="mainpage-sidebar">
           <ul>
             {menuList.map((menu) => (
-              <li
-                key={menu.label}
-                className={activeMenu === menu.label ? 'active' : ''}
-                onClick={() => setActiveMenu(menu.label)}
-                style={{ userSelect: 'none' }}
-              >
-                <span className="mainpage-menu-icon">{menu.icon}</span>
-                <span className="mainpage-menu-label">{menu.label}</span>
-              </li>
+              // 로그인이 필요한 메뉴는 로그인한 사용자만 표시
+              (!menu.requireLogin || currentUser) && (
+                <li
+                  key={menu.label}
+                  className={activeMenu === menu.label ? 'active' : ''}
+                  onClick={() => setActiveMenu(menu.label)}
+                  style={{ userSelect: 'none' }}
+                >
+                  <span className="mainpage-menu-icon">{menu.icon}</span>
+                  <span className="mainpage-menu-label">{menu.label}</span>
+                </li>
+              )
             ))}
           </ul>
         </aside>

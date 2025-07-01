@@ -2,22 +2,26 @@ package com.movie.movie_backend.service;
 
 import com.movie.movie_backend.dto.UserJoinRequestDto;
 import com.movie.movie_backend.entity.User;
-import com.movie.movie_backend.entity.PasswordResetToken;
 import com.movie.movie_backend.entity.Tag;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.PasswordResetToken;
 import com.movie.movie_backend.repository.USRUserRepository;
-import com.movie.movie_backend.repository.PasswordResetTokenRepository;
 import com.movie.movie_backend.repository.PRDTagRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.PasswordResetTokenRepository;
 import com.movie.movie_backend.constant.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +32,7 @@ public class USRUserService {
     private final MailService mailService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PRDTagRepository tagRepository;
+    private final PRDMovieRepository movieRepository;
 
     public User register(User user) {
         // 회원가입 로직
@@ -272,5 +277,24 @@ public class USRUserService {
         
         user.setPreferredTags(filteredTags);
         userRepository.save(user);
+    }
+
+    // 사용자 선호 태그 기반 영화 추천
+    @Transactional(readOnly = true)
+    public List<MovieDetail> getRecommendedMovies(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        List<Tag> preferredTags = user.getPreferredTags();
+        
+        if (preferredTags.isEmpty()) {
+            // 선호 태그가 없으면 빈 리스트 반환 (마이페이지에서 설정하라고 안내)
+            return new ArrayList<>();
+        }
+        
+        // 선호 태그를 가진 영화들을 모두 모아서 랜덤으로 20개 추출
+        List<MovieDetail> allCandidates = movieRepository.findMoviesByTags(preferredTags);
+        Collections.shuffle(allCandidates); // 무작위 섞기
+        return allCandidates.stream().limit(20).collect(Collectors.toList());
     }
 } 

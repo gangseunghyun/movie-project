@@ -144,6 +144,7 @@ public class SecurityConfig {
                     "/api/reset-password/validate-token",
                     "/api/reset-password",
                     "/api/search-history/popular",
+                    "/api/popular-keywords/**",
                     "/reset-password",
                     "/static/**",
                     "/resources/static/**",

@@ -1,12 +1,16 @@
 package com.movie.movie_backend.controller;
 
 import com.movie.movie_backend.dto.UserJoinRequestDto;
+import com.movie.movie_backend.dto.MovieDetailDto;
 import com.movie.movie_backend.entity.PasswordResetToken;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.Tag;
+import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.mapper.MovieMapper;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.repository.PRDTagRepository;
+import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.service.MailService;
 import com.movie.movie_backend.service.USRUserService;
 import com.movie.movie_backend.constant.Provider;
@@ -26,6 +30,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,6 +46,8 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final PRDTagRepository tagRepository;
+    private final MovieMapper movieMapper;
+    private final PRDMovieRepository movieRepository;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -725,5 +734,27 @@ public class UserController {
     public ResponseEntity<?> removeUserFeatureTags(@PathVariable Long userId) {
         userService.removeFeatureTags(userId);
         return ResponseEntity.ok().build();
+    }
+
+    // [3] 사용자 선호 태그 기반 영화 추천 (태그별 그룹화)
+    @GetMapping("/api/users/{userId}/recommended-movies")
+    public ResponseEntity<Map<String, List<MovieDetailDto>>> getRecommendedMovies(@PathVariable Long userId) {
+        // 사용자의 선호 태그 가져오기
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null || user.getPreferredTags().isEmpty()) {
+            // 선호 태그가 없으면 빈 Map 반환 (마이페이지에서 설정하라고 안내)
+            return ResponseEntity.ok(new HashMap<>());
+        }
+
+        Map<String, List<MovieDetailDto>> groupedMovies = new HashMap<>();
+        for (Tag tag : user.getPreferredTags()) {
+            // 1. 해당 태그에 매칭되는 영화 모두 가져오기
+            List<MovieDetail> tagMovies = movieRepository.findMoviesByTags(List.of(tag));
+            Collections.shuffle(tagMovies); // 랜덤 섞기
+            // 2. 20개만 반환 (20개 이하면 있는대로만)
+            List<MovieDetailDto> dtos = tagMovies.stream().limit(20).map(movieMapper::toDto).collect(Collectors.toList());
+            groupedMovies.put(tag.getName(), dtos);
+        }
+        return ResponseEntity.ok(groupedMovies);
     }
 } 
