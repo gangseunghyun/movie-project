@@ -29,6 +29,8 @@ public class PersonController {
     private final MovieDetailMapper movieDetailMapper;
     // 현재 추천된 배우 정보 (캐시)
     private Actor currentRecommendedActor = null;
+    // 현재 추천된 감독 정보 (캐시)
+    private Director currentRecommendedDirector = null;
     private final Random random = new Random();
     // 19금(청소년관람불가) 등급 문자열 목록
     private static final List<String> FORBIDDEN_GRADES = List.of("청소년관람불가", "19", "청불", "Restricted", "R");
@@ -264,6 +266,149 @@ public class PersonController {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", "배우 추천 새로고침에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 현재 추천된 감독 정보 조회
+     */
+    @GetMapping("/recommended-director")
+    public ResponseEntity<?> getRecommendedDirector() {
+        try {
+            // 추천 감독이 없으면 선정
+            if (currentRecommendedDirector == null) {
+                selectRandomDirector();
+            }
+            if (currentRecommendedDirector == null) {
+                return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", "추천 감독이 없습니다."
+                ));
+            }
+            // 감독 정보와 대표 작품 3개 조회
+            Map<String, Object> recommendationInfo = getDirectorRecommendationInfo();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", recommendationInfo
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "감독 추천 정보 조회에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 5분마다 영화 2개 이상 감독한 감독 중에서 무작위로 선정
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000) // 5분 = 300초
+    public void selectRandomDirector() {
+        try {
+            // 19금이 아닌 영화 2개 이상 감독한 감독들 조회
+            List<Director> eligibleDirectors = getDirectorsWithMinNonAdultMovies(2);
+            if (eligibleDirectors.isEmpty()) {
+                return;
+            }
+            // 무작위로 감독 선정
+            Director selectedDirector = eligibleDirectors.get(random.nextInt(eligibleDirectors.size()));
+            currentRecommendedDirector = selectedDirector;
+        } catch (Exception e) {
+            // 로그는 나중에 추가
+        }
+    }
+
+    /**
+     * 19금이 아닌 영화 2개 이상 감독한 감독들 조회
+     */
+    private List<Director> getDirectorsWithMinNonAdultMovies(int minMovieCount) {
+        List<Director> allDirectors = directorRepository.findAll();
+        return allDirectors.stream()
+            .filter(director -> {
+                List<MovieDetail> movies = movieRepository.findAll().stream()
+                    .filter(movie -> movie.getDirector() != null && movie.getDirector().getId().equals(director.getId()))
+                    .filter(movie -> !isAdultMovie(movie))
+                    .collect(Collectors.toList());
+                return movies.size() >= minMovieCount;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * 감독별 영화 개수 조회
+     */
+    private long getMovieCountByDirector(Long directorId) {
+        return movieRepository.findAll().stream()
+            .filter(movie -> movie.getDirector() != null && movie.getDirector().getId().equals(directorId))
+            .count();
+    }
+
+    /**
+     * 감독별 평균 평점 조회
+     */
+    private double getAverageRatingByDirector(Long directorId) {
+        List<MovieDetail> movies = movieRepository.findAll().stream()
+            .filter(movie -> movie.getDirector() != null && movie.getDirector().getId().equals(directorId))
+            .collect(Collectors.toList());
+        if (movies.isEmpty()) return 0.0;
+        double totalRating = movies.stream()
+            .mapToDouble(movie -> movie.getAverageRating() != null ? movie.getAverageRating() : 0.0)
+            .sum();
+        return totalRating / movies.size();
+    }
+
+    /**
+     * 감독 정보와 대표 작품 3개 조회
+     */
+    private Map<String, Object> getDirectorRecommendationInfo() {
+        List<MovieDetail> allMovies = movieRepository.findAll().stream()
+            .filter(movie -> movie.getDirector() != null && movie.getDirector().getId().equals(currentRecommendedDirector.getId()))
+            .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
+            .collect(Collectors.toList());
+        // 별점순으로 상위 3개 작품
+        List<MovieDetail> topMovies = allMovies.stream()
+            .sorted((m1, m2) -> {
+                double rating1 = m1.getAverageRating() != null ? m1.getAverageRating() : 0.0;
+                double rating2 = m2.getAverageRating() != null ? m2.getAverageRating() : 0.0;
+                return Double.compare(rating2, rating1);
+            })
+            .limit(3)
+            .collect(Collectors.toList());
+        Map<String, Object> directorDto = new HashMap<>();
+        directorDto.put("id", currentRecommendedDirector.getId());
+        directorDto.put("name", currentRecommendedDirector.getName());
+        directorDto.put("birthDate", currentRecommendedDirector.getBirthDate());
+        directorDto.put("nationality", currentRecommendedDirector.getNationality());
+        directorDto.put("biography", currentRecommendedDirector.getBiography());
+        directorDto.put("photoUrl", currentRecommendedDirector.getPhotoUrl());
+        Map<String, Object> result = new HashMap<>();
+        result.put("director", directorDto);
+        result.put("movieCount", allMovies.size());
+        result.put("averageRating", getAverageRatingByDirector(currentRecommendedDirector.getId()));
+        result.put("topMovies", topMovies.stream()
+            .map(movie -> movieDetailMapper.toDto(movie, 0, false))
+            .collect(Collectors.toList()));
+        return result;
+    }
+
+    /**
+     * 수동으로 감독 추천 새로고침 (관리자용)
+     */
+    @PostMapping("/refresh-recommended-director")
+    public ResponseEntity<?> refreshRecommendedDirector() {
+        try {
+            selectRandomDirector();
+            Map<String, Object> newRecommendation = getDirectorRecommendationInfo();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "감독 추천이 새로고침되었습니다.",
+                "data", newRecommendation
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "감독 추천 새로고침에 실패했습니다: " + e.getMessage()
             ));
         }
     }
