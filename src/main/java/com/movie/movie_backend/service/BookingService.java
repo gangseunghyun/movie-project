@@ -25,6 +25,8 @@ import com.movie.movie_backend.constant.ReservationStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,6 +36,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
+
+    private static final Logger log = LoggerFactory.getLogger(BookingService.class);
 
     @Autowired
     private CinemaRepository cinemaRepository;
@@ -127,55 +131,117 @@ public class BookingService {
     @Transactional
     public boolean createBooking(String movieId, Long screeningId, List<Long> seatIds, Integer totalPrice) {
         try {
-            // 좌석 개수 제한 (최대 2개)
-            if (seatIds == null || seatIds.size() == 0 || seatIds.size() > 2) {
-                return false;
-            }
-            // 현재 로그인한 사용자 정보 가져오기 (세션에서)
-            // TODO: 실제 인증된 사용자 정보를 가져오는 로직으로 수정 필요
-            Optional<User> currentUser = userRepository.findById(1L); // 임시로 ID 1 사용
-            if (currentUser.isEmpty()) {
+            // 1. 입력값 검증
+            if (seatIds == null || seatIds.isEmpty() || seatIds.size() > 2) {
+                log.warn("Invalid seatIds: " + seatIds);
                 return false;
             }
 
-            // 상영 정보 확인
+            // 2. 사용자, 상영 정보 조회
+            Optional<User> currentUser = userRepository.findById(1L); // 실제 서비스에서는 인증 정보 사용
+            if (currentUser.isEmpty()) {
+                log.warn("User not found");
+                return false;
+            }
             Optional<Screening> screening = screeningRepository.findById(screeningId);
             if (screening.isEmpty()) {
+                log.warn("Screening not found: " + screeningId);
                 return false;
             }
 
-            // 좌석 상태 확인 및 업데이트
+            // 3. 좌석 상태 확인 및 예약 가능 여부 체크
+            List<ScreeningSeat> seatsToReserve = new java.util.ArrayList<>();
             for (Long seatId : seatIds) {
-                Optional<ScreeningSeat> screeningSeat = screeningSeatRepository.findByScreeningIdAndSeatId(screeningId, seatId);
-                if (screeningSeat.isEmpty() || screeningSeat.get().getStatus() != ScreeningSeatStatus.AVAILABLE) {
-                    return false; // 좌석이 이미 예매되었거나 사용할 수 없음
+                Optional<ScreeningSeat> screeningSeatOpt = screeningSeatRepository.findByScreeningIdAndSeatId(screeningId, seatId);
+                if (screeningSeatOpt.isEmpty()) {
+                    log.warn("ScreeningSeat not found: screeningId=" + screeningId + ", seatId=" + seatId);
+                    return false;
                 }
+                ScreeningSeat screeningSeat = screeningSeatOpt.get();
+                if (screeningSeat.getStatus() != ScreeningSeatStatus.AVAILABLE &&
+                    screeningSeat.getStatus() != ScreeningSeatStatus.LOCKED) {
+                    log.warn("Seat not available: screeningId=" + screeningId + ", seatId=" + seatId + ", status=" + screeningSeat.getStatus());
+                    return false;
+                }
+                seatsToReserve.add(screeningSeat);
             }
 
-            // 예매 정보 생성
+            // 4. Reservation 생성 및 저장
             Reservation reservation = new Reservation();
             reservation.setUser(currentUser.get());
             reservation.setScreening(screening.get());
-            reservation.setTotalAmount(BigDecimal.valueOf(totalPrice));
+            reservation.setTotalAmount(java.math.BigDecimal.valueOf(totalPrice));
             reservation.setStatus(ReservationStatus.CONFIRMED);
-            reservation.setReservedAt(LocalDateTime.now());
-
+            reservation.setReservedAt(java.time.LocalDateTime.now());
             Reservation savedReservation = reservationRepository.save(reservation);
 
-            // 좌석 상태 업데이트
-            for (Long seatId : seatIds) {
-                Optional<ScreeningSeat> screeningSeat = screeningSeatRepository.findByScreeningIdAndSeatId(screeningId, seatId);
-                if (screeningSeat.isPresent()) {
-                    ScreeningSeat seat = screeningSeat.get();
-                    seat.setStatus(ScreeningSeatStatus.RESERVED);
-                    seat.setReservation(savedReservation);
-                    screeningSeatRepository.save(seat);
-                }
+            // 5. 좌석 상태 RESERVED로 변경 및 Reservation 연결
+            for (ScreeningSeat seat : seatsToReserve) {
+                seat.setStatus(ScreeningSeatStatus.RESERVED);
+                seat.setReservation(savedReservation);
+                screeningSeatRepository.save(seat);
             }
 
+            // 6. 성공 반환
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Booking failed", e);
+            return false;
+        }
+    }
+
+    // 결제 전 임시 좌석 홀드(LOCKED) 처리
+    @Transactional
+    public boolean lockSeatsForPayment(Long screeningId, List<Long> seatIds) {
+        try {
+            List<ScreeningSeat> seatsToLock = new java.util.ArrayList<>();
+            for (Long seatId : seatIds) {
+                Optional<ScreeningSeat> screeningSeatOpt = screeningSeatRepository.findByScreeningIdAndSeatId(screeningId, seatId);
+                if (screeningSeatOpt.isEmpty()) {
+                    log.warn("ScreeningSeat not found: screeningId=" + screeningId + ", seatId=" + seatId);
+                    return false;
+                }
+                ScreeningSeat screeningSeat = screeningSeatOpt.get();
+                if (screeningSeat.getStatus() != ScreeningSeatStatus.AVAILABLE) {
+                    log.warn("Seat not available for lock: screeningId=" + screeningId + ", seatId=" + seatId + ", status=" + screeningSeat.getStatus());
+                    return false;
+                }
+                seatsToLock.add(screeningSeat);
+            }
+            // 모두 AVAILABLE이면 LOCKED로 변경
+            for (ScreeningSeat seat : seatsToLock) {
+                seat.setStatus(ScreeningSeatStatus.LOCKED);
+                screeningSeatRepository.save(seat);
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Locking seats for payment failed", e);
+            return false;
+        }
+    }
+
+    // 좌석 홀드 취소 (LOCKED -> AVAILABLE)
+    @Transactional
+    public boolean unlockSeats(Long screeningId, List<Long> seatIds) {
+        try {
+            for (Long seatId : seatIds) {
+                Optional<ScreeningSeat> screeningSeatOpt = screeningSeatRepository.findByScreeningIdAndSeatId(screeningId, seatId);
+                if (screeningSeatOpt.isEmpty()) {
+                    log.warn("ScreeningSeat not found: screeningId=" + screeningId + ", seatId=" + seatId);
+                    return false;
+                }
+                ScreeningSeat screeningSeat = screeningSeatOpt.get();
+                if (screeningSeat.getStatus() == ScreeningSeatStatus.LOCKED) {
+                    screeningSeat.setStatus(ScreeningSeatStatus.AVAILABLE);
+                    screeningSeatRepository.save(screeningSeat);
+                } else {
+                    log.warn("Seat is not LOCKED: screeningId=" + screeningId + ", seatId=" + seatId + ", status=" + screeningSeat.getStatus());
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Unlocking seats failed", e);
             return false;
         }
     }

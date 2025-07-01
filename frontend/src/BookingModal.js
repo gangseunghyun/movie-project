@@ -14,6 +14,8 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
+  const [paymentReady, setPaymentReady] = useState(false);
 
   const MAX_SELECT = 2;
 
@@ -157,48 +159,70 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   // 좌석 선택 핸들러
   const handleSeatClick = (seat) => {
     if (seat.status !== 'AVAILABLE') return;
-    const isSelected = selectedSeats.find(s => s.id === seat.id);
+    const isSelected = selectedSeats.find(s => s.seatId === seat.seatId);
     if (!isSelected && selectedSeats.length >= MAX_SELECT) {
       alert('최대 2좌석까지만 선택할 수 있습니다.');
       return;
     }
     setSelectedSeats(prev => {
       if (isSelected) {
-        return prev.filter(s => s.id !== seat.id);
+        return prev.filter(s => s.seatId !== seat.seatId);
       } else {
         return [...prev, seat];
       }
     });
   };
 
-  // 예매하기 핸들러
+  // 예매하기 핸들러 (이제는 좌석 LOCK만 담당)
   const handleBooking = async () => {
     if (!selectedSeats.length) {
       alert('좌석을 선택해주세요.');
       return;
     }
+    try {
+      setLoading(true);
+      // 1. LOCKED API 먼저 호출
+      const lockRes = await axios.post('http://localhost:80/api/bookings/lock-seats', {
+        screeningId: selectedScreening.id,
+        seatIds: selectedSeats.map(seat => seat.seatId)
+      });
+      if (!lockRes.data.success) {
+        alert('좌석 임시 홀드에 실패했습니다. 이미 예매 중이거나 사용할 수 없는 좌석이 있습니다.');
+        setLoading(false);
+        return;
+      }
+      setIsLocked(true); // LOCKED 성공
+      setPaymentReady(true); // 결제 버튼 노출
+    } catch (error) {
+      alert('좌석 홀드 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // 결제(예약 확정) 핸들러
+  const handlePayment = async () => {
     try {
       setLoading(true);
       const bookingData = {
         movieId: movie.movieCd,
         screeningId: selectedScreening.id,
-        seatIds: selectedSeats.map(seat => seat.id),
-        totalPrice: selectedSeats.length * 12000 // 1좌석당 12,000원
+        seatIds: selectedSeats.map(seat => seat.seatId),
+        totalPrice: selectedSeats.length * 12000
       };
-
       const response = await axios.post('http://localhost:80/api/bookings', bookingData);
-      
       if (response.data.success) {
         alert('예매가 완료되었습니다!');
-        onBookingComplete && onBookingComplete(response.data);
+        setIsLocked(false);
+        setPaymentReady(false);
+        setSelectedSeats([]);
+        if (onBookingComplete) onBookingComplete();
         onClose();
       } else {
-        alert('예매에 실패했습니다: ' + response.data.message);
+        alert('예매에 실패했습니다.');
       }
     } catch (error) {
-      console.error('예매 실패:', error);
-      alert('예매 처리 중 오류가 발생했습니다.');
+      alert('예매 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -209,7 +233,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
     let className = 'seat';
     if (seat.status === 'RESERVED' || seat.status === 'BOOKED' || seat.status === 'LOCKED' || seat.status === 'CLOSED' || seat.status === 'UNAVAILABLE' || seat.status === 'COMPLETED') {
       className += ' booked';
-    } else if (selectedSeats.find(s => s.id === seat.id)) {
+    } else if (selectedSeats.find(s => s.seatId === seat.seatId)) {
       className += ' selected';
     } else if (seat.status === 'AVAILABLE') {
       className += ' available';
@@ -217,6 +241,106 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
       className += ' unavailable';
     }
     return className;
+  };
+
+  // 카카오페이 결제창 호출 함수
+  const onClickKakaoPay = () => {
+    const { IMP } = window;
+    IMP.init('imp45866522'); // 아임포트 가맹점 식별코드
+    IMP.request_pay({
+      pg: 'kakaopay', // 카카오페이 테스트 채널
+      pay_method: 'card',
+      merchant_uid: 'order_' + new Date().getTime(),
+      name: '영화 예매',
+      amount: selectedSeats.length * 12000 || 12000, // 최소 1좌석 금액
+      buyer_email: 'test@example.com',
+      buyer_name: '홍길동',
+      buyer_tel: '010-1234-5678',
+      buyer_addr: '서울특별시',
+      buyer_postcode: '123-456'
+    }, function (rsp) {
+      if (rsp.success) {
+        alert('결제 성공! 예매를 확정합니다.');
+        handlePayment(); // 결제 성공 시 예약 확정
+      } else {
+        alert('결제 실패: ' + rsp.error_msg);
+      }
+    });
+  };
+
+  // 토스페이 결제창 호출 함수
+  const onClickTossPay = () => {
+    const { IMP } = window;
+    IMP.init('imp45866522'); // 아임포트 가맹점 식별코드
+    IMP.request_pay({
+      pg: 'uplus', // 구모듈(V1) 토스페이먼츠는 'uplus'로 설정
+      pay_method: 'card',
+      merchant_uid: 'order_' + new Date().getTime(),
+      name: '영화 예매',
+      amount: selectedSeats.length * 12000 || 12000, // 최소 1좌석 금액
+      buyer_email: 'test@example.com',
+      buyer_name: '홍길동',
+      buyer_tel: '010-1234-5678',
+      buyer_addr: '서울특별시',
+      buyer_postcode: '123-456'
+    }, function (rsp) {
+      if (rsp.success) {
+        alert('결제 성공! 예매를 확정합니다.');
+        handlePayment(); // 결제 성공 시 예약 확정
+      } else {
+        alert('결제 실패: ' + rsp.error_msg);
+      }
+    });
+  };
+
+  // 나이스페이 결제창 호출 함수
+  const onClickNicePay = () => {
+    const { IMP } = window;
+    IMP.init('imp45866522'); // 아임포트 가맹점 식별코드
+    IMP.request_pay({
+      pg: 'nice',
+      pay_method: 'card',
+      merchant_uid: 'order_' + new Date().getTime(),
+      name: '영화 예매',
+      amount: selectedSeats.length * 12000 || 12000,
+      buyer_email: 'test@example.com',
+      buyer_name: '홍길동',
+      buyer_tel: '010-1234-5678',
+      buyer_addr: '서울특별시',
+      buyer_postcode: '123-456'
+    }, function (rsp) {
+      if (rsp.success) {
+        alert('결제 성공! 예매를 확정합니다.');
+        handlePayment();
+      } else {
+        alert('결제 실패: ' + rsp.error_msg);
+      }
+    });
+  };
+
+  // 좌석 홀드 취소 핸들러
+  const handleUnlockSeats = async () => {
+    if (!selectedScreening || !selectedSeats.length) return;
+    try {
+      setLoading(true);
+      const res = await axios.post('http://localhost:80/api/bookings/unlock-seats', {
+        screeningId: selectedScreening.id,
+        seatIds: selectedSeats.map(seat => seat.seatId)
+      });
+      if (res.data.success) {
+        alert('좌석 홀드가 취소되었습니다.');
+        setIsLocked(false);
+        setPaymentReady(false);
+        setSelectedSeats([]);
+        fetchSeats(selectedScreening.id); // 좌석 목록 새로고침
+      } else {
+        alert('좌석 홀드 취소에 실패했습니다.');
+      }
+    } catch (error) {
+      alert('좌석 홀드 취소 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 초기 로딩 중일 때
@@ -342,10 +466,10 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
                     <div className="seat-row" key={rowIdx}>
                       {rowSeats.map(seat => (
                         <button
-                          key={seat.id}
+                          key={seat.seatId}
                           className={getSeatClassName(seat)}
                           onClick={() => handleSeatClick(seat)}
-                          disabled={seat.status === 'BOOKED'}
+                          disabled={seat.status !== 'AVAILABLE'}
                         >
                           {seat.seatNumber}
                         </button>
@@ -378,13 +502,55 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
             <div className="booking-summary">
               <p>선택된 좌석: {selectedSeats.map(seat => seat.seatNumber).join(', ')}</p>
               <p>총 금액: {selectedSeats.length * 12000}원</p>
-              <button 
-                className="booking-confirm-btn"
+              <button
+                className="booking-btn"
                 onClick={handleBooking}
-                disabled={loading}
+                disabled={loading || !selectedSeats.length || isLocked}
               >
-                {loading ? '예매 처리 중...' : '예매하기'}
+                좌석 홀드하기
               </button>
+              {paymentReady && (
+                <>
+                  <button
+                    className="payment-btn"
+                    onClick={handlePayment}
+                    disabled={loading}
+                  >
+                    결제하기 (시뮬레이션)
+                  </button>
+                  <button
+                    className="kakao-pay-btn"
+                    onClick={onClickKakaoPay}
+                    disabled={loading}
+                  >
+                    카카오페이로 결제하기
+                  </button>
+                  <button
+                    className="toss-pay-btn"
+                    onClick={onClickTossPay}
+                    disabled={loading}
+                  >
+                    토스페이로 결제하기
+                  </button>
+                  <button
+                    className="nice-pay-btn"
+                    onClick={() => alert('나이스페이 결제는 실제 결제가 발생할 수 있어 비활성화되었습니다.')}
+                    disabled={true}
+                    title="실제 결제 발생 위험이 있어 비활성화됨"
+                  >
+                    나이스페이로 결제하기 (비활성화됨)
+                  </button>
+                </>
+              )}
+              {isLocked && paymentReady && (
+                <button
+                  className="unlock-btn"
+                  onClick={handleUnlockSeats}
+                  disabled={loading}
+                >
+                  좌석 홀드 취소
+                </button>
+              )}
             </div>
           )}
         </div>
