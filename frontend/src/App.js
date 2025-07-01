@@ -5,7 +5,7 @@ import Signup from './Signup';
 import SocialJoin from './SocialJoin';
 import './App.css';
 import { safeFetch } from './api';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import UserSearch from './UserSearch';
 import UserPage from './UserPage';
 import { userSearch } from './services/userService';
@@ -15,6 +15,7 @@ import FindPassword from './FindPassword';
 import ResetPassword from './ResetPassword';
 import StarRating from './StarRating';
 import RatingDistributionChart from './components/RatingDistributionChart';
+import PersonDetail from './PersonDetail';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -404,7 +405,9 @@ function App() {
         sortParam = 'nameDesc';
       }
       
-      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto?page=${page}&size=20&sort=${sortParam}`);
+      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto?page=${page}&size=20&sort=${sortParam}`, {
+        withCredentials: true
+      });
       console.log('MovieDetail DTO API Response:', response.data);
       setMovieDetailDtoData(response.data);
     } catch (err) {
@@ -426,7 +429,9 @@ function App() {
     setIsSearching(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=20`);
+      const response = await axios.get(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=20`, {
+        withCredentials: true
+      });
       console.log('영화 검색 결과:', response.data);
       setSearchResults(response.data);
     } catch (err) {
@@ -644,9 +649,11 @@ function App() {
 
   // 영화 관리 기능들
   const handleMovieClick = (movie) => {
+    console.log('영화 클릭:', movie);
+    console.log('감독 정보:', movie.directors);
+    console.log('배우 정보:', movie.actors);
     setSelectedMovie(movie);
     setShowMovieDetail(true);
-    setShowMovieForm(false);
   };
 
   const handleEditMovie = (movie) => {
@@ -1652,6 +1659,57 @@ function App() {
                   <p><strong>예매율:</strong> {selectedMovie.reservationRate ? `${selectedMovie.reservationRate}%` : '-'}</p>
                   <p><strong>누적관객:</strong> {selectedMovie.totalAudience ? selectedMovie.totalAudience.toLocaleString() : '-'}명</p>
                 </div>
+                {/* 출연/제작 섹션 - 왓챠피디아 스타일 */}
+                <div className="movie-detail-section">
+                  <h4>출연/제작</h4>
+                  <div className="credit-row">
+                    {/* 감독 */}
+                    {selectedMovie.directors && selectedMovie.directors.length > 0 && (
+                      <div className="credit-card" onClick={() => {
+                        console.log('감독 클릭:', selectedMovie.directors[0]);
+                        if (selectedMovie.directors[0].id) {
+                          navigate(`/director/${selectedMovie.directors[0].id}`);
+                        } else {
+                          console.error('감독 ID가 없습니다:', selectedMovie.directors[0]);
+                        }
+                      }}>
+                        <img src={selectedMovie.directors[0].photoUrl || 'https://via.placeholder.com/120x180/cccccc/666666?text=감독'} alt={selectedMovie.directors[0].peopleNm} />
+                        <div>{selectedMovie.directors[0].peopleNm}</div>
+                        <div className="credit-role">감독</div>
+                      </div>
+                    )}
+                    {/* 주연 */}
+                    {selectedMovie.actors && selectedMovie.actors.filter(a => a.roleType === 'LEAD').map((actor, idx) => (
+                      <div className="credit-card" key={"lead-"+idx} onClick={() => {
+                        console.log('주연 클릭:', actor);
+                        if (actor.id) {
+                          navigate(`/actor/${actor.id}`);
+                        } else {
+                          console.error('배우 ID가 없습니다:', actor);
+                        }
+                      }}>
+                        <img src={actor.photoUrl || 'https://via.placeholder.com/120x180/cccccc/666666?text=Actor'} alt={actor.peopleNm} />
+                        <div>{actor.peopleNm}</div>
+                        <div className="credit-role">주연</div>
+                      </div>
+                    ))}
+                    {/* 조연 */}
+                    {selectedMovie.actors && selectedMovie.actors.filter(a => a.roleType === 'SUPPORTING').map((actor, idx) => (
+                      <div className="credit-card" key={"support-"+idx} onClick={() => {
+                        console.log('조연 클릭:', actor);
+                        if (actor.id) {
+                          navigate(`/actor/${actor.id}`);
+                        } else {
+                          console.error('배우 ID가 없습니다:', actor);
+                        }
+                      }}>
+                        <img src={actor.photoUrl || 'https://via.placeholder.com/120x180/cccccc/666666?text=Actor'} alt={actor.peopleNm} />
+                        <div>{actor.peopleNm}</div>
+                        <div className="credit-role">조연</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 {selectedMovie.stillcuts && selectedMovie.stillcuts.length > 0 && (
                   <div className="movie-detail-section">
                     <h4>스틸컷</h4>
@@ -2206,6 +2264,8 @@ function App() {
     }
   }, [showMovieDetail, selectedMovie]);
 
+  const navigate = useNavigate();
+
   return (
     <>
       {/* 기존 헤더/네비게이션 등 */}
@@ -2273,6 +2333,8 @@ function App() {
         <Route path="/find-id" element={<FindId />} />
         <Route path="/find-password" element={<FindPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/director/:id" element={<PersonDetail type="director" />} />
+        <Route path="/actor/:id" element={<PersonDetail type="actor" />} />
       </Routes>
       {/* 기존 내용 ... */}
       {/* 로그인 안내 모달 */}

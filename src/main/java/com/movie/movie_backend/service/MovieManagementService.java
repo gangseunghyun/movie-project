@@ -28,6 +28,7 @@ public class MovieManagementService {
     private final REVLikeRepository likeRepository;
     private final REVRatingRepository ratingRepository;
     private final MovieDetailMapper movieDetailMapper;
+    private final USRUserRepository userRepository;
 
     /**
      * 영화 등록
@@ -210,10 +211,14 @@ public class MovieManagementService {
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 이미 좋아요를 눌렀는지 확인
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userId));
+        
+        // 이미 좋아요를 눌렀는지 확인 (null 체크 추가)
         List<Like> existingLikes = likeRepository.findAll().stream()
                 .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd) && 
-                               like.getUser().getId().equals(userId))
+                               like.getUser() != null && like.getUser().getId().equals(userId))
                 .toList();
         
         if (!existingLikes.isEmpty()) {
@@ -224,6 +229,7 @@ public class MovieManagementService {
         // 좋아요 추가
         Like like = new Like();
         like.setMovieDetail(movie);
+        like.setUser(user);
         like.setCreatedAt(LocalDateTime.now());
         
         likeRepository.save(like);
@@ -240,10 +246,10 @@ public class MovieManagementService {
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 좋아요 찾기
+        // 좋아요 찾기 (null 체크 추가)
         List<Like> existingLikes = likeRepository.findAll().stream()
                 .filter(like -> like.getMovieDetail().getMovieCd().equals(movieCd) && 
-                               like.getUser().getId().equals(userId))
+                               like.getUser() != null && like.getUser().getId().equals(userId))
                 .toList();
         
         if (existingLikes.isEmpty()) {

@@ -349,8 +349,32 @@
 }
 
 .movie-detail-section p {
-  margin: 5px 0;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+/* 출연자 목록 스타일 */
+.actors-list {
+  margin-top: 10px;
+}
+
+.actor-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.actor-item:last-child {
+  border-bottom: none;
+}
+
+.actor-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.actor-role {
   color: #666;
+  font-style: italic;
 }
 
 /* 폼 스타일 */
@@ -1061,4 +1085,39 @@
   border-radius: 3px;
   cursor: pointer;
   font-size: 12px;
+}
+
+.credit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-top: 16px;
+}
+.credit-card {
+  width: 120px;
+  text-align: center;
+  background: #fafbfc;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 16px 8px 12px 8px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.credit-card img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+  background: #eaeaea;
+}
+.credit-card div {
+  margin-bottom: 2px;
+}
+.credit-role {
+  color: #888;
+  font-size: 14px;
+  margin-top: 2px;
 } 

@@ -2,6 +2,7 @@ package com.movie.movie_backend.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.movie.movie_backend.constant.RoleType;
 
 @Entity
@@ -13,10 +14,12 @@ public class Cast {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "movie_detail_id")
+    @JsonIgnoreProperties("casts")
     private MovieDetail movieDetail;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_id")
+    @JsonIgnoreProperties("casts")
     private Actor actor;
 
     @Enumerated(EnumType.STRING)
