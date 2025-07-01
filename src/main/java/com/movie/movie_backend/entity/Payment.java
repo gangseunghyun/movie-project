@@ -52,4 +52,11 @@ public class Payment {
     @ManyToOne
     @JoinColumn(name = "reservation_id")
     private Reservation reservation; // 이 결제가 연결된 예매 정보
+
+    // --- 추가 추천 필드 (선택적 사용) ---
+    private String pgResponseCode; // PG사 응답코드 (실패/취소 상세 사유 등)
+    private String pgResponseMessage; // PG사 응답메시지
+    private String cardName; // 카드사명 (카드결제시)
+    private String cardNumberSuffix; // 카드번호 끝 4자리 (카드결제시)
+    private String approvalNumber; // 결제 승인번호 (카드결제시)
 }
