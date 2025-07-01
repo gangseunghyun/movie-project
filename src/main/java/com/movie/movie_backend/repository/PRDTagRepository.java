@@ -29,7 +29,7 @@ public interface PRDTagRepository extends JpaRepository<Tag, Long> {
     @Query("SELECT t, COUNT(md) as usageCount FROM Tag t JOIN t.movieDetails md GROUP BY t ORDER BY usageCount DESC")
     List<Object[]> findPopularTags();
     
-    // 장르 태그만 조회 (고정 장르명 리스트)
-    @Query("SELECT t FROM Tag t WHERE t.name IN ('액션', '드라마', '코미디', '스릴러', '로맨스', '호러', 'SF', '판타지', '모험', '범죄', '전쟁', '서부극', '뮤지컬', '애니메이션', '다큐멘터리', '가족', '역사', '스포츠', '음악', '공포') ORDER BY t.name")
+    // 실제 사용되는 장르 태그만 조회 (동적)
+    @Query("SELECT DISTINCT t FROM Tag t JOIN t.movieDetails md WHERE md IS NOT NULL ORDER BY t.name")
     List<Tag> findGenreTags();
 } 

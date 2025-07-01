@@ -26,10 +26,11 @@ public class SearchHistoryController {
 
     // 검색어 저장
     @PostMapping
-    public void saveSearch(@RequestParam String keyword, @AuthenticationPrincipal Object principal) {
-        log.info("검색어 저장 요청: keyword={}", keyword);
+    public void saveSearch(@RequestParam String keyword, @RequestParam(defaultValue = "0") int searchResultCount, @AuthenticationPrincipal Object principal) {
+        log.info("검색어 저장 요청: keyword={}, searchResultCount={}", keyword, searchResultCount);
         System.out.println("==== SearchHistoryController.saveSearch 메서드 호출됨 ====");
         System.out.println("==== keyword: " + keyword);
+        System.out.println("==== searchResultCount: " + searchResultCount);
         System.out.println("==== principal class: " + (principal != null ? principal.getClass() : "null"));
         System.out.println("==== principal: " + principal);
 
@@ -51,8 +52,8 @@ public class SearchHistoryController {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("사용자 정보가 없습니다."));
         System.out.println("==== user: " + user);
 
-        searchHistoryService.saveSearchHistory(user, keyword);
-        log.info("검색어 저장 완료: user={}, keyword={}", user.getEmail(), keyword);
+        searchHistoryService.saveSearchHistory(user, keyword, searchResultCount);
+        log.info("검색어 저장 완료: user={}, keyword={}, searchResultCount={}", user.getEmail(), keyword, searchResultCount);
     }
 
     // 최근 검색어 조회

@@ -28,10 +28,7 @@ public class TagDataService {
     public void setupTagData() {
         log.info("=== 태그 데이터 세팅 시작 ===");
         
-        // 0. 기존 감독/배우 태그들 삭제
-        deleteOldDirectorActorTags();
-        
-        // 1. 기본 태그들 생성
+        // 1. 기본 태그들 생성 (기존 태그는 그대로 두고 새로운 태그만 추가)
         createBasicTags();
         
         // 2. 영화별 태그 매핑
@@ -41,47 +38,44 @@ public class TagDataService {
     }
 
     /**
-     * 기존 감독/배우 태그들 삭제
-     */
-    private void deleteOldDirectorActorTags() {
-        log.info("기존 감독/배우 태그 삭제 시작");
-        
-        // 감독/배우 관련 태그들 삭제
-        List<String> directorActorTags = Arrays.asList(
-            "감독", "배우", "주연", "조연", "출연"
-        );
-        
-        for (String tagName : directorActorTags) {
-            tagRepository.findByName(tagName).ifPresent(tag -> {
-                tagRepository.delete(tag);
-                log.debug("태그 삭제: {}", tagName);
-            });
-        }
-        
-        log.info("기존 감독/배우 태그 삭제 완료");
-    }
-
-    /**
-     * 기본 태그들 생성 (장르 태그만)
+     * 기본 태그들 생성 (실제 영화 데이터 기반)
      */
     private void createBasicTags() {
         log.info("기본 태그 생성 시작");
         
-        // 장르 태그들만 생성
-        List<String> genreTags = Arrays.asList(
-            "액션", "드라마", "코미디", "스릴러", "로맨스", "호러", "SF", "판타지", 
-            "모험", "범죄", "전쟁", "서부극", "뮤지컬", "애니메이션", "다큐멘터리", 
-            "가족", "역사", "스포츠", "음악", "공포"
-        );
+        // 실제 영화 데이터에서 장르 추출하여 태그 생성
+        List<MovieDetail> allMovies = movieRepository.findAll();
+        Set<String> actualGenres = new HashSet<>();
+        
+        log.info("전체 영화 수: {}", allMovies.size());
+        
+        for (MovieDetail movie : allMovies) {
+            if (movie.getGenreNm() != null && !movie.getGenreNm().isEmpty()) {
+                String[] genres = movie.getGenreNm().split(",");
+                for (String genre : genres) {
+                    String trimmedGenre = genre.trim();
+                    if (!trimmedGenre.isEmpty()) {
+                        actualGenres.add(trimmedGenre);
+                        log.debug("장르 발견: {} (영화: {})", trimmedGenre, movie.getMovieNm());
+                    }
+                }
+            } else {
+                log.debug("장르가 없는 영화: {} (genreNm: {})", movie.getMovieNm(), movie.getGenreNm());
+            }
+        }
+        
+        log.info("발견된 장르들: {}", actualGenres);
         
         int createdCount = 0;
-        for (String tagName : genreTags) {
-            if (!tagRepository.existsByName(tagName)) {
+        for (String genreName : actualGenres) {
+            if (!tagRepository.existsByName(genreName)) {
                 Tag tag = new Tag();
-                tag.setName(tagName);
+                tag.setName(genreName);
                 tagRepository.save(tag);
                 createdCount++;
-                log.debug("태그 생성: {}", tagName);
+                log.info("태그 생성: {}", genreName);
+            } else {
+                log.debug("이미 존재하는 태그: {}", genreName);
             }
         }
         
@@ -97,15 +91,20 @@ public class TagDataService {
         int mappedCount = 0;
         for (MovieDetail movie : allMovies) {
             try {
-                // 이미 태그가 있으면 건너뜀
-                if (movie.getTags() != null && !movie.getTags().isEmpty()) continue;
+                // 기존 태그 제거하고 새로 매핑 (강제 업데이트)
                 List<Tag> movieTags = generateTagsForMovie(movie);
                 if (!movieTags.isEmpty()) {
+                    // tags가 null이면 초기화
+                    if (movie.getTags() == null) {
+                        movie.setTags(new ArrayList<>());
+                    }
                     movie.getTags().clear();
                     movie.getTags().addAll(movieTags);
                     movieRepository.save(movie);
                     mappedCount++;
                     log.debug("영화 태그 매핑: {} -> {}개 태그", movie.getMovieNm(), movieTags.size());
+                } else {
+                    log.debug("영화에 매핑할 태그 없음: {} (장르: {})", movie.getMovieNm(), movie.getGenreNm());
                 }
             } catch (Exception e) {
                 log.warn("영화 태그 매핑 실패: {} - {}", movie.getMovieNm(), e.getMessage());
@@ -115,75 +114,18 @@ public class TagDataService {
     }
 
     /**
-     * 영화에 맞는 태그들을 생성 (장르 태그만)
+     * 영화에 맞는 태그들을 생성 (실제 데이터 기반)
      */
     private List<Tag> generateTagsForMovie(MovieDetail movie) {
         List<Tag> tags = new ArrayList<>();
         
         // 장르 기반 태그 추가
         if (movie.getGenreNm() != null && !movie.getGenreNm().isEmpty()) {
-            String genreNm = movie.getGenreNm().toLowerCase();
-            
-            // 각 장르별로 태그 추가
-            if (genreNm.contains("액션")) {
-                tagRepository.findByName("액션").ifPresent(tags::add);
-            }
-            if (genreNm.contains("드라마")) {
-                tagRepository.findByName("드라마").ifPresent(tags::add);
-            }
-            if (genreNm.contains("코미디")) {
-                tagRepository.findByName("코미디").ifPresent(tags::add);
-            }
-            if (genreNm.contains("스릴러")) {
-                tagRepository.findByName("스릴러").ifPresent(tags::add);
-            }
-            if (genreNm.contains("로맨스")) {
-                tagRepository.findByName("로맨스").ifPresent(tags::add);
-            }
-            if (genreNm.contains("호러")) {
-                tagRepository.findByName("호러").ifPresent(tags::add);
-            }
-            if (genreNm.contains("sf") || genreNm.contains("sci-fi")) {
-                tagRepository.findByName("SF").ifPresent(tags::add);
-            }
-            if (genreNm.contains("판타지")) {
-                tagRepository.findByName("판타지").ifPresent(tags::add);
-            }
-            if (genreNm.contains("모험")) {
-                tagRepository.findByName("모험").ifPresent(tags::add);
-            }
-            if (genreNm.contains("범죄")) {
-                tagRepository.findByName("범죄").ifPresent(tags::add);
-            }
-            if (genreNm.contains("전쟁")) {
-                tagRepository.findByName("전쟁").ifPresent(tags::add);
-            }
-            if (genreNm.contains("서부")) {
-                tagRepository.findByName("서부극").ifPresent(tags::add);
-            }
-            if (genreNm.contains("뮤지컬")) {
-                tagRepository.findByName("뮤지컬").ifPresent(tags::add);
-            }
-            if (genreNm.contains("애니메이션")) {
-                tagRepository.findByName("애니메이션").ifPresent(tags::add);
-            }
-            if (genreNm.contains("다큐멘터리")) {
-                tagRepository.findByName("다큐멘터리").ifPresent(tags::add);
-            }
-            if (genreNm.contains("가족")) {
-                tagRepository.findByName("가족").ifPresent(tags::add);
-            }
-            if (genreNm.contains("역사")) {
-                tagRepository.findByName("역사").ifPresent(tags::add);
-            }
-            if (genreNm.contains("스포츠")) {
-                tagRepository.findByName("스포츠").ifPresent(tags::add);
-            }
-            if (genreNm.contains("음악")) {
-                tagRepository.findByName("음악").ifPresent(tags::add);
-            }
-            if (genreNm.contains("공포")) {
-                tagRepository.findByName("공포").ifPresent(tags::add);
+            String[] genres = movie.getGenreNm().split(",");
+            for (String genre : genres) {
+                String genreName = genre.trim();
+                // 실제 생성된 태그에서 찾기
+                tagRepository.findByName(genreName).ifPresent(tags::add);
             }
         }
         
@@ -217,6 +159,12 @@ public class TagDataService {
 
     @PostConstruct
     public void init() {
-        setupTagData();
+        try {
+            log.info("TagDataService 초기화 시작");
+            setupTagData();
+            log.info("TagDataService 초기화 완료");
+        } catch (Exception e) {
+            log.error("TagDataService 초기화 실패: {}", e.getMessage(), e);
+        }
     }
 } 

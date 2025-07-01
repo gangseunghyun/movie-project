@@ -21,23 +21,28 @@ public class SearchHistoryService {
     private final SearchLogRepository searchLogRepository;
 
     // 검색어 저장 (중복 비허용, 10개 제한) + search_log에도 저장
-    public SearchHistory saveSearchHistory(User user, String keyword) {
+    public SearchHistory saveSearchHistory(User user, String keyword, int searchResultCount) {
         System.out.println("==== saveSearchHistory 호출됨 ====");
         System.out.println("user: " + user);
         System.out.println("keyword: " + keyword);
+        System.out.println("searchResultCount: " + searchResultCount);
         
-        // 1. search_log에 저장 (인기검색어 집계용) - 로그인/비로그인 모두 저장
-        try {
-            SearchLog searchLog = new SearchLog();
-            searchLog.setKeyword(keyword);
-            searchLog.setSearchedAt(LocalDateTime.now());
-            searchLog.setUserId(user != null ? user.getId() : null);
-            searchLogRepository.save(searchLog);
-            System.out.println("==== search_log 저장 완료 ====");
-        } catch (Exception e) {
-            System.out.println("==== search_log 저장 실패 ====");
-            e.printStackTrace();
-            // search_log 저장 실패해도 최근검색어는 계속 진행
+        // 1. search_log에 저장 (인기검색어 집계용) - 검색 결과가 있는 경우에만 저장
+        if (searchResultCount > 0) {
+            try {
+                SearchLog searchLog = new SearchLog();
+                searchLog.setKeyword(keyword);
+                searchLog.setSearchedAt(LocalDateTime.now());
+                searchLog.setUserId(user != null ? user.getId() : null);
+                searchLogRepository.save(searchLog);
+                System.out.println("==== search_log 저장 완료 (검색 결과 있음) ====");
+            } catch (Exception e) {
+                System.out.println("==== search_log 저장 실패 ====");
+                e.printStackTrace();
+                // search_log 저장 실패해도 최근검색어는 계속 진행
+            }
+        } else {
+            System.out.println("==== 검색 결과가 없어 search_log 저장하지 않음 ====");
         }
         
         // 2. 최근검색어 저장 (로그인한 사용자만)
@@ -72,6 +77,11 @@ public class SearchHistoryService {
             System.out.println("==== 비로그인 사용자이므로 최근검색어 저장하지 않음 ====");
             return null;
         }
+    }
+
+    // 기존 메서드 호환성을 위한 오버로드
+    public SearchHistory saveSearchHistory(User user, String keyword) {
+        return saveSearchHistory(user, keyword, 0); // 기본값으로 0 전달
     }
 
     // 최근 검색어 조회 (최신 10개)

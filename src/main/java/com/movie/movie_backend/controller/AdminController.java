@@ -305,6 +305,20 @@ public class AdminController {
     }
 
     /**
+     * movie_detail의 genre_nm에서 장르 태그 생성
+     */
+    @PostMapping("/tags/generate-from-genres")
+    public ResponseEntity<Map<String, Object>> generateTagsFromGenres() {
+        try {
+            Map<String, Object> result = adminMovieService.generateTagsFromMovieGenres();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("장르 태그 생성 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * 장르 중복 현황 확인
      */
     @GetMapping("/movies/genre-duplicates")

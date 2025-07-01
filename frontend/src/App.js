@@ -112,6 +112,17 @@ function App() {
   const [comingSoonData, setComingSoonData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [nowPlayingData, setNowPlayingData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [endedData, setEndedData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
+  const [recommendedMoviesData, setRecommendedMoviesData] = useState([]);
+  const [activeRecommendedTab, setActiveRecommendedTab] = useState('recommended');
+
+  useEffect(() => {
+    if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
+      const tagNames = Object.keys(recommendedMoviesData);
+      if (tagNames.length > 0) {
+        setActiveRecommendedTab(tagNames[0]);
+      }
+    }
+  }, [recommendedMoviesData]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -304,6 +315,14 @@ function App() {
       setSearchExecuted(false);
       setSearchKeyword('');
       setSearchResults({ data: [], total: 0, page: 0, totalPages: 0 });
+      
+      // 인기검색어 캐시 무효화
+      try {
+        await axios.post('http://localhost:80/api/popular-keywords/clear-cache');
+        console.log("인기검색어 캐시 무효화 완료");
+      } catch (cacheError) {
+        console.error("캐시 무효화 실패:", cacheError);
+      }
     } catch (err) {
       console.error('로그아웃 오류:', err);
     }
@@ -453,25 +472,32 @@ function App() {
 
   // 검색 실행 핸들러
   const handleSearch = async (customKeyword) => {
-    const keyword = (typeof customKeyword === 'string') ? customKeyword : searchKeyword;
-    if (!keyword.trim()) return;
+    const keyword = customKeyword || searchKeyword.trim();
+    if (!keyword) return;
+    
     setIsSearching(true);
     setError(null);
     setSearchExecuted(true);
+    
     try {
       // 1. 검색 API 호출
       const movieRes = await safeFetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(keyword)}&page=0&size=20`);
       setSearchResults(movieRes);
 
-      // 2. 검색 결과가 있을 때만 최근 검색어 저장 (로그인한 경우만)
+      // 2. 최근 검색어 저장 (로그인한 경우만) - 검색 결과가 없어도 저장
       if (currentUser) {
         await axios.post('http://localhost:80/api/search-history', null, {
-          params: { keyword: keyword.trim() },
+          params: { 
+            keyword: keyword.trim(),
+            searchResultCount: movieRes && movieRes.data ? movieRes.data.length : 0
+          },
           withCredentials: true
         });
         fetchRecentKeywords();
-        // 인기 검색어도 업데이트
-        fetchPopularKeywords();
+        // 인기 검색어도 업데이트 (검색 결과가 있을 때만)
+        if (movieRes && movieRes.data && movieRes.data.length > 0) {
+          fetchPopularKeywords();
+        }
       }
 
       // 3. 유저 검색 등 추가 로직
@@ -567,15 +593,45 @@ function App() {
   };
 
   const fetchEnded = async (page = 0) => {
-    setLoading(true);
-    setError(null);
     try {
-      const response = await axios.get(`http://localhost:80/data/api/movies/ended?page=${page}&size=20`);
-      console.log('Ended Movies API Response:', response.data);
-      setEndedData(response.data);
-    } catch (err) {
-      console.error('Ended Movies API Error:', err);
-      setError('상영종료된 영화 데이터를 불러오는데 실패했습니다.');
+      setLoading(true);
+      const response = await safeFetch(`/movie-detail/ended?page=${page}&size=20`);
+      if (response.success) {
+        setEndedData({
+          data: response.data.content,
+          total: response.data.totalElements,
+          page: response.data.number,
+          totalPages: response.data.totalPages
+        });
+      }
+    } catch (error) {
+      console.error('상영종료 영화 조회 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRecommendedMovies = async () => {
+    if (!currentUser) {
+      console.log('로그인하지 않은 사용자는 추천 영화를 볼 수 없습니다.');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/users/${currentUser.id}/recommended-movies`);
+      setRecommendedMoviesData(response.data);
+      
+      // 첫 번째 탭을 기본으로 설정
+      if (typeof response.data === 'object' && !Array.isArray(response.data)) {
+        const tagNames = Object.keys(response.data);
+        if (tagNames.length > 0) {
+          setActiveRecommendedTab(tagNames[0]);
+        }
+      }
+    } catch (error) {
+      console.error('추천 영화 조회 실패:', error);
+      setRecommendedMoviesData([]);
     } finally {
       setLoading(false);
     }
@@ -1048,8 +1104,36 @@ function App() {
 
   const handleMenuChange = (menu) => {
     setActiveMenu(menu);
-    setSearchKeyword('');
     setSearchExecuted(false);
+    setSearchKeyword('');
+    
+    if (menu === '통계') {
+      fetchStats();
+    } else if (menu === '영화 목록') {
+      fetchMovieList(0);
+    } else if (menu === '영화 상세') {
+      fetchMovieDetail(0);
+    } else if (menu === '박스오피스') {
+      fetchBoxOffice(0);
+    } else if (menu === '박스오피스 DTO') {
+      fetchBoxOfficeDto(0);
+    } else if (menu === '영화 상세 DTO') {
+      fetchMovieDetailDto(0);
+    } else if (menu === '영화 목록 DTO') {
+      fetchMovieListDto(0);
+    } else if (menu === '평점 높은 영화') {
+      fetchTopRated();
+    } else if (menu === '인기 영화') {
+      fetchPopularMovies();
+    } else if (menu === '개봉예정작') {
+      fetchComingSoon(0);
+    } else if (menu === '개봉중') {
+      fetchNowPlaying(0);
+    } else if (menu === '상영종료') {
+      fetchEnded(0);
+    } else if (menu === '태그추천영화') {
+      fetchRecommendedMovies();
+    }
   };
 
   // 2. 정렬 함수 추가
@@ -2224,47 +2308,179 @@ function App() {
 
   // 인기 영화 렌더링
   const renderPopularMovies = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, marginBottom: 16 }}>
-        <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
-          <option value="rating">별점순</option>
-          <option value="date">개봉일순</option>
-          <option value="nameAsc">이름 오름차순</option>
-          <option value="nameDesc">이름 내림차순</option>
-        </select>
-      </div>
-      <div className="movie-grid">
-        {popularMoviesData && popularMoviesData.length > 0 ? (
-          getSortedResults(popularMoviesData).map((item, index) => (
-            <div key={index} className="movie-card">
+    <div className="movie-grid">
+      {popularMoviesData.map((movie) => (
+        <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
+          <div className="movie-poster">
+            {movie.posterUrl ? (
+              <img src={movie.posterUrl} alt={movie.movieNm} />
+            ) : (
+              <div className="no-poster">No Poster</div>
+            )}
+          </div>
+          <div className="movie-info">
+            <h3>{movie.movieNm}</h3>
+            <p>{movie.genreNm}</p>
+            <p>{movie.openDt}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderRecommendedMovies = () => {
+    if (!currentUser) {
+      return (
+        <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+          <h2>로그인이 필요합니다</h2>
+          <p>태그 추천 영화를 보려면 로그인해주세요.</p>
+        </div>
+      );
+    }
+
+    if (loading) {
+      return <div style={{ textAlign: 'center', padding: '50px' }}>로딩 중...</div>;
+    }
+
+    // recommendedMoviesData가 객체인지 배열인지 확인
+    if (
+      !recommendedMoviesData ||
+      (Array.isArray(recommendedMoviesData) && recommendedMoviesData.length === 0) ||
+      (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData) && Object.keys(recommendedMoviesData).length === 0)
+    ) {
+      return (
+        <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+          <h2>추천 영화가 없습니다</h2>
+          <p>마이페이지에서 선호하는 장르 태그를 설정해보세요!</p>
+          <button
+            style={{
+              background: '#a18cd1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 24px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              marginTop: '20px',
+              fontWeight: 'bold'
+            }}
+            onClick={() => window.location.href = `/user/${encodeURIComponent(currentUser.nickname)}`}
+          >
+            마이페이지로 이동
+          </button>
+        </div>
+      );
+    }
+
+    // 태그별 그룹화된 데이터인 경우
+    if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
+      const tagNames = Object.keys(recommendedMoviesData);
+      
+      return (
+        <div>
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>🎯 {currentUser.nickname}님을 위한 추천 영화</h3>
+            <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
+              마이페이지에서 설정한 선호 장르 태그를 기반으로 추천된 영화입니다.
+            </p>
+          </div>
+          
+          {/* 태그별 탭 */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
+              {tagNames.map((tagName, index) => (
+                <button
+                  key={tagName}
+                  onClick={() => setActiveRecommendedTab(tagName)}
+                  style={{
+                    padding: '8px 16px',
+                    border: 'none',
+                    borderRadius: '20px',
+                    backgroundColor: activeRecommendedTab === tagName ? '#a18cd1' : '#f0f0f0',
+                    color: activeRecommendedTab === tagName ? 'white' : '#333',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: activeRecommendedTab === tagName ? 'bold' : 'normal'
+                  }}
+                >
+                  {tagName} ({recommendedMoviesData[tagName].length})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 선택된 탭의 영화들 표시 */}
+          <div className="movie-grid">
+            {recommendedMoviesData[activeRecommendedTab]?.map((movie) => (
+              <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
+                <div className="movie-poster">
+                  {movie.posterUrl ? (
+                    <img src={movie.posterUrl} alt={movie.movieNm} />
+                  ) : (
+                    <div className="no-poster">No Poster</div>
+                  )}
+                </div>
+                <div className="movie-info">
+                  <h3>{movie.movieNm}</h3>
+                  <p>{movie.genreNm}</p>
+                  <p>{movie.openDt}</p>
+                  {movie.totalAudience && (
+                    <p style={{ fontSize: '12px', color: '#666' }}>
+                      관객수: {movie.totalAudience.toLocaleString()}명
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // 기존 배열 형태인 경우 (하위 호환성)
+    return (
+      <div>
+        <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>🎯 {currentUser.nickname}님을 위한 추천 영화</h3>
+          <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
+            마이페이지에서 설정한 선호 장르 태그를 기반으로 추천된 영화입니다.
+          </p>
+        </div>
+        <div className="movie-grid">
+          {recommendedMoviesData.map((movie) => (
+            <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
               <div className="movie-poster">
-                {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                {movie.posterUrl ? (
+                  <img src={movie.posterUrl} alt={movie.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
               </div>
               <div className="movie-info">
-                <h3>{item.movieNm}</h3>
-                <p className="movie-title-en">{item.movieNmEn || '-'}</p>
-                <div className="movie-details">
-                  <p><strong>개봉일:</strong> {item.openDt || '-'}</p>
-                  <p><strong>장르:</strong> {item.genreNm || '-'}</p>
-                </div>
+                <h3>{movie.movieNm}</h3>
+                <p>{movie.genreNm}</p>
+                <p>{movie.openDt}</p>
+                {movie.totalAudience && (
+                  <p style={{ fontSize: '12px', color: '#666' }}>
+                    관객수: {movie.totalAudience.toLocaleString()}명
+                  </p>
+                )}
               </div>
             </div>
-          ))
-        ) : (
-          <div style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
-            {loading ? '데이터를 불러오는 중...' : '데이터가 없습니다.'}
-          </div>
-      )}
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // 최근 검색어 클릭 시 바로 검색
   const handleRecentKeywordClick = (keyword) => {
+    setSearchKeyword(keyword);
+    handleSearch(keyword);
+  };
+
+  // 인기 검색어 클릭 시 바로 검색
+  const handlePopularKeywordClick = (keyword) => {
     setSearchKeyword(keyword);
     handleSearch(keyword);
   };
@@ -2328,16 +2544,11 @@ function App() {
             renderMovieDetail={renderMovieDetail}
             renderBoxOffice={renderBoxOffice}
             renderBoxOfficeDto={renderBoxOfficeDto}
-            renderMovieDetailDto={(extraProps) => renderMovieDetailDto({
-              ...extraProps,
-              currentUser,
-              handleEditMovie,
-              handleDeleteMovie,
-              handleLikeMovie
-            })}
+            renderMovieDetailDto={renderMovieDetailDto}
             renderMovieListDto={renderMovieListDto}
             renderTopRated={renderTopRated}
             renderPopularMovies={renderPopularMovies}
+            renderRecommendedMovies={renderRecommendedMovies}
             renderComingSoon={renderComingSoon}
             renderNowPlaying={renderNowPlaying}
             renderEnded={renderEnded}
@@ -2367,7 +2578,7 @@ function App() {
             handleRecentKeywordClick={handleRecentKeywordClick}
             handleDeleteRecentKeyword={handleDeleteRecentKeyword}
             popularKeywords={popularKeywords}
-            handlePopularKeywordClick={handleRecentKeywordClick}
+            handlePopularKeywordClick={handlePopularKeywordClick}
           />
         } />
         <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />

@@ -52,6 +52,11 @@ public class MovieMapper {
     public MovieDetailDto toDto(MovieDetail entity) {
         if (entity == null) return null;
 
+        String posterUrl = null;
+        if (entity.getMovieList() != null) {
+            posterUrl = entity.getMovieList().getPosterUrl();
+        }
+
         return MovieDetailDto.builder()
                 .movieCd(entity.getMovieCd())
                 .movieNm(entity.getMovieNm())
@@ -71,7 +76,7 @@ public class MovieMapper {
                 .reservationRate(entity.getReservationRate())
                 .daysSinceRelease(entity.getDaysSinceRelease())
                 .totalAudience(entity.getTotalAudience())
-                .posterUrl("") // MovieList에서 가져와야 함
+                .posterUrl(posterUrl)
                 .directorName(entity.getDirector() != null ? entity.getDirector().getName() : null)
                 .nations(createNationList(entity.getNationNm()))
                 .genres(createGenreList(entity.getGenreNm()))

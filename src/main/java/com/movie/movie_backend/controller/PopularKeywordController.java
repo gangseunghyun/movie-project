@@ -36,4 +36,11 @@ public class PopularKeywordController {
         popularKeywordBatchService.aggregatePopularKeywords();
         return "인기검색어 집계 완료";
     }
+
+    @PostMapping("/clear-cache")
+    @CacheEvict(value = "popularKeywords", allEntries = true)
+    public String clearPopularKeywordsCache() {
+        log.info("인기검색어 캐시 무효화 요청");
+        return "인기검색어 캐시 무효화 완료";
+    }
 } 
