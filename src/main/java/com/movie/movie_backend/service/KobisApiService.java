@@ -428,6 +428,18 @@ public class KobisApiService {
                 }
             }
             
+            // 관람등급 파싱 (audits[0].watchGradeNm)
+            String watchGradeNm = movieList.getWatchGradeNm();
+            if (movieInfo.has("audits") && movieInfo.get("audits").isArray()) {
+                JsonNode audits = movieInfo.get("audits");
+                if (audits.size() > 0 && audits.get(0).has("watchGradeNm")) {
+                    String kobisGrade = audits.get(0).get("watchGradeNm").asText();
+                    if (kobisGrade != null && !kobisGrade.isBlank()) {
+                        watchGradeNm = kobisGrade;
+                    }
+                }
+            }
+            
             // 감독 정보
             Director director = null;
             if (movieInfo.has("directors") && movieInfo.get("directors").isArray()) {
@@ -495,7 +507,7 @@ public class KobisApiService {
                 .showTm(showTm)
                 .genreNm(genreNm != null ? genreNm : "")
                 .nationNm(movieList.getNationNm())
-                .watchGradeNm(movieList.getWatchGradeNm())
+                .watchGradeNm(watchGradeNm)
                 .companyNm(companyNm)
                 .totalAudience(0)
                 .reservationRate(0.0)
@@ -1012,6 +1024,18 @@ public class KobisApiService {
                 }
             }
             
+            // 관람등급 파싱 (audits[0].watchGradeNm)
+            String watchGradeNm = movieList.getWatchGradeNm();
+            if (movieInfo.has("audits") && movieInfo.get("audits").isArray()) {
+                JsonNode audits = movieInfo.get("audits");
+                if (audits.size() > 0 && audits.get(0).has("watchGradeNm")) {
+                    String kobisGrade = audits.get(0).get("watchGradeNm").asText();
+                    if (kobisGrade != null && !kobisGrade.isBlank()) {
+                        watchGradeNm = kobisGrade;
+                    }
+                }
+            }
+            
             // 감독 정보
             Director director = null;
             if (movieInfo.has("directors") && movieInfo.get("directors").isArray()) {
@@ -1042,17 +1066,44 @@ public class KobisApiService {
                 }
             }
             
+            // TMDB에서 영어 제목과 장르 정보 보완
+            String movieNmEn = movieList.getMovieNmEn();
+            String genreNm = movieList.getGenreNm();
+            
+            // KOBIS에 영어 제목이 없거나 장르 정보가 부족하면 TMDB에서 보완
+            if ((movieNmEn == null || movieNmEn.isEmpty() || genreNm == null || genreNm.isEmpty()) 
+                && movieList.getOpenDt() != null) {
+                
+                try {
+                    // TMDB에서 영화 검색하여 영어 제목과 장르 정보 가져오기
+                    String tmdbInfo = getTmdbMovieInfo(movieList.getMovieNm(), movieList.getOpenDt());
+                    if (tmdbInfo != null) {
+                        String[] tmdbData = tmdbInfo.split("\\|");
+                        if (tmdbData.length >= 2) {
+                            if (movieNmEn == null || movieNmEn.isEmpty()) {
+                                movieNmEn = tmdbData[0]; // 영어 제목
+                            }
+                            if (genreNm == null || genreNm.isEmpty()) {
+                                genreNm = tmdbData[1]; // 장르
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("TMDB 정보 보완 실패: {} - {}", movieList.getMovieNm(), e.getMessage());
+                }
+            }
+            
             // MovieDetail 엔티티 생성
             MovieDetail movieDetail = MovieDetail.builder()
                 .movieCd(movieCd)
                 .movieNm(movieList.getMovieNm())
-                .movieNmEn(movieList.getMovieNmEn() != null ? movieList.getMovieNmEn() : "")
+                .movieNmEn(movieNmEn != null ? movieNmEn : "")
                 .description(description)
                 .openDt(movieList.getOpenDt())
                 .showTm(showTm)
-                .genreNm(movieList.getGenreNm() != null ? movieList.getGenreNm() : "")
-                .nationNm(movieList.getNationNm() != null ? movieList.getNationNm() : "")
-                .watchGradeNm(movieList.getWatchGradeNm() != null ? movieList.getWatchGradeNm() : "")
+                .genreNm(genreNm != null ? genreNm : "")
+                .nationNm(movieList.getNationNm())
+                .watchGradeNm(watchGradeNm)
                 .companyNm(companyNm)
                 .totalAudience(0)
                 .reservationRate(0.0)

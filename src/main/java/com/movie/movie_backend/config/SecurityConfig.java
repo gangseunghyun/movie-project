@@ -148,10 +148,15 @@ public class SecurityConfig {
                     "/reset-password",
                     "/static/**",
                     "/resources/static/**",
-                    "/data/api/**",
+                    "/data/**",
+                    "/api/users/search",
                     "/swagger-ui/**",
                     "/api-docs/**",
-                    "/v3/api-docs/**"
+                    "/v3/api-docs/**",
+                    "/api/person/actor/*",
+                    "/api/person/recommended-actor",
+                    "/api/person/refresh-recommended-actor",
+                    "/api/person/director/*"
                 ).permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
