@@ -765,12 +765,87 @@
 }
 
 .search-user-result {
-  width: 100%;
+  margin: 40px auto 40px auto;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  max-width: 700px;
+  text-align: center;
+}
+
+.search-person-result {
+  margin: 40px auto 40px auto;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  max-width: 700px;
+  text-align: center;
+}
+
+.search-person-result h4 {
+  margin: 15px 0 10px 0;
+  color: #495057;
+  font-size: 1.1rem;
+}
+
+.person-grid {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.person-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 120px;
+  margin: 0 auto;
+}
+
+.person-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.person-photo {
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: flex;
   align-items: center;
-  margin-top: 48px;
-  margin-bottom: 80px;
+  justify-content: center;
+}
+
+.person-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-photo {
+  color: #6c757d;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.person-info {
+  padding: 8px;
+  text-align: center;
+}
+
+.person-info h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
 .search-divider {
