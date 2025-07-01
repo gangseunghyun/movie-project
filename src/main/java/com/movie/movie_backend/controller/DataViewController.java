@@ -52,6 +52,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.movie.movie_backend.repository.USRUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import com.movie.movie_backend.repository.PRDActorRepository;
+import com.movie.movie_backend.repository.PRDDirectorRepository;
 
 @Slf4j
 @Controller
@@ -77,6 +79,8 @@ public class DataViewController {
     private final SearchLogRepository searchLogRepository;
     private final REVLikeRepository likeRepository;
     private final USRUserRepository userRepository;
+    private final PRDActorRepository actorRepository;
+    private final PRDDirectorRepository directorRepository;
 
     /**
      * 데이터 조회 메인 페이지
@@ -1144,5 +1148,30 @@ public class DataViewController {
         }
         
         return user;
+    }
+
+    @GetMapping("/api/search-person")
+    @ResponseBody
+    public Map<String, Object> searchPerson(@RequestParam String keyword) {
+        List<Map<String, Object>> actors = actorRepository.findByNameContainingIgnoreCase(keyword).stream()
+            .map(actor -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", actor.getId());
+                map.put("name", actor.getName());
+                map.put("photoUrl", actor.getPhotoUrl());
+                return map;
+            }).collect(Collectors.toList());
+        List<Map<String, Object>> directors = directorRepository.findByNameContainingIgnoreCase(keyword).stream()
+            .map(director -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", director.getId());
+                map.put("name", director.getName());
+                map.put("photoUrl", director.getPhotoUrl());
+                return map;
+            }).collect(Collectors.toList());
+        Map<String, Object> result = new HashMap<>();
+        result.put("actors", actors);
+        result.put("directors", directors);
+        return result;
     }
 } 

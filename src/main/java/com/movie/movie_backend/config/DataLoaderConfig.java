@@ -291,4 +291,12 @@ public class DataLoaderConfig {
             log.error("MovieDetail 채워넣기 실패", e);
         }
     }
+
+    @Bean
+    public CommandLineRunner autoMapMovieDetailTags(TagDataService tagDataService) {
+        return args -> {
+            log.info("=== TagDataService.setupTagData() 자동 실행 ===");
+            tagDataService.setupTagData();
+        };
+    }
 } 

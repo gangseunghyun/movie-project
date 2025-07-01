@@ -30,7 +30,7 @@ function App() {
   const [showSocialJoin, setShowSocialJoin] = useState(false);
   const [socialUserInfo, setSocialUserInfo] = useState(null);
   const [activeTab, setActiveTab] = useState('movieList');
-  const [activeMenu, setActiveMenu] = useState('movieList');
+  const [activeMenu, setActiveMenu] = useState('메인 페이지');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -99,6 +99,7 @@ function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [searchExecuted, setSearchExecuted] = useState(false);
   const [userResults, setUserResults] = useState([]);
+  const [personResults, setPersonResults] = useState({ actors: [], directors: [] });
   
   // 데이터 관련 상태들 (기존 구조 유지)
   const [movieListData, setMovieListData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
@@ -114,6 +115,7 @@ function App() {
   const [endedData, setEndedData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [recommendedMoviesData, setRecommendedMoviesData] = useState([]);
   const [activeRecommendedTab, setActiveRecommendedTab] = useState('recommended');
+  const [actorRecommendation, setActorRecommendation] = useState(null);
 
   useEffect(() => {
     if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
@@ -126,6 +128,7 @@ function App() {
 
   // 로그인 상태 확인
   useEffect(() => {
+    console.log('배우 추천 useEffect 실행!');
     checkLoginStatus();
     
     // URL 경로 확인하여 social-join 페이지 표시
@@ -136,6 +139,18 @@ function App() {
     
     // 인기 검색어 불러오기 (로그인 상태와 관계없이)
     fetchPopularKeywords();
+    
+    // 배우 추천 정보 가져오기
+    fetchActorRecommendation();
+    
+    // 메인 페이지 데이터 불러오기
+    fetchStats();
+  }, []);
+
+  // 5분마다 배우 추천 정보 갱신
+  useEffect(() => {
+    const interval = setInterval(fetchActorRecommendation, 300000); // 5분
+    return () => clearInterval(interval);
   }, []);
 
   // 정렬 옵션이 변경될 때마다 현재 활성 탭에 따라 데이터 다시 가져오기
@@ -200,6 +215,23 @@ function App() {
     } catch (e) {
       console.error('최근 검색어 불러오기 실패:', e);
       setRecentKeywords([]);
+    }
+  };
+
+  // 배우 추천 정보 가져오기
+  const fetchActorRecommendation = async () => {
+    console.log('배우 추천 API 호출 시도');
+    try {
+      const response = await axios.get('http://localhost:80/api/person/recommended-actor');
+      console.log('배우 추천 API 응답:', response.data);
+      if (response.data.success) {
+        setActorRecommendation(response.data.data);
+        console.log('배우 추천 데이터 설정 완료:', response.data.data);
+      } else {
+        console.log('배우 추천 API 응답이 실패:', response.data);
+      }
+    } catch (error) {
+      console.error('배우 추천 정보 조회 실패:', error);
     }
   };
 
@@ -472,37 +504,30 @@ function App() {
 
   // 검색 실행 핸들러
   const handleSearch = async (customKeyword) => {
-    const keyword = customKeyword || searchKeyword.trim();
-    if (!keyword) return;
-    
+    const keyword = String(customKeyword !== undefined ? customKeyword : searchKeyword || '').trim();
+
+    if (!keyword) {
+      setSearchResults({ data: [], total: 0, page: 0, totalPages: 0 });
+      setUserResults([]);
+      setPersonResults({ actors: [], directors: [] });
+      setSearchExecuted(false);
+      fetchMovieDetailDto(0);
+      return;
+    }
+
     setIsSearching(true);
     setError(null);
     setSearchExecuted(true);
-    
+
     try {
-      // 1. 검색 API 호출
       const movieRes = await safeFetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(keyword)}&page=0&size=20`);
       setSearchResults(movieRes);
 
-      // 2. 최근 검색어 저장 (로그인한 경우만) - 검색 결과가 없어도 저장
-      if (currentUser) {
-        await axios.post('http://localhost:80/api/search-history', null, {
-          params: { 
-            keyword: keyword.trim(),
-            searchResultCount: movieRes && movieRes.data ? movieRes.data.length : 0
-          },
-          withCredentials: true
-        });
-        fetchRecentKeywords();
-        // 인기 검색어도 업데이트 (검색 결과가 있을 때만)
-        if (movieRes && movieRes.data && movieRes.data.length > 0) {
-          fetchPopularKeywords();
-        }
-      }
-
-      // 3. 유저 검색 등 추가 로직
       const userRes = await userSearch(keyword);
       setUserResults(userRes);
+
+      const personRes = await axios.get(`http://localhost:80/data/api/search-person?keyword=${encodeURIComponent(keyword)}`);
+      setPersonResults(personRes.data);
     } catch (err) {
       setError('검색 중 오류가 발생했습니다.');
     }
@@ -514,6 +539,8 @@ function App() {
     setSearchKeyword('');
     setSearchResults({ data: [], total: 0, page: 0, totalPages: 0 });
     setSearchExecuted(false);
+    setUserResults([]);
+    setPersonResults({ actors: [], directors: [] });
     fetchMovieDetailDto(0);
   };
 
@@ -1199,6 +1226,118 @@ function App() {
         </div>
       </div>
       )}
+
+      {/* 배우 추천 섹션 */}
+      {console.log('actorRecommendation 상태:', actorRecommendation)}
+      {actorRecommendation && (
+        <div style={{ marginTop: '30px' }}>
+          <h3 style={{ marginBottom: '20px', color: '#333' }}>🎭 오늘의 배우 추천</h3>
+          <div style={{ 
+            display: 'flex', 
+            gap: '20px', 
+            padding: '20px', 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            {/* 배우 프로필 */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              minWidth: '150px'
+            }}>
+              <div style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                marginBottom: '10px',
+                backgroundColor: '#ddd',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {actorRecommendation.actor.photoUrl ? (
+                  <img 
+                    src={actorRecommendation.actor.photoUrl} 
+                    alt={actorRecommendation.actor.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '40px' }}>🎭</span>
+                )}
+              </div>
+              <h4 style={{ margin: '0 0 5px 0', textAlign: 'center' }}>
+                {actorRecommendation.actor.name}
+              </h4>
+              <p style={{ margin: '0', fontSize: '14px', color: '#666', textAlign: 'center' }}>
+                영화 {actorRecommendation.movieCount}개
+              </p>
+              <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', textAlign: 'center' }}>
+                평균 평점: {actorRecommendation.averageRating.toFixed(1)}⭐
+              </p>
+            </div>
+
+            {/* 대표 작품 */}
+            <div style={{ flex: 1 }}>
+              <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>대표 작품</h5>
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                {actorRecommendation.topMovies.map((movie, index) => (
+                  <div 
+                    key={movie.movieCd}
+                    style={{
+                      width: '120px',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    onClick={() => handleMovieClick(movie)}
+                  >
+                    <div style={{
+                      width: '100%',
+                      height: '160px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      backgroundColor: '#ddd',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {movie.posterUrl ? (
+                        <img 
+                          src={movie.posterUrl} 
+                          alt={movie.movieNm}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '24px' }}>🎬</span>
+                      )}
+                    </div>
+                    <div>
+                      <p style={{ 
+                        margin: '0 0 5px 0', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {movie.movieNm}
+                      </p>
+                      <p style={{ margin: '0', fontSize: '11px', color: '#666' }}>
+                        {movie.averageRating.toFixed(1)}⭐
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1605,7 +1744,7 @@ function App() {
       <div className="movie-grid">
         {movieListDtoData.data && movieListDtoData.data.length > 0 ? (
           getSortedResults(movieListDtoData.data).map((item, index) => (
-            <div key={index} className="movie-card">
+            <div key={index} className="movie-card" onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
                   <img src={item.posterUrl} alt={item.movieNm} />
@@ -2050,7 +2189,7 @@ function App() {
           {searchResults.data && searchResults.data.length > 0 ? (
             <div className="movie-grid">
               {getSortedResults(searchResults.data).map(movie => (
-                <div key={movie.movieCd} className="movie-card">
+                <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
                   <div className="movie-poster">
                     {movie.posterUrl ? (
                       <img src={movie.posterUrl} alt={movie.movieNm} />
@@ -2069,6 +2208,58 @@ function App() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div>검색 결과가 없습니다.</div>
+          )}
+        </div>
+        <div className="search-divider"></div>
+        <div className="search-person-result">
+          <h3>인물 결과</h3>
+          {(personResults.actors && personResults.actors.length > 0) || (personResults.directors && personResults.directors.length > 0) ? (
+            <div>
+              {personResults.actors && personResults.actors.length > 0 && (
+                <div>
+                  <h4>배우</h4>
+                  <div className="person-grid">
+                    {personResults.actors.map(actor => (
+                      <div key={actor.id} className="person-card" onClick={() => handleActorClick(actor.id)}>
+                        <div className="person-photo">
+                          {actor.photoUrl ? (
+                            <img src={actor.photoUrl} alt={actor.name} />
+                          ) : (
+                            <div className="no-photo">No Photo</div>
+                          )}
+                        </div>
+                        <div className="person-info">
+                          <h5>{actor.name}</h5>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {personResults.directors && personResults.directors.length > 0 && (
+                <div>
+                  <h4>감독</h4>
+                  <div className="person-grid">
+                    {personResults.directors.map(director => (
+                      <div key={director.id} className="person-card" onClick={() => handleDirectorClick(director.id)}>
+                        <div className="person-photo">
+                          {director.photoUrl ? (
+                            <img src={director.photoUrl} alt={director.name} />
+                          ) : (
+                            <div className="no-photo">No Photo</div>
+                          )}
+                        </div>
+                        <div className="person-info">
+                          <h5>{director.name}</h5>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div>검색 결과가 없습니다.</div>
@@ -2096,6 +2287,16 @@ function App() {
   // 유저 닉네임 클릭 시 마이페이지 이동 (window.location 사용)
   const handleUserClick = (nickname) => {
     window.location.href = `/user/${nickname}`;
+  };
+
+  // 배우 클릭 시 배우 상세페이지 이동
+  const handleActorClick = (actorId) => {
+    window.location.href = `/actor/${actorId}`;
+  };
+
+    // 감독 클릭 시 감독 상세페이지 이동
+  const handleDirectorClick = (directorId) => {
+    window.location.href = `/director/${directorId}`;
   };
 
   // 개봉예정작 렌더링
