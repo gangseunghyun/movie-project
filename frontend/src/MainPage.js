@@ -3,7 +3,7 @@ import RatingDistributionChart from './components/RatingDistributionChart';
 import { useNavigate } from 'react-router-dom';
 
 const menuList = [
-  { icon: '📊', label: '통계' },
+  { icon: '🏠', label: '메인 페이지' },
   { icon: '🎬', label: '영화 목록' },
   { icon: '📝', label: '영화 상세' },
   { icon: '🔥', label: '박스오피스' },
@@ -92,7 +92,7 @@ const MainPage = ({
 
   // 탭별 렌더링 함수 매핑
   const renderByMenu = {
-    '통계': renderStats,
+    '메인 페이지': renderStats,
     '영화 목록': renderMovieList,
     '영화 상세': renderMovieDetail,
     '박스오피스': renderBoxOffice,

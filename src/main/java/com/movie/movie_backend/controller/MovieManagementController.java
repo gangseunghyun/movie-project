@@ -282,12 +282,12 @@ public class MovieManagementController {
     }
 
     /**
-     * 영화 좋아요 (일반 사용자)
+     * 영화 찜 (일반 사용자)
      */
     @PostMapping("/{movieCd}/like")
     public ResponseEntity<Map<String, Object>> likeMovie(@PathVariable String movieCd, HttpServletRequest request) {
         try {
-            log.info("영화 좋아요 요청: {}", movieCd);
+            log.info("영화 찜 요청: {}", movieCd);
             
             User currentUser = getCurrentUser(request);
             if (currentUser == null) {
@@ -301,24 +301,24 @@ public class MovieManagementController {
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "좋아요가 추가되었습니다."
+                "message", "찜이 추가되었습니다."
             ));
         } catch (Exception e) {
-            log.error("영화 좋아요 실패: {}", movieCd, e);
+            log.error("영화 찜 실패: {}", movieCd, e);
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
-                "message", "좋아요 추가에 실패했습니다: " + e.getMessage()
+                "message", "찜 추가에 실패했습니다: " + e.getMessage()
             ));
         }
     }
 
     /**
-     * 영화 좋아요 취소 (일반 사용자)
+     * 영화 찜 취소 (일반 사용자)
      */
     @DeleteMapping("/{movieCd}/like")
     public ResponseEntity<Map<String, Object>> unlikeMovie(@PathVariable String movieCd, HttpServletRequest request) {
         try {
-            log.info("영화 좋아요 취소 요청: {}", movieCd);
+            log.info("영화 찜 취소 요청: {}", movieCd);
             
             User currentUser = getCurrentUser(request);
             if (currentUser == null) {
@@ -332,13 +332,13 @@ public class MovieManagementController {
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "좋아요가 취소되었습니다."
+                "message", "찜이 취소되었습니다."
             ));
         } catch (Exception e) {
-            log.error("영화 좋아요 취소 실패: {}", movieCd, e);
+            log.error("영화 찜 취소 실패: {}", movieCd, e);
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
-                "message", "좋아요 취소에 실패했습니다: " + e.getMessage()
+                "message", "찜 취소에 실패했습니다: " + e.getMessage()
             ));
         }
     }

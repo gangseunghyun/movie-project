@@ -75,7 +75,7 @@ public class MovieDetail {
 
     @OneToMany(mappedBy = "movieDetail")
     @JsonIgnore
-    private List<Like> likes; // 영화에 달린 좋아요 목록
+    private List<Like> likes; // 영화에 달린 찜 목록
 
     @OneToMany(mappedBy = "movieDetail")
     @JsonIgnore
