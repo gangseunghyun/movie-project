@@ -186,13 +186,13 @@ const UserPage = () => {
               </div>
               <div className="tag-selection">
                 {genreTags.map(tag => (
-                  <label key={tag.id} className="tag-checkbox">
+                  <label key={typeof tag === 'string' ? tag : tag.id} className="tag-checkbox">
                     <input
                       type="checkbox"
-                      checked={selectedTags.includes(tag.name)}
-                      onChange={() => handleTagChange(tag.name)}
+                      checked={selectedTags.includes(typeof tag === 'string' ? tag : tag.name)}
+                      onChange={() => handleTagChange(typeof tag === 'string' ? tag : tag.name)}
                     />
-                    <span className="checkbox-label">{tag.name}</span>
+                    <span className="checkbox-label">{typeof tag === 'string' ? tag : tag.name}</span>
                   </label>
                 ))}
               </div>
