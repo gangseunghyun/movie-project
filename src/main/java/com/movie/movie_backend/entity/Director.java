@@ -21,4 +21,8 @@ public class Director {
     @OneToMany(mappedBy = "director")
     @JsonIgnoreProperties("director")
     private List<MovieDetail> movieDetails; // 감독한 영화 상세정보 목록 (1:N)
+
+    @OneToMany(mappedBy = "director", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("director")
+    private List<PersonLike> personLikes; // 이 감독을 좋아요한 사용자 목록
 } 

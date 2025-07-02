@@ -17,6 +17,13 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
+import com.movie.movie_backend.service.PersonLikeService;
+import com.movie.movie_backend.entity.User;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.movie.movie_backend.repository.USRUserRepository;
+import com.movie.movie_backend.constant.Provider;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 
 @RestController
 @RequestMapping("/api/person")
@@ -27,6 +34,8 @@ public class PersonController {
     private final PRDMovieRepository movieRepository;
     private final CastRepository castRepository;
     private final MovieDetailMapper movieDetailMapper;
+    private final PersonLikeService personLikeService;
+    private final USRUserRepository userRepository;
     // 현재 추천된 배우 정보 (캐시)
     private Actor currentRecommendedActor = null;
     // 현재 추천된 감독 정보 (캐시)
@@ -410,6 +419,183 @@ public class PersonController {
                 "success", false,
                 "message", "감독 추천 새로고침에 실패했습니다: " + e.getMessage()
             ));
+        }
+    }
+
+    // principal에서 User 엔티티 안전하게 추출하는 메서드
+    private User extractCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) return null;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User user) {
+            return user;
+        } else if (principal instanceof DefaultOAuth2User oAuth2User) {
+            String email = oAuth2User.getAttribute("email");
+            String provider = oAuth2User.getAttribute("provider");
+            String providerId = oAuth2User.getAttribute("providerId");
+            // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+            if (email == null && "KAKAO".equals(provider)) {
+                Object kakaoAccountObj = oAuth2User.getAttribute("kakao_account");
+                if (kakaoAccountObj instanceof java.util.Map kakaoAccount) {
+                    email = (String) kakaoAccount.get("email");
+                }
+            }
+            if (provider != null && providerId != null) {
+                try {
+                    Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+                    return userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
+                } catch (Exception e) {
+                    return null;
+                }
+            } else if (email != null) {
+                return userRepository.findByEmail(email).orElse(null);
+            }
+        }
+        return null;
+    }
+
+    // ===== 인물 좋아요 API =====
+
+    /**
+     * 배우 좋아요 추가
+     */
+    @PostMapping("/actor/{id}/like")
+    public ResponseEntity<?> likeActor(@PathVariable Long id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            User user = extractCurrentUser(authentication);
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다."));
+            }
+            personLikeService.likeActor(user.getId(), id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "배우를 좋아요했습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 배우 좋아요 취소
+     */
+    @DeleteMapping("/actor/{id}/like")
+    public ResponseEntity<?> unlikeActor(@PathVariable Long id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            User user = extractCurrentUser(authentication);
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다."));
+            }
+            personLikeService.unlikeActor(user.getId(), id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "배우 좋아요를 취소했습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 감독 좋아요 추가
+     */
+    @PostMapping("/director/{id}/like")
+    public ResponseEntity<?> likeDirector(@PathVariable Long id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            User user = extractCurrentUser(authentication);
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다."));
+            }
+            personLikeService.likeDirector(user.getId(), id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "감독을 좋아요했습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 감독 좋아요 취소
+     */
+    @DeleteMapping("/director/{id}/like")
+    public ResponseEntity<?> unlikeDirector(@PathVariable Long id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            User user = extractCurrentUser(authentication);
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다."));
+            }
+            personLikeService.unlikeDirector(user.getId(), id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "감독 좋아요를 취소했습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 배우 좋아요 상태 확인
+     */
+    @GetMapping("/actor/{id}/like-status")
+    public ResponseEntity<?> getActorLikeStatus(@PathVariable Long id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+                return ResponseEntity.ok(Map.of("likedByMe", false, "likeCount", personLikeService.getActorLikeCount(id)));
+            }
+
+            User user = null;
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof User) {
+                user = (User) principal;
+            } else if (principal instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User) {
+                String provider = oauth2User.getAttribute("provider");
+                String providerId = oauth2User.getAttribute("providerId");
+                if (provider != null && providerId != null) {
+                    user = userRepository.findByProviderAndProviderId(
+                        com.movie.movie_backend.constant.Provider.valueOf(provider.toUpperCase()), providerId
+                    ).orElse(null);
+                }
+            } else {
+                String loginId = authentication.getName();
+                user = userRepository.findByLoginId(loginId).orElse(null);
+            }
+
+            boolean likedByMe = user != null && personLikeService.hasUserLikedActor(user.getId(), id);
+            long likeCount = personLikeService.getActorLikeCount(id);
+            return ResponseEntity.ok(Map.of("likedByMe", likedByMe, "likeCount", likeCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 감독 좋아요 상태 확인
+     */
+    @GetMapping("/director/{id}/like-status")
+    public ResponseEntity<?> getDirectorLikeStatus(@PathVariable Long id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+                return ResponseEntity.ok(Map.of("likedByMe", false, "likeCount", personLikeService.getDirectorLikeCount(id)));
+            }
+
+            User user = null;
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof User) {
+                user = (User) principal;
+            } else if (principal instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User) {
+                String provider = oauth2User.getAttribute("provider");
+                String providerId = oauth2User.getAttribute("providerId");
+                if (provider != null && providerId != null) {
+                    user = userRepository.findByProviderAndProviderId(
+                        com.movie.movie_backend.constant.Provider.valueOf(provider.toUpperCase()), providerId
+                    ).orElse(null);
+                }
+            } else {
+                String loginId = authentication.getName();
+                user = userRepository.findByLoginId(loginId).orElse(null);
+            }
+
+            boolean likedByMe = user != null && personLikeService.hasUserLikedDirector(user.getId(), id);
+            long likeCount = personLikeService.getDirectorLikeCount(id);
+            return ResponseEntity.ok(Map.of("likedByMe", likedByMe, "likeCount", likeCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
 } 

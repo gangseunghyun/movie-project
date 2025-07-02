@@ -85,6 +85,9 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentLike> commentLikes; // 사용자가 누른 댓글 좋아요 목록
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PersonLike> personLikes; // 사용자가 누른 인물 좋아요 목록
+
     @ManyToMany
     @JoinTable(name = "user_preferred_tags",
         joinColumns = @JoinColumn(name = "user_id"),

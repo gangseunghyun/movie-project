@@ -158,12 +158,16 @@ public class SecurityConfig {
                     "/api/person/refresh-recommended-actor",
                     "/api/person/director/*",
                     "/api/person/recommended-director",
-                    "/api/person/refresh-recommended-director"
+                    "/api/person/refresh-recommended-director",
+                    "/api/person/actor/*/like-status",
+                    "/api/person/director/*/like-status"
                 ).permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/distribution").permitAll()
                 .requestMatchers("/api/movies/*/like").authenticated()
+                .requestMatchers("/api/person/*/like").authenticated()
+                .requestMatchers("/api/person/*/like-status").permitAll()
                 .requestMatchers("/api/movies/**").hasRole("ADMIN")
                 .requestMatchers("/api/reviews/movie/*").permitAll()  // 리뷰 목록 조회는 누구나
                 .requestMatchers("/api/reviews/movie/*/content-only").permitAll()  // 댓글만 조회도 누구나
