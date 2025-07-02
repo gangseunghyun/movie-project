@@ -35,21 +35,18 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> createReview(@RequestBody Map<String, Object> request, @AuthenticationPrincipal Object principal) {
         try {
-            // 사용자 정보 추출
-            String userEmail = null;
-            if (principal instanceof DefaultOAuth2User) {
-                DefaultOAuth2User oauth2User = (DefaultOAuth2User) principal;
-                userEmail = oauth2User.getAttribute("email");
-            }
+            // 사용자 정보 추출 - getCurrentUserId 메서드 사용 (소셜 + 일반 로그인 모두 지원)
+            Long currentUserId = getCurrentUserId(principal);
+            log.info("리뷰 작성 - 현재 사용자 ID: {}", currentUserId);
             
-            if (userEmail == null) {
+            if (currentUserId == null) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
                 response.put("message", "로그인이 필요합니다.");
                 return ResponseEntity.badRequest().body(response);
             }
             
-            User user = userRepository.findByEmail(userEmail)
+            User user = userRepository.findById(currentUserId)
                     .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
             
             // 요청 데이터 파싱
@@ -149,9 +146,18 @@ public class ReviewController {
      * 영화의 모든 리뷰 조회
      */
     @GetMapping("/movie/{movieCd}")
-    public ResponseEntity<Map<String, Object>> getReviewsByMovie(@PathVariable String movieCd) {
+    public ResponseEntity<Map<String, Object>> getReviewsByMovie(
+            @PathVariable String movieCd,
+            @AuthenticationPrincipal Object principal) {
         try {
-            List<ReviewDto> reviews = reviewService.getReviewsByMovieCd(movieCd);
+            // 사용자 정보 추출 - 로그인하지 않은 사용자도 처리 가능
+            Long currentUserId = null;
+            if (principal != null) {
+                currentUserId = getCurrentUserId(principal);
+            }
+            log.info("리뷰 목록 조회 - 현재 사용자 ID: {}", currentUserId);
+            
+            List<ReviewDto> reviews = reviewService.getReviewsByMovieCdWithLikeInfo(movieCd, currentUserId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -321,14 +327,66 @@ public class ReviewController {
      * [DTO 기반] 리뷰 좋아요/취소
      */
     @PostMapping("/dto/{reviewId}/like")
-    public ResponseEntity<Void> likeReview(@PathVariable Long reviewId, @RequestParam Long userId) {
-        reviewService.likeReview(reviewId, userId);
+    public ResponseEntity<Void> likeReview(@PathVariable Long reviewId, @AuthenticationPrincipal Object principal) {
+        log.info("=== 리뷰 좋아요 API 호출 ===");
+        log.info("리뷰ID: {}", reviewId);
+        log.info("Principal 타입: {}", principal != null ? principal.getClass().getSimpleName() : "null");
+        
+        Long currentUserId = getCurrentUserId(principal);
+        log.info("현재 사용자 ID: {}", currentUserId);
+        
+        if (currentUserId == null) {
+            log.error("사용자 인증 실패 - 401 반환");
+            return ResponseEntity.status(401).build();
+        }
+        
+        reviewService.likeReview(reviewId, currentUserId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/dto/{reviewId}/like")
-    public ResponseEntity<Void> unlikeReview(@PathVariable Long reviewId, @RequestParam Long userId) {
-        reviewService.unlikeReview(reviewId, userId);
+    public ResponseEntity<Void> unlikeReview(@PathVariable Long reviewId, @AuthenticationPrincipal Object principal) {
+        Long currentUserId = getCurrentUserId(principal);
+        if (currentUserId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        reviewService.unlikeReview(reviewId, currentUserId);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 현재 인증된 사용자의 ID를 가져오는 헬퍼 메서드
+     */
+    private Long getCurrentUserId(Object principal) {
+        log.info("getCurrentUserId 호출 - Principal: {}", principal);
+        
+        if (principal == null) {
+            log.warn("Principal이 null입니다");
+            return null;
+        }
+        
+        log.info("Principal 클래스: {}", principal.getClass().getName());
+        
+        if (principal instanceof DefaultOAuth2User) {
+            // OAuth2 로그인 (소셜 로그인)
+            DefaultOAuth2User oauth2User = (DefaultOAuth2User) principal;
+            String userEmail = oauth2User.getAttribute("email");
+            log.info("OAuth2User 이메일: {}", userEmail);
+            
+            if (userEmail != null) {
+                User user = userRepository.findByEmail(userEmail).orElse(null);
+                log.info("DB에서 찾은 사용자: {}", user != null ? user.getId() : "null");
+                return user != null ? user.getId() : null;
+            }
+        } else if (principal instanceof User) {
+            // 일반 로그인 (세션 기반)
+            User user = (User) principal;
+            log.info("일반 로그인 사용자 ID: {}", user.getId());
+            return user.getId();
+        } else {
+            log.warn("지원하지 않는 Principal 타입: {}", principal.getClass().getName());
+        }
+        
+        return null;
     }
 } 

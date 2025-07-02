@@ -18,6 +18,7 @@ import RatingDistributionChart from './components/RatingDistributionChart';
 import PersonDetail from './PersonDetail';
 import BookingModal from './BookingModal';
 import ReviewModal from './components/ReviewModal';
+import ReviewList from './components/ReviewList';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -119,6 +120,7 @@ function App() {
   const [actorRecommendation, setActorRecommendation] = useState(null);
   const [directorRecommendation, setDirectorRecommendation] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewListKey, setReviewListKey] = useState(0); // 리뷰 목록 강제 새로고침용
 
   useEffect(() => {
     if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
@@ -170,38 +172,54 @@ function App() {
     }
   }, [sortOption]);
 
+  // 별점 정보 불러오기 함수들
+  const fetchUserRating = async (movieCd) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/ratings/${movieCd}`, { withCredentials: true });
+      setUserRating(res.data.data?.score || null);
+    } catch (error) {
+      setUserRating(null);
+    }
+  };
+
+  const fetchAverageRating = async (movieCd) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/ratings/movie/${movieCd}/average`);
+      setAverageRating(res.data.data?.averageRating || null);
+      setRatingCount(res.data.data?.ratingCount || null);
+    } catch (error) {
+      setAverageRating(null);
+      setRatingCount(null);
+    }
+  };
+
+  const fetchRatingDistribution = async (movieCd) => {
+    try {
+      console.log('평점 분포 API 호출 시작:', movieCd);
+      const res = await axios.get(`${API_BASE_URL}/ratings/movie/${movieCd}/distribution`);
+      console.log('평점 분포 API 응답:', res.data);
+      setRatingDistribution(res.data.data?.distribution || null);
+    } catch (error) {
+      console.error('평점 분포 API 실패:', error);
+      setRatingDistribution(null);
+    }
+  };
+
   // 별점 정보 불러오기 (왓챠 스타일: Review 테이블 기준)
   useEffect(() => {
     if (!selectedMovie) return;
     setLoadingRating(true);
-    // 내 별점(리뷰 기준)
-    axios.get(`${API_BASE_URL}/ratings/${selectedMovie.movieCd}`, { withCredentials: true })
-      .then(res => {
-        setUserRating(res.data.data?.score || null);
-      })
-      .catch(() => setUserRating(null));
-    // 평균 별점/참여자 수(리뷰 기준)
-    axios.get(`${API_BASE_URL}/ratings/movie/${selectedMovie.movieCd}/average`)
-      .then(res => {
-        setAverageRating(res.data.data?.averageRating || null);
-        setRatingCount(res.data.data?.ratingCount || null);
-      })
-      .catch(() => {
-        setAverageRating(null);
-        setRatingCount(null);
-      });
-    // 별점 분포(리뷰 기준)
-    console.log('평점 분포 API 호출 시작:', selectedMovie.movieCd);
-    axios.get(`${API_BASE_URL}/ratings/movie/${selectedMovie.movieCd}/distribution`)
-      .then(res => {
-        console.log('평점 분포 API 응답:', res.data);
-        setRatingDistribution(res.data.data?.distribution || null);
-      })
-      .catch((error) => {
-        console.error('평점 분포 API 실패:', error);
-        setRatingDistribution(null);
-      })
-      .finally(() => setLoadingRating(false));
+    
+    const loadRatingData = async () => {
+      await Promise.all([
+        fetchUserRating(selectedMovie.movieCd),
+        fetchAverageRating(selectedMovie.movieCd),
+        fetchRatingDistribution(selectedMovie.movieCd)
+      ]);
+      setLoadingRating(false);
+    };
+    
+    loadRatingData();
   }, [selectedMovie]);
 
   // 최근 검색어 불러오기
@@ -2064,7 +2082,13 @@ function App() {
                 {/* 평점 그래프 아래에 코멘트 남기기 버튼 */}
                 <div style={{ textAlign: 'center', marginTop: 40 }}>
                   <button
-                    onClick={() => setShowReviewModal(true)}
+                    onClick={() => {
+                      if (!currentUser) {
+                        setShowLoginAlert(true);
+                      } else {
+                        setShowReviewModal(true);
+                      }
+                    }}
                     style={{
                       background: '#ff2f6e',
                       color: 'white',
@@ -2159,6 +2183,15 @@ function App() {
                     ))}
                   </div>
                 </div>
+                {/* 리뷰 목록 섹션 */}
+                <div className="movie-detail-section">
+                  <ReviewList 
+                    key={reviewListKey}
+                    movieCd={selectedMovie.movieCd} 
+                    currentUser={currentUser}
+                  />
+                </div>
+                
                 {selectedMovie.stillcuts && selectedMovie.stillcuts.length > 0 && (
                   <div className="movie-detail-section">
                     <h4>스틸컷</h4>
@@ -2872,7 +2905,7 @@ function App() {
     <div className="modal-overlay" onClick={() => setShowLoginAlert(false)}>
       <div className="modal-content" style={{ maxWidth: 340, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
         <h3 style={{ margin: '24px 0 12px 0' }}>로그인이 필요합니다</h3>
-        <p style={{ marginBottom: 24 }}>별점 평가를 하려면 로그인이 필요합니다.</p>
+        <p style={{ marginBottom: 24 }}>리뷰를 작성하려면 로그인이 필요합니다.</p>
         <button
           style={{
             background: '#a18cd1', color: 'white', border: 'none', borderRadius: 5,
@@ -2992,10 +3025,11 @@ function App() {
       {showReviewModal && (
         <ReviewModal
           movieTitle={selectedMovie?.movieNm || '영화 제목'}
-          onSave={(content, rating, spoiler) => {
+          onSave={(content, spoiler) => {
+            // 영화 상세 페이지에서 이미 입력된 별점 사용
             const reviewData = {
               content,
-              rating,
+              rating: userRating, // 영화 상세 페이지의 별점 사용
               spoiler,
               movieCd: selectedMovie.movieCd,
             };
@@ -3004,7 +3038,14 @@ function App() {
             axios.post(`${API_BASE_URL}/reviews`, reviewData, { withCredentials: true })
             .then(res => {
               console.log('리뷰 저장 성공', res.data);
-              // TODO: 리뷰 리스트 갱신 등 추가 작업 가능
+              // 리뷰 목록 새로고침
+              setReviewListKey(prev => prev + 1);
+              // 별점 정보도 새로고침
+              if (selectedMovie) {
+                fetchUserRating(selectedMovie.movieCd);
+                fetchAverageRating(selectedMovie.movieCd);
+                fetchRatingDistribution(selectedMovie.movieCd);
+              }
             })
             .catch(err => {
               console.error('리뷰 저장 실패', err);
