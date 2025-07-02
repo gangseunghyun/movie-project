@@ -778,12 +778,25 @@ function App() {
   };
 
   // 영화 관리 기능들
-  const handleMovieClick = (movie) => {
-    console.log('영화 클릭:', movie);
-    console.log('감독 정보:', movie.directors);
-    console.log('배우 정보:', movie.actors);
-    setSelectedMovie(movie);
-    setShowMovieDetail(true);
+  const handleMovieClick = async (movie) => {
+    // 상세 정보가 이미 있으면 바로 모달 오픈
+    if (movie.directors && movie.actors && movie.stillcuts) {
+      setSelectedMovie(movie);
+      setShowMovieDetail(true);
+      return;
+    }
+    // 상세 정보 fetch
+    try {
+      const res = await axios.get(`http://localhost:80/data/api/movie-detail-dto?movieCd=${movie.movieCd}`);
+      if (res.data && res.data.data && res.data.data.length > 0) {
+        setSelectedMovie(res.data.data[0]);
+        setShowMovieDetail(true);
+      } else {
+        alert('상세 정보를 불러올 수 없습니다.');
+      }
+    } catch (e) {
+      alert('상세 정보 조회 실패');
+    }
   };
 
   const handleEditMovie = (movie) => {
