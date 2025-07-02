@@ -878,6 +878,10 @@ function App() {
       console.log("검증 통과, API 호출 시작...");
       
       // 데이터 변환
+      let actorNamesStr = movieForm.actorNames;
+      if (Array.isArray(actorNamesStr)) {
+        actorNamesStr = actorNamesStr.join(',');
+      }
       const movieData = {
         movieNm: movieForm.movieNm,
         movieNmEn: movieForm.movieNmEn,
@@ -897,7 +901,7 @@ function App() {
         directors: movieForm.directorName ? [{
           peopleNm: movieForm.directorName
         }] : [],
-        actors: movieForm.actorNames ? movieForm.actorNames.split(',').map(actor => ({
+        actors: actorNamesStr ? actorNamesStr.split(',').map(actor => ({
           peopleNm: actor.trim(),
           cast: actor.trim()
         })) : []
