@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 
 function ReviewModal({ movieTitle, onSave, onClose }) {
   const [content, setContent] = useState('');
-  const [rating, setRating] = useState(5);
   const [spoiler, setSpoiler] = useState(false);
   const maxLength = 10000;
 
@@ -12,15 +11,6 @@ function ReviewModal({ movieTitle, onSave, onClose }) {
         <button className="close-btn" onClick={onClose}>&times;</button>
         <h2>{movieTitle}</h2>
         <div className="review-modal-desc">이 작품에 대한 생각을 자유롭게 표현해주세요.</div>
-        <div className="star-rating">
-          {[1,2,3,4,5].map(star => (
-            <span
-              key={star}
-              style={{ color: star <= rating ? '#ff2f6e' : '#eee', fontSize: 36, cursor: 'pointer' }}
-              onClick={() => setRating(star)}
-            >★</span>
-          ))}
-        </div>
         <textarea
           className="review-textarea"
           placeholder="대단한 작품이군요! 감동을 글로 남겨보세요"
@@ -41,7 +31,7 @@ function ReviewModal({ movieTitle, onSave, onClose }) {
           <button
             className="save-btn"
             style={{ background: '#ff2f6e', color: 'white', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 18, marginLeft: 16 }}
-            onClick={() => onSave(content, rating, spoiler)}
+            onClick={() => onSave(content, spoiler)}
             disabled={!content.trim()}
           >저장</button>
         </div>

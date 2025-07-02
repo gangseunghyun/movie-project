@@ -169,6 +169,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/person/*/like").authenticated()
                 .requestMatchers("/api/person/*/like-status").permitAll()
                 .requestMatchers("/api/movies/**").hasRole("ADMIN")
+                .requestMatchers("/api/reviews/movie/*").permitAll()  // 리뷰 목록 조회는 누구나
+                .requestMatchers("/api/reviews/movie/*/content-only").permitAll()  // 댓글만 조회도 누구나
+                .requestMatchers("/api/reviews/**").authenticated()  // 나머지 리뷰 관련 기능은 인증 필요
                 .requestMatchers("/api/search-history").authenticated()
                 .requestMatchers("/api/users/*/liked-movies").permitAll()
                 .anyRequest().authenticated()

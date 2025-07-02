@@ -16,6 +16,8 @@ public class ReviewDto {
     private String userNickname;
     private String movieCd;
     private String movieNm;
+    private int likeCount;
+    private boolean likedByMe;
 
     public static ReviewDto fromEntity(com.movie.movie_backend.entity.Review review) {
         return ReviewDto.builder()

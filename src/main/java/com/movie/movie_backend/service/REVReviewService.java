@@ -132,6 +132,31 @@ public class REVReviewService {
     }
 
     /**
+     * 영화의 모든 리뷰 조회 (좋아요 정보 포함)
+     */
+    public List<ReviewDto> getReviewsByMovieCdWithLikeInfo(String movieCd, Long currentUserId) {
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdOrderByCreatedAtDesc(movieCd);
+        return reviews.stream()
+                .map(review -> {
+                    ReviewDto dto = ReviewDto.fromEntity(review);
+                    // 좋아요 개수 설정
+                    int likeCount = reviewLikeRepository.countByReviewId(review.getId());
+                    dto.setLikeCount(likeCount);
+                    
+                    // 현재 사용자가 좋아요를 눌렀는지 확인
+                    if (currentUserId != null) {
+                        boolean likedByMe = reviewLikeRepository.existsByReviewIdAndUserId(review.getId(), currentUserId);
+                        dto.setLikedByMe(likedByMe);
+                    } else {
+                        dto.setLikedByMe(false);
+                    }
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 영화의 평점이 있는 리뷰만 조회
      */
     public List<ReviewDto> getRatedReviewsByMovieCd(String movieCd) {
@@ -296,19 +321,47 @@ public class REVReviewService {
     // [DTO 기반] 리뷰 좋아요/취소
     @Transactional
     public void likeReview(Long reviewId, Long userId) {
-        if (!reviewLikeRepository.existsByReviewIdAndUserId(reviewId, userId)) {
-            reviewLikeRepository.save(
-                com.movie.movie_backend.entity.ReviewLike.builder()
-                    .review( reviewRepository.findById(reviewId).orElseThrow(() -> new RuntimeException("리뷰 없음")) )
-                    .user( userRepository.findById(userId).orElseThrow(() -> new RuntimeException("유저 없음")) )
-                    .createdAt(LocalDateTime.now())
-                    .build()
-            );
+        System.out.println("=== 리뷰 좋아요 시도 ===");
+        System.out.println("리뷰ID: " + reviewId);
+        System.out.println("사용자ID: " + userId);
+        
+        boolean alreadyLiked = reviewLikeRepository.existsByReviewIdAndUserId(reviewId, userId);
+        System.out.println("이미 좋아요를 눌렀는지 확인: " + alreadyLiked);
+        
+        if (!alreadyLiked) {
+            System.out.println("좋아요 추가 시작...");
+            
+            ReviewLike reviewLike = ReviewLike.builder()
+                .review( reviewRepository.findById(reviewId).orElseThrow(() -> new RuntimeException("리뷰 없음")) )
+                .user( userRepository.findById(userId).orElseThrow(() -> new RuntimeException("유저 없음")) )
+                .createdAt(LocalDateTime.now())
+                .build();
+            
+            ReviewLike savedLike = reviewLikeRepository.save(reviewLike);
+            System.out.println("리뷰 좋아요 추가 완료: 좋아요ID=" + savedLike.getId());
+        } else {
+            System.out.println("이미 좋아요를 눌렀으므로 추가하지 않음");
         }
+        
+        System.out.println("=== 리뷰 좋아요 시도 완료 ===");
     }
     @Transactional
     public void unlikeReview(Long reviewId, Long userId) {
-        reviewLikeRepository.deleteByReviewIdAndUserId(reviewId, userId);
+        System.out.println("=== 리뷰 좋아요 취소 시도 ===");
+        System.out.println("리뷰ID: " + reviewId);
+        System.out.println("사용자ID: " + userId);
+        
+        boolean exists = reviewLikeRepository.existsByReviewIdAndUserId(reviewId, userId);
+        System.out.println("좋아요가 존재하는지 확인: " + exists);
+        
+        if (exists) {
+            reviewLikeRepository.deleteByReviewIdAndUserId(reviewId, userId);
+            System.out.println("리뷰 좋아요 취소 완료");
+        } else {
+            System.out.println("좋아요가 존재하지 않으므로 취소하지 않음");
+        }
+        
+        System.out.println("=== 리뷰 좋아요 취소 시도 완료 ===");
     }
 
     // Review -> ReviewResponseDto 변환
