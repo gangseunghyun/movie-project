@@ -116,7 +116,7 @@ const MainPage = ({
     <div className="mainpage-root">
       {/* 상단 헤더 */}
       <header className="mainpage-header">
-        <span className="mainpage-title">영화 데이터 관리 시스템</span>
+        <span className="mainpage-title">Filmer</span>
         <div style={{ flex: 1 }} />
         {/* 통합 검색창 */}
         <div className="mainpage-global-search">

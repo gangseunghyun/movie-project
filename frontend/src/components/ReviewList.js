@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import ReviewEditModal from './ReviewEditModal';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:80';
 
@@ -8,6 +9,8 @@ function ReviewList({ movieCd, currentUser }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [likeLoading, setLikeLoading] = useState({}); // 각 리뷰별 좋아요 로딩 상태
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
 
   useEffect(() => {
     if (movieCd) {
@@ -35,6 +38,46 @@ function ReviewList({ movieCd, currentUser }) {
     }
   };
 
+  // 리뷰 수정 모달 열기
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setEditModalOpen(true);
+  };
+
+  // 리뷰 수정 완료 후 처리
+  const handleReviewUpdate = (updatedData) => {
+    fetchReviews(); // 리뷰 목록 새로고침
+  };
+
+  // 리뷰 삭제 함수
+  const handleDeleteReview = async (reviewId) => {
+    if (!currentUser) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    if (!window.confirm('정말로 이 리뷰를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:80/api/reviews/${reviewId}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        alert('리뷰가 삭제되었습니다.');
+        fetchReviews(); // 리뷰 목록 새로고침
+      } else {
+        alert(response.data.message || '리뷰 삭제에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('리뷰 삭제 실패:', err);
+      alert(err.response?.data?.message || '리뷰 삭제에 실패했습니다.');
+    }
+  };
+
   // 리뷰 좋아요/취소 함수
   const handleLikeReview = async (reviewId, currentLiked) => {
     if (!currentUser) {
@@ -47,10 +90,10 @@ function ReviewList({ movieCd, currentUser }) {
     try {
       if (currentLiked) {
         // 좋아요 취소
-        await axios.delete(`${API_BASE_URL}/api/reviews/dto/${reviewId}/like`, { withCredentials: true });
+        await axios.delete(`http://localhost:80/api/reviews/dto/${reviewId}/like`, { withCredentials: true });
       } else {
         // 좋아요 추가
-        await axios.post(`${API_BASE_URL}/api/reviews/dto/${reviewId}/like`, {}, { withCredentials: true });
+        await axios.post(`http://localhost:80/api/reviews/dto/${reviewId}/like`, {}, { withCredentials: true });
       }
 
       // 리뷰 목록 새로고침
@@ -185,6 +228,24 @@ function ReviewList({ movieCd, currentUser }) {
                 </span>
                 좋아요 {review.likeCount > 0 && `(${review.likeCount})`}
               </button>
+              {currentUser && currentUser.id === review.userId && (
+                <>
+                  <button 
+                    className="action-btn edit-btn"
+                    onClick={() => handleEditReview(review)}
+                  >
+                    <span style={{ marginRight: 4 }}>✏️</span>
+                    수정
+                  </button>
+                  <button 
+                    className="action-btn delete-btn"
+                    onClick={() => handleDeleteReview(review.id)}
+                  >
+                    <span style={{ marginRight: 4 }}>🗑️</span>
+                    삭제
+                  </button>
+                </>
+              )}
               <button className="action-btn">
                 <span style={{ marginRight: 4 }}>💬</span>
                 댓글
@@ -193,6 +254,17 @@ function ReviewList({ movieCd, currentUser }) {
           </div>
         </div>
       ))}
+      
+      {/* 리뷰 수정 모달 */}
+      <ReviewEditModal
+        review={editingReview}
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingReview(null);
+        }}
+        onUpdate={handleReviewUpdate}
+      />
       
       <style>{`
         .review-list {
@@ -268,6 +340,22 @@ function ReviewList({ movieCd, currentUser }) {
         
         .action-btn.liked {
           color: #ff2f6e;
+        }
+        
+        .action-btn.edit-btn {
+          color: #666;
+        }
+        
+        .action-btn.edit-btn:hover {
+          color: #333;
+        }
+        
+        .action-btn.delete-btn {
+          color: #ff4757;
+        }
+        
+        .action-btn.delete-btn:hover {
+          color: #ff3742;
         }
         
         .action-btn:disabled {

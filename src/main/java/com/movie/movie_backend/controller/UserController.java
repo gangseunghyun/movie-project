@@ -904,7 +904,7 @@ public class UserController {
             log.info("사용자 작성 코멘트 목록 조회: {}", userId);
             
             // 사용자가 작성한 리뷰 목록 조회
-            List<Review> myReviews = reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            List<Review> myReviews = reviewRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, Review.ReviewStatus.ACTIVE);
             
             // 리뷰 정보로 변환
             List<Map<String, Object>> reviewDtos = myReviews.stream()
