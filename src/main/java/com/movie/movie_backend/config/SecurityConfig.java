@@ -156,7 +156,9 @@ public class SecurityConfig {
                     "/api/person/actor/*",
                     "/api/person/recommended-actor",
                     "/api/person/refresh-recommended-actor",
-                    "/api/person/director/*"
+                    "/api/person/director/*",
+                    "/api/person/recommended-director",
+                    "/api/person/refresh-recommended-director"
                 ).permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()

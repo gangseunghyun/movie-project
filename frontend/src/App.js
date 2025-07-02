@@ -116,6 +116,7 @@ function App() {
   const [recommendedMoviesData, setRecommendedMoviesData] = useState([]);
   const [activeRecommendedTab, setActiveRecommendedTab] = useState('recommended');
   const [actorRecommendation, setActorRecommendation] = useState(null);
+  const [directorRecommendation, setDirectorRecommendation] = useState(null);
 
   useEffect(() => {
     if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
@@ -142,14 +143,19 @@ function App() {
     
     // 배우 추천 정보 가져오기
     fetchActorRecommendation();
+    // 감독 추천 정보 가져오기
+    fetchDirectorRecommendation();
     
     // 메인 페이지 데이터 불러오기
     fetchStats();
   }, []);
 
-  // 5분마다 배우 추천 정보 갱신
+  // 5분마다 배우/감독 추천 정보 갱신
   useEffect(() => {
-    const interval = setInterval(fetchActorRecommendation, 300000); // 5분
+    const interval = setInterval(() => {
+      fetchActorRecommendation();
+      fetchDirectorRecommendation();
+    }, 300000); // 5분
     return () => clearInterval(interval);
   }, []);
 
@@ -232,6 +238,23 @@ function App() {
       }
     } catch (error) {
       console.error('배우 추천 정보 조회 실패:', error);
+    }
+  };
+
+  // 감독 추천 정보 가져오기
+  const fetchDirectorRecommendation = async () => {
+    console.log('감독 추천 API 호출 시도');
+    try {
+      const response = await axios.get('http://localhost:80/api/person/recommended-director');
+      console.log('감독 추천 API 응답:', response.data);
+      if (response.data.success) {
+        setDirectorRecommendation(response.data.data);
+        console.log('감독 추천 데이터 설정 완료:', response.data.data);
+      } else {
+        console.log('감독 추천 API 응답이 실패:', response.data);
+      }
+    } catch (error) {
+      console.error('감독 추천 정보 조회 실패:', error);
     }
   };
 
@@ -1284,6 +1307,118 @@ function App() {
               <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>대표 작품</h5>
               <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 {actorRecommendation.topMovies.map((movie, index) => (
+                  <div 
+                    key={movie.movieCd}
+                    style={{
+                      width: '120px',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    onClick={() => handleMovieClick(movie)}
+                  >
+                    <div style={{
+                      width: '100%',
+                      height: '160px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      backgroundColor: '#ddd',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {movie.posterUrl ? (
+                        <img 
+                          src={movie.posterUrl} 
+                          alt={movie.movieNm}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '24px' }}>🎬</span>
+                      )}
+                    </div>
+                    <div>
+                      <p style={{ 
+                        margin: '0 0 5px 0', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {movie.movieNm}
+                      </p>
+                      <p style={{ margin: '0', fontSize: '11px', color: '#666' }}>
+                        {movie.averageRating.toFixed(1)}⭐
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 감독 추천 섹션 */}
+      {console.log('directorRecommendation 상태:', directorRecommendation)}
+      {directorRecommendation && (
+        <div style={{ marginTop: '30px' }}>
+          <h3 style={{ marginBottom: '20px', color: '#333' }}>🎬 오늘의 감독 추천</h3>
+          <div style={{ 
+            display: 'flex', 
+            gap: '20px', 
+            padding: '20px', 
+            backgroundColor: '#f0f8ff', 
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            {/* 감독 프로필 */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              minWidth: '150px'
+            }}>
+              <div style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                marginBottom: '10px',
+                backgroundColor: '#ddd',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {directorRecommendation.director.photoUrl ? (
+                  <img 
+                    src={directorRecommendation.director.photoUrl} 
+                    alt={directorRecommendation.director.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '40px' }}>🎬</span>
+                )}
+              </div>
+              <h4 style={{ margin: '0 0 5px 0', textAlign: 'center' }}>
+                {directorRecommendation.director.name}
+              </h4>
+              <p style={{ margin: '0', fontSize: '14px', color: '#666', textAlign: 'center' }}>
+                영화 {directorRecommendation.movieCount}개
+              </p>
+              <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666', textAlign: 'center' }}>
+                평균 평점: {directorRecommendation.averageRating.toFixed(1)}⭐
+              </p>
+            </div>
+
+            {/* 대표 작품 */}
+            <div style={{ flex: 1 }}>
+              <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>대표 작품</h5>
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                {directorRecommendation.topMovies.map((movie, index) => (
                   <div 
                     key={movie.movieCd}
                     style={{
