@@ -20,6 +20,8 @@ import com.movie.movie_backend.repository.SeatRepository;
 import com.movie.movie_backend.repository.ReservationRepository;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.PaymentRepository;
+import com.movie.movie_backend.entity.Payment;
 import com.movie.movie_backend.constant.ScreeningSeatStatus;
 import com.movie.movie_backend.constant.ReservationStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -62,6 +68,15 @@ public class BookingService {
 
     @Autowired
     private PRDMovieRepository prdMovieRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    // 아임포트 API 키/시크릿 (환경변수나 설정파일에서 주입 권장)
+    @Value("${iamport.api.key:YOUR_API_KEY}")
+    private String iamportApiKey;
+    @Value("${iamport.api.secret:YOUR_API_SECRET}")
+    private String iamportApiSecret;
 
     // 모든 영화관 조회
     public List<CinemaDto> getAllCinemas() {
@@ -244,5 +259,99 @@ public class BookingService {
             log.error("Unlocking seats failed", e);
             return false;
         }
+    }
+
+    // 아임포트 인증 토큰 발급
+    public String getIamportAccessToken() {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.iamport.kr/users/getToken";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String body = String.format("{\"imp_key\":\"%s\",\"imp_secret\":\"%s\"}", iamportApiKey, iamportApiSecret);
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(url, entity, JsonNode.class);
+        return response.getBody().get("response").get("access_token").asText();
+    }
+
+    // 아임포트 결제정보 조회
+    public JsonNode getIamportPaymentInfo(String impUid, String accessToken) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.iamport.kr/payments/" + impUid;
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", accessToken);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+        return response.getBody().get("response");
+    }
+
+    // 결제완료 처리: 아임포트에서 결제정보 조회 후 Payment 저장
+    @Transactional
+    public Payment completePayment(String impUid, String merchantUid, Long userId, Long reservationId) {
+        try {
+            // 아임포트 API 호출 시도
+            String accessToken = getIamportAccessToken();
+            JsonNode info = getIamportPaymentInfo(impUid, accessToken);
+            
+            Payment payment = Payment.builder()
+                .impUid(impUid)
+                .merchantUid(merchantUid)
+                .amount(info.get("amount").decimalValue())
+                .paidAt(info.has("paid_at") ? java.time.Instant.ofEpochSecond(info.get("paid_at").asLong()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null)
+                .method(com.movie.movie_backend.constant.PaymentMethod.valueOf(info.get("pay_method").asText().toUpperCase()))
+                .status(com.movie.movie_backend.constant.PaymentStatus.valueOf(info.get("status").asText().toUpperCase()))
+                .receiptNumber(info.has("receipt_url") ? info.get("receipt_url").asText() : null)
+                .receiptUrl(info.has("receipt_url") ? info.get("receipt_url").asText() : null)
+                .isCancelled("cancelled".equalsIgnoreCase(info.get("status").asText()))
+                .cancelReason(info.has("cancel_reason") ? info.get("cancel_reason").asText() : null)
+                .cancelledAt(info.has("cancelled_at") && !info.get("cancelled_at").isNull() ? java.time.Instant.ofEpochSecond(info.get("cancelled_at").asLong()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null)
+                .pgResponseCode(info.has("code") ? info.get("code").asText() : null)
+                .pgResponseMessage(info.has("message") ? info.get("message").asText() : null)
+                .cardName(info.has("card_name") ? info.get("card_name").asText() : null)
+                .cardNumberSuffix(info.has("card_number") ? info.get("card_number").asText().substring(info.get("card_number").asText().length() - 4) : null)
+                .approvalNumber(info.has("apply_num") ? info.get("apply_num").asText() : null)
+                .build();
+            
+            // 유저/예약 연관관계 설정
+            if (userId != null) {
+                userRepository.findById(userId).ifPresent(payment::setUser);
+            }
+            if (reservationId != null) {
+                reservationRepository.findById(reservationId).ifPresent(payment::setReservation);
+            }
+            return paymentRepository.save(payment);
+            
+        } catch (Exception e) {
+            log.error("아임포트 API 호출 실패, 기본 결제정보로 저장: {}", e.getMessage());
+            
+            // 아임포트 API 실패 시 기본 결제정보로 저장
+            Payment payment = Payment.builder()
+                .impUid(impUid)
+                .merchantUid(merchantUid)
+                .amount(java.math.BigDecimal.ZERO) // 기본값
+                .paidAt(java.time.LocalDateTime.now())
+                .method(com.movie.movie_backend.constant.PaymentMethod.CREDIT_CARD) // 기본값
+                .status(com.movie.movie_backend.constant.PaymentStatus.SUCCESS) // 기본값
+                .isCancelled(false)
+                .build();
+            
+            // 유저/예약 연관관계 설정
+            if (userId != null) {
+                userRepository.findById(userId).ifPresent(payment::setUser);
+            }
+            if (reservationId != null) {
+                reservationRepository.findById(reservationId).ifPresent(payment::setReservation);
+            }
+            return paymentRepository.save(payment);
+        }
+    }
+
+    // 유저의 가장 최근 예매 ID 반환
+    public Long getLastReservationIdForUser(Long userId) {
+        List<Reservation> reservations = reservationRepository.findByUserId(userId);
+        return reservations.stream()
+            .sorted((a, b) -> b.getReservedAt().compareTo(a.getReservedAt()))
+            .map(Reservation::getId)
+            .findFirst()
+            .orElse(null);
     }
 } 

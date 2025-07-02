@@ -208,7 +208,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
         movieId: movie.movieCd,
         screeningId: selectedScreening.id,
         seatIds: selectedSeats.map(seat => seat.seatId),
-        totalPrice: selectedSeats.length * 12000
+        totalPrice: selectedSeats.length * 1
       };
       const response = await axios.post('http://localhost:80/api/bookings', bookingData);
       if (response.data.success) {
@@ -244,7 +244,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   };
 
   // 카카오페이 결제창 호출 함수
-  const onClickKakaoPay = () => {
+  const onClickKakaoPay = async () => {
     const { IMP } = window;
     IMP.init('imp45866522'); // 아임포트 가맹점 식별코드
     IMP.request_pay({
@@ -252,16 +252,38 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
       pay_method: 'card',
       merchant_uid: 'order_' + new Date().getTime(),
       name: '영화 예매',
-      amount: selectedSeats.length * 12000 || 12000, // 최소 1좌석 금액
+      amount: selectedSeats.length * 1 || 1, // 최소 1좌석 금액
       buyer_email: 'test@example.com',
       buyer_name: '홍길동',
       buyer_tel: '010-1234-5678',
       buyer_addr: '서울특별시',
       buyer_postcode: '123-456'
-    }, function (rsp) {
+    }, async function (rsp) {
       if (rsp.success) {
-        alert('결제 성공! 예매를 확정합니다.');
-        handlePayment(); // 결제 성공 시 예약 확정
+        // 1. 예매 확정(좌석 예약) API 호출
+        const bookingRes = await axios.post('http://localhost:80/api/bookings', {
+          movieId: movie.movieCd,
+          screeningId: selectedScreening.id,
+          seatIds: selectedSeats.map(seat => seat.seatId),
+          totalPrice: selectedSeats.length * 1
+        });
+        if (bookingRes.data.success) {
+          // 2. 결제정보 저장 API 호출
+          await axios.post('http://localhost:80/api/payments/complete', {
+            imp_uid: rsp.imp_uid,
+            merchant_uid: rsp.merchant_uid,
+            userId: 1, // TODO: 실제 로그인 정보로 대체
+            reservationId: bookingRes.data.reservationId
+          });
+          alert('결제 및 예매가 완료되었습니다!');
+          setIsLocked(false);
+          setPaymentReady(false);
+          setSelectedSeats([]);
+          if (onBookingComplete) onBookingComplete();
+          onClose();
+        } else {
+          alert('예매에 실패했습니다.');
+        }
       } else {
         alert('결제 실패: ' + rsp.error_msg);
       }
@@ -269,7 +291,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   };
 
   // 토스페이 결제창 호출 함수
-  const onClickTossPay = () => {
+  const onClickTossPay = async () => {
     const { IMP } = window;
     IMP.init('imp45866522'); // 아임포트 가맹점 식별코드
     IMP.request_pay({
@@ -277,16 +299,38 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
       pay_method: 'card',
       merchant_uid: 'order_' + new Date().getTime(),
       name: '영화 예매',
-      amount: selectedSeats.length * 12000 || 12000, // 최소 1좌석 금액
+      amount: selectedSeats.length * 1 || 1, // 최소 1좌석 금액
       buyer_email: 'test@example.com',
       buyer_name: '홍길동',
       buyer_tel: '010-1234-5678',
       buyer_addr: '서울특별시',
       buyer_postcode: '123-456'
-    }, function (rsp) {
+    }, async function (rsp) {
       if (rsp.success) {
-        alert('결제 성공! 예매를 확정합니다.');
-        handlePayment(); // 결제 성공 시 예약 확정
+        // 1. 예매 확정(좌석 예약) API 호출
+        const bookingRes = await axios.post('http://localhost:80/api/bookings', {
+          movieId: movie.movieCd,
+          screeningId: selectedScreening.id,
+          seatIds: selectedSeats.map(seat => seat.seatId),
+          totalPrice: selectedSeats.length * 1
+        });
+        if (bookingRes.data.success) {
+          // 2. 결제정보 저장 API 호출
+          await axios.post('http://localhost:80/api/payments/complete', {
+            imp_uid: rsp.imp_uid,
+            merchant_uid: rsp.merchant_uid,
+            userId: 1, // TODO: 실제 로그인 정보로 대체
+            reservationId: bookingRes.data.reservationId
+          });
+          alert('결제 및 예매가 완료되었습니다!');
+          setIsLocked(false);
+          setPaymentReady(false);
+          setSelectedSeats([]);
+          if (onBookingComplete) onBookingComplete();
+          onClose();
+        } else {
+          alert('예매에 실패했습니다.');
+        }
       } else {
         alert('결제 실패: ' + rsp.error_msg);
       }
@@ -294,7 +338,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   };
 
   // 나이스페이 결제창 호출 함수
-  const onClickNicePay = () => {
+  const onClickNicePay = async () => {
     const { IMP } = window;
     IMP.init('imp45866522'); // 아임포트 가맹점 식별코드
     IMP.request_pay({
@@ -302,16 +346,38 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
       pay_method: 'card',
       merchant_uid: 'order_' + new Date().getTime(),
       name: '영화 예매',
-      amount: selectedSeats.length * 12000 || 12000,
+      amount: selectedSeats.length * 1 || 1,
       buyer_email: 'test@example.com',
       buyer_name: '홍길동',
       buyer_tel: '010-1234-5678',
       buyer_addr: '서울특별시',
       buyer_postcode: '123-456'
-    }, function (rsp) {
+    }, async function (rsp) {
       if (rsp.success) {
-        alert('결제 성공! 예매를 확정합니다.');
-        handlePayment();
+        // 1. 예매 확정(좌석 예약) API 호출
+        const bookingRes = await axios.post('http://localhost:80/api/bookings', {
+          movieId: movie.movieCd,
+          screeningId: selectedScreening.id,
+          seatIds: selectedSeats.map(seat => seat.seatId),
+          totalPrice: selectedSeats.length * 1
+        });
+        if (bookingRes.data.success) {
+          // 2. 결제정보 저장 API 호출
+          await axios.post('http://localhost:80/api/payments/complete', {
+            imp_uid: rsp.imp_uid,
+            merchant_uid: rsp.merchant_uid,
+            userId: 1, // TODO: 실제 로그인 정보로 대체
+            reservationId: bookingRes.data.reservationId
+          });
+          alert('결제 및 예매가 완료되었습니다!');
+          setIsLocked(false);
+          setPaymentReady(false);
+          setSelectedSeats([]);
+          if (onBookingComplete) onBookingComplete();
+          onClose();
+        } else {
+          alert('예매에 실패했습니다.');
+        }
       } else {
         alert('결제 실패: ' + rsp.error_msg);
       }
@@ -501,7 +567,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
           {Array.isArray(selectedSeats) && selectedSeats.length > 0 && (
             <div className="booking-summary">
               <p>선택된 좌석: {selectedSeats.map(seat => seat.seatNumber).join(', ')}</p>
-              <p>총 금액: {selectedSeats.length * 12000}원</p>
+              <p>총 금액: {selectedSeats.length * 1}원</p>
               <button
                 className="booking-btn"
                 onClick={handleBooking}
@@ -534,11 +600,10 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
                   </button>
                   <button
                     className="nice-pay-btn"
-                    onClick={() => alert('나이스페이 결제는 실제 결제가 발생할 수 있어 비활성화되었습니다.')}
-                    disabled={true}
-                    title="실제 결제 발생 위험이 있어 비활성화됨"
+                    onClick={onClickNicePay}
+                    disabled={loading}
                   >
-                    나이스페이로 결제하기 (비활성화됨)
+                    나이스페이로 결제하기
                   </button>
                 </>
               )}
