@@ -53,7 +53,7 @@ public class REVReviewService {
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
 
         // 이미 작성한 리뷰가 있는지 확인
-        Review existingReview = reviewRepository.findByUserIdAndMovieDetailMovieCd(userId, movieCd);
+        Review existingReview = reviewRepository.findByUserIdAndMovieDetailMovieCdAndStatus(userId, movieCd, Review.ReviewStatus.ACTIVE);
         if (existingReview != null) {
             throw new RuntimeException("이미 이 영화에 리뷰를 작성했습니다.");
         }
@@ -125,7 +125,7 @@ public class REVReviewService {
      * 영화의 모든 리뷰 조회
      */
     public List<ReviewDto> getReviewsByMovieCd(String movieCd) {
-        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdOrderByCreatedAtDesc(movieCd);
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndStatusOrderByCreatedAtDesc(movieCd, Review.ReviewStatus.ACTIVE);
         return reviews.stream()
                 .map(ReviewDto::fromEntity)
                 .collect(Collectors.toList());
@@ -135,7 +135,7 @@ public class REVReviewService {
      * 영화의 모든 리뷰 조회 (좋아요 정보 포함)
      */
     public List<ReviewDto> getReviewsByMovieCdWithLikeInfo(String movieCd, Long currentUserId) {
-        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdOrderByCreatedAtDesc(movieCd);
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndStatusOrderByCreatedAtDesc(movieCd, Review.ReviewStatus.ACTIVE);
         return reviews.stream()
                 .map(review -> {
                     ReviewDto dto = ReviewDto.fromEntity(review);
@@ -160,7 +160,7 @@ public class REVReviewService {
      * 영화의 평점이 있는 리뷰만 조회
      */
     public List<ReviewDto> getRatedReviewsByMovieCd(String movieCd) {
-        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndRatingIsNotNullOrderByCreatedAtDesc(movieCd);
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndRatingIsNotNullAndStatusOrderByCreatedAtDesc(movieCd, Review.ReviewStatus.ACTIVE);
         return reviews.stream()
                 .map(ReviewDto::fromEntity)
                 .collect(Collectors.toList());
@@ -170,7 +170,7 @@ public class REVReviewService {
      * 영화의 댓글만 있는 리뷰 조회 (평점 없음)
      */
     public List<ReviewDto> getContentOnlyReviewsByMovieCd(String movieCd) {
-        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndRatingIsNullOrderByCreatedAtDesc(movieCd);
+        List<Review> reviews = reviewRepository.findByMovieDetailMovieCdAndRatingIsNullAndStatusOrderByCreatedAtDesc(movieCd, Review.ReviewStatus.ACTIVE);
         return reviews.stream()
                 .map(ReviewDto::fromEntity)
                 .collect(Collectors.toList());
@@ -180,7 +180,7 @@ public class REVReviewService {
      * 영화의 평균 평점 조회
      */
     public Double getAverageRating(String movieCd) {
-        Double average = reviewRepository.getAverageRatingByMovieCd(movieCd);
+        Double average = reviewRepository.getAverageRatingByMovieCd(movieCd, Review.ReviewStatus.ACTIVE);
         return average != null ? Math.round(average * 10.0) / 10.0 : null; // 소수점 첫째자리까지
     }
 
@@ -188,21 +188,21 @@ public class REVReviewService {
      * 영화의 평점 개수 조회
      */
     public Long getRatingCount(String movieCd) {
-        return reviewRepository.getRatingCountByMovieCd(movieCd);
+        return reviewRepository.getRatingCountByMovieCd(movieCd, Review.ReviewStatus.ACTIVE);
     }
 
     /**
      * 영화의 댓글 리뷰 개수 조회
      */
     public Long getContentReviewCount(String movieCd) {
-        return (long) reviewRepository.findByMovieDetailMovieCdAndRatingIsNullOrderByCreatedAtDesc(movieCd).size();
+        return (long) reviewRepository.findByMovieDetailMovieCdAndRatingIsNullAndStatusOrderByCreatedAtDesc(movieCd, Review.ReviewStatus.ACTIVE).size();
     }
 
     /**
      * 영화의 평점 분포 조회 (왓챠피디아 스타일)
      */
     public Map<Integer, Long> getRatingDistribution(String movieCd) {
-        List<Object[]> distribution = reviewRepository.getRatingDistributionByMovieCd(movieCd);
+        List<Object[]> distribution = reviewRepository.getRatingDistributionByMovieCd(movieCd, Review.ReviewStatus.ACTIVE);
         Map<Integer, Long> result = new java.util.HashMap<>();
         
         // 1~5점까지 초기화
@@ -224,7 +224,7 @@ public class REVReviewService {
      * 사용자의 모든 리뷰 조회
      */
     public List<ReviewDto> getReviewsByUserId(Long userId) {
-        List<Review> reviews = reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Review> reviews = reviewRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, Review.ReviewStatus.ACTIVE);
         return reviews.stream()
                 .map(ReviewDto::fromEntity)
                 .collect(Collectors.toList());
@@ -234,7 +234,7 @@ public class REVReviewService {
      * 사용자가 특정 영화에 작성한 리뷰 조회
      */
     public Optional<ReviewDto> getReviewByUserAndMovie(Long userId, String movieCd) {
-        Review review = reviewRepository.findByUserIdAndMovieDetailMovieCd(userId, movieCd);
+        Review review = reviewRepository.findByUserIdAndMovieDetailMovieCdAndStatus(userId, movieCd, Review.ReviewStatus.ACTIVE);
         return Optional.ofNullable(review != null ? ReviewDto.fromEntity(review) : null);
     }
 
@@ -302,7 +302,7 @@ public class REVReviewService {
 
     // [DTO 기반] 영화별 리뷰 목록(정렬/페이징)
     public Page<ReviewResponseDto> getReviewsByMovieDto(Long movieId, String sort, int page, int size) {
-        List<Review> reviews = reviewRepository.findByMovieDetailIdOrderByCreatedAtDesc(movieId); // 정렬/페이징은 임시
+        List<Review> reviews = reviewRepository.findByMovieDetailIdAndStatusOrderByCreatedAtDesc(movieId, Review.ReviewStatus.ACTIVE); // 정렬/페이징은 임시
         int start = page * size;
         int end = Math.min(start + size, reviews.size());
         List<ReviewResponseDto> dtoList = reviews.subList(start, end).stream()

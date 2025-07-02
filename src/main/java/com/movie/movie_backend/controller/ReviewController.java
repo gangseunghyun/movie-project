@@ -93,14 +93,25 @@ public class ReviewController {
     @PutMapping("/{reviewId}")
     public ResponseEntity<Map<String, Object>> updateReview(
             @PathVariable Long reviewId,
-            @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request,
+            @AuthenticationPrincipal Object principal) {
         try {
-            Long userId = Long.valueOf(request.get("userId").toString());
+            // 사용자 정보 추출 - getCurrentUserId 메서드 사용 (소셜 + 일반 로그인 모두 지원)
+            Long currentUserId = getCurrentUserId(principal);
+            log.info("리뷰 수정 - 현재 사용자 ID: {}", currentUserId);
+            
+            if (currentUserId == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
             String content = (String) request.get("content");
             Integer rating = request.get("rating") != null ? 
                 Integer.valueOf(request.get("rating").toString()) : null;
 
-            Review review = reviewService.updateReview(reviewId, userId, content, rating);
+            Review review = reviewService.updateReview(reviewId, currentUserId, content, rating);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -123,11 +134,20 @@ public class ReviewController {
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Map<String, Object>> deleteReview(
             @PathVariable Long reviewId,
-            @RequestBody Map<String, Object> request) {
+            @AuthenticationPrincipal Object principal) {
         try {
-            Long userId = Long.valueOf(request.get("userId").toString());
+            // 사용자 정보 추출 - getCurrentUserId 메서드 사용 (소셜 + 일반 로그인 모두 지원)
+            Long currentUserId = getCurrentUserId(principal);
+            log.info("리뷰 삭제 - 현재 사용자 ID: {}", currentUserId);
             
-            reviewService.deleteReview(reviewId, userId);
+            if (currentUserId == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            reviewService.deleteReview(reviewId, currentUserId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
