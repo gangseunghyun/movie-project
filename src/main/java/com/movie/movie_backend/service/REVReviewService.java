@@ -11,6 +11,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.movie.movie_backend.dto.ReviewRequestDto;
+import com.movie.movie_backend.dto.ReviewResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import com.movie.movie_backend.entity.ReviewLike;
+import com.movie.movie_backend.entity.Comment;
+import com.movie.movie_backend.repository.ReviewLikeRepository;
+import com.movie.movie_backend.repository.REVCommentRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +35,8 @@ public class REVReviewService {
     private final REVReviewRepository reviewRepository;
     private final USRUserRepository userRepository;
     private final PRDMovieRepository movieRepository;
+    private final ReviewLikeRepository reviewLikeRepository;
+    private final REVCommentRepository commentRepository;
 
     /**
      * 리뷰 작성 (댓글만, 평점만, 둘 다 가능)
@@ -215,5 +226,107 @@ public class REVReviewService {
         } else {
             return "EMPTY";
         }
+    }
+
+    // [DTO 기반] 리뷰 등록
+    @Transactional
+    public ReviewResponseDto createReviewDto(ReviewRequestDto dto) {
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + dto.getUserId()));
+        MovieDetail movie = movieRepository.findById(dto.getMovieId())
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + dto.getMovieId()));
+        Review review = Review.builder()
+                .content(dto.getContent())
+                .rating(dto.getRating())
+                .user(user)
+                .movieDetail(movie)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .status(Review.ReviewStatus.ACTIVE)
+                .build();
+        Review saved = reviewRepository.save(review);
+        return toResponseDto(saved, false);
+    }
+
+    // [DTO 기반] 리뷰 수정
+    @Transactional
+    public ReviewResponseDto updateReviewDto(Long reviewId, ReviewRequestDto dto) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("리뷰를 찾을 수 없습니다: " + reviewId));
+        if (!review.getUser().getId().equals(dto.getUserId())) {
+            throw new RuntimeException("리뷰를 수정할 권한이 없습니다.");
+        }
+        review.setContent(dto.getContent());
+        review.setRating(dto.getRating());
+        review.setUpdatedAt(LocalDateTime.now());
+        Review updated = reviewRepository.save(review);
+        return toResponseDto(updated, false);
+    }
+
+    // [DTO 기반] 리뷰 삭제
+    @Transactional
+    public void deleteReviewDto(Long reviewId, Long userId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("리뷰를 찾을 수 없습니다: " + reviewId));
+        if (!review.getUser().getId().equals(userId)) {
+            throw new RuntimeException("리뷰를 삭제할 권한이 없습니다.");
+        }
+        review.setStatus(Review.ReviewStatus.DELETED);
+        reviewRepository.save(review);
+    }
+
+    // [DTO 기반] 영화별 리뷰 목록(정렬/페이징)
+    public Page<ReviewResponseDto> getReviewsByMovieDto(Long movieId, String sort, int page, int size) {
+        List<Review> reviews = reviewRepository.findByMovieDetailIdOrderByCreatedAtDesc(movieId); // 정렬/페이징은 임시
+        int start = page * size;
+        int end = Math.min(start + size, reviews.size());
+        List<ReviewResponseDto> dtoList = reviews.subList(start, end).stream()
+                .map(r -> toResponseDto(r, false)).toList();
+        return new PageImpl<>(dtoList, PageRequest.of(page, size), reviews.size());
+    }
+
+    // [DTO 기반] 리뷰 상세(댓글 포함)
+    public ReviewResponseDto getReviewDetailDto(Long reviewId, Long userId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("리뷰를 찾을 수 없습니다: " + reviewId));
+        boolean likedByMe = reviewLikeRepository.existsByReviewIdAndUserId(reviewId, userId);
+        return toResponseDto(review, likedByMe);
+    }
+
+    // [DTO 기반] 리뷰 좋아요/취소
+    @Transactional
+    public void likeReview(Long reviewId, Long userId) {
+        if (!reviewLikeRepository.existsByReviewIdAndUserId(reviewId, userId)) {
+            reviewLikeRepository.save(
+                com.movie.movie_backend.entity.ReviewLike.builder()
+                    .review( reviewRepository.findById(reviewId).orElseThrow(() -> new RuntimeException("리뷰 없음")) )
+                    .user( userRepository.findById(userId).orElseThrow(() -> new RuntimeException("유저 없음")) )
+                    .createdAt(LocalDateTime.now())
+                    .build()
+            );
+        }
+    }
+    @Transactional
+    public void unlikeReview(Long reviewId, Long userId) {
+        reviewLikeRepository.deleteByReviewIdAndUserId(reviewId, userId);
+    }
+
+    // Review -> ReviewResponseDto 변환
+    private ReviewResponseDto toResponseDto(Review review, boolean likedByMe) {
+        int likeCount = reviewLikeRepository.countByReviewId(review.getId());
+        int commentCount = commentRepository.countByReviewIdAndParentIsNull(review.getId());
+        return ReviewResponseDto.builder()
+                .id(review.getId())
+                .content(review.getContent())
+                .rating(review.getRating())
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
+                .username(review.getUser().getNickname())
+                .userId(review.getUser().getId())
+                .movieId(review.getMovieDetail().getId())
+                .likeCount(likeCount)
+                .likedByMe(likedByMe)
+                .commentCount(commentCount)
+                .build();
     }
 } 

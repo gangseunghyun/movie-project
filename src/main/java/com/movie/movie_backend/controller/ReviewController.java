@@ -2,11 +2,18 @@ package com.movie.movie_backend.controller;
 
 import com.movie.movie_backend.dto.ReviewDto;
 import com.movie.movie_backend.entity.Review;
+import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.service.REVReviewService;
+import com.movie.movie_backend.repository.USRUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.movie.movie_backend.dto.ReviewRequestDto;
+import com.movie.movie_backend.dto.ReviewResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 
 import java.util.List;
 import java.util.Map;
@@ -20,20 +27,53 @@ import java.util.Optional;
 public class ReviewController {
 
     private final REVReviewService reviewService;
+    private final USRUserRepository userRepository;
 
     /**
      * 리뷰 작성
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createReview(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> createReview(@RequestBody Map<String, Object> request, @AuthenticationPrincipal Object principal) {
         try {
-            Long userId = Long.valueOf(request.get("userId").toString());
-            String movieCd = (String) request.get("movieCd");
+            // 사용자 정보 추출
+            String userEmail = null;
+            if (principal instanceof DefaultOAuth2User) {
+                DefaultOAuth2User oauth2User = (DefaultOAuth2User) principal;
+                userEmail = oauth2User.getAttribute("email");
+            }
+            
+            if (userEmail == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+            
+            // 요청 데이터 파싱
+            String movieCd = null;
+            if (request.get("movieCd") != null) {
+                movieCd = (String) request.get("movieCd");
+            } else if (request.get("movieId") != null) {
+                // movieId가 movieCd인 경우
+                movieCd = request.get("movieId").toString();
+            } else {
+                throw new RuntimeException("movieCd 또는 movieId가 필요합니다.");
+            }
+            
             String content = (String) request.get("content");
-            Integer rating = request.get("rating") != null ? 
-                Integer.valueOf(request.get("rating").toString()) : null;
+            Integer rating = null;
+            if (request.get("rating") != null) {
+                try {
+                    rating = Integer.valueOf(request.get("rating").toString());
+                } catch (NumberFormatException e) {
+                    log.warn("평점 형식이 올바르지 않습니다: {}", request.get("rating"));
+                }
+            }
 
-            Review review = reviewService.createReview(movieCd, userId, content, rating);
+            Review review = reviewService.createReview(movieCd, user.getId(), content, rating);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -151,34 +191,6 @@ public class ReviewController {
     }
 
     /**
-     * 영화의 평점 통계 조회 (왓챠피디아 스타일)
-     */
-    @GetMapping("/movie/{movieCd}/rating-stats")
-    public ResponseEntity<Map<String, Object>> getRatingStats(@PathVariable String movieCd) {
-        try {
-            Double averageRating = reviewService.getAverageRating(movieCd);
-            Long ratingCount = reviewService.getRatingCount(movieCd);
-            Long contentReviewCount = reviewService.getContentReviewCount(movieCd);
-            Map<Integer, Long> ratingDistribution = reviewService.getRatingDistribution(movieCd);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "movieCd", movieCd,
-                "averageRating", averageRating,
-                "ratingCount", ratingCount,
-                "contentReviewCount", contentReviewCount,
-                "ratingDistribution", ratingDistribution
-            ));
-        } catch (Exception e) {
-            log.error("평점 통계 조회 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "평점 통계 조회에 실패했습니다: " + e.getMessage()
-            ));
-        }
-    }
-
-    /**
      * 사용자가 특정 영화에 작성한 리뷰 조회
      */
     @GetMapping("/movie/{movieCd}/user/{userId}")
@@ -254,5 +266,69 @@ public class ReviewController {
         } else {
             return "EMPTY";
         }
+    }
+
+    /**
+     * [DTO 기반] 리뷰 등록
+     */
+    @PostMapping("/dto")
+    public ResponseEntity<ReviewResponseDto> createReviewDto(@RequestBody ReviewRequestDto requestDto) {
+        ReviewResponseDto responseDto = reviewService.createReviewDto(requestDto);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    /**
+     * [DTO 기반] 리뷰 수정
+     */
+    @PutMapping("/dto/{reviewId}")
+    public ResponseEntity<ReviewResponseDto> updateReviewDto(@PathVariable Long reviewId, @RequestBody ReviewRequestDto requestDto) {
+        ReviewResponseDto responseDto = reviewService.updateReviewDto(reviewId, requestDto);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    /**
+     * [DTO 기반] 리뷰 삭제
+     */
+    @DeleteMapping("/dto/{reviewId}")
+    public ResponseEntity<Void> deleteReviewDto(@PathVariable Long reviewId, @RequestParam Long userId) {
+        reviewService.deleteReviewDto(reviewId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * [DTO 기반] 영화별 리뷰 목록(정렬/페이징)
+     */
+    @GetMapping("/dto/list")
+    public ResponseEntity<Page<ReviewResponseDto>> getReviewsByMovieDto(
+            @RequestParam Long movieId,
+            @RequestParam(defaultValue = "date") String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<ReviewResponseDto> pageResult = reviewService.getReviewsByMovieDto(movieId, sort, page, size);
+        return ResponseEntity.ok(pageResult);
+    }
+
+    /**
+     * [DTO 기반] 리뷰 상세(댓글 포함)
+     */
+    @GetMapping("/dto/{reviewId}")
+    public ResponseEntity<ReviewResponseDto> getReviewDetailDto(@PathVariable Long reviewId, @RequestParam Long userId) {
+        ReviewResponseDto responseDto = reviewService.getReviewDetailDto(reviewId, userId);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    /**
+     * [DTO 기반] 리뷰 좋아요/취소
+     */
+    @PostMapping("/dto/{reviewId}/like")
+    public ResponseEntity<Void> likeReview(@PathVariable Long reviewId, @RequestParam Long userId) {
+        reviewService.likeReview(reviewId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/dto/{reviewId}/like")
+    public ResponseEntity<Void> unlikeReview(@PathVariable Long reviewId, @RequestParam Long userId) {
+        reviewService.unlikeReview(reviewId, userId);
+        return ResponseEntity.ok().build();
     }
 } 

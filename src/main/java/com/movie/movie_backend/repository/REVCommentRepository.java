@@ -35,4 +35,7 @@ public interface REVCommentRepository extends JpaRepository<Comment, Long> {
 
     // 활성 상태의 댓글만 조회
     List<Comment> findByReviewIdAndStatusOrderByCreatedAtDesc(Long reviewId, Comment.CommentStatus status);
+
+    int countByReviewIdAndParentIsNull(Long reviewId);
+    List<Comment> findByReviewIdAndParentIsNullOrderByCreatedAtAsc(Long reviewId);
 } 
