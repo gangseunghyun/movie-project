@@ -35,6 +35,10 @@ const UserPage = ({ onMovieClick }) => {
   const [myComments, setMyComments] = useState([]);
   const [myCommentsLoading, setMyCommentsLoading] = useState(false);
 
+  // 내가 좋아요한 코멘트 상태 추가
+  const [likedComments, setLikedComments] = useState([]);
+  const [likedCommentsLoading, setLikedCommentsLoading] = useState(false);
+
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
@@ -177,6 +181,25 @@ const UserPage = ({ onMovieClick }) => {
       }
     };
     fetchMyComments();
+  }, [user, currentUser, nickname]);
+
+  // 좋아요한 리뷰(코멘트) 목록 가져오기
+  useEffect(() => {
+    const fetchLikedComments = async () => {
+      if (!user || !currentUser || currentUser.nickname !== nickname) return;
+      setLikedCommentsLoading(true);
+      try {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-reviews`, { withCredentials: true });
+        if (response.data.success) {
+          setLikedComments(response.data.data);
+        }
+      } catch (error) {
+        console.error('좋아요한 리뷰 목록 조회 실패:', error);
+      } finally {
+        setLikedCommentsLoading(false);
+      }
+    };
+    fetchLikedComments();
   }, [user, currentUser, nickname]);
 
   const handleTagChange = (tag) => {
@@ -514,6 +537,61 @@ const UserPage = ({ onMovieClick }) => {
                   </div>
                   <div className="comment-info">
                     <h4 className="comment-movie-title">{comment.movieNm}</h4>
+                    <div className="comment-meta">
+                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                      {comment.rating && (
+                        <span className="comment-rating">★ {comment.rating}</span>
+                      )}
+                      <span className="comment-likes">♥ {comment.likeCount}</span>
+                    </div>
+                    <div className="comment-content">{comment.content}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 내가 좋아요한 코멘트 섹션 */}
+        <div className="liked-comments-section">
+          <div className="section-header">
+            <h3>내가 좋아요한 코멘트</h3>
+            <span className="comment-count">({likedComments.length}개)</span>
+          </div>
+          {likedCommentsLoading ? (
+            <div className="loading-comments">코멘트를 불러오는 중...</div>
+          ) : likedComments.length === 0 ? (
+            <div className="no-liked-comments">
+              <span>아직 좋아요한 코멘트가 없습니다.</span>
+              <p>영화 상세페이지에서 마음에 드는 코멘트를 좋아요해보세요!</p>
+            </div>
+          ) : (
+            <div className="liked-comments-grid">
+              {likedComments.map(comment => (
+                <div
+                  key={comment.id}
+                  className="liked-comment-card"
+                  onClick={() => onMovieClick && onMovieClick({
+                    movieCd: comment.movieCd,
+                    movieNm: comment.movieNm,
+                    posterUrl: comment.posterUrl,
+                    genreNm: comment.genreNm,
+                    openDt: comment.openDt
+                  })}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="comment-movie-poster">
+                    {comment.posterUrl ? (
+                      <img src={comment.posterUrl} alt={comment.movieNm} />
+                    ) : (
+                      <div className="no-poster">No Poster</div>
+                    )}
+                  </div>
+                  <div className="comment-info">
+                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
+                    <div className="comment-author">
+                      <span className="author-nickname">by {comment.authorNickname}</span>
+                    </div>
                     <div className="comment-meta">
                       <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
                       {comment.rating && (
