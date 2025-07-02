@@ -189,12 +189,19 @@ function App() {
       .catch(() => {
         setAverageRating(null);
         setRatingCount(null);
+      });
+    // 별점 분포(리뷰 기준)
+    console.log('평점 분포 API 호출 시작:', selectedMovie.movieCd);
+    axios.get(`${API_BASE_URL}/ratings/movie/${selectedMovie.movieCd}/distribution`)
+      .then(res => {
+        console.log('평점 분포 API 응답:', res.data);
+        setRatingDistribution(res.data.data?.distribution || null);
+      })
+      .catch((error) => {
+        console.error('평점 분포 API 실패:', error);
+        setRatingDistribution(null);
       })
       .finally(() => setLoadingRating(false));
-    // 별점 분포(리뷰 기준)
-    axios.get(`${API_BASE_URL}/ratings/movie/${selectedMovie.movieCd}/distribution`)
-      .then(res => setRatingDistribution(res.data.data?.distribution || null))
-      .catch(() => setRatingDistribution(null));
   }, [selectedMovie]);
 
   // 최근 검색어 불러오기
@@ -664,12 +671,8 @@ function App() {
       return;
     }
     try {
-      setLoading(true);
-<<<<<<< HEAD
-      const response = await axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/distribution`)
-=======
+      // 별도의 로딩 상태 사용 (전체 페이지 로딩에 영향 주지 않음)
       const response = await axios.get(`http://localhost:80/api/users/${currentUser.id}/recommended-movies`, { withCredentials: true });
->>>>>>> main
       setRecommendedMoviesData(response.data);
       // 첫 번째 탭을 기본으로 설정
       if (typeof response.data === 'object' && !Array.isArray(response.data)) {
@@ -681,10 +684,12 @@ function App() {
     } catch (error) {
       console.error('추천 영화 조회 실패:', error);
       setRecommendedMoviesData([]);
-    } finally {
-      setLoading(false);
     }
   };
+
+
+
+
 
   const fetchTmdbRatings = async () => {
     try {
@@ -2892,15 +2897,11 @@ function App() {
 
   // App 컴포넌트 최상단에 추가
   const [ratingDistribution, setRatingDistribution] = useState(null);
-  useEffect(() => {
-    if (showMovieDetail && selectedMovie && selectedMovie.movieCd) {
-      axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/distribution`)
-        .then(res => setRatingDistribution(res.data.distribution))
-        .catch(() => setRatingDistribution(null));
-    } else {
-      setRatingDistribution(null);
-    }
-  }, [showMovieDetail, selectedMovie]);
+
+
+
+
+
 
   const navigate = useNavigate();
 

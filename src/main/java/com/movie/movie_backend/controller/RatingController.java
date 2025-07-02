@@ -127,9 +127,11 @@ public class RatingController {
     @GetMapping("/movie/{movieCd}/distribution")
     public ResponseEntity<Map<String, Object>> getRatingDistribution(@PathVariable String movieCd) {
         try {
+            log.info("별점 분포 조회 시작: movieCd={}", movieCd);
             Map<Double, Long> distribution = ratingService.getRatingDistribution(movieCd);
             Map<String, Object> data = new HashMap<>();
             data.put("distribution", distribution);
+            log.info("별점 분포 조회 완료: distribution={}", distribution);
             return ok(data, "별점 분포를 조회했습니다.");
         } catch (Exception e) {
             log.error("별점 분포 조회 실패", e);
