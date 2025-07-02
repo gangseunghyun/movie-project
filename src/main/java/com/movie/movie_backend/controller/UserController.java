@@ -12,6 +12,9 @@ import com.movie.movie_backend.constant.PersonType;
 import com.movie.movie_backend.entity.Actor;
 import com.movie.movie_backend.entity.Director;
 import com.movie.movie_backend.entity.Review;
+import com.movie.movie_backend.entity.Comment;
+import com.movie.movie_backend.entity.CommentLike;
+import com.movie.movie_backend.entity.ReviewLike;
 import com.movie.movie_backend.mapper.MovieMapper;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
@@ -22,6 +25,7 @@ import com.movie.movie_backend.repository.REVLikeRepository;
 import com.movie.movie_backend.repository.PersonLikeRepository;
 import com.movie.movie_backend.repository.ReviewLikeRepository;
 import com.movie.movie_backend.repository.REVReviewRepository;
+import com.movie.movie_backend.repository.CommentLikeRepository;
 import com.movie.movie_backend.service.MailService;
 import com.movie.movie_backend.service.USRUserService;
 import com.movie.movie_backend.constant.Provider;
@@ -64,6 +68,7 @@ public class UserController {
     private final PersonLikeRepository personLikeRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final REVReviewRepository reviewRepository;
+    private final CommentLikeRepository commentLikeRepository;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -946,6 +951,123 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", "작성한 코멘트 목록 조회에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    // [8] 사용자가 좋아요한 리뷰 목록 조회 (내가 쓴 리뷰 제외)
+    @GetMapping("/api/users/{userId}/liked-reviews")
+    public ResponseEntity<Map<String, Object>> getLikedReviews(@PathVariable Long userId) {
+        try {
+            log.info("사용자 좋아요한 리뷰 목록 조회: {}", userId);
+
+            List<ReviewLike> likedReviews = reviewLikeRepository.findLikedReviewsByUserIdExcludingOwn(userId);
+
+            List<Map<String, Object>> reviewDtos = likedReviews.stream()
+                .map(reviewLike -> {
+                    Review review = reviewLike.getReview();
+                    Map<String, Object> dto = new HashMap<>();
+                    dto.put("id", review.getId());
+                    dto.put("content", review.getContent());
+                    dto.put("rating", review.getRating());
+                    dto.put("createdAt", review.getCreatedAt());
+                    dto.put("updatedAt", review.getUpdatedAt());
+                    // 작성자 정보
+                    User reviewUser = review.getUser();
+                    dto.put("authorNickname", reviewUser.getNickname());
+                    dto.put("authorId", reviewUser.getId());
+                    // 영화 정보
+                    MovieDetail md = review.getMovieDetail();
+                    dto.put("movieCd", md.getMovieCd());
+                    dto.put("movieNm", md.getMovieNm());
+                    dto.put("posterUrl", md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null);
+                    dto.put("genreNm", md.getGenreNm());
+                    dto.put("openDt", md.getOpenDt());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", reviewDtos);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("좋아요한 리뷰 목록 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "좋아요한 리뷰 목록 조회에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    // [9] 사용자가 좋아요한 모든 코멘트 목록 조회 (디버깅용)
+    @GetMapping("/api/users/{userId}/all-liked-comments")
+    public ResponseEntity<Map<String, Object>> getAllLikedComments(@PathVariable Long userId) {
+        try {
+            log.info("사용자 좋아요한 모든 코멘트 목록 조회 (디버깅): {}", userId);
+            
+            // 사용자가 좋아요한 모든 코멘트 목록 조회
+            List<CommentLike> allLikedComments = commentLikeRepository.findAllLikedCommentsByUserId(userId);
+            log.info("조회된 모든 좋아요한 코멘트 수: {}", allLikedComments.size());
+            
+            // 코멘트 정보로 변환
+            List<Map<String, Object>> commentDtos = allLikedComments.stream()
+                .map(commentLike -> {
+                    Comment comment = commentLike.getComment();
+                    Review review = comment.getReview();
+                    Map<String, Object> commentDto = new HashMap<>();
+                    commentDto.put("id", comment.getId());
+                    commentDto.put("content", comment.getContent());
+                    commentDto.put("createdAt", comment.getCreatedAt());
+                    commentDto.put("updatedAt", comment.getUpdatedAt());
+                    
+                    // 작성자 정보 추가
+                    User commentUser = comment.getUser();
+                    if (commentUser != null) {
+                        commentDto.put("authorId", commentUser.getId());
+                        commentDto.put("authorNickname", commentUser.getNickname());
+                        commentDto.put("isMyComment", commentUser.getId().equals(userId));
+                    }
+                    
+                    // 리뷰 정보 추가 (평점 포함)
+                    if (review != null) {
+                        commentDto.put("rating", review.getRating());
+                        
+                        // 영화 정보 추가
+                        MovieDetail movie = review.getMovieDetail();
+                        if (movie != null) {
+                            commentDto.put("movieCd", movie.getMovieCd());
+                            commentDto.put("movieNm", movie.getMovieNm());
+                            commentDto.put("posterUrl", movie.getMovieList() != null ? movie.getMovieList().getPosterUrl() : null);
+                            commentDto.put("genreNm", movie.getGenreNm());
+                            commentDto.put("openDt", movie.getOpenDt());
+                        }
+                    }
+                    
+                    // 좋아요 수 추가
+                    int likeCount = commentLikeRepository.countByCommentId(comment.getId());
+                    commentDto.put("likeCount", likeCount);
+                    commentDto.put("likedByMe", true);
+                    
+                    return commentDto;
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", commentDtos);
+            response.put("count", commentDtos.size());
+            response.put("message", "좋아요한 모든 코멘트 목록을 성공적으로 조회했습니다.");
+            
+            log.info("좋아요한 모든 코멘트 목록 조회 성공: {}개", commentDtos.size());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("좋아요한 모든 코멘트 목록 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "좋아요한 모든 코멘트 목록 조회에 실패했습니다: " + e.getMessage()
             ));
         }
     }

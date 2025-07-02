@@ -781,8 +781,50 @@
   word-break: break-all;
 }
 .loading-comments,
-.no-my-comments {
+.no-my-comments,
+.no-liked-comments {
   text-align: center;
   color: #6c757d;
   padding: 20px;
+}
+
+/* 좋아요한 코멘트 섹션 스타일 */
+.liked-comments-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.liked-comments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 15px;
+}
+
+.liked-comment-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.liked-comment-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+  transform: translateY(-2px);
+}
+
+.comment-author {
+  margin-bottom: 4px;
+}
+
+.author-nickname {
+  font-size: 12px;
+  color: #667eea;
+  font-weight: 500;
 } 
