@@ -21,5 +21,9 @@ public class Actor {
     @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("actor")
     private List<Cast> casts; // 출연한 영화 목록 (역할 정보 포함)
+
+    @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("actor")
+    private List<PersonLike> personLikes; // 이 배우를 좋아요한 사용자 목록
     // data
 } 
