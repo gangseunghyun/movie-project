@@ -36,19 +36,19 @@ function Signup({ onSignupSuccess }) {
       let endpoint = '';
       switch (type) {
         case 'loginId':
-          endpoint = `/api/users/check-login-id?loginId=${value}`;
+          endpoint = `http://localhost:80/api/users/check-login-id?loginId=${value}`;
           break;
         case 'email':
-          endpoint = `/api/users/check-email?email=${value}`;
+          endpoint = `http://localhost:80/api/users/check-email?email=${value}`;
           break;
         case 'nickname':
-          endpoint = `/api/users/check-nickname?nickname=${value}`;
+          endpoint = `http://localhost:80/api/users/check-nickname?nickname=${value}`;
           break;
         default:
           return;
       }
 
-      const response = await axios.get(`http://localhost:80${endpoint}`);
+      const response = await axios.get(endpoint);
       setValidations(prev => ({
         ...prev,
         [type]: {

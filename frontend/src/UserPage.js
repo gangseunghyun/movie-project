@@ -65,7 +65,7 @@ const UserPage = () => {
     try {
       // genreTags에 존재하는 selectedTags만 저장
       const validTags = selectedTags.filter(tag => genreTags.includes(tag));
-      await axios.put(`/api/users/${user.id}/preferred-tags`, validTags);
+      await axios.put(`http://localhost:80/api/users/${user.id}/preferred-tags`, validTags);
       setPreferredTags(validTags);
       setEditMode(false);
       alert('선호 태그가 저장되었습니다!');

@@ -13,7 +13,7 @@ const PersonDetail = ({ type }) => {
     if (!type || !id) return; // type이나 id가 없으면 API 호출하지 않음
     
     setLoading(true);
-    axios.get(`/api/person/${type}/${id}`)
+    axios.get(`http://localhost:80/api/person/${type}/${id}`)
       .then(res => {
         setPerson(res.data.person);
         setMovies(res.data.movies);
