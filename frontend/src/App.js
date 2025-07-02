@@ -2963,14 +2963,20 @@ function App() {
         <Route path="/signup" element={<Signup onSignupSuccess={handleSignupSuccess} />} />
         <Route path="/social-join" element={<SocialJoin />} />
         <Route path="/user-search" element={<UserSearch />} />
-        <Route path="/user/:nickname" element={<UserPage />} />
+        <Route path="/user/:nickname" element={<UserPage onMovieClick={handleMovieClick} />} />
         <Route path="/find-id" element={<FindId />} />
         <Route path="/find-password" element={<FindPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/director/:id" element={<PersonDetail type="director" />} />
         <Route path="/actor/:id" element={<PersonDetail type="actor" />} />
       </Routes>
-      {/* 기존 내용 ... */}
+      
+      {/* 영화 상세 모달 - 모든 라우트에서 항상 렌더링 */}
+      {showMovieDetail && selectedMovie && renderMovieDetailModal()}
+      
+      {/* 영화 등록/수정 폼 모달 - 모든 라우트에서 항상 렌더링 */}
+      {showMovieForm && renderMovieForm()}
+      
       {/* 로그인 안내 모달 */}
       {showLoginAlert && <LoginAlertModal />}
       
