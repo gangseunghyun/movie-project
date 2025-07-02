@@ -361,7 +361,7 @@ public class DataViewController {
     @GetMapping("/api/movie-detail-dto")
     @ResponseBody
     @Operation(summary = "MovieDetail DTO 데이터 조회 API (왓챠피디아 스타일)", 
-               description = "영화 상세정보를 왓챠피디아 스타일로 조회합니다. 포스터 URL, 감독명, 배우 목록, 줄거리 등 완전한 정보. React에서 사용할 때: fetch('/data/api/movie-detail-dto?page=0&size=10&sort=date')")
+               description = "영화 상세정보를 왓챠피디아 스타일로 조회합니다. 포스터 URL, 감독명, 배우 목록, 줄거리 등 완전한 정보. React에서 사용할 때: fetch('/data/api/movie-detail-dto?page=0&size=10&sort=date') 또는 fetch('/data/api/movie-detail-dto?movieCd=20201234')")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "MovieDetail DTO 데이터 조회 성공"),
         @ApiResponse(responseCode = "400", description = "MovieDetail DTO 데이터 조회 실패")
@@ -370,29 +370,45 @@ public class DataViewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "date") String sort,
+            @RequestParam(required = false) String movieCd,
             HttpServletRequest request) {
         
         try {
             List<MovieDetail> movieDetails;
             
-            // 정렬 옵션에 따라 데이터 조회
-            switch (sort) {
-                case "date":
-                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 개봉일 최신순
-                    break;
-                case "nameAsc":
-                    movieDetails = movieRepository.findAllByOrderByMovieNmAsc(); // 이름 오름차순
-                    break;
-                case "nameDesc":
-                    movieDetails = movieRepository.findAllByOrderByMovieNmDesc(); // 이름 내림차순
-                    break;
-                case "rating":
-                    movieDetails = movieRepository.findAll();
-                    movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
-                    break;
-                default:
-                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 기본값: 개봉일 최신순
-                    break;
+            // movieCd가 있으면 특정 영화만 조회
+            if (movieCd != null && !movieCd.trim().isEmpty()) {
+                MovieDetail movieDetail = movieRepository.findByMovieCd(movieCd).orElse(null);
+                if (movieDetail == null) {
+                    return ResponseEntity.ok(Map.of(
+                        "data", List.of(),
+                        "total", 0,
+                        "page", page,
+                        "size", size,
+                        "totalPages", 0
+                    ));
+                }
+                movieDetails = List.of(movieDetail);
+            } else {
+                // 정렬 옵션에 따라 데이터 조회
+                switch (sort) {
+                    case "date":
+                        movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 개봉일 최신순
+                        break;
+                    case "nameAsc":
+                        movieDetails = movieRepository.findAllByOrderByMovieNmAsc(); // 이름 오름차순
+                        break;
+                    case "nameDesc":
+                        movieDetails = movieRepository.findAllByOrderByMovieNmDesc(); // 이름 내림차순
+                        break;
+                    case "rating":
+                        movieDetails = movieRepository.findAll();
+                        movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                        break;
+                    default:
+                        movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 기본값: 개봉일 최신순
+                        break;
+                }
             }
             
             int total = movieDetails.size();

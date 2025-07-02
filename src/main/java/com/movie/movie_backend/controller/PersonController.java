@@ -231,6 +231,7 @@ public class PersonController {
             .stream()
             .map(cast -> cast.getMovieDetail())
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
+            .distinct() // 중복 제거
             .collect(Collectors.toList());
         // 별점순으로 상위 3개 작품
         List<MovieDetail> topMovies = allMovies.stream()
@@ -374,6 +375,7 @@ public class PersonController {
         List<MovieDetail> allMovies = movieRepository.findAll().stream()
             .filter(movie -> movie.getDirector() != null && movie.getDirector().getId().equals(currentRecommendedDirector.getId()))
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
+            .distinct() // 중복 제거
             .collect(Collectors.toList());
         // 별점순으로 상위 3개 작품
         List<MovieDetail> topMovies = allMovies.stream()
