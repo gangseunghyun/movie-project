@@ -11,6 +11,7 @@ import com.movie.movie_backend.entity.PersonLike;
 import com.movie.movie_backend.constant.PersonType;
 import com.movie.movie_backend.entity.Actor;
 import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.entity.Review;
 import com.movie.movie_backend.mapper.MovieMapper;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
@@ -19,6 +20,8 @@ import com.movie.movie_backend.repository.PRDTagRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.REVLikeRepository;
 import com.movie.movie_backend.repository.PersonLikeRepository;
+import com.movie.movie_backend.repository.ReviewLikeRepository;
+import com.movie.movie_backend.repository.REVReviewRepository;
 import com.movie.movie_backend.service.MailService;
 import com.movie.movie_backend.service.USRUserService;
 import com.movie.movie_backend.constant.Provider;
@@ -59,6 +62,8 @@ public class UserController {
     private final REVLikeRepository likeRepository;
     private final MovieDetailMapper movieDetailMapper;
     private final PersonLikeRepository personLikeRepository;
+    private final ReviewLikeRepository reviewLikeRepository;
+    private final REVReviewRepository reviewRepository;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -888,6 +893,59 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", "좋아요한 감독 목록 조회에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    // [7] 사용자가 작성한 코멘트(리뷰) 목록 조회
+    @GetMapping("/api/users/{userId}/my-comments")
+    public ResponseEntity<Map<String, Object>> getMyComments(@PathVariable Long userId) {
+        try {
+            log.info("사용자 작성 코멘트 목록 조회: {}", userId);
+            
+            // 사용자가 작성한 리뷰 목록 조회
+            List<Review> myReviews = reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            
+            // 리뷰 정보로 변환
+            List<Map<String, Object>> reviewDtos = myReviews.stream()
+                .map(review -> {
+                    Map<String, Object> reviewDto = new HashMap<>();
+                    reviewDto.put("id", review.getId());
+                    reviewDto.put("content", review.getContent());
+                    reviewDto.put("rating", review.getRating());
+                    reviewDto.put("createdAt", review.getCreatedAt());
+                    reviewDto.put("updatedAt", review.getUpdatedAt());
+                    
+                    // 영화 정보 추가
+                    MovieDetail movie = review.getMovieDetail();
+                    if (movie != null) {
+                        reviewDto.put("movieCd", movie.getMovieCd());
+                        reviewDto.put("movieNm", movie.getMovieNm());
+                        reviewDto.put("posterUrl", movie.getMovieList() != null ? movie.getMovieList().getPosterUrl() : null);
+                    }
+                    
+                    // 좋아요 수 추가
+                    int likeCount = reviewLikeRepository.countByReviewId(review.getId());
+                    reviewDto.put("likeCount", likeCount);
+                    
+                    return reviewDto;
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", reviewDtos);
+            response.put("count", reviewDtos.size());
+            response.put("message", "작성한 코멘트 목록을 성공적으로 조회했습니다.");
+            
+            log.info("작성한 코멘트 목록 조회 성공: {}개", reviewDtos.size());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("작성한 코멘트 목록 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "작성한 코멘트 목록 조회에 실패했습니다: " + e.getMessage()
             ));
         }
     }
