@@ -174,6 +174,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/reviews/**").authenticated()  // 나머지 리뷰 관련 기능은 인증 필요
                 .requestMatchers("/api/search-history").authenticated()
                 .requestMatchers("/api/users/*/liked-movies").permitAll()
+                .requestMatchers("/api/users/*/liked-actors").permitAll()
+                .requestMatchers("/api/users/*/liked-directors").permitAll()
                 .anyRequest().authenticated()
             .and()
             .formLogin().disable()

@@ -7,6 +7,10 @@ import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.Tag;
 import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.Like;
+import com.movie.movie_backend.entity.PersonLike;
+import com.movie.movie_backend.constant.PersonType;
+import com.movie.movie_backend.entity.Actor;
+import com.movie.movie_backend.entity.Director;
 import com.movie.movie_backend.mapper.MovieMapper;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
@@ -14,6 +18,7 @@ import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.repository.PRDTagRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.REVLikeRepository;
+import com.movie.movie_backend.repository.PersonLikeRepository;
 import com.movie.movie_backend.service.MailService;
 import com.movie.movie_backend.service.USRUserService;
 import com.movie.movie_backend.constant.Provider;
@@ -53,6 +58,7 @@ public class UserController {
     private final PRDMovieRepository movieRepository;
     private final REVLikeRepository likeRepository;
     private final MovieDetailMapper movieDetailMapper;
+    private final PersonLikeRepository personLikeRepository;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -800,6 +806,88 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", "찜한 영화 목록 조회에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    // [5] 사용자가 좋아요한 배우 목록 조회
+    @GetMapping("/api/users/{userId}/liked-actors")
+    public ResponseEntity<Map<String, Object>> getLikedActors(@PathVariable Long userId) {
+        try {
+            log.info("사용자 좋아요한 배우 목록 조회: {}", userId);
+            
+            // 사용자가 좋아요한 배우 목록 조회
+            List<PersonLike> likedActors = personLikeRepository.findByUserIdAndPersonTypeOrderByCreatedAtDesc(userId, PersonType.ACTOR);
+            
+            // Actor 정보로 변환
+            List<Map<String, Object>> actorDtos = likedActors.stream()
+                .map(personLike -> {
+                    Actor actor = personLike.getActor();
+                    Map<String, Object> actorDto = new HashMap<>();
+                    actorDto.put("id", actor.getId());
+                    actorDto.put("name", actor.getName());
+                    actorDto.put("photoUrl", actor.getPhotoUrl());
+                    actorDto.put("likeCount", personLikeRepository.countByActorAndPersonType(actor, PersonType.ACTOR));
+                    actorDto.put("likedByMe", true); // 이미 좋아요한 배우이므로 true
+                    return actorDto;
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", actorDtos);
+            response.put("count", actorDtos.size());
+            response.put("message", "좋아요한 배우 목록을 성공적으로 조회했습니다.");
+            
+            log.info("좋아요한 배우 목록 조회 성공: {}개", actorDtos.size());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("좋아요한 배우 목록 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "좋아요한 배우 목록 조회에 실패했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    // [6] 사용자가 좋아요한 감독 목록 조회
+    @GetMapping("/api/users/{userId}/liked-directors")
+    public ResponseEntity<Map<String, Object>> getLikedDirectors(@PathVariable Long userId) {
+        try {
+            log.info("사용자 좋아요한 감독 목록 조회: {}", userId);
+            
+            // 사용자가 좋아요한 감독 목록 조회
+            List<PersonLike> likedDirectors = personLikeRepository.findByUserIdAndPersonTypeOrderByCreatedAtDesc(userId, PersonType.DIRECTOR);
+            
+            // Director 정보로 변환
+            List<Map<String, Object>> directorDtos = likedDirectors.stream()
+                .map(personLike -> {
+                    Director director = personLike.getDirector();
+                    Map<String, Object> directorDto = new HashMap<>();
+                    directorDto.put("id", director.getId());
+                    directorDto.put("name", director.getName());
+                    directorDto.put("photoUrl", director.getPhotoUrl());
+                    directorDto.put("likeCount", personLikeRepository.countByDirectorAndPersonType(director, PersonType.DIRECTOR));
+                    directorDto.put("likedByMe", true); // 이미 좋아요한 감독이므로 true
+                    return directorDto;
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", directorDtos);
+            response.put("count", directorDtos.size());
+            response.put("message", "좋아요한 감독 목록을 성공적으로 조회했습니다.");
+            
+            log.info("좋아요한 감독 목록 조회 성공: {}개", directorDtos.size());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("좋아요한 감독 목록 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "좋아요한 감독 목록 조회에 실패했습니다: " + e.getMessage()
             ));
         }
     }
