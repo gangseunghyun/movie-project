@@ -14,7 +14,7 @@ function LoginChoice() {
   // 자체 로그인
   const handleLocalLogin = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/login', {
+    const res = await fetch('http://localhost:80/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

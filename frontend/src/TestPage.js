@@ -37,7 +37,7 @@ function TestPage() {
   // 현재 사용자 확인
   const checkCurrentUser = async () => {
     try {
-      const res = await fetch('/api/current-user', { credentials: 'include' });
+      const res = await fetch('http://localhost:80/api/current-user', { credentials: 'include' });
       if (res.ok) {
         const user = await res.json();
         setCurrentUser(user);
@@ -55,7 +55,7 @@ function TestPage() {
   const doSignup = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/users/join', {
+      const res = await fetch('http://localhost:80/api/users/join', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(signup)
       });
@@ -69,7 +69,7 @@ function TestPage() {
   const doLogin = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('http://localhost:80/api/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ username: login.loginId, password: login.password })
       });
@@ -84,7 +84,7 @@ function TestPage() {
   const doLogout = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      const res = await fetch('http://localhost:80/api/logout', { method: 'POST', credentials: 'include' });
       const data = await res.json();
       addResult('로그아웃', '성공', data);
       setCurrentUser(null);
@@ -102,7 +102,7 @@ function TestPage() {
   const doFindId = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/find-id', {
+      const res = await fetch('http://localhost:80/api/find-id', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: find.email })
       });
@@ -116,7 +116,7 @@ function TestPage() {
   const doForgotPassword = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/forgot-password', {
+      const res = await fetch('http://localhost:80/api/forgot-password', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: find.email })
       });
@@ -130,7 +130,7 @@ function TestPage() {
   const doCheckNickname = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/users/check-nickname?nickname=${nickname.nickname}`);
+      const res = await fetch(`http://localhost:80/api/users/check-nickname?nickname=${nickname.nickname}`);
       const data = await res.json();
       addResult('닉네임 중복 확인', '성공', data);
     } catch (e) { addResult('닉네임 중복 확인', '에러', e.message); }
@@ -141,7 +141,7 @@ function TestPage() {
   const doRecommendNickname = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/users/recommend-nickname');
+      const res = await fetch('http://localhost:80/api/users/recommend-nickname');
       const data = await res.json();
       addResult('닉네임 추천', '성공', data);
     } catch (e) { addResult('닉네임 추천', '에러', e.message); }
@@ -152,7 +152,7 @@ function TestPage() {
   const doSearch = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?query=${encodeURIComponent(search.query)}`);
+      const res = await fetch(`http://localhost:80/api/search?query=${encodeURIComponent(search.query)}`);
       const data = await res.json();
       addResult('영화 검색', '성공', data);
     } catch (e) { addResult('영화 검색', '에러', e.message); }

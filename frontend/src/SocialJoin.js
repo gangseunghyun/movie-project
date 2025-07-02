@@ -25,7 +25,7 @@ function SocialJoin() {
     if (!nickname) return;
     
     try {
-      const response = await axios.get(`/api/users/check-nickname?nickname=${nickname}`);
+      const response = await axios.get(`http://localhost:80/api/users/check-nickname?nickname=${nickname}`);
       setValidations(prev => ({
         ...prev,
         nickname: {
@@ -47,7 +47,7 @@ function SocialJoin() {
 
   const getRecommendNicknames = async () => {
     try {
-      const response = await axios.get('/api/users/recommend-nickname');
+      const response = await axios.get('http://localhost:80/api/users/recommend-nickname');
       if (response.data.nicknames && response.data.nicknames.length > 0) {
         const recommendedNickname = response.data.nicknames[0];
         setFormData(prev => ({ ...prev, nickname: recommendedNickname }));
@@ -76,7 +76,7 @@ function SocialJoin() {
     }
 
     try {
-      const response = await axios.post('/api/social-join-complete', {
+      const response = await axios.post('http://localhost:80/api/social-join-complete', {
         nickname: formData.nickname,
         agree: formData.agree
       });

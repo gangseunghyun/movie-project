@@ -173,7 +173,7 @@ function App() {
     if (!selectedMovie) return;
     setLoadingRating(true);
     // 내 별점
-    axios.get(`/api/user-ratings/${selectedMovie.movieCd}`)
+    axios.get(`http://localhost:80/api/user-ratings/${selectedMovie.movieCd}`)
       .then(res => {
         if (res.data.success && res.data.data) {
           setUserRating(res.data.data.score);
@@ -183,7 +183,7 @@ function App() {
       })
       .catch(() => setUserRating(null));
     // 평균 별점/참여자 수
-    axios.get(`/api/user-ratings/movie/${selectedMovie.movieCd}/average`)
+    axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/average`)
       .then(res => {
         if (res.data.success) {
           setAverageRating(res.data.averageRating);
@@ -669,7 +669,7 @@ function App() {
     
     try {
       setLoading(true);
-      const response = await axios.get(`/api/users/${currentUser.id}/recommended-movies`);
+      const response = await axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/distribution`)
       setRecommendedMoviesData(response.data);
       
       // 첫 번째 탭을 기본으로 설정
@@ -1099,7 +1099,7 @@ function App() {
   // 찜 추가
   const handleLikeMovie = async (movieCd) => {
     try {
-      await axios.post(`/api/movies/${movieCd}/like`, {}, { withCredentials: true });
+      await axios.post(`http://localhost:80/api/movies/${movieCd}/like`, {}, { withCredentials: true });
       updateMovieLikeState(movieCd, true);
     } catch (error) {
       alert('찜에 실패했습니다.');
@@ -1109,7 +1109,7 @@ function App() {
   // 찜 취소
   const handleUnlikeMovie = async (movieCd) => {
     try {
-      await axios.delete(`/api/movies/${movieCd}/like`, { withCredentials: true });
+      await axios.delete(`http://localhost:80/api/movies/${movieCd}/like`, { withCredentials: true });
       updateMovieLikeState(movieCd, false);
     } catch (error) {
       alert('찜 취소에 실패했습니다.');
@@ -1930,7 +1930,7 @@ function App() {
   const handleStarChange = (score) => {
     if (!selectedMovie) return;
     setLoadingRating(true);
-    axios.post('/api/user-ratings', {
+    axios.post('http://localhost:80/api/user-ratings', {
       movieCd: selectedMovie.movieCd,
       score
     }, {
@@ -1940,8 +1940,7 @@ function App() {
         if (res.data.success) {
           setUserRating(score);
           // 평균 별점/참여자 수 갱신
-          return axios.get(`/api/user-ratings/movie/${selectedMovie.movieCd}/average`);
-        }
+          return axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/average`);        }
       })
       .then(res => {
         if (res && res.data.success) {
@@ -2867,7 +2866,7 @@ function App() {
   const [ratingDistribution, setRatingDistribution] = useState(null);
   useEffect(() => {
     if (showMovieDetail && selectedMovie && selectedMovie.movieCd) {
-      axios.get(`/api/user-ratings/movie/${selectedMovie.movieCd}/distribution`)
+      axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/distribution`)
         .then(res => setRatingDistribution(res.data.distribution))
         .catch(() => setRatingDistribution(null));
     } else {
