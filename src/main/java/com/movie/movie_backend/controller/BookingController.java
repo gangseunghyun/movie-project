@@ -172,4 +172,12 @@ public class BookingController {
         Payment payment = bookingService.completePayment(impUid, merchantUid, userId, reservationId);
         return ResponseEntity.ok(Map.of("success", true, "paymentId", payment.getId()));
     }
+
+    @PostMapping("/payment/webhook")
+    public ResponseEntity<?> handleIamportWebhook(@RequestBody Map<String, Object> payload) {
+        String impUid = (String) payload.get("imp_uid");
+        String merchantUid = (String) payload.get("merchant_uid");
+        bookingService.completePayment(impUid, merchantUid, null, null);
+        return ResponseEntity.ok().build();
+    }
 } 

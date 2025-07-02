@@ -4,7 +4,9 @@ public enum PaymentStatus {
     PENDING("대기중"),
     SUCCESS("성공"),
     FAILED("실패"),
-    CANCELLED("취소됨");
+    CANCELLED("취소됨"),
+    PAID("결제완료"),
+    OTHER("기타");
 
     private final String displayName;
 
