@@ -7,6 +7,7 @@ import com.movie.movie_backend.entity.ScreeningSeat;
 import com.movie.movie_backend.service.BookingService;
 import com.movie.movie_backend.dto.ScreeningDto;
 import com.movie.movie_backend.dto.ScreeningSeatDto;
+import com.movie.movie_backend.entity.Payment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -83,11 +84,12 @@ public class BookingController {
             Integer totalPrice = (Integer) bookingRequest.get("totalPrice");
 
             boolean success = bookingService.createBooking(movieId, screeningId, seatIds, totalPrice);
-            
+            Long reservationId = bookingService.getLastReservationIdForUser(1L); // 실제 서비스에서는 인증 정보 사용
             if (success) {
                 return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "예매가 완료되었습니다."
+                    "message", "예매가 완료되었습니다.",
+                    "reservationId", reservationId
                 ));
             } else {
                 return ResponseEntity.ok(Map.of(
@@ -159,5 +161,23 @@ public class BookingController {
                 "message", "좌석 홀드 취소 처리 중 오류가 발생했습니다: " + e.getMessage()
             ));
         }
+    }
+
+    @PostMapping("/payments/complete")
+    public ResponseEntity<?> completePayment(@RequestBody Map<String, Object> req) {
+        String impUid = (String) req.get("imp_uid");
+        String merchantUid = (String) req.get("merchant_uid");
+        Long userId = req.get("userId") != null ? Long.valueOf(req.get("userId").toString()) : null;
+        Long reservationId = req.get("reservationId") != null ? Long.valueOf(req.get("reservationId").toString()) : null;
+        Payment payment = bookingService.completePayment(impUid, merchantUid, userId, reservationId);
+        return ResponseEntity.ok(Map.of("success", true, "paymentId", payment.getId()));
+    }
+
+    @PostMapping("/payment/webhook")
+    public ResponseEntity<?> handleIamportWebhook(@RequestBody Map<String, Object> payload) {
+        String impUid = (String) payload.get("imp_uid");
+        String merchantUid = (String) payload.get("merchant_uid");
+        bookingService.completePayment(impUid, merchantUid, null, null);
+        return ResponseEntity.ok().build();
     }
 } 
