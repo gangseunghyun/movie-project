@@ -17,6 +17,7 @@ import StarRating from './StarRating';
 import RatingDistributionChart from './components/RatingDistributionChart';
 import PersonDetail from './PersonDetail';
 import BookingModal from './BookingModal';
+import ReviewModal from './components/ReviewModal';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -117,6 +118,7 @@ function App() {
   const [activeRecommendedTab, setActiveRecommendedTab] = useState('recommended');
   const [actorRecommendation, setActorRecommendation] = useState(null);
   const [directorRecommendation, setDirectorRecommendation] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   useEffect(() => {
     if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
@@ -168,36 +170,31 @@ function App() {
     }
   }, [sortOption]);
 
-  // 별점 정보 불러오기
+  // 별점 정보 불러오기 (왓챠 스타일: Review 테이블 기준)
   useEffect(() => {
     if (!selectedMovie) return;
     setLoadingRating(true);
-    // 내 별점
-    axios.get(`http://localhost:80/api/user-ratings/${selectedMovie.movieCd}`)
+    // 내 별점(리뷰 기준)
+    axios.get(`${API_BASE_URL}/ratings/${selectedMovie.movieCd}`, { withCredentials: true })
       .then(res => {
-        if (res.data.success && res.data.data) {
-          setUserRating(res.data.data.score);
-        } else {
-          setUserRating(null);
-        }
+        setUserRating(res.data.data?.score || null);
       })
       .catch(() => setUserRating(null));
-    // 평균 별점/참여자 수
-    axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/average`)
+    // 평균 별점/참여자 수(리뷰 기준)
+    axios.get(`${API_BASE_URL}/ratings/movie/${selectedMovie.movieCd}/average`)
       .then(res => {
-        if (res.data.success) {
-          setAverageRating(res.data.averageRating);
-          setRatingCount(res.data.ratingCount);
-        } else {
-          setAverageRating(null);
-          setRatingCount(null);
-        }
+        setAverageRating(res.data.data?.averageRating || null);
+        setRatingCount(res.data.data?.ratingCount || null);
       })
       .catch(() => {
         setAverageRating(null);
         setRatingCount(null);
       })
       .finally(() => setLoadingRating(false));
+    // 별점 분포(리뷰 기준)
+    axios.get(`${API_BASE_URL}/ratings/movie/${selectedMovie.movieCd}/distribution`)
+      .then(res => setRatingDistribution(res.data.data?.distribution || null))
+      .catch(() => setRatingDistribution(null));
   }, [selectedMovie]);
 
   // 최근 검색어 불러오기
@@ -645,7 +642,7 @@ function App() {
   const fetchEnded = async (page = 0) => {
     try {
       setLoading(true);
-      const response = await safeFetch(`/movie-detail/ended?page=${page}&size=20`);
+      const response = await safeFetch(`http://localhost:80/data/api/movies/ended?page=${page}&size=20`);
       if (response.success) {
         setEndedData({
           data: response.data.content,
@@ -669,7 +666,7 @@ function App() {
     
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/distribution`)
+      const response = await axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/distribution`)
       setRecommendedMoviesData(response.data);
       
       // 첫 번째 탭을 기본으로 설정
@@ -1934,7 +1931,7 @@ function App() {
   const handleStarChange = (score) => {
     if (!selectedMovie) return;
     setLoadingRating(true);
-    axios.post('http://localhost:80/api/user-ratings', {
+    axios.post('http://localhost:80/api/ratings', {
       movieCd: selectedMovie.movieCd,
       score
     }, {
@@ -1944,7 +1941,7 @@ function App() {
         if (res.data.success) {
           setUserRating(score);
           // 평균 별점/참여자 수 갱신
-          return axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/average`);        }
+          return axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/average`);        }
       })
       .then(res => {
         if (res && res.data.success) {
@@ -2057,6 +2054,31 @@ function App() {
                     <RatingDistributionChart distribution={ratingDistribution} />
                   </div>
                 )}
+                {/* 평점 그래프 아래에 코멘트 남기기 버튼 */}
+                <div style={{ textAlign: 'center', marginTop: 40 }}>
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    style={{
+                      background: '#ff2f6e',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 16,
+                      padding: '18px 48px',
+                      fontSize: 22,
+                      fontWeight: 700,
+                      boxShadow: '0 2px 8px rgba(255,47,110,0.12)',
+                      cursor: 'pointer',
+                      width: '90%',
+                      maxWidth: 340,
+                      display: 'block',
+                      marginLeft: 'auto',
+                      marginRight: 'auto',
+                      marginTop: 0
+                    }}
+                  >
+                    코멘트 남기기
+                  </button>
+                </div>
               </div>
               <div className="movie-detail-info">
                 <h3>{selectedMovie.movieNmEn}</h3>
@@ -2093,7 +2115,7 @@ function App() {
                           console.error('감독 ID가 없습니다:', selectedMovie.directors[0]);
                         }
                       }}>
-                        <img src={selectedMovie.directors[0].photoUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDEyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjQ0NDQ0NDIi8+Cjx0ZXh0IHg9IjYwIiB5PSI5MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2NjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6rWQ7ZmU8L3RleHQ+Cjwvc3ZnPgo='} alt={selectedMovie.directors[0].peopleNm} />
+                        <img src={selectedMovie.directors[0].photoUrl || '/placeholder-actor.png'} alt={selectedMovie.directors[0].peopleNm} />
                         <div>{selectedMovie.directors[0].peopleNm}</div>
                         <div className="credit-role">감독</div>
                       </div>
@@ -2108,7 +2130,7 @@ function App() {
                           console.error('배우 ID가 없습니다:', actor);
                         }
                       }}>
-                        <img src={actor.photoUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDEyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjQ0NDQ0NDIi8+Cjx0ZXh0IHg9IjYwIiB5PSI5MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2NjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QWN0b3I8L3RleHQ+Cjwvc3ZnPgo='} alt={actor.peopleNm} />
+                        <img src={actor.photoUrl || '/placeholder-actor.png'} alt={actor.peopleNm} />
                         <div>{actor.peopleNm}</div>
                         <div className="credit-role">주연</div>
                       </div>
@@ -2123,7 +2145,7 @@ function App() {
                           console.error('배우 ID가 없습니다:', actor);
                         }
                       }}>
-                        <img src={actor.photoUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDEyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjQ0NDQ0NDIi8+Cjx0ZXh0IHg9IjYwIiB5PSI5MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2NjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QWN0b3I8L3RleHQ+Cjwvc3ZnPgo='} alt={actor.peopleNm} />
+                        <img src={actor.photoUrl || '/placeholder-actor.png'} alt={actor.peopleNm} />
                         <div>{actor.peopleNm}</div>
                         <div className="credit-role">조연</div>
                       </div>
@@ -2870,7 +2892,7 @@ function App() {
   const [ratingDistribution, setRatingDistribution] = useState(null);
   useEffect(() => {
     if (showMovieDetail && selectedMovie && selectedMovie.movieCd) {
-      axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/distribution`)
+      axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/distribution`)
         .then(res => setRatingDistribution(res.data.distribution))
         .catch(() => setRatingDistribution(null));
     } else {
@@ -2955,6 +2977,33 @@ function App() {
           movie={selectedMovie}
           onClose={() => setShowBookingModal(false)}
           onBookingComplete={handleBookingComplete}
+        />
+      )}
+      {/* 영화 상세에서 코멘트 남기기 버튼 노출 예시 */}
+      {showReviewModal && (
+        <ReviewModal
+          movieTitle={selectedMovie?.movieNm || '영화 제목'}
+          onSave={(content, rating, spoiler) => {
+            const reviewData = {
+              content,
+              rating,
+              spoiler,
+              movieCd: selectedMovie.movieCd,
+            };
+            console.log('리뷰 저장 요청 데이터:', reviewData);
+            
+            axios.post(`${API_BASE_URL}/reviews`, reviewData, { withCredentials: true })
+            .then(res => {
+              console.log('리뷰 저장 성공', res.data);
+              // TODO: 리뷰 리스트 갱신 등 추가 작업 가능
+            })
+            .catch(err => {
+              console.error('리뷰 저장 실패', err);
+              console.error('에러 응답:', err.response?.data);
+            });
+            setShowReviewModal(false);
+          }}
+          onClose={() => setShowReviewModal(false)}
         />
       )}
     </>

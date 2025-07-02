@@ -29,7 +29,7 @@ const PersonDetail = ({ type }) => {
   return (
     <div style={{maxWidth:900, margin:'40px auto', background:'#fff', borderRadius:12, boxShadow:'0 2px 12px rgba(0,0,0,0.07)', padding:32}}>
       <div style={{display:'flex', alignItems:'center', gap:32}}>
-        <img src={person.photoUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjQ0NDQ0NDIi8+Cjx0ZXh0IHg9IjYwIiB5PSI2MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2NjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+7IOB7KCE8L3RleHQ+Cjwvc3ZnPgo='} alt={person.name} style={{width:120, height:120, borderRadius:'50%', objectFit:'cover', background:'#eee'}} />
+        <img src={person.photoUrl || '/placeholder-actor.png'} alt={person.peopleNm} style={{width:120, height:120, borderRadius:'50%', objectFit:'cover', background:'#eee'}} />
         <div>
           <h1 style={{margin:0, fontSize:32}}>{person.name || person.peopleNm}</h1>
           <div style={{color:'#888', fontSize:20, marginTop:8}}>{type === 'director' ? '감독' : '배우'}</div>
