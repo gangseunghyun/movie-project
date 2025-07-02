@@ -222,6 +222,48 @@ public class ReviewController {
     }
 
     /**
+     * 현재 로그인한 사용자가 특정 영화에 리뷰를 작성했는지 확인
+     */
+    @GetMapping("/movie/{movieCd}/check-user-review")
+    public ResponseEntity<Map<String, Object>> checkUserReviewForMovie(
+            @PathVariable String movieCd,
+            @AuthenticationPrincipal Object principal) {
+        try {
+            // 사용자 정보 추출
+            Long currentUserId = getCurrentUserId(principal);
+            log.info("리뷰 작성 여부 확인 - 현재 사용자 ID: {}, 영화 코드: {}", currentUserId, movieCd);
+            
+            if (currentUserId == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                response.put("hasReview", false);
+                return ResponseEntity.ok(response);
+            }
+            
+            Optional<ReviewDto> review = reviewService.getReviewByUserAndMovie(currentUserId, movieCd);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("hasReview", review.isPresent());
+            if (review.isPresent()) {
+                response.put("message", "이미 해당 영화에 리뷰를 작성했습니다.");
+                response.put("reviewId", review.get().getId());
+            } else {
+                response.put("message", "해당 영화에 리뷰를 작성하지 않았습니다.");
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("리뷰 작성 여부 확인 실패: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "리뷰 작성 여부 확인에 실패했습니다: " + e.getMessage());
+            response.put("hasReview", false);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
      * 사용자의 모든 리뷰 조회
      */
     @GetMapping("/user/{userId}")
