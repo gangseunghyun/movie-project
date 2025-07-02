@@ -43,4 +43,15 @@ public interface PersonLikeRepository extends JpaRepository<PersonLike, Long> {
     // 특정 감독을 좋아요한 사용자 수
     @Query("SELECT COUNT(pl) FROM PersonLike pl WHERE pl.director.id = :directorId")
     long countByDirectorIdQuery(@Param("directorId") Long directorId);
+    
+    // 사용자가 좋아요한 인물 목록 (타입별, 최신순)
+    List<PersonLike> findByUserIdAndPersonTypeOrderByCreatedAtDesc(Long userId, PersonType personType);
+    
+    // 특정 배우의 좋아요 개수 (타입별)
+    @Query("SELECT COUNT(pl) FROM PersonLike pl WHERE pl.actor = :actor AND pl.personType = :personType")
+    long countByActorAndPersonType(@Param("actor") com.movie.movie_backend.entity.Actor actor, @Param("personType") PersonType personType);
+    
+    // 특정 감독의 좋아요 개수 (타입별)
+    @Query("SELECT COUNT(pl) FROM PersonLike pl WHERE pl.director = :director AND pl.personType = :personType")
+    long countByDirectorAndPersonType(@Param("director") com.movie.movie_backend.entity.Director director, @Param("personType") PersonType personType);
 } 

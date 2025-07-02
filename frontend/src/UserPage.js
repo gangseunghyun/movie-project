@@ -24,6 +24,12 @@ const UserPage = ({ onMovieClick }) => {
   const [likedMovies, setLikedMovies] = useState([]);
   const [likedMoviesLoading, setLikedMoviesLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // 좋아요한 인물 관련 상태 추가
+  const [likedActors, setLikedActors] = useState([]);
+  const [likedDirectors, setLikedDirectors] = useState([]);
+  const [likedActorsLoading, setLikedActorsLoading] = useState(false);
+  const [likedDirectorsLoading, setLikedDirectorsLoading] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -103,6 +109,52 @@ const UserPage = ({ onMovieClick }) => {
     };
     
     fetchLikedMovies();
+  }, [user, currentUser, nickname]);
+
+  // 좋아요한 배우 목록 가져오기
+  useEffect(() => {
+    const fetchLikedActors = async () => {
+      if (!user || !currentUser || currentUser.nickname !== nickname) return;
+      
+      setLikedActorsLoading(true);
+      try {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-actors`, { 
+          withCredentials: true 
+        });
+        if (response.data.success) {
+          setLikedActors(response.data.data);
+        }
+      } catch (error) {
+        console.error('좋아요한 배우 목록 조회 실패:', error);
+      } finally {
+        setLikedActorsLoading(false);
+      }
+    };
+    
+    fetchLikedActors();
+  }, [user, currentUser, nickname]);
+
+  // 좋아요한 감독 목록 가져오기
+  useEffect(() => {
+    const fetchLikedDirectors = async () => {
+      if (!user || !currentUser || currentUser.nickname !== nickname) return;
+      
+      setLikedDirectorsLoading(true);
+      try {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-directors`, { 
+          withCredentials: true 
+        });
+        if (response.data.success) {
+          setLikedDirectors(response.data.data);
+        }
+      } catch (error) {
+        console.error('좋아요한 감독 목록 조회 실패:', error);
+      } finally {
+        setLikedDirectorsLoading(false);
+      }
+    };
+    
+    fetchLikedDirectors();
   }, [user, currentUser, nickname]);
 
   const handleTagChange = (tag) => {
@@ -317,6 +369,90 @@ const UserPage = ({ onMovieClick }) => {
               );
             }
           })()}
+        </div>
+
+        {/* 좋아요한 배우 섹션 */}
+        <div className="liked-actors-section">
+          <div className="section-header">
+            <h3>내가 좋아요한 배우</h3>
+            <span className="actor-count">({likedActors.length}명)</span>
+          </div>
+          
+          {likedActorsLoading ? (
+            <div className="loading-actors">좋아요한 배우를 불러오는 중...</div>
+          ) : likedActors.length === 0 ? (
+            <div className="no-liked-actors">
+              <span>아직 좋아요한 배우가 없습니다.</span>
+              <p>배우 상세페이지에서 마음에 드는 배우를 좋아요해보세요!</p>
+            </div>
+          ) : (
+            <div className="liked-actors-grid">
+              {likedActors.map(actor => (
+                <div
+                  key={actor.id}
+                  className="liked-actor-card"
+                  onClick={() => navigate(`/actor/${actor.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="actor-photo">
+                    {actor.photoUrl ? (
+                      <img src={actor.photoUrl} alt={actor.name} />
+                    ) : (
+                      <div className="no-photo">No Photo</div>
+                    )}
+                  </div>
+                  <div className="actor-info">
+                    <h4 className="actor-name">{actor.name}</h4>
+                    <div className="actor-likes">
+                      <span className="like-count">♥ {actor.likeCount}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 좋아요한 감독 섹션 */}
+        <div className="liked-directors-section">
+          <div className="section-header">
+            <h3>내가 좋아요한 감독</h3>
+            <span className="director-count">({likedDirectors.length}명)</span>
+          </div>
+          
+          {likedDirectorsLoading ? (
+            <div className="loading-directors">좋아요한 감독을 불러오는 중...</div>
+          ) : likedDirectors.length === 0 ? (
+            <div className="no-liked-directors">
+              <span>아직 좋아요한 감독이 없습니다.</span>
+              <p>감독 상세페이지에서 마음에 드는 감독을 좋아요해보세요!</p>
+            </div>
+          ) : (
+            <div className="liked-directors-grid">
+              {likedDirectors.map(director => (
+                <div
+                  key={director.id}
+                  className="liked-director-card"
+                  onClick={() => navigate(`/director/${director.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="director-photo">
+                    {director.photoUrl ? (
+                      <img src={director.photoUrl} alt={director.name} />
+                    ) : (
+                      <div className="no-photo">No Photo</div>
+                    )}
+                  </div>
+                  <div className="director-info">
+                    <h4 className="director-name">{director.name}</h4>
+                    <div className="director-likes">
+                      <span className="like-count">♥ {director.likeCount}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
