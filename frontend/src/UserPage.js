@@ -31,6 +31,10 @@ const UserPage = ({ onMovieClick }) => {
   const [likedActorsLoading, setLikedActorsLoading] = useState(false);
   const [likedDirectorsLoading, setLikedDirectorsLoading] = useState(false);
 
+  // 내가 작성한 코멘트(리뷰) 상태 추가
+  const [myComments, setMyComments] = useState([]);
+  const [myCommentsLoading, setMyCommentsLoading] = useState(false);
+
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
@@ -155,6 +159,24 @@ const UserPage = ({ onMovieClick }) => {
     };
     
     fetchLikedDirectors();
+  }, [user, currentUser, nickname]);
+
+  useEffect(() => {
+    const fetchMyComments = async () => {
+      if (!user || !currentUser || currentUser.nickname !== nickname) return;
+      setMyCommentsLoading(true);
+      try {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/my-comments`, { withCredentials: true });
+        if (response.data.success) {
+          setMyComments(response.data.data);
+        }
+      } catch (error) {
+        console.error('내가 작성한 코멘트 목록 조회 실패:', error);
+      } finally {
+        setMyCommentsLoading(false);
+      }
+    };
+    fetchMyComments();
   }, [user, currentUser, nickname]);
 
   const handleTagChange = (tag) => {
@@ -448,6 +470,58 @@ const UserPage = ({ onMovieClick }) => {
                     <div className="director-likes">
                       <span className="like-count">♥ {director.likeCount}</span>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 내가 작성한 코멘트(리뷰) 섹션 */}
+        <div className="my-comments-section">
+          <div className="section-header">
+            <h3>내가 작성한 코멘트</h3>
+            <span className="comment-count">({myComments.length}개)</span>
+          </div>
+          {myCommentsLoading ? (
+            <div className="loading-comments">코멘트를 불러오는 중...</div>
+          ) : myComments.length === 0 ? (
+            <div className="no-my-comments">
+              <span>아직 작성한 코멘트가 없습니다.</span>
+              <p>영화 상세페이지에서 코멘트를 남겨보세요!</p>
+            </div>
+          ) : (
+            <div className="my-comments-grid">
+              {myComments.map(comment => (
+                <div
+                  key={comment.id}
+                  className="my-comment-card"
+                  onClick={() => onMovieClick && onMovieClick({
+                    movieCd: comment.movieCd,
+                    movieNm: comment.movieNm,
+                    posterUrl: comment.posterUrl,
+                    genreNm: comment.genreNm,
+                    openDt: comment.openDt
+                  })}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="comment-movie-poster">
+                    {comment.posterUrl ? (
+                      <img src={comment.posterUrl} alt={comment.movieNm} />
+                    ) : (
+                      <div className="no-poster">No Poster</div>
+                    )}
+                  </div>
+                  <div className="comment-info">
+                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
+                    <div className="comment-meta">
+                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                      {comment.rating && (
+                        <span className="comment-rating">★ {comment.rating}</span>
+                      )}
+                      <span className="comment-likes">♥ {comment.likeCount}</span>
+                    </div>
+                    <div className="comment-content">{comment.content}</div>
                   </div>
                 </div>
               ))}

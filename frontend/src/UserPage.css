@@ -705,4 +705,84 @@
 .director-count {
   color: #a18cd1;
   font-weight: 500;
+}
+
+.my-comments-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.my-comments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 15px;
+}
+.my-comment-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.my-comment-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+  transform: translateY(-2px);
+}
+.comment-movie-poster {
+  width: 60px;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #e9ecef;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.comment-movie-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.comment-info {
+  flex: 1;
+}
+.comment-movie-title {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+.comment-meta {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.comment-rating {
+  color: #f39c12;
+  font-weight: 600;
+}
+.comment-likes {
+  color: #e74c3c;
+  font-weight: 500;
+}
+.comment-content {
+  font-size: 14px;
+  color: #444;
+  margin-top: 2px;
+  word-break: break-all;
+}
+.loading-comments,
+.no-my-comments {
+  text-align: center;
+  color: #6c757d;
+  padding: 20px;
 } 
