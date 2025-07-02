@@ -3038,6 +3038,7 @@ function App() {
       {showReviewModal && (
         <ReviewModal
           movieTitle={selectedMovie?.movieNm || '영화 제목'}
+          movieCd={selectedMovie?.movieCd}
           onSave={(content, spoiler) => {
             // 영화 상세 페이지에서 이미 입력된 별점 사용
             const reviewData = {

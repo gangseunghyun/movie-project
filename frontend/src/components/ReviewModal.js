@@ -1,9 +1,119 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { checkUserReview } from '../api';
 
-function ReviewModal({ movieTitle, onSave, onClose }) {
+function ReviewModal({ movieTitle, movieCd, onSave, onClose }) {
   const [content, setContent] = useState('');
   const [spoiler, setSpoiler] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [hasExistingReview, setHasExistingReview] = useState(false);
+  const [existingReviewMessage, setExistingReviewMessage] = useState('');
   const maxLength = 10000;
+
+  useEffect(() => {
+    const checkExistingReview = async () => {
+      console.log('ReviewModal useEffect 호출 - movieCd:', movieCd);
+      
+      if (!movieCd) {
+        console.log('movieCd가 없어서 확인 건너뜀');
+        setIsChecking(false);
+        return;
+      }
+
+      try {
+        console.log('checkUserReview API 호출 시작 - movieCd:', movieCd);
+        const response = await checkUserReview(movieCd);
+        console.log('checkUserReview API 응답:', response);
+        
+        if (response.success) {
+          if (response.hasReview) {
+            console.log('이미 리뷰가 존재함');
+            setHasExistingReview(true);
+            setExistingReviewMessage(response.message);
+          } else {
+            console.log('리뷰가 존재하지 않음');
+          }
+        } else {
+          console.log('리뷰 확인 실패:', response.message);
+        }
+      } catch (error) {
+        console.error('리뷰 확인 중 오류:', error);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkExistingReview();
+  }, [movieCd]);
+
+  if (isChecking) {
+    return (
+      <div className="review-modal-overlay">
+        <div className="review-modal">
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <div>리뷰 작성 여부를 확인하고 있습니다...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasExistingReview) {
+    return (
+      <div className="review-modal-overlay">
+        <div className="review-modal">
+          <button className="close-btn" onClick={onClose}>&times;</button>
+          <h2>{movieTitle}</h2>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px 20px',
+            color: '#ff2f6e',
+            fontSize: '18px',
+            fontWeight: 'bold'
+          }}>
+            <div style={{ marginBottom: '20px' }}>
+              <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>⚠️</span>
+              {existingReviewMessage}
+            </div>
+            <div style={{ 
+              color: '#666', 
+              fontSize: '14px',
+              fontWeight: 'normal'
+            }}>
+              한 영화당 하나의 리뷰만 작성할 수 있습니다.
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <button
+              className="close-review-btn"
+              onClick={onClose}
+              style={{
+                background: '#ff2f6e',
+                color: 'white',
+                border: 'none',
+                borderRadius: 10,
+                padding: '12px 32px',
+                fontSize: 16,
+                cursor: 'pointer'
+              }}
+            >
+              확인
+            </button>
+          </div>
+        </div>
+        <style>{`
+          .review-modal-overlay {
+            position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; justify-content: center;
+          }
+          .review-modal {
+            background: white; border-radius: 16px; padding: 32px; min-width: 400px; max-width: 600px; box-shadow: 0 4px 32px rgba(0,0,0,0.15); position: relative;
+          }
+          .close-btn {
+            position: absolute; right: 16px; top: 16px; background: #eee; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 22px; cursor: pointer;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="review-modal-overlay">
