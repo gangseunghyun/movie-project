@@ -6,11 +6,14 @@ import com.movie.movie_backend.entity.PasswordResetToken;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.entity.Tag;
 import com.movie.movie_backend.entity.MovieDetail;
+import com.movie.movie_backend.entity.Like;
 import com.movie.movie_backend.mapper.MovieMapper;
+import com.movie.movie_backend.mapper.MovieDetailMapper;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.repository.PRDTagRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.REVLikeRepository;
 import com.movie.movie_backend.service.MailService;
 import com.movie.movie_backend.service.USRUserService;
 import com.movie.movie_backend.constant.Provider;
@@ -48,6 +51,8 @@ public class UserController {
     private final PRDTagRepository tagRepository;
     private final MovieMapper movieMapper;
     private final PRDMovieRepository movieRepository;
+    private final REVLikeRepository likeRepository;
+    private final MovieDetailMapper movieDetailMapper;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -760,5 +765,42 @@ public class UserController {
             groupedMovies.put(tag.getName(), dtos);
         }
         return ResponseEntity.ok(groupedMovies);
+    }
+
+    // [4] 사용자가 찜한 영화 목록 조회
+    @GetMapping("/api/users/{userId}/liked-movies")
+    public ResponseEntity<Map<String, Object>> getLikedMovies(@PathVariable Long userId) {
+        try {
+            log.info("사용자 찜한 영화 목록 조회: {}", userId);
+            
+            // 사용자가 찜한 영화 목록 조회
+            List<Like> likedMovies = likeRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            
+            // MovieDetailDto로 변환
+            List<MovieDetailDto> movieDtos = likedMovies.stream()
+                .map(like -> {
+                    MovieDetail movie = like.getMovieDetail();
+                    int likeCount = likeRepository.countByMovieDetail(movie);
+                    boolean likedByMe = true; // 이미 찜한 영화이므로 true
+                    return movieDetailMapper.toDto(movie, likeCount, likedByMe);
+                })
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", movieDtos);
+            response.put("count", movieDtos.size());
+            response.put("message", "찜한 영화 목록을 성공적으로 조회했습니다.");
+            
+            log.info("찜한 영화 목록 조회 성공: {}개", movieDtos.size());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("찜한 영화 목록 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "찜한 영화 목록 조회에 실패했습니다: " + e.getMessage()
+            ));
+        }
     }
 } 

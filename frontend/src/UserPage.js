@@ -8,7 +8,7 @@ import {
 import axios from 'axios';
 import './UserPage.css';
 
-const UserPage = () => {
+const UserPage = ({ onMovieClick }) => {
   const { nickname } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -19,6 +19,11 @@ const UserPage = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [saving, setSaving] = useState(false);
+  
+  // 찜한 영화 관련 상태 추가
+  const [likedMovies, setLikedMovies] = useState([]);
+  const [likedMoviesLoading, setLikedMoviesLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -45,6 +50,60 @@ const UserPage = () => {
     };
     fetchUser();
   }, [nickname]);
+
+  // 현재 로그인한 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await axios.get('http://localhost:80/api/current-user', { withCredentials: true });
+        if (response.data.success) {
+          setCurrentUser(response.data.user);
+        }
+      } catch (error) {
+        console.log('로그인되지 않은 사용자');
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  // 찜한 영화 목록 가져오기
+  useEffect(() => {
+    const fetchLikedMovies = async () => {
+      if (!user || !currentUser) {
+        console.log('fetchLikedMovies: user 또는 currentUser가 없음', { user, currentUser });
+        return;
+      }
+      
+      // 본인의 마이페이지인지 확인
+      if (currentUser.nickname !== nickname) {
+        console.log('fetchLikedMovies: 본인의 마이페이지가 아님', { 
+          currentUserNickname: currentUser.nickname, 
+          pageNickname: nickname 
+        });
+        return;
+      }
+      
+      console.log('fetchLikedMovies: 찜한 영화 목록 조회 시작', { userId: user.id });
+      setLikedMoviesLoading(true);
+      try {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-movies`, { 
+          withCredentials: true 
+        });
+        console.log('fetchLikedMovies: API 응답', response.data);
+        if (response.data.success) {
+          setLikedMovies(response.data.data);
+          console.log('fetchLikedMovies: 찜한 영화 설정 완료', response.data.data);
+        }
+      } catch (error) {
+        console.error('fetchLikedMovies: 찜한 영화 목록 조회 실패:', error);
+        console.error('fetchLikedMovies: 에러 응답:', error.response?.data);
+      } finally {
+        setLikedMoviesLoading(false);
+      }
+    };
+    
+    fetchLikedMovies();
+  }, [user, currentUser, nickname]);
 
   const handleTagChange = (tag) => {
     setSelectedTags(prev => {
@@ -197,6 +256,67 @@ const UserPage = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* 찜한 영화 섹션 */}
+        <div className="liked-movies-section">
+          <div className="section-header">
+            <h3>내가 찜한 영화</h3>
+            <span className="movie-count">({likedMovies.length}개)</span>
+          </div>
+          
+          {(() => {
+            console.log('찜한 영화 섹션 렌더링:', { 
+              likedMoviesLoading, 
+              likedMoviesLength: likedMovies.length, 
+              likedMovies,
+              currentUser,
+              nickname
+            });
+            
+            if (likedMoviesLoading) {
+              return <div className="loading-movies">찜한 영화를 불러오는 중...</div>;
+            } else if (likedMovies.length === 0) {
+              return (
+                <div className="no-liked-movies">
+                  <span>아직 찜한 영화가 없습니다.</span>
+                  <p>영화 목록에서 마음에 드는 영화를 찜해보세요!</p>
+                </div>
+              );
+            } else {
+              return (
+                <div className="liked-movies-grid">
+                  {likedMovies.map(movie => (
+                    <div
+                      key={movie.movieCd}
+                      className="liked-movie-card"
+                      onClick={() => onMovieClick && onMovieClick(movie)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="movie-poster">
+                        {movie.posterUrl ? (
+                          <img src={movie.posterUrl} alt={movie.movieNm} />
+                        ) : (
+                          <div className="no-poster">No Poster</div>
+                        )}
+                      </div>
+                      <div className="movie-info">
+                        <h4 className="movie-title">{movie.movieNm}</h4>
+                        <p className="movie-genre">{movie.genreNm}</p>
+                        <p className="movie-year">{movie.openDt}</p>
+                        {movie.averageRating && (
+                          <div className="movie-rating">
+                            <span className="rating-star">⭐</span>
+                            <span className="rating-score">{movie.averageRating.toFixed(1)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+          })()}
         </div>
       </div>
     </div>

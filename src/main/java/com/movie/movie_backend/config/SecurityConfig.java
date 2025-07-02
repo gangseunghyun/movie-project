@@ -166,6 +166,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/movies/*/like").authenticated()
                 .requestMatchers("/api/movies/**").hasRole("ADMIN")
                 .requestMatchers("/api/search-history").authenticated()
+                .requestMatchers("/api/users/*/liked-movies").permitAll()
                 .anyRequest().authenticated()
             .and()
             .formLogin().disable()
