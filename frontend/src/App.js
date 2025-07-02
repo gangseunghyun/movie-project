@@ -666,12 +666,10 @@ function App() {
       console.log('로그인하지 않은 사용자는 추천 영화를 볼 수 없습니다.');
       return;
     }
-    
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:80/api/user-ratings/movie/${selectedMovie.movieCd}/distribution`)
+      const response = await axios.get(`http://localhost:80/api/users/${currentUser.id}/recommended-movies`, { withCredentials: true });
       setRecommendedMoviesData(response.data);
-      
       // 첫 번째 탭을 기본으로 설정
       if (typeof response.data === 'object' && !Array.isArray(response.data)) {
         const tagNames = Object.keys(response.data);
