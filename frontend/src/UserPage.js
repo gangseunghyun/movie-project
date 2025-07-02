@@ -32,28 +32,11 @@ const UserPage = () => {
             getUserPreferredTags(data.id),
             getGenreTags()
           ]);
-          
-          // 기존 태그 중 장르 태그만 필터링
-          const genreTagNames = genres.map(tag => tag.name);
-          const filteredTags = tags.filter(tag => genreTagNames.includes(tag.name));
-          
-          // 필터링된 태그가 원본과 다르면 특징 태그가 있었던 것이므로 제거
-          if (filteredTags.length !== tags.length) {
-            try {
-              await axios.delete(`/api/users/${data.id}/feature-tags`);
-              setPreferredTags(filteredTags);
-              setSelectedTags(filteredTags.map(tag => tag.name));
-            } catch (err) {
-              console.error('특징 태그 제거 실패:', err);
-              setPreferredTags(filteredTags);
-              setSelectedTags(filteredTags.map(tag => tag.name));
-            }
-          } else {
-            setPreferredTags(tags);
-            setSelectedTags(tags.map(tag => tag.name));
-          }
-          
           setGenreTags(genres);
+          // preferredTags, selectedTags는 genreTags에 존재하는 값만
+          const validTags = tags.filter(tag => genres.includes(tag));
+          setPreferredTags(validTags);
+          setSelectedTags(validTags);
         }
       } catch (err) {
         setError('유저 정보를 불러올 수 없습니다.');
@@ -63,18 +46,16 @@ const UserPage = () => {
     fetchUser();
   }, [nickname]);
 
-  const handleTagChange = (tagName) => {
+  const handleTagChange = (tag) => {
     setSelectedTags(prev => {
-      if (prev.includes(tagName)) {
-        // 이미 선택된 태그는 해제 가능
-        return prev.filter(name => name !== tagName);
+      if (prev.includes(tag)) {
+        return prev.filter(name => name !== tag);
       } else {
-        // 5개 이상 선택 불가
-        if (prev.length >= 5) {
-          alert('최대 5개까지만 선택할 수 있습니다.');
+        if (prev.length >= 4) {
+          alert('최대 4개까지만 선택할 수 있습니다.');
           return prev;
         }
-        return [...prev, tagName];
+        return [...prev, tag];
       }
     });
   };
@@ -82,8 +63,10 @@ const UserPage = () => {
   const handleSaveTags = async () => {
     setSaving(true);
     try {
-      await axios.put(`/api/users/${user.id}/preferred-tags`, selectedTags);
-      setPreferredTags(genreTags.filter(tag => selectedTags.includes(tag.name)));
+      // genreTags에 존재하는 selectedTags만 저장
+      const validTags = selectedTags.filter(tag => genreTags.includes(tag));
+      await axios.put(`/api/users/${user.id}/preferred-tags`, validTags);
+      setPreferredTags(validTags);
       setEditMode(false);
       alert('선호 태그가 저장되었습니다!');
     } catch (e) {
@@ -94,7 +77,7 @@ const UserPage = () => {
   };
 
   const handleCancel = () => {
-    setSelectedTags(preferredTags.map(tag => tag.name));
+    setSelectedTags(preferredTags);
     setEditMode(false);
   };
 
@@ -170,8 +153,8 @@ const UserPage = () => {
                     <h4>장르</h4>
                     <div className="tag-tags">
                       {preferredTags.map(tag => (
-                        <span key={tag.id} className="tag-tag">
-                          {tag.name}
+                        <span key={tag} className="tag-tag">
+                          {tag}
                         </span>
                       ))}
                     </div>
@@ -182,17 +165,17 @@ const UserPage = () => {
           ) : (
             <div className="tags-edit">
               <div style={{ marginBottom: 10, color: '#a18cd1', fontWeight: 'bold', fontSize: '15px' }}>
-                선택: {selectedTags.length}/5
+                선택: {selectedTags.filter(tag => genreTags.includes(tag)).length}/4
               </div>
               <div className="tag-selection">
                 {genreTags.map(tag => (
-                  <label key={tag.id} className="tag-checkbox">
+                  <label key={tag} className="tag-checkbox">
                     <input
                       type="checkbox"
-                      checked={selectedTags.includes(tag.name)}
-                      onChange={() => handleTagChange(tag.name)}
+                      checked={selectedTags.includes(tag)}
+                      onChange={() => handleTagChange(tag)}
                     />
-                    <span className="checkbox-label">{tag.name}</span>
+                    <span className="checkbox-label">{tag}</span>
                   </label>
                 ))}
               </div>
