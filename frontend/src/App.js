@@ -574,6 +574,27 @@ function App() {
 
       const personRes = await axios.get(`http://localhost:80/data/api/search-person?keyword=${encodeURIComponent(keyword)}`);
       setPersonResults(personRes.data);
+
+      // 검색어 저장 (로그인한 사용자만)
+      if (currentUser) {
+        try {
+          const searchResultCount = movieRes.data ? movieRes.data.length : 0;
+          await axios.post('http://localhost:80/api/search-history', null, {
+            params: { 
+              keyword: keyword,
+              searchResultCount: searchResultCount
+            },
+            withCredentials: true
+          });
+          console.log('검색어 저장 완료:', keyword);
+          
+          // 최근 검색어 다시 불러오기
+          fetchRecentKeywords();
+        } catch (saveError) {
+          console.error('검색어 저장 실패:', saveError);
+          // 검색어 저장 실패해도 검색은 계속 진행
+        }
+      }
     } catch (err) {
       setError('검색 중 오류가 발생했습니다.');
     }
