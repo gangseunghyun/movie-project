@@ -25,14 +25,14 @@ public class PopularKeywordBatchService {
     private EntityManager em;
 
     // 테스트용: 1분, 실제 운영시: 7일로 변경
-    private static final int AGGREGATION_MINUTES = 180; // 3시간 = 180분
+    private static final int AGGREGATION_MINUTES = 1440; // 24시간 = 1440분
 
     // 3분마다 실행 (매 3분마다)
     @Scheduled(cron = "0 */3 * * * *")
     @Transactional
     @CacheEvict(value = "popularKeywords", allEntries = true)
     public void aggregatePopularKeywords() {
-        log.info("인기검색어 슬라이딩 윈도우 집계 배치 시작 ({}분)", AGGREGATION_MINUTES);
+        log.info("인기검색어 슬라이딩 윈도우 집계 배치 시작 ({}분 = {}시간)", AGGREGATION_MINUTES, AGGREGATION_MINUTES / 60);
         
         LocalDateTime windowStart = LocalDateTime.now().minusMinutes(AGGREGATION_MINUTES);
         LocalDateTime now = LocalDateTime.now();
