@@ -23,6 +23,7 @@ import ReviewList from './components/ReviewList';
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
 
+export const API_BASE_URL = 'http://localhost:80/api';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -90,9 +91,6 @@ function App() {
   const [averageRating, setAverageRating] = useState(null);
   const [ratingCount, setRatingCount] = useState(null);
   const [loadingRating, setLoadingRating] = useState(false);
-
-  // API 기본 URL
-  const API_BASE_URL = 'http://localhost:80/api';
 
   // 1. 정렬 옵션 추가
   const [sortOption, setSortOption] = useState('rating');
@@ -3092,6 +3090,25 @@ function App() {
     );
   };
 
+  const closeAllModals = () => {
+    setShowBookingModal(false);
+    setShowMovieDetail(false);
+    setShowMovieForm(false);
+    setShowReviewModal(false);
+    // 필요시 다른 모달도 닫기
+  };
+
+  const goToMyReservations = () => {
+    closeAllModals();
+    if (currentUser?.nickname) {
+      navigate(`/user/${currentUser.nickname}`);
+      setTimeout(() => {
+        const evt = new CustomEvent('openUserReservations');
+        window.dispatchEvent(evt);
+      }, 100);
+    }
+  };
+
   return (
     <>
       {/* 기존 헤더/네비게이션 등 */}
@@ -3173,6 +3190,7 @@ function App() {
           movie={selectedMovie}
           onClose={() => setShowBookingModal(false)}
           onBookingComplete={handleBookingComplete}
+          goToMyReservations={goToMyReservations}
         />
       )}
       {/* 영화 상세에서 코멘트 남기기 버튼 노출 예시 */}

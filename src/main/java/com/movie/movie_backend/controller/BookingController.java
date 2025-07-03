@@ -180,4 +180,16 @@ public class BookingController {
         bookingService.completePayment(impUid, merchantUid, null, null);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/payments/cancel")
+    public ResponseEntity<?> cancelPayment(@RequestBody Map<String, Object> req) {
+        String impUid = String.valueOf(req.get("imp_uid"));
+        String reason = req.get("reason") != null ? String.valueOf(req.get("reason")) : null;
+        boolean result = bookingService.cancelPayment(impUid, reason);
+        if (result) {
+            return ResponseEntity.ok(Map.of("success", true, "message", "결제취소(환불) 성공"));
+        } else {
+            return ResponseEntity.ok(Map.of("success", false, "message", "결제취소(환불) 실패"));
+        }
+    }
 } 

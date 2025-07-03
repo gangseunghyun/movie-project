@@ -48,6 +48,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Collections;
+import com.movie.movie_backend.dto.ReservationReceiptDto;
+import com.movie.movie_backend.dto.PaymentDto;
+import com.movie.movie_backend.dto.ScreeningDto;
+import com.movie.movie_backend.dto.CinemaDto;
+import com.movie.movie_backend.dto.TheaterDto;
+import com.movie.movie_backend.dto.ScreeningSeatDto;
+import com.movie.movie_backend.entity.Reservation;
+import com.movie.movie_backend.entity.Payment;
+import com.movie.movie_backend.entity.ScreeningSeat;
+import com.movie.movie_backend.entity.Screening;
+import com.movie.movie_backend.entity.Cinema;
+import com.movie.movie_backend.entity.Theater;
+import com.movie.movie_backend.repository.ReservationRepository;
+import com.movie.movie_backend.repository.ScreeningSeatRepository;
+import com.movie.movie_backend.repository.PaymentRepository;
 
 @RestController
 @RequiredArgsConstructor
@@ -69,6 +84,9 @@ public class UserController {
     private final ReviewLikeRepository reviewLikeRepository;
     private final REVReviewRepository reviewRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final ReservationRepository reservationRepository;
+    private final ScreeningSeatRepository screeningSeatRepository;
+    private final PaymentRepository paymentRepository;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -1070,5 +1088,71 @@ public class UserController {
                 "message", "좋아요한 모든 코멘트 목록 조회에 실패했습니다: " + e.getMessage()
             ));
         }
+    }
+
+    // 내 예매내역 리스트 조회
+    @GetMapping("/api/users/{userId}/reservations")
+    public ResponseEntity<List<ReservationReceiptDto>> getMyReservations(@PathVariable Long userId) {
+        List<Reservation> reservations = reservationRepository.findByUserId(userId);
+        List<ReservationReceiptDto> result = reservations.stream().map(this::toReceiptDto).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    // 단일 예매영수증(상세) 조회
+    @GetMapping("/api/users/{userId}/reservations/{reservationId}")
+    public ResponseEntity<ReservationReceiptDto> getMyReservationDetail(@PathVariable Long userId, @PathVariable Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId).orElse(null);
+        if (reservation == null || !reservation.getUser().getId().equals(userId)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(toReceiptDto(reservation));
+    }
+
+    // Reservation -> ReservationReceiptDto 변환
+    private ReservationReceiptDto toReceiptDto(Reservation reservation) {
+        Screening screening = reservation.getScreening();
+        Cinema cinema = screening.getCinema();
+        Theater theater = screening.getTheater();
+        List<ScreeningSeatDto> seatDtos = reservation.getReservedSeats() != null ?
+            reservation.getReservedSeats().stream().map(ScreeningSeatDto::fromEntity).collect(Collectors.toList()) :
+            Collections.emptyList();
+        List<PaymentDto> paymentDtos = reservation.getPayments() != null ?
+            reservation.getPayments().stream().map(this::toPaymentDto).collect(Collectors.toList()) :
+            Collections.emptyList();
+        return ReservationReceiptDto.builder()
+            .reservationId(reservation.getId())
+            .reservedAt(reservation.getReservedAt() != null ? reservation.getReservedAt().toString() : null)
+            .status(reservation.getStatus() != null ? reservation.getStatus().name() : null)
+            .totalAmount(reservation.getTotalAmount() != null ? reservation.getTotalAmount().intValue() : 0)
+            .screening(ScreeningDto.fromEntity(screening))
+            .cinema(cinema != null ? new CinemaDto(cinema.getId(), cinema.getName(), cinema.getAddress(), cinema.getPhoneNumber(), null) : null)
+            .theater(theater != null ? new TheaterDto(theater.getId(), theater.getName(), theater.getTotalSeats(), theater.getCinema() != null ? theater.getCinema().getId() : null) : null)
+            .seats(seatDtos)
+            .payments(paymentDtos)
+            .build();
+    }
+
+    // Payment -> PaymentDto 변환
+    private PaymentDto toPaymentDto(Payment payment) {
+        return PaymentDto.builder()
+            .id(payment.getId())
+            .amount(payment.getAmount() != null ? payment.getAmount().intValue() : 0)
+            .method(payment.getMethod() != null ? payment.getMethod().name() : null)
+            .status(payment.getStatus() != null ? payment.getStatus().name() : null)
+            .paidAt(payment.getPaidAt() != null ? payment.getPaidAt().toString() : null)
+            .receiptUrl(payment.getReceiptUrl())
+            .cancelled(payment.isCancelled())
+            .cancelReason(payment.getCancelReason())
+            .cancelledAt(payment.getCancelledAt() != null ? payment.getCancelledAt().toString() : null)
+            .impUid(payment.getImpUid())
+            .merchantUid(payment.getMerchantUid())
+            .receiptNumber(payment.getReceiptNumber())
+            .cardName(payment.getCardName())
+            .cardNumberSuffix(payment.getCardNumberSuffix())
+            .approvalNumber(payment.getApprovalNumber())
+            .userName(payment.getUser() != null ? payment.getUser().getDisplayName() : null)
+            .pgResponseCode(payment.getPgResponseCode())
+            .pgResponseMessage(payment.getPgResponseMessage())
+            .build();
     }
 } 

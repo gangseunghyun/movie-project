@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './BookingModal.css';
+import { useNavigate } from 'react-router-dom';
 
-const BookingModal = ({ movie, onClose, onBookingComplete }) => {
+const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations }) => {
   const [cinemas, setCinemas] = useState([]);
   const [selectedCinema, setSelectedCinema] = useState(null);
   const [theaters, setTheaters] = useState([]);
@@ -16,6 +17,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [paymentReady, setPaymentReady] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   const MAX_SELECT = 2;
 
@@ -212,12 +214,11 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
       };
       const response = await axios.post('http://localhost:80/api/bookings', bookingData);
       if (response.data.success) {
-        alert('예매가 완료되었습니다!');
+        setShowCompleteModal(true);
         setIsLocked(false);
         setPaymentReady(false);
         setSelectedSeats([]);
         if (onBookingComplete) onBookingComplete();
-        onClose();
       } else {
         alert('예매에 실패했습니다.');
       }
@@ -275,12 +276,11 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
             userId: 1, // TODO: 실제 로그인 정보로 대체
             reservationId: bookingRes.data.reservationId
           });
-          alert('결제 및 예매가 완료되었습니다!');
+          setShowCompleteModal(true);
           setIsLocked(false);
           setPaymentReady(false);
           setSelectedSeats([]);
           if (onBookingComplete) onBookingComplete();
-          onClose();
         } else {
           alert('예매에 실패했습니다.');
         }
@@ -322,12 +322,11 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
             userId: 1, // TODO: 실제 로그인 정보로 대체
             reservationId: bookingRes.data.reservationId
           });
-          alert('결제 및 예매가 완료되었습니다!');
+          setShowCompleteModal(true);
           setIsLocked(false);
           setPaymentReady(false);
           setSelectedSeats([]);
           if (onBookingComplete) onBookingComplete();
-          onClose();
         } else {
           alert('예매에 실패했습니다.');
         }
@@ -369,12 +368,11 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
             userId: 1, // TODO: 실제 로그인 정보로 대체
             reservationId: bookingRes.data.reservationId
           });
-          alert('결제 및 예매가 완료되었습니다!');
+          setShowCompleteModal(true);
           setIsLocked(false);
           setPaymentReady(false);
           setSelectedSeats([]);
           if (onBookingComplete) onBookingComplete();
-          onClose();
         } else {
           alert('예매에 실패했습니다.');
         }
@@ -616,6 +614,34 @@ const BookingModal = ({ movie, onClose, onBookingComplete }) => {
                   좌석 홀드 취소
                 </button>
               )}
+            </div>
+          )}
+
+          {showCompleteModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.3)',
+              zIndex: 3000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <div style={{ background: '#fff', padding: 32, borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.18)', minWidth: 320, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>결제 및 예매가 완료되었습니다!</div>
+                <button onClick={() => {
+                  setShowCompleteModal(false);
+                  onClose();
+                }} style={{ padding: '8px 24px', borderRadius: 8, background: '#5c6bc0', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, marginRight: 12 }}>닫기</button>
+                <button onClick={() => {
+                  setShowCompleteModal(false);
+                  onClose();
+                  if (goToMyReservations) goToMyReservations();
+                }} style={{ padding: '8px 24px', borderRadius: 8, background: '#1976d2', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16 }}>내 예매목록으로 가기</button>
+              </div>
             </div>
           )}
         </div>

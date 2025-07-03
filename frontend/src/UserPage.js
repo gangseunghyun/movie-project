@@ -7,6 +7,8 @@ import {
 } from './services/userService';
 import axios from 'axios';
 import './UserPage.css';
+import UserReservations from './UserReservations';
+import ReservationReceipt from './ReservationReceipt';
 
 const UserPage = ({ onMovieClick }) => {
   const { nickname } = useParams();
@@ -38,6 +40,9 @@ const UserPage = ({ onMovieClick }) => {
   // 내가 좋아요한 코멘트 상태 추가
   const [likedComments, setLikedComments] = useState([]);
   const [likedCommentsLoading, setLikedCommentsLoading] = useState(false);
+
+  const [selectedReservationId, setSelectedReservationId] = useState(null);
+  const [showReservations, setShowReservations] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -241,6 +246,12 @@ const UserPage = ({ onMovieClick }) => {
     navigate('/');
   };
 
+  useEffect(() => {
+    const handler = () => setShowReservations(true);
+    window.addEventListener('openUserReservations', handler);
+    return () => window.removeEventListener('openUserReservations', handler);
+  }, []);
+
   if (loading) return (
     <div className="user-page-container">
       <div className="loading-spinner">로딩 중...</div>
@@ -354,6 +365,25 @@ const UserPage = ({ onMovieClick }) => {
             </div>
           )}
         </div>
+
+        {/* '내 예매목록 보기' 버튼을 선호태그 바로 아래에 위치 */}
+        <button
+          style={{
+            background: '#1976d2',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            padding: '12px 24px',
+            fontWeight: 600,
+            fontSize: 18,
+            cursor: 'pointer',
+            margin: '0 0 24px 0',
+            display: 'block',
+          }}
+          onClick={() => setShowReservations(true)}
+        >
+          내 예매목록 보기
+        </button>
 
         {/* 찜한 영화 섹션 */}
         <div className="liked-movies-section">
@@ -607,6 +637,66 @@ const UserPage = ({ onMovieClick }) => {
           )}
         </div>
       </div>
+      {showReservations && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.5)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        onClick={e => {
+          if (e.target === e.currentTarget) {
+            setShowReservations(false);
+            setSelectedReservationId(null);
+          }
+        }}
+        >
+          <div style={{
+            background: '#f7f7fa',
+            borderRadius: 16,
+            padding: 32,
+            minWidth: 420,
+            maxWidth: 700,
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+            position: 'relative',
+          }}>
+            <button
+              onClick={() => {
+                setShowReservations(false);
+                setSelectedReservationId(null);
+              }}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                background: 'transparent',
+                border: 'none',
+                fontSize: 24,
+                fontWeight: 700,
+                color: '#888',
+                cursor: 'pointer',
+                zIndex: 10,
+              }}
+              aria-label="닫기"
+            >
+              ×
+            </button>
+            {!selectedReservationId ? (
+              <UserReservations onSelectReservation={setSelectedReservationId} currentUser={currentUser} />
+            ) : (
+              <ReservationReceipt reservationId={selectedReservationId} onBack={() => setSelectedReservationId(null)} currentUser={currentUser} />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
