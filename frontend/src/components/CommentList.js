@@ -11,6 +11,8 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
   const [editingComment, setEditingComment] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [likeLoading, setLikeLoading] = useState({});
+  const [replyInput, setReplyInput] = useState({});
+  const [replyOpen, setReplyOpen] = useState({});
 
   useEffect(() => {
     if (isOpen && reviewId) {
@@ -21,16 +23,15 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
   const fetchComments = async () => {
     setLoading(true);
     setError('');
-    
     try {
+      // 평탄화(flat) 리스트로 모든 댓글을 가져오는 API 사용
       const url = currentUser 
-        ? `http://localhost:80/api/comments/review/${reviewId}?userId=${currentUser.id}`
-        : `http://localhost:80/api/comments/review/${reviewId}`;
-        
+        ? `http://localhost:80/api/comments/review/${reviewId}/flat?userId=${currentUser.id}`
+        : `http://localhost:80/api/comments/review/${reviewId}/flat`;
       const response = await axios.get(url, { withCredentials: true });
-      
       if (response.data.success) {
         setComments(response.data.data);
+        console.log('댓글 평탄화(flat) 데이터:', response.data.data);
       } else {
         setError('댓글을 불러오는데 실패했습니다.');
       }
@@ -149,6 +150,35 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
     }
   };
 
+  const handleSubmitReply = async (parentId, reviewId) => {
+    if (!replyInput[parentId] || !replyInput[parentId].trim()) {
+      alert('답글 내용을 입력해주세요.');
+      return;
+    }
+    if (!currentUser) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    try {
+      const response = await axios.post(`http://localhost:80/api/comments`, {
+        reviewId: reviewId,
+        userId: currentUser.id,
+        content: replyInput[parentId].trim(),
+        parentId: parentId
+      }, { withCredentials: true });
+      if (response.data.success) {
+        setReplyInput(prev => ({ ...prev, [parentId]: '' }));
+        setReplyOpen(prev => ({ ...prev, [parentId]: false }));
+        fetchComments();
+      } else {
+        alert(response.data.message || '답글 작성에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('답글 작성 실패:', err);
+      alert(err.response?.data?.message || '답글 작성에 실패했습니다.');
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -171,6 +201,160 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
     } else {
       return date.toLocaleDateString('ko-KR');
     }
+  };
+
+  // 부모 id를 받아 모든 하위 댓글을 평탄하게 한 번만 들여써서 반환
+  const getAllDescendants = (parentId) => {
+    let result = [];
+    const directChildren = comments.filter(c => c.parentId === parentId);
+    for (const child of directChildren) {
+      result.push(child);
+      result = result.concat(getAllDescendants(child.id));
+    }
+    return result;
+  };
+
+  // 부모-하위 댓글을 한 번만 들여써서 평탄하게 렌더링
+  const renderFlatParentAllDescendants = () => {
+    const parents = comments.filter(c => c.parentId === null);
+    return (
+      <div style={{ marginTop: 24 }}>
+        {parents.map(parent => (
+          <div key={parent.id}>
+            {/* 부모 댓글 */}
+            <div style={{
+              background: '#fafbfc',
+              borderRadius: 6,
+              padding: 12,
+              marginBottom: 8,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+            }}>
+              <b>{parent.userNickname}</b>
+              <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(parent.createdAt)}</span>
+              <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line' }}>{parent.content}</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                <span style={{ color: '#ff2f6e', cursor: 'pointer' }} onClick={() => setReplyOpen(prev => ({ ...prev, [parent.id]: !prev[parent.id] }))}>
+                  답글
+                </span>
+                <span 
+                  style={{ 
+                    color: parent.likedByMe ? '#ff2f6e' : '#888', 
+                    cursor: 'pointer',
+                    fontWeight: parent.likedByMe ? 'bold' : 'normal'
+                  }} 
+                  onClick={() => handleLikeComment(parent.id, parent.likedByMe)}
+                  disabled={likeLoading[parent.id]}
+                >
+                  {likeLoading[parent.id] ? '처리중...' : `좋아요 ${parent.likeCount || 0}`}
+                </span>
+                {currentUser && parent.userId === currentUser.id && (
+                  <>
+                    <span 
+                      style={{ color: '#666', cursor: 'pointer' }} 
+                      onClick={() => {
+                        setEditingComment(parent.id);
+                        setEditContent(parent.content);
+                      }}
+                    >
+                      수정
+                    </span>
+                    <span 
+                      style={{ color: '#ff4757', cursor: 'pointer' }} 
+                      onClick={() => handleDeleteComment(parent.id)}
+                    >
+                      삭제
+                    </span>
+                  </>
+                )}
+              </div>
+              {replyOpen[parent.id] && (
+                <div style={{ marginTop: 8 }}>
+                  <textarea
+                    value={replyInput[parent.id] || ''}
+                    onChange={e => setReplyInput(prev => ({ ...prev, [parent.id]: e.target.value }))}
+                    placeholder="답글을 입력하세요"
+                    rows={2}
+                    style={{ width: '100%', fontSize: 14 }}
+                    maxLength={300}
+                  />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <button onClick={() => handleSubmitReply(parent.id, parent.reviewId)} style={{ fontSize: 13, padding: '4px 12px', background: '#ff2f6e', color: 'white', border: 'none', borderRadius: 4 }}>등록</button>
+                    <button onClick={() => setReplyOpen(prev => ({ ...prev, [parent.id]: false }))} style={{ fontSize: 13, padding: '4px 12px', background: '#eee', color: '#333', border: 'none', borderRadius: 4 }}>취소</button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* 모든 하위 댓글(대댓글, 대댓글의 대댓글 등)을 한 번만 들여써서 같은 라인에 나열 */}
+            {getAllDescendants(parent.id).map(reply => (
+              <div key={reply.id} style={{
+                background: '#fafbfc',
+                borderRadius: 6,
+                padding: 12,
+                marginBottom: 8,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                marginLeft: 32
+              }}>
+                <b>{reply.userNickname}</b>
+                <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(reply.createdAt)}</span>
+                <span style={{ color: '#3b82f6', fontWeight: 600, marginLeft: 8 }}>@{parent.userNickname}</span>
+                <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line' }}>{reply.content}</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                  <span style={{ color: '#ff2f6e', cursor: 'pointer' }} onClick={() => setReplyOpen(prev => ({ ...prev, [reply.id]: !prev[reply.id] }))}>
+                    답글
+                  </span>
+                  <span 
+                    style={{ 
+                      color: reply.likedByMe ? '#ff2f6e' : '#888', 
+                      cursor: 'pointer',
+                      fontWeight: reply.likedByMe ? 'bold' : 'normal'
+                    }} 
+                    onClick={() => handleLikeComment(reply.id, reply.likedByMe)}
+                    disabled={likeLoading[reply.id]}
+                  >
+                    {likeLoading[reply.id] ? '처리중...' : `좋아요 ${reply.likeCount || 0}`}
+                  </span>
+                  {currentUser && reply.userId === currentUser.id && (
+                    <>
+                      <span 
+                        style={{ color: '#666', cursor: 'pointer' }} 
+                        onClick={() => {
+                          setEditingComment(reply.id);
+                          setEditContent(reply.content);
+                        }}
+                      >
+                        수정
+                      </span>
+                      <span 
+                        style={{ color: '#ff4757', cursor: 'pointer' }} 
+                        onClick={() => handleDeleteComment(reply.id)}
+                      >
+                        삭제
+                      </span>
+                    </>
+                  )}
+                </div>
+                {replyOpen[reply.id] && (
+                  <div style={{ marginTop: 8 }}>
+                    <textarea
+                      value={replyInput[reply.id] || ''}
+                      onChange={e => setReplyInput(prev => ({ ...prev, [reply.id]: e.target.value }))}
+                      placeholder="답글을 입력하세요"
+                      rows={2}
+                      style={{ width: '100%', fontSize: 14 }}
+                      maxLength={300}
+                    />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                      <button onClick={() => handleSubmitReply(reply.id, reply.reviewId)} style={{ fontSize: 13, padding: '4px 12px', background: '#ff2f6e', color: 'white', border: 'none', borderRadius: 4 }}>등록</button>
+                      <button onClick={() => setReplyOpen(prev => ({ ...prev, [reply.id]: false }))} style={{ fontSize: 13, padding: '4px 12px', background: '#eee', color: '#333', border: 'none', borderRadius: 4 }}>취소</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -201,98 +385,8 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
             </form>
           )}
 
-          {error && (
-            <div className="error-message">{error}</div>
-          )}
-
-          {/* 댓글 목록 */}
-          {loading ? (
-            <div className="loading">댓글을 불러오는 중...</div>
-          ) : comments.length === 0 ? (
-            <div className="no-comments">아직 댓글이 없습니다.</div>
-          ) : (
-            <div className="comments-list">
-              {comments.map((comment) => (
-                <div key={comment.id} className="comment-item">
-                  <div className="comment-header">
-                    <div className="commenter-info">
-                      <div className="commenter-name">{comment.userNickname}</div>
-                      <div className="comment-date">{formatDate(comment.createdAt)}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="comment-content">
-                    {editingComment === comment.id ? (
-                      <div className="edit-form">
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          rows={2}
-                          maxLength={500}
-                        />
-                        <div className="edit-actions">
-                          <button 
-                            onClick={() => handleEditComment(comment.id)}
-                            className="save-btn"
-                          >
-                            저장
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setEditingComment(null);
-                              setEditContent('');
-                            }}
-                            className="cancel-btn"
-                          >
-                            취소
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>{comment.content}</div>
-                    )}
-                  </div>
-                  
-                  <div className="comment-footer">
-                    <div className="comment-actions">
-                      <button 
-                        className={`action-btn ${comment.likedByMe ? 'liked' : ''}`}
-                        onClick={() => handleLikeComment(comment.id, comment.likedByMe)}
-                        disabled={likeLoading[comment.id]}
-                      >
-                        <span style={{ marginRight: 4, color: comment.likedByMe ? '#ff2f6e' : '#666' }}>
-                          {comment.likedByMe ? '❤️' : '🤍'}
-                        </span>
-                        좋아요 {comment.likeCount > 0 && `(${comment.likeCount})`}
-                      </button>
-                      
-                      {currentUser && currentUser.id === comment.userId && (
-                        <>
-                          <button 
-                            className="action-btn edit-btn"
-                            onClick={() => {
-                              setEditingComment(comment.id);
-                              setEditContent(comment.content);
-                            }}
-                          >
-                            <span style={{ marginRight: 4 }}>✏️</span>
-                            수정
-                          </button>
-                          <button 
-                            className="action-btn delete-btn"
-                            onClick={() => handleDeleteComment(comment.id)}
-                          >
-                            <span style={{ marginRight: 4 }}>🗑️</span>
-                            삭제
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* 플랫 구조로 댓글 렌더링 */}
+          {renderFlatParentAllDescendants()}
         </div>
 
         <style>{`

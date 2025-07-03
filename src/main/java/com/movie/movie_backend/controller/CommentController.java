@@ -137,9 +137,16 @@ public class CommentController {
      * 리뷰의 모든 댓글 조회 (트리 구조)
      */
     @GetMapping("/review/{reviewId}/all")
-    public ResponseEntity<Map<String, Object>> getAllComments(@PathVariable Long reviewId) {
+    public ResponseEntity<Map<String, Object>> getAllComments(
+            @PathVariable Long reviewId,
+            @RequestParam(required = false) Long userId) {
         try {
-            List<CommentDto> comments = commentService.getAllCommentsByReviewId(reviewId);
+            List<CommentDto> comments;
+            if (userId != null) {
+                comments = commentService.getAllCommentsByReviewIdWithUserLikeStatus(reviewId, userId);
+            } else {
+                comments = commentService.getAllCommentsByReviewId(reviewId);
+            }
             Long commentCount = commentService.getCommentCountByReviewId(reviewId);
             
             Map<String, Object> response = new HashMap<>();
@@ -153,6 +160,30 @@ public class CommentController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "전체 댓글 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 리뷰의 모든 댓글 조회 (평탄화 flat 구조)
+     */
+    @GetMapping("/review/{reviewId}/flat")
+    public ResponseEntity<Map<String, Object>> getAllCommentsFlat(
+            @PathVariable Long reviewId) {
+        try {
+            List<CommentDto> comments = commentService.getAllCommentsByReviewIdFlat(reviewId);
+            Long commentCount = commentService.getCommentCountByReviewId(reviewId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", comments);
+            response.put("count", comments.size());
+            response.put("totalCount", commentCount);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("평탄화 전체 댓글 조회 실패: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "평탄화 전체 댓글 조회에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
