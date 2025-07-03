@@ -106,6 +106,10 @@ public class MovieDetailMapper {
                     .orderInMovie(stillcut.getOrderInMovie())
                     .build())
                 .collect(Collectors.toList()) : null);
+        
+        // 태그 정보 매핑
+        dto.setTags(movieDetail.getTags() != null ? movieDetail.getTags() : List.of());
+        
         dto.setLikeCount(likeCount);
         dto.setLikedByMe(likedByMe);
         return dto;

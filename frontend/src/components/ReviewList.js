@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReviewEditModal from './ReviewEditModal';
+import CommentList from './CommentList';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:80';
 
@@ -11,6 +12,8 @@ function ReviewList({ movieCd, currentUser }) {
   const [likeLoading, setLikeLoading] = useState({}); // 각 리뷰별 좋아요 로딩 상태
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [commentReviewId, setCommentReviewId] = useState(null);
 
   useEffect(() => {
     if (movieCd) {
@@ -104,6 +107,12 @@ function ReviewList({ movieCd, currentUser }) {
     } finally {
       setLikeLoading(prev => ({ ...prev, [reviewId]: false }));
     }
+  };
+
+  // 댓글 모달 열기
+  const handleOpenCommentModal = (reviewId) => {
+    setCommentReviewId(reviewId);
+    setCommentModalOpen(true);
   };
 
   const formatDate = (dateString) => {
@@ -246,9 +255,12 @@ function ReviewList({ movieCd, currentUser }) {
                   </button>
                 </>
               )}
-              <button className="action-btn">
+              <button 
+                className="action-btn"
+                onClick={() => handleOpenCommentModal(review.id)}
+              >
                 <span style={{ marginRight: 4 }}>💬</span>
-                댓글
+                댓글 {review.commentCount > 0 && `(${review.commentCount})`}
               </button>
             </div>
           </div>
@@ -264,6 +276,13 @@ function ReviewList({ movieCd, currentUser }) {
           setEditingReview(null);
         }}
         onUpdate={handleReviewUpdate}
+      />
+      {/* 댓글 모달 */}
+      <CommentList
+        reviewId={commentReviewId}
+        currentUser={currentUser}
+        isOpen={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
       />
       
       <style>{`

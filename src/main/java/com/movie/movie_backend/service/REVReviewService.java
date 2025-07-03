@@ -143,6 +143,10 @@ public class REVReviewService {
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     dto.setLikeCount(likeCount);
                     
+                    // 댓글 개수 설정 (활성 상태만)
+                    int commentCount = commentRepository.getTopLevelCommentCountByReviewId(review.getId()).intValue();
+                    dto.setCommentCount(commentCount);
+                    
                     // 현재 사용자가 좋아요를 눌렀는지 확인
                     if (currentUserId != null) {
                         boolean likedByMe = reviewLikeRepository.existsByReviewIdAndUserId(review.getId(), currentUserId);
@@ -367,7 +371,7 @@ public class REVReviewService {
     // Review -> ReviewResponseDto 변환
     private ReviewResponseDto toResponseDto(Review review, boolean likedByMe) {
         int likeCount = reviewLikeRepository.countByReviewId(review.getId());
-        int commentCount = commentRepository.countByReviewIdAndParentIsNull(review.getId());
+        int commentCount = commentRepository.getTopLevelCommentCountByReviewId(review.getId()).intValue();
         return ReviewResponseDto.builder()
                 .id(review.getId())
                 .content(review.getContent())

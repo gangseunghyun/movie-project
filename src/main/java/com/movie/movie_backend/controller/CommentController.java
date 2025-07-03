@@ -85,10 +85,8 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Map<String, Object>> deleteComment(
             @PathVariable Long commentId,
-            @RequestBody Map<String, Object> request) {
+            @RequestParam Long userId) {
         try {
-            Long userId = Long.valueOf(request.get("userId").toString());
-            
             commentService.deleteComment(commentId, userId);
             
             Map<String, Object> response = new HashMap<>();
@@ -108,9 +106,16 @@ public class CommentController {
      * 리뷰의 최상위 댓글 조회
      */
     @GetMapping("/review/{reviewId}")
-    public ResponseEntity<Map<String, Object>> getTopLevelComments(@PathVariable Long reviewId) {
+    public ResponseEntity<Map<String, Object>> getTopLevelComments(
+            @PathVariable Long reviewId,
+            @RequestParam(required = false) Long userId) {
         try {
-            List<CommentDto> comments = commentService.getTopLevelCommentsByReviewId(reviewId);
+            List<CommentDto> comments;
+            if (userId != null) {
+                comments = commentService.getTopLevelCommentsByReviewIdWithUserLikeStatus(reviewId, userId);
+            } else {
+                comments = commentService.getTopLevelCommentsByReviewId(reviewId);
+            }
             Long commentCount = commentService.getCommentCountByReviewId(reviewId);
             
             Map<String, Object> response = new HashMap<>();
@@ -233,10 +238,8 @@ public class CommentController {
     @DeleteMapping("/{commentId}/like")
     public ResponseEntity<Map<String, Object>> removeCommentLike(
             @PathVariable Long commentId,
-            @RequestBody Map<String, Object> request) {
+            @RequestParam Long userId) {
         try {
-            Long userId = Long.valueOf(request.get("userId").toString());
-            
             commentService.removeCommentLike(commentId, userId);
             Long likeCount = commentService.getCommentLikeCount(commentId);
             
