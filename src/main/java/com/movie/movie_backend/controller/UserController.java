@@ -63,6 +63,7 @@ import com.movie.movie_backend.entity.Theater;
 import com.movie.movie_backend.repository.ReservationRepository;
 import com.movie.movie_backend.repository.ScreeningSeatRepository;
 import com.movie.movie_backend.repository.PaymentRepository;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor

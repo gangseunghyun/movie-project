@@ -3098,6 +3098,67 @@ function App() {
     // 필요시 다른 모달도 닫기
   };
 
+  // 새로운 장르 추천 API 호출 함수
+    const fetchNewGenreRecommendation = async () => {
+      if (!currentUser || !currentUser.id) return;
+      try {
+        const res = await axios.get(`http://localhost:80/api/users/${currentUser.id}/new-genre-recommendation?sort=rating`, { withCredentials: true });
+        setNewGenreRecommendation(res.data);
+      } catch (error) {
+        setNewGenreRecommendation(null);
+      }
+    };
+
+    // 찜/찜해제, 별점 등록/삭제, 선호태그 추가/삭제 후 새로운 장르 추천 갱신
+    const handleLikeMovie = async (movieCd) => {
+      try {
+        await axios.post(`http://localhost:80/api/movies/${movieCd}/like`, {}, { withCredentials: true });
+        updateMovieLikeState(movieCd, true);
+        fetchNewGenreRecommendation();
+      } catch (error) {
+        alert('찜에 실패했습니다.');
+      }
+    };
+    const handleUnlikeMovie = async (movieCd) => {
+      try {
+        await axios.delete(`http://localhost:80/api/movies/${movieCd}/like`, { withCredentials: true });
+        updateMovieLikeState(movieCd, false);
+        fetchNewGenreRecommendation();
+      } catch (error) {
+        alert('찜 취소에 실패했습니다.');
+      }
+    };
+    const handleStarChange = (score) => {
+      if (!selectedMovie) return;
+      setLoadingRating(true);
+      axios.post('http://localhost:80/api/ratings', {
+        movieCd: selectedMovie.movieCd,
+        score
+      }, {
+        withCredentials: true
+      })
+        .then(res => {
+          if (res.data.success) {
+            setUserRating(score);
+            return axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/average`);
+          }
+        })
+        .then(res => {
+          if (res && res.data.success) {
+            setAverageRating(res.data.averageRating);
+            setRatingCount(res.data.ratingCount);
+          }
+          fetchNewGenreRecommendation();
+        })
+        .finally(() => setLoadingRating(false));
+    };
+
+    // 로그인/유저 변경 시 새로운 장르 추천 fetch
+    useEffect(() => {
+      fetchNewGenreRecommendation();
+    }, [currentUser?.id]);
+
+
   // 내 예매목록(마이페이지)로 이동 함수
   const goToMyReservations = () => {
     closeAllModals();
