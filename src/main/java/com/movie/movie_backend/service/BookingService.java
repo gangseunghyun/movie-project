@@ -354,4 +354,89 @@ public class BookingService {
             .findFirst()
             .orElse(null);
     }
+
+    // 결제취소(환불) 처리: 아임포트에 환불 요청 후 Payment 상태 업데이트
+    @Transactional
+    public boolean cancelPayment(String impUid, String reason) {
+        try {
+            // 1. Payment 엔티티 조회
+            Payment payment = paymentRepository.findByImpUid(impUid);
+            log.info("[검증] Payment 조회: impUid={}, paymentObj={}, reservationId={}", impUid, payment, payment != null ? payment.getReservation() != null ? payment.getReservation().getId() : "null" : "null");
+            if (payment == null) {
+                log.warn("[검증] Payment not found for impUid: {}", impUid);
+                return false;
+            }
+            if (payment.isCancelled()) {
+                log.info("[검증] Payment already cancelled: {}", impUid);
+                return false;
+            }
+
+            // 2. 아임포트 인증 토큰 발급
+            String accessToken = getIamportAccessToken();
+
+            // 3. 아임포트 결제취소 API 호출
+            RestTemplate restTemplate = new RestTemplate();
+            String url = "https://api.iamport.kr/payments/cancel";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", accessToken);
+            String body = String.format("{\"imp_uid\":\"%s\",\"reason\":\"%s\"}", impUid, reason != null ? reason : "사용자 요청");
+            HttpEntity<String> entity = new HttpEntity<>(body, headers);
+            ResponseEntity<JsonNode> response = restTemplate.postForEntity(url, entity, JsonNode.class);
+            JsonNode responseBody = response.getBody();
+            if (responseBody == null || !responseBody.has("response") || responseBody.get("response").isNull()) {
+                log.error("[검증] 아임포트 환불 실패: {}", responseBody);
+                return false;
+            }
+            JsonNode cancelInfo = responseBody.get("response");
+
+            // 4. Payment 엔티티 상태 업데이트
+            payment.setStatus(com.movie.movie_backend.constant.PaymentStatus.CANCELLED);
+            payment.setCancelled(true);
+            payment.setCancelReason(reason);
+            payment.setCancelledAt(java.time.LocalDateTime.now());
+            if (cancelInfo.has("receipt_url")) {
+                payment.setReceiptUrl(cancelInfo.get("receipt_url").asText());
+            }
+            paymentRepository.save(payment);
+
+            // === 추가: 해당 예약의 좌석을 모두 AVAILABLE로 변경 ===
+            log.info("[검증] Checking reservation for payment: impUid={}, reservationObj={}, reservationId={}", impUid, payment.getReservation(), payment.getReservation() != null ? payment.getReservation().getId() : "null");
+            if (payment.getReservation() != null) {
+                Long reservationId = payment.getReservation().getId();
+                Reservation managedReservation = reservationRepository.findById(reservationId).orElse(null);
+                log.info("[검증] Found managedReservation for payment: reservationId={}, managedReservationObj={}", reservationId, managedReservation);
+                if (managedReservation != null) {
+                    List<ScreeningSeat> seats = screeningSeatRepository.findByReservation(managedReservation);
+                    log.info("[검증] Found {} seats for managedReservation: {}", seats.size(), reservationId);
+                    for (ScreeningSeat seat : seats) {
+                        log.info("[검증] Updating seat: seatId={}, seatObjId={}, currentStatus={}, newStatus=AVAILABLE, reservationId={}", 
+                            seat.getSeat() != null ? seat.getSeat().getId() : "null", seat.getId(), seat.getStatus(), reservationId);
+                        seat.setStatus(ScreeningSeatStatus.AVAILABLE);
+                        screeningSeatRepository.save(seat);
+                    }
+                } else {
+                    log.warn("[검증] Reservation not found by id: {}", reservationId);
+                }
+            } else {
+                log.warn("[검증] Payment has no reservation: impUid={}", impUid);
+                log.info("[검증] Trying alternative approach: looking for seats with RESERVED status");
+                List<ScreeningSeat> reservedSeats = screeningSeatRepository.findByStatus(ScreeningSeatStatus.RESERVED);
+                log.info("[검증] Found {} reserved seats total", reservedSeats.size());
+                for (ScreeningSeat seat : reservedSeats) {
+                    if (seat.getReservation() != null) {
+                        log.info("[검증] Found reserved seat: seatId={}, seatObjId={}, reservationId={}, status={}", 
+                            seat.getSeat() != null ? seat.getSeat().getId() : "null", seat.getId(), seat.getReservation().getId(), seat.getStatus());
+                        seat.setStatus(ScreeningSeatStatus.AVAILABLE);
+                        screeningSeatRepository.save(seat);
+                    }
+                }
+            }
+            // === ===
+            return true;
+        } catch (Exception e) {
+            log.error("[검증] 결제취소(환불) 처리 실패: {}", e.getMessage(), e);
+            return false;
+        }
+    }
 } 

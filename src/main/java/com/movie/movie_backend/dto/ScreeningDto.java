@@ -14,8 +14,13 @@ public class ScreeningDto {
     private Long movieDetailId;
     private String movieCd;
     private String movieNm;
+    private String posterUrl;
 
     public static ScreeningDto fromEntity(com.movie.movie_backend.entity.Screening s) {
+        String posterUrl = null;
+        if (s.getMovieDetail() != null && s.getMovieDetail().getMovieList() != null) {
+            posterUrl = s.getMovieDetail().getMovieList().getPosterUrl();
+        }
         return ScreeningDto.builder()
             .id(s.getId())
             .startTime(s.getStartTime() != null ? s.getStartTime().toString() : null)
@@ -27,6 +32,7 @@ public class ScreeningDto {
             .movieDetailId(s.getMovieDetail() != null ? s.getMovieDetail().getId() : null)
             .movieCd(s.getMovieDetail() != null ? s.getMovieDetail().getMovieCd() : null)
             .movieNm(s.getMovieDetail() != null ? s.getMovieDetail().getMovieNm() : null)
+            .posterUrl(posterUrl)
             .build();
     }
 } 

@@ -48,6 +48,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Collections;
+import com.movie.movie_backend.dto.ReservationReceiptDto;
+import com.movie.movie_backend.dto.PaymentDto;
+import com.movie.movie_backend.dto.ScreeningDto;
+import com.movie.movie_backend.dto.CinemaDto;
+import com.movie.movie_backend.dto.TheaterDto;
+import com.movie.movie_backend.dto.ScreeningSeatDto;
+import com.movie.movie_backend.entity.Reservation;
+import com.movie.movie_backend.entity.Payment;
+import com.movie.movie_backend.entity.ScreeningSeat;
+import com.movie.movie_backend.entity.Screening;
+import com.movie.movie_backend.entity.Cinema;
+import com.movie.movie_backend.entity.Theater;
+import com.movie.movie_backend.repository.ReservationRepository;
+import com.movie.movie_backend.repository.ScreeningSeatRepository;
+import com.movie.movie_backend.repository.PaymentRepository;
 
 @RestController
 @RequiredArgsConstructor
@@ -69,6 +84,9 @@ public class UserController {
     private final ReviewLikeRepository reviewLikeRepository;
     private final REVReviewRepository reviewRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final ReservationRepository reservationRepository;
+    private final ScreeningSeatRepository screeningSeatRepository;
+    private final PaymentRepository paymentRepository;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -1072,14 +1090,77 @@ public class UserController {
         }
     }
 
-    /**
-     * [POST] /api/users/{userId}/follow - userId(상대)를 현재 로그인 사용자가 팔로우
-     */
+    // 내 예매내역 리스트 조회
+    @GetMapping("/api/users/{userId}/reservations")
+    public ResponseEntity<List<ReservationReceiptDto>> getMyReservations(@PathVariable Long userId) {
+        List<Reservation> reservations = reservationRepository.findByUserId(userId);
+        List<ReservationReceiptDto> result = reservations.stream().map(this::toReceiptDto).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    // 단일 예매영수증(상세) 조회
+    @GetMapping("/api/users/{userId}/reservations/{reservationId}")
+    public ResponseEntity<ReservationReceiptDto> getMyReservationDetail(@PathVariable Long userId, @PathVariable Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId).orElse(null);
+        if (reservation == null || !reservation.getUser().getId().equals(userId)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(toReceiptDto(reservation));
+    }
+
+    // Reservation -> ReservationReceiptDto 변환
+    private ReservationReceiptDto toReceiptDto(Reservation reservation) {
+        Screening screening = reservation.getScreening();
+        Cinema cinema = screening.getCinema();
+        Theater theater = screening.getTheater();
+        List<ScreeningSeatDto> seatDtos = reservation.getReservedSeats() != null ?
+            reservation.getReservedSeats().stream().map(ScreeningSeatDto::fromEntity).collect(Collectors.toList()) :
+            Collections.emptyList();
+        List<PaymentDto> paymentDtos = reservation.getPayments() != null ?
+            reservation.getPayments().stream().map(this::toPaymentDto).collect(Collectors.toList()) :
+            Collections.emptyList();
+        return ReservationReceiptDto.builder()
+            .reservationId(reservation.getId())
+            .reservedAt(reservation.getReservedAt() != null ? reservation.getReservedAt().toString() : null)
+            .status(reservation.getStatus() != null ? reservation.getStatus().name() : null)
+            .totalAmount(reservation.getTotalAmount() != null ? reservation.getTotalAmount().intValue() : 0)
+            .screening(ScreeningDto.fromEntity(screening))
+            .cinema(cinema != null ? new CinemaDto(cinema.getId(), cinema.getName(), cinema.getAddress(), cinema.getPhoneNumber(), null) : null)
+            .theater(theater != null ? new TheaterDto(theater.getId(), theater.getName(), theater.getTotalSeats(), theater.getCinema() != null ? theater.getCinema().getId() : null) : null)
+            .seats(seatDtos)
+            .payments(paymentDtos)
+            .build();
+    }
+
+    // Payment -> PaymentDto 변환
+    private PaymentDto toPaymentDto(Payment payment) {
+        return PaymentDto.builder()
+            .id(payment.getId())
+            .amount(payment.getAmount() != null ? payment.getAmount().intValue() : 0)
+            .method(payment.getMethod() != null ? payment.getMethod().name() : null)
+            .status(payment.getStatus() != null ? payment.getStatus().name() : null)
+            .paidAt(payment.getPaidAt() != null ? payment.getPaidAt().toString() : null)
+            .receiptUrl(payment.getReceiptUrl())
+            .cancelled(payment.isCancelled())
+            .cancelReason(payment.getCancelReason())
+            .cancelledAt(payment.getCancelledAt() != null ? payment.getCancelledAt().toString() : null)
+            .impUid(payment.getImpUid())
+            .merchantUid(payment.getMerchantUid())
+            .receiptNumber(payment.getReceiptNumber())
+            .cardName(payment.getCardName())
+            .cardNumberSuffix(payment.getCardNumberSuffix())
+            .approvalNumber(payment.getApprovalNumber())
+            .userName(payment.getUser() != null ? payment.getUser().getDisplayName() : null)
+            .pgResponseCode(payment.getPgResponseCode())
+            .pgResponseMessage(payment.getPgResponseMessage())
+            .build();
+    }
+
+    // ===== 소셜/팔로우 관련 API =====
     @PostMapping("/api/users/{userId}/follow")
     public ResponseEntity<?> followUser(@PathVariable Long userId) {
         Long currentUserId = getCurrentUserId();
         userService.followUser(currentUserId, userId);
-        // 최신 팔로워/팔로잉 목록 반환
         var followers = userService.getFollowers(userId);
         var following = userService.getFollowing(userId);
         return ResponseEntity.ok(Map.of(
@@ -1090,14 +1171,10 @@ public class UserController {
         ));
     }
 
-    /**
-     * [DELETE] /api/users/{userId}/unfollow - userId(상대)를 현재 로그인 사용자가 언팔로우
-     */
     @DeleteMapping("/api/users/{userId}/unfollow")
     public ResponseEntity<?> unfollowUser(@PathVariable Long userId) {
         Long currentUserId = getCurrentUserId();
         userService.unfollowUser(currentUserId, userId);
-        // 최신 팔로워/팔로잉 목록 반환
         var followers = userService.getFollowers(userId);
         var following = userService.getFollowing(userId);
         return ResponseEntity.ok(Map.of(
@@ -1108,7 +1185,6 @@ public class UserController {
         ));
     }
 
-    // 현재 로그인한 사용자의 userId 반환 (SecurityContextHolder 활용)
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
@@ -1118,7 +1194,6 @@ public class UserController {
         if (principal instanceof com.movie.movie_backend.entity.User user) {
             return user.getId();
         }
-        // 소셜 로그인 사용자인 경우
         if (principal instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User oAuth2User) {
             String email = (String) oAuth2User.getAttribute("email");
             if (email != null) {
@@ -1129,7 +1204,6 @@ public class UserController {
         throw new RuntimeException("유저 정보를 찾을 수 없습니다.");
     }
 
-    // 내부 클래스 또는 별도 파일로 UserSimpleDto 정의
     public static class UserSimpleDto {
         private Long id;
         private String nickname;
@@ -1164,13 +1238,11 @@ public class UserController {
         return getSocialRecommendationInternal(userId);
     }
 
-    // 메인페이지용 엔드포인트 추가
     @GetMapping("/api/users/{userId}/main-recommendation")
     public ResponseEntity<?> getMainSocialRecommendation(@PathVariable Long userId) {
         return getSocialRecommendationInternal(userId);
     }
 
-    // 내부 공통 로직 메서드
     private ResponseEntity<?> getSocialRecommendationInternal(Long userId) {
         var following = userService.getFollowing(userId);
         if (following.isEmpty()) {
