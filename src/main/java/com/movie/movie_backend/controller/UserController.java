@@ -1181,11 +1181,15 @@ public class UserController {
                 "movies", java.util.Collections.emptyList()
             ));
         }
-        var candidates = following.stream().filter(f -> {
-            boolean hasLiked = f.getLikes() != null && !f.getLikes().isEmpty();
-            boolean hasHighRating = f.getRatings() != null && f.getRatings().stream().anyMatch(r -> r.getScore() >= 4.0);
-            return hasLiked || hasHighRating;
-        }).toList();
+        // 팔로잉 유저를 반드시 DB에서 새로 조회해서 최신 상태 사용
+        var candidates = following.stream()
+            .map(f -> userRepository.findById(f.getId()).orElse(null))
+            .filter(java.util.Objects::nonNull)
+            .filter(f -> {
+                boolean hasLiked = f.getLikes() != null && !f.getLikes().isEmpty();
+                boolean hasHighRating = f.getRatings() != null && f.getRatings().stream().anyMatch(r -> r.getScore() >= 4.0);
+                return hasLiked || hasHighRating;
+            }).toList();
         if (candidates.isEmpty()) {
             return ResponseEntity.ok(java.util.Map.of(
                 "success", true,

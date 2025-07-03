@@ -127,6 +127,27 @@ function App() {
   const [socialRecommendation, setSocialRecommendation] = useState(null);
   const [socialRecommendationLoading, setSocialRecommendationLoading] = useState(false);
 
+  // 소셜 추천 fetch 함수 최상단에 선언
+  const fetchSocialRecommendation = async () => {
+    if (!currentUser || !currentUser.id) return;
+    setSocialRecommendationLoading(true);
+    try {
+      const response = await axios.get(`http://localhost:80/api/users/${currentUser.id}/daily-social-recommendation`, { withCredentials: true });
+      if (response.data.success) {
+        setSocialRecommendation(response.data);
+      }
+    } catch (error) {
+      console.error('소셜 추천 정보 조회 실패:', error);
+    } finally {
+      setSocialRecommendationLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!currentUser || !currentUser.id) return;
+    fetchSocialRecommendation();
+  }, [currentUser?.id]);
+
   useEffect(() => {
     if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
       const tagNames = Object.keys(recommendedMoviesData);
@@ -1836,8 +1857,10 @@ function App() {
                       e.stopPropagation();
                       if (item.likedByMe) {
                         handleUnlikeMovie(item.movieCd);
+                        if (typeof fetchSocialRecommendation === 'function') fetchSocialRecommendation();
                       } else {
                         handleLikeMovie(item.movieCd);
+                        if (typeof fetchSocialRecommendation === 'function') fetchSocialRecommendation();
                       }
                     }}
                     style={{
@@ -2058,6 +2081,41 @@ function App() {
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
+                {/* 찜 버튼 (포스터 아래, 별점 위) */}
+                <div style={{ textAlign: 'center', margin: '16px 0' }}>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (!currentUser) {
+                        setShowLoginAlert(true);
+                        return;
+                      }
+                      if (selectedMovie.likedByMe) {
+                        handleUnlikeMovie(selectedMovie.movieCd);
+                        setSelectedMovie(prev => prev ? { ...prev, likedByMe: false, likeCount: Math.max((prev.likeCount || 1) - 1, 0) } : prev);
+                        if (typeof fetchSocialRecommendation === 'function') fetchSocialRecommendation();
+                      } else {
+                        handleLikeMovie(selectedMovie.movieCd);
+                        setSelectedMovie(prev => prev ? { ...prev, likedByMe: true, likeCount: (prev.likeCount || 0) + 1 } : prev);
+                        if (typeof fetchSocialRecommendation === 'function') fetchSocialRecommendation();
+                      }
+                    }}
+                    style={{
+                      padding: '8px 20px',
+                      backgroundColor: selectedMovie.likedByMe ? '#ffc107' : '#eee',
+                      color: selectedMovie.likedByMe ? 'black' : '#333',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      fontWeight: 600,
+                      marginBottom: 8
+                    }}
+                  >
+                    {selectedMovie.likedByMe ? '❤️ 찜 ' : '🤍 찜 '}
+                    {selectedMovie.likeCount}
+                  </button>
+                </div>
                 {/* ⭐️ 별점 입력 UI */}
                 <StarRating
                   movieCd={selectedMovie.movieCd}
@@ -2998,143 +3056,6 @@ function App() {
       prev.includes(movieCd)
         ? prev.filter(id => id !== movieCd)
         : [...prev, movieCd]
-    );
-  };
-
-  // current-user 정보 받아온 후 소셜 추천 정보 가져오기
-  useEffect(() => {
-    if (!currentUser || !currentUser.id) return;
-    let isCurrent = true;
-    const fetchSocialRecommendation = async () => {
-      setSocialRecommendationLoading(true);
-      try {
-        const response = await axios.get(`http://localhost:80/api/users/${currentUser.id}/daily-social-recommendation`, { withCredentials: true });
-        if (response.data.success && isCurrent) {
-          setSocialRecommendation(response.data);
-        }
-      } catch (error) {
-        console.error('소셜 추천 정보 조회 실패:', error);
-      } finally {
-        if (isCurrent) setSocialRecommendationLoading(false);
-      }
-    };
-    fetchSocialRecommendation();
-    return () => { isCurrent = false; };
-  }, [currentUser?.id]);
-
-  // 소셜 친구 추천 UI 렌더링 함수
-  const renderSocialRecommendation = () => {
-    if (socialRecommendationLoading) {
-      return <div style={{ marginTop: '30px' }}>소셜 친구 추천 정보를 불러오는 중...</div>;
-    }
-    if (!socialRecommendation || !socialRecommendation.recommender || !socialRecommendation.movies || socialRecommendation.movies.length === 0) {
-      return null;
-    }
-    const { recommender, movies } = socialRecommendation;
-    return (
-      <div style={{ marginTop: '30px' }}>
-        <h3 style={{ marginBottom: '20px', color: '#333' }}>🍿 {recommender.nickname}님이 추천하는 영화</h3>
-        <div style={{ 
-          display: 'flex', 
-          gap: '20px', 
-          padding: '20px', 
-          backgroundColor: '#f8f6ff', 
-          borderRadius: '12px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-        }}>
-          {/* 추천자 프로필 */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center',
-            minWidth: '150px'
-          }}>
-            <div style={{
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              marginBottom: '10px',
-              backgroundColor: '#eee',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              {recommender.profileImageUrl ? (
-                <img 
-                  src={recommender.profileImageUrl} 
-                  alt={recommender.nickname}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <span style={{ fontSize: '36px' }}>👤</span>
-              )}
-            </div>
-            <h4 style={{ margin: '0 0 5px 0', textAlign: 'center' }}>
-              {recommender.nickname}
-            </h4>
-            <p style={{ margin: '0', fontSize: '13px', color: '#666', textAlign: 'center' }}>
-              팔로잉 유저
-            </p>
-          </div>
-          {/* 추천 영화 리스트 */}
-          <div style={{ flex: 1 }}>
-            <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>추천 영화</h5>
-            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-              {movies.map((movie, index) => (
-                <div 
-                  key={movie.movieCd || movie.id || index}
-                  style={{
-                    width: '120px',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                  onClick={() => handleMovieClick(movie)}
-                >
-                  <div style={{
-                    width: '100%',
-                    height: '160px',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    backgroundColor: '#ddd',
-                    marginBottom: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {movie.posterUrl ? (
-                      <img 
-                        src={movie.posterUrl} 
-                        alt={movie.movieNm}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: '24px' }}>🎬</span>
-                    )}
-                  </div>
-                  <div>
-                    <p style={{ 
-                      margin: '0 0 5px 0', 
-                      fontSize: '12px', 
-                      fontWeight: 'bold',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {movie.movieNm}
-                    </p>
-                    <p style={{ margin: '0', fontSize: '11px', color: '#666' }}>
-                      {movie.averageRating ? `${movie.averageRating.toFixed(1)}⭐` : ''}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
     );
   };
 

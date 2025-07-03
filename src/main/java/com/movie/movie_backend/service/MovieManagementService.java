@@ -234,6 +234,7 @@ public class MovieManagementService {
         
         likeRepository.save(like);
         log.info("찜 추가 완료: {} - 사용자: {}", movieCd, userId);
+        likeRepository.flush();
     }
 
     /**
@@ -260,6 +261,7 @@ public class MovieManagementService {
         // 찜 삭제
         likeRepository.deleteAll(existingLikes);
         log.info("찜 취소 완료: {} - 사용자: {}", movieCd, userId);
+        likeRepository.flush();
     }
 
     /**
