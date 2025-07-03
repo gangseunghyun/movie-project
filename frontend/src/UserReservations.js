@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { API_BASE_URL } from './App';
 
 function UserReservations({ onSelectReservation, currentUser }) {
   const [reservations, setReservations] = useState([]);
@@ -16,7 +15,7 @@ function UserReservations({ onSelectReservation, currentUser }) {
   }, [userId]);
 
   const fetchReservations = () => {
-    axios.get(`${API_BASE_URL}/users/${userId}/reservations`, { withCredentials: true })
+    axios.get(`http://localhost:80/api/users/${userId}/reservations`, { withCredentials: true })
       .then(res => {
         setReservations(res.data);
         setLoading(false);
@@ -30,7 +29,7 @@ function UserReservations({ onSelectReservation, currentUser }) {
     if (!impUid) return alert('결제정보가 없습니다.');
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/payments/cancel`,
+        `http://localhost:80/api/payments/cancel`,
         { imp_uid: impUid, reason },
         { withCredentials: true }
       );
