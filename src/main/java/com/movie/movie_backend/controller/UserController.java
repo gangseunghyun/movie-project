@@ -1071,4 +1071,91 @@ public class UserController {
             ));
         }
     }
+
+    /**
+     * [POST] /api/users/{userId}/follow - userId(상대)를 현재 로그인 사용자가 팔로우
+     */
+    @PostMapping("/api/users/{userId}/follow")
+    public ResponseEntity<?> followUser(@PathVariable Long userId) {
+        Long currentUserId = getCurrentUserId();
+        userService.followUser(currentUserId, userId);
+        // 최신 팔로워/팔로잉 목록 반환
+        var followers = userService.getFollowers(userId);
+        var following = userService.getFollowing(userId);
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "팔로우 성공",
+            "followers", followers,
+            "following", following
+        ));
+    }
+
+    /**
+     * [DELETE] /api/users/{userId}/unfollow - userId(상대)를 현재 로그인 사용자가 언팔로우
+     */
+    @DeleteMapping("/api/users/{userId}/unfollow")
+    public ResponseEntity<?> unfollowUser(@PathVariable Long userId) {
+        Long currentUserId = getCurrentUserId();
+        userService.unfollowUser(currentUserId, userId);
+        // 최신 팔로워/팔로잉 목록 반환
+        var followers = userService.getFollowers(userId);
+        var following = userService.getFollowing(userId);
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "언팔로우 성공",
+            "followers", followers,
+            "following", following
+        ));
+    }
+
+    // 현재 로그인한 사용자의 userId 반환 (SecurityContextHolder 활용)
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            throw new RuntimeException("로그인이 필요합니다.");
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof com.movie.movie_backend.entity.User user) {
+            return user.getId();
+        }
+        // 소셜 로그인 사용자인 경우
+        if (principal instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User oAuth2User) {
+            String email = (String) oAuth2User.getAttribute("email");
+            if (email != null) {
+                User userEntity = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("유저 정보를 찾을 수 없습니다."));
+                return userEntity.getId();
+            }
+        }
+        throw new RuntimeException("유저 정보를 찾을 수 없습니다.");
+    }
+
+    // 내부 클래스 또는 별도 파일로 UserSimpleDto 정의
+    public static class UserSimpleDto {
+        private Long id;
+        private String nickname;
+        public UserSimpleDto(User user) {
+            this.id = user.getId();
+            this.nickname = user.getNickname();
+        }
+        public Long getId() { return id; }
+        public String getNickname() { return nickname; }
+    }
+
+    @GetMapping("/api/users/{userId}/followers")
+    public ResponseEntity<?> getFollowers(@PathVariable Long userId) {
+        var followers = userService.getFollowers(userId)
+            .stream()
+            .map(UserSimpleDto::new)
+            .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(java.util.Map.of("success", true, "data", followers));
+    }
+
+    @GetMapping("/api/users/{userId}/following")
+    public ResponseEntity<?> getFollowing(@PathVariable Long userId) {
+        var following = userService.getFollowing(userId)
+            .stream()
+            .map(UserSimpleDto::new)
+            .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(java.util.Map.of("success", true, "data", following));
+    }
 } 

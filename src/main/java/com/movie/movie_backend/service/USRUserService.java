@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -307,5 +308,50 @@ public class USRUserService {
                 .limit(20)
                 .map(MovieDetail::getMovieCd)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 팔로우: followerId가 followingId를 팔로우
+     */
+    public void followUser(Long followerId, Long followingId) {
+        if (followerId.equals(followingId)) throw new IllegalArgumentException("자기 자신은 팔로우할 수 없습니다.");
+        User follower = userRepository.findById(followerId).orElseThrow(() -> new IllegalArgumentException("팔로우하는 유저가 존재하지 않습니다."));
+        User following = userRepository.findById(followingId).orElseThrow(() -> new IllegalArgumentException("팔로우 대상 유저가 존재하지 않습니다."));
+        if (!follower.getFollowing().contains(following)) {
+            follower.getFollowing().add(following);
+            userRepository.save(follower);
+            userRepository.flush();
+        }
+    }
+
+    /**
+     * 언팔로우: followerId가 followingId를 언팔로우
+     */
+    public void unfollowUser(Long followerId, Long followingId) {
+        User follower = userRepository.findById(followerId).orElseThrow(() -> new IllegalArgumentException("언팔로우하는 유저가 존재하지 않습니다."));
+        User following = userRepository.findById(followingId).orElseThrow(() -> new IllegalArgumentException("언팔로우 대상 유저가 존재하지 않습니다."));
+        if (follower.getFollowing().contains(following)) {
+            follower.getFollowing().remove(following);
+            userRepository.save(follower);
+            userRepository.flush();
+        }
+    }
+
+    /**
+     * 내가 팔로우하는 유저 목록
+     */
+    @Transactional(readOnly = true)
+    public Set<User> getFollowing(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
+        return user.getFollowing();
+    }
+
+    /**
+     * 나를 팔로우하는 유저 목록
+     */
+    @Transactional(readOnly = true)
+    public Set<User> getFollowers(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
+        return user.getFollowers();
     }
 } 

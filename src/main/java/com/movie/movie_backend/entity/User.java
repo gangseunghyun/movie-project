@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import com.movie.movie_backend.constant.Provider;
 import com.movie.movie_backend.constant.UserRole;
 import org.springframework.security.core.GrantedAuthority;
@@ -94,6 +96,17 @@ public class User implements UserDetails {
         inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private List<Tag> preferredTags; // 사용자가 선호하는 태그 목록 (마이페이지 태그 설정)
 
+    @ManyToMany
+    @JoinTable(
+        name = "user_follow",
+        joinColumns = @JoinColumn(name = "follower_id"),
+        inverseJoinColumns = @JoinColumn(name = "following_id")
+    )
+    private Set<User> following = new HashSet<>(); // 내가 팔로우하는 유저들
+
+    @ManyToMany(mappedBy = "following")
+    private Set<User> followers = new HashSet<>(); // 나를 팔로우하는 유저들
+
     // JPA 생명주기 메서드
     @PrePersist
     protected void onCreate() {
@@ -156,5 +169,18 @@ public class User implements UserDetails {
     
     public boolean isUser() {
         return role == UserRole.USER;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31;
     }
 } 

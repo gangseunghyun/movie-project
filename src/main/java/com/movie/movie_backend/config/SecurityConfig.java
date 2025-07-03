@@ -160,7 +160,11 @@ public class SecurityConfig {
                     "/api/person/recommended-director",
                     "/api/person/refresh-recommended-director",
                     "/api/person/actor/*/like-status",
-                    "/api/person/director/*/like-status"
+                    "/api/person/director/*/like-status",
+                    "/api/users/*/follow",
+                    "/api/users/*/unfollow",
+                    "/api/users/*/followers",
+                    "/api/users/*/following"
                 ).permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
