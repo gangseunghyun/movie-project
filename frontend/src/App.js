@@ -19,10 +19,14 @@ import PersonDetail from './PersonDetail';
 import BookingModal from './BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewList from './components/ReviewList';
+import UserReservations from './UserReservations';
+import ReservationReceipt from './ReservationReceipt';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
 
+// API 기본 URL
+const API_BASE_URL = 'http://localhost:80/api';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -90,9 +94,6 @@ function App() {
   const [averageRating, setAverageRating] = useState(null);
   const [ratingCount, setRatingCount] = useState(null);
   const [loadingRating, setLoadingRating] = useState(false);
-
-  // API 기본 URL
-  const API_BASE_URL = 'http://localhost:80/api';
 
   // 1. 정렬 옵션 추가
   const [sortOption, setSortOption] = useState('rating');
@@ -3059,6 +3060,164 @@ function App() {
     );
   };
 
+  // 모든 모달 닫기 함수
+  const closeAllModals = () => {
+    setShowBookingModal(false);
+    setShowMovieDetail(false);
+    setShowMovieForm(false);
+    setShowReviewModal(false);
+    // 필요시 다른 모달도 닫기
+  };
+
+  // 내 예매목록(마이페이지)로 이동 함수
+  const goToMyReservations = () => {
+    closeAllModals();
+    if (currentUser?.nickname) {
+      navigate(`/user/${currentUser.nickname}`);
+      setTimeout(() => {
+        const evt = new CustomEvent('openUserReservations');
+        window.dispatchEvent(evt);
+      }, 100);
+    }
+  };
+
+  // current-user 정보 받아온 후 소셜 추천 정보 가져오기
+  useEffect(() => {
+    if (!currentUser || !currentUser.id) return;
+    let isCurrent = true;
+    const fetchSocialRecommendation = async () => {
+      setSocialRecommendationLoading(true);
+      try {
+        const response = await axios.get(`http://localhost:80/api/users/${currentUser.id}/daily-social-recommendation`, { withCredentials: true });
+        if (response.data.success && isCurrent) {
+          setSocialRecommendation(response.data);
+        }
+      } catch (error) {
+        console.error('소셜 추천 정보 조회 실패:', error);
+      } finally {
+        if (isCurrent) setSocialRecommendationLoading(false);
+      }
+    };
+    fetchSocialRecommendation();
+    return () => { isCurrent = false; };
+  }, [currentUser?.id]);
+
+  // 소셜 친구 추천 UI 렌더링 함수
+  const renderSocialRecommendation = () => {
+    if (socialRecommendationLoading) {
+      return <div style={{ marginTop: '30px' }}>소셜 친구 추천 정보를 불러오는 중...</div>;
+    }
+    if (!socialRecommendation || !socialRecommendation.recommender || !socialRecommendation.movies || socialRecommendation.movies.length === 0) {
+      return null;
+    }
+    const { recommender, movies } = socialRecommendation;
+    return (
+      <div style={{ marginTop: '30px' }}>
+        <h3 style={{ marginBottom: '20px', color: '#333' }}>🍿 {recommender.nickname}님이 추천하는 영화</h3>
+        <div style={{ 
+          display: 'flex', 
+          gap: '20px', 
+          padding: '20px', 
+          backgroundColor: '#f8f6ff', 
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          {/* 추천자 프로필 */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            minWidth: '150px'
+          }}>
+            <div style={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              marginBottom: '10px',
+              backgroundColor: '#eee',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {recommender.profileImageUrl ? (
+                <img 
+                  src={recommender.profileImageUrl} 
+                  alt={recommender.nickname}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span style={{ fontSize: '36px' }}>👤</span>
+              )}
+            </div>
+            <h4 style={{ margin: '0 0 5px 0', textAlign: 'center' }}>
+              {recommender.nickname}
+            </h4>
+            <p style={{ margin: '0', fontSize: '13px', color: '#666', textAlign: 'center' }}>
+              팔로잉 유저
+            </p>
+          </div>
+          {/* 추천 영화 리스트 */}
+          <div style={{ flex: 1 }}>
+            <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>추천 영화</h5>
+            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+              {movies.map((movie, index) => (
+                <div 
+                  key={movie.movieCd || movie.id || index}
+                  style={{
+                    width: '120px',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  onClick={() => handleMovieClick(movie)}
+                >
+                  <div style={{
+                    width: '100%',
+                    height: '160px',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    backgroundColor: '#ddd',
+                    marginBottom: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {movie.posterUrl ? (
+                      <img 
+                        src={movie.posterUrl} 
+                        alt={movie.movieNm}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '24px' }}>🎬</span>
+                    )}
+                  </div>
+                  <div>
+                    <p style={{ 
+                      margin: '0 0 5px 0', 
+                      fontSize: '12px', 
+                      fontWeight: 'bold',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {movie.movieNm}
+                    </p>
+                    <p style={{ margin: '0', fontSize: '11px', color: '#666' }}>
+                      {movie.averageRating ? `${movie.averageRating.toFixed(1)}⭐` : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* 기존 헤더/네비게이션 등 */}
@@ -3140,6 +3299,7 @@ function App() {
           movie={selectedMovie}
           onClose={() => setShowBookingModal(false)}
           onBookingComplete={handleBookingComplete}
+          goToMyReservations={goToMyReservations}
         />
       )}
       {/* 영화 상세에서 코멘트 남기기 버튼 노출 예시 */}

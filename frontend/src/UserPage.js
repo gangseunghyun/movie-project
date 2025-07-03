@@ -7,6 +7,9 @@ import {
 } from './services/userService';
 import axios from 'axios';
 import './UserPage.css';
+import UserReservations from './UserReservations';
+import ReservationReceipt from './ReservationReceipt';
+
 
 const UserPage = ({ onMovieClick }) => {
   const { nickname } = useParams();
@@ -39,13 +42,24 @@ const UserPage = ({ onMovieClick }) => {
   const [likedComments, setLikedComments] = useState([]);
   const [likedCommentsLoading, setLikedCommentsLoading] = useState(false);
 
+  // 예매 관련 상태
+  const [selectedReservationId, setSelectedReservationId] = useState(null);
+  const [showReservations, setShowReservations] = useState(false);
+
+  // 팔로우/팔로워 관련 상태
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followModalType, setFollowModalType] = useState('followers'); // 'followers' or 'following'
+
+  // openUserReservations 이벤트 수신해서 예매목록 모달 자동 오픈
+  useEffect(() => {
+    const handleOpenReservations = () => setShowReservations(true);
+    window.addEventListener('openUserReservations', handleOpenReservations);
+    return () => window.removeEventListener('openUserReservations', handleOpenReservations);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -483,6 +497,96 @@ const UserPage = ({ onMovieClick }) => {
           )}
         </div>
 
+        {/* '내 예매목록 보기' 버튼을 선호태그 바로 아래에 위치 */}
+        <button
+          style={{
+            background: '#1976d2',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            padding: '12px 24px',
+            fontWeight: 600,
+            fontSize: 18,
+            cursor: 'pointer',
+            margin: '0 0 24px 0',
+            display: 'block',
+          }}
+          onClick={() => setShowReservations(true)}
+        >
+          내 예매목록 보기
+        </button>
+
+        {/* 예매 목록 모달 */}
+        {showReservations && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={e => {
+            if (e.target === e.currentTarget) {
+              setShowReservations(false);
+              setSelectedReservationId(null);
+            }
+          }}
+          >
+            <div style={{
+              background: '#f7f7fa',
+              borderRadius: 16,
+              padding: 32,
+              minWidth: 800,
+              maxWidth: 1000,
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+              position: 'relative',
+            }}>
+              <button
+                onClick={() => {
+                  setShowReservations(false);
+                  setSelectedReservationId(null);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: '#888',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                }}
+                aria-label="닫기"
+              >
+                ×
+              </button>
+              {!selectedReservationId ? (
+                <UserReservations 
+                  currentUser={user}
+                  onSelectReservation={(reservationId) => {
+                    setSelectedReservationId(reservationId);
+                  }}
+                />
+              ) : (
+                <ReservationReceipt 
+                  reservationId={selectedReservationId} 
+                  onBack={() => setSelectedReservationId(null)} 
+                  currentUser={user} 
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 찜한 영화 섹션 */}
         <div className="liked-movies-section">
           <div className="section-header">
@@ -735,6 +839,8 @@ const UserPage = ({ onMovieClick }) => {
           )}
         </div>
       </div>
+
+
       {/* 팔로워/팔로잉 모달 */}
       {showFollowModal && (
         <div className="review-modal-overlay" style={{ zIndex: 2000 }}>
