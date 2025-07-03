@@ -1300,4 +1300,93 @@ public class UserController {
             "movies", movies
         ));
     }
+
+    @GetMapping("/api/users/{userId}/new-genre-recommendation")
+    public ResponseEntity<?> getNewGenreRecommendation(
+            @PathVariable Long userId,
+            @RequestParam(value = "sort", defaultValue = "rating") String sort
+    ) {
+        // 1. 전체 장르 목록
+        List<Tag> allGenres = tagRepository.findGenreTags();
+        Set<String> allGenreNames = allGenres.stream().map(Tag::getName).collect(java.util.stream.Collectors.toSet());
+
+        // 2. 사용자의 선호 태그(장르)
+        User user = userRepository.findById(userId).orElse(null);
+        Set<String> preferredGenres = user != null && user.getPreferredTags() != null
+                ? user.getPreferredTags().stream().map(Tag::getName).collect(java.util.stream.Collectors.toSet())
+                : java.util.Collections.emptySet();
+
+        // 3. 사용자가 평점 남긴 영화의 장르
+        Set<String> ratedGenres = user != null && user.getRatings() != null
+                ? user.getRatings().stream()
+                    .filter(r -> r.getMovieDetail() != null && r.getMovieDetail().getGenreNm() != null)
+                    .flatMap(r -> java.util.Arrays.stream(r.getMovieDetail().getGenreNm().split(",")))
+                    .map(String::trim)
+                    .collect(java.util.stream.Collectors.toSet())
+                : java.util.Collections.emptySet();
+
+        // 4. 사용자가 찜한 영화의 장르
+        Set<String> likedGenres = user != null && user.getLikes() != null
+                ? user.getLikes().stream()
+                    .filter(l -> l.getMovieDetail() != null && l.getMovieDetail().getGenreNm() != null)
+                    .flatMap(l -> java.util.Arrays.stream(l.getMovieDetail().getGenreNm().split(",")))
+                    .map(String::trim)
+                    .collect(java.util.stream.Collectors.toSet())
+                : java.util.Collections.emptySet();
+
+        // 5. 본 적 있는 장르 = 선호 + 평점 + 찜
+        Set<String> experiencedGenres = new java.util.HashSet<>();
+        experiencedGenres.addAll(preferredGenres);
+        experiencedGenres.addAll(ratedGenres);
+        experiencedGenres.addAll(likedGenres);
+
+        // 6. 미경험 장르 = 전체 - 본 적 있는 장르
+        Set<String> newGenres = new java.util.HashSet<>(allGenreNames);
+        newGenres.removeAll(experiencedGenres);
+
+        // 7. 각 미경험 장르별 대표 영화 20개 추천
+        java.util.List<java.util.Map<String, Object>> genreResults = new java.util.ArrayList<>();
+        for (String genre : newGenres) {
+            // 해당 장르 영화 전체 조회
+            List<MovieDetail> movies = movieRepository.findByGenreNmContaining(genre);
+            // 정렬
+            if ("latest".equalsIgnoreCase(sort)) {
+                movies.sort((a, b) -> {
+                    if (a.getOpenDt() == null && b.getOpenDt() == null) return 0;
+                    if (a.getOpenDt() == null) return 1;
+                    if (b.getOpenDt() == null) return -1;
+                    return b.getOpenDt().compareTo(a.getOpenDt());
+                });
+            } else if ("random".equalsIgnoreCase(sort)) {
+                java.util.Collections.shuffle(movies);
+            } else { // 평점순(기본)
+                movies.sort((a, b) -> {
+                    Double ar = a.getAverageRating() != null ? a.getAverageRating() : 0.0;
+                    Double br = b.getAverageRating() != null ? b.getAverageRating() : 0.0;
+                    return Double.compare(br, ar);
+                });
+            }
+            // 최대 20개만
+            List<MovieDetail> topMovies = movies.stream().limit(20).toList();
+            // DTO 변환
+            List<java.util.Map<String, Object>> movieDtos = topMovies.stream().map(md -> {
+                java.util.Map<String, Object> m = new java.util.HashMap<>();
+                m.put("movieCd", md.getMovieCd());
+                m.put("movieNm", md.getMovieNm());
+                m.put("posterUrl", md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null);
+                m.put("genreNm", md.getGenreNm());
+                m.put("openDt", md.getOpenDt());
+                m.put("averageRating", md.getAverageRating());
+                return m;
+            }).toList();
+            genreResults.add(java.util.Map.of(
+                "genre", genre,
+                "movies", movieDtos
+            ));
+        }
+        return ResponseEntity.ok(java.util.Map.of(
+            "success", true,
+            "genres", genreResults
+        ));
+    }
 } 
