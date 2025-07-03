@@ -121,6 +121,7 @@ function App() {
   const [directorRecommendation, setDirectorRecommendation] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewListKey, setReviewListKey] = useState(0); // 리뷰 목록 강제 새로고침용
+  const [openTagCards, setOpenTagCards] = useState([]); // 태그 펼침 상태 관리
 
   useEffect(() => {
     if (typeof recommendedMoviesData === 'object' && !Array.isArray(recommendedMoviesData)) {
@@ -1285,6 +1286,9 @@ function App() {
           <button onClick={handleFetchPosterUrlsFromNaver} className="admin-button">
             🎭 네이버 포스터 URL 가져오기
           </button>
+          <button onClick={generateTags} className="admin-button">
+            🏷️ 태그 데이터 생성
+          </button>
         </div>
       </div>
       )}
@@ -1810,6 +1814,59 @@ function App() {
                   <p><strong>예매율:</strong> {item.reservationRate ? `${item.reservationRate}%` : '-'}</p>
                   <p><strong>누적관객:</strong> {item.totalAudience ? item.totalAudience.toLocaleString() : '-'}명</p>
                 </div>
+                {/* 태그 표시 */}
+                {item.tags && item.tags.length > 0 && (
+                  <div className="movie-tags" style={{ marginTop: '8px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {(openTagCards.includes(item.movieCd) ? item.tags : item.tags.slice(0, 3)).map((tag, tagIndex) => (
+                        <span 
+                          key={tag.id || tagIndex} 
+                          className="tag"
+                          style={{
+                            backgroundColor: '#e3f2fd',
+                            color: '#1976d2',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#bbdefb';
+                            e.target.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = '#e3f2fd';
+                            e.target.style.transform = 'translateY(0)';
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSearchKeyword(tag.name);
+                            handleSearch(tag.name);
+                          }}
+                        >
+                          #{tag.name}
+                        </span>
+                      ))}
+                      {item.tags.length > 3 && !openTagCards.includes(item.movieCd) && (
+                        <span 
+                          style={{ fontSize: '11px', color: '#666', alignSelf: 'center', cursor: 'pointer', background: '#f0f0f0', borderRadius: '12px', padding: '2px 8px' }}
+                          onClick={e => { e.stopPropagation(); handleToggleTags(item.movieCd); }}
+                        >
+                          +{item.tags.length - 3}
+                        </span>
+                      )}
+                      {item.tags.length > 3 && openTagCards.includes(item.movieCd) && (
+                        <span 
+                          style={{ fontSize: '11px', color: '#666', alignSelf: 'center', cursor: 'pointer', background: '#f0f0f0', borderRadius: '12px', padding: '2px 8px' }}
+                          onClick={e => { e.stopPropagation(); handleToggleTags(item.movieCd); }}
+                        >
+                          접기
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="movie-actions" style={{marginTop: '10px', display: 'flex', gap: '5px'}}>
                   {currentUser && (currentUser.isAdmin || currentUser.role === 'ADMIN') && (
                     <>
@@ -2154,6 +2211,7 @@ function App() {
                       <div className="credit-card" onClick={() => {
                         console.log('감독 클릭:', selectedMovie.directors[0]);
                         if (selectedMovie.directors[0].id) {
+                          setShowMovieDetail(false); // 모달 닫기
                           navigate(`/director/${selectedMovie.directors[0].id}`);
                         } else {
                           console.error('감독 ID가 없습니다:', selectedMovie.directors[0]);
@@ -2169,6 +2227,7 @@ function App() {
                       <div className="credit-card" key={"lead-"+idx} onClick={() => {
                         console.log('주연 클릭:', actor);
                         if (actor.id) {
+                          setShowMovieDetail(false); // 모달 닫기
                           navigate(`/actor/${actor.id}`);
                         } else {
                           console.error('배우 ID가 없습니다:', actor);
@@ -2184,6 +2243,7 @@ function App() {
                       <div className="credit-card" key={"support-"+idx} onClick={() => {
                         console.log('조연 클릭:', actor);
                         if (actor.id) {
+                          setShowMovieDetail(false); // 모달 닫기
                           navigate(`/actor/${actor.id}`);
                         } else {
                           console.error('배우 ID가 없습니다:', actor);
@@ -2196,6 +2256,45 @@ function App() {
                     ))}
                   </div>
                 </div>
+                {/* 태그 섹션 */}
+                {selectedMovie.tags && selectedMovie.tags.length > 0 && (
+                  <div className="movie-detail-section">
+                    <h4>태그</h4>
+                    <div className="tag-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {selectedMovie.tags.map((tag, index) => (
+                        <span 
+                          key={tag.id || index} 
+                          className="tag"
+                          style={{
+                            backgroundColor: '#f0f0f0',
+                            color: '#333',
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#e0e0e0';
+                            e.target.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = '#f0f0f0';
+                            e.target.style.transform = 'translateY(0)';
+                          }}
+                          onClick={() => {
+                            // 태그 클릭 시 해당 태그로 검색
+                            setSearchKeyword(tag.name);
+                            handleSearch(tag.name);
+                            setShowMovieDetail(false);
+                          }}
+                        >
+                          #{tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* 리뷰 목록 섹션 */}
                 <div className="movie-detail-section">
                   <ReviewList 
@@ -2510,6 +2609,18 @@ function App() {
     // 감독 클릭 시 감독 상세페이지 이동
   const handleDirectorClick = (directorId) => {
     window.location.href = `/director/${directorId}`;
+  };
+
+  // 태그 데이터 생성 (임시 함수)
+  const generateTags = async () => {
+    try {
+      const response = await axios.post('http://localhost:80/admin/api/tags/generate-from-genres');
+      console.log('태그 생성 결과:', response.data);
+      alert('태그 생성 완료! 페이지를 새로고침해주세요.');
+    } catch (error) {
+      console.error('태그 생성 실패:', error);
+      alert('태그 생성 실패: ' + error.message);
+    }
   };
 
   // 개봉예정작 렌더링
@@ -2950,6 +3061,15 @@ function App() {
 
 
   const navigate = useNavigate();
+
+  // 태그 펼침 토글 함수
+  const handleToggleTags = (movieCd) => {
+    setOpenTagCards(prev =>
+      prev.includes(movieCd)
+        ? prev.filter(id => id !== movieCd)
+        : [...prev, movieCd]
+    );
+  };
 
   return (
     <>

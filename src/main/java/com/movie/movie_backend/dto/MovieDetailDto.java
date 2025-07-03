@@ -1,5 +1,6 @@
 package com.movie.movie_backend.dto;
 
+import com.movie.movie_backend.entity.Tag;
 import lombok.*;
 import java.util.List;
 import java.time.LocalDate;
@@ -37,6 +38,7 @@ public class MovieDetailDto {
     private List<Company> companys;   // 참여 영화사 목록
     private List<Staff> staffs;       // 스텝 목록
     private List<Stillcut> stillcuts; // 스틸컷 목록
+    private List<Tag> tags;     // 태그 목록
     private int likeCount;      // 찜 수
     private boolean likedByMe;  // 내가 찜을 눌렀는지
 

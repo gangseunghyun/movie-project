@@ -118,9 +118,26 @@ public class REVCommentService {
      * 리뷰의 최상위 댓글 조회
      */
     public List<CommentDto> getTopLevelCommentsByReviewId(Long reviewId) {
-        List<Comment> comments = commentRepository.findByReviewIdAndParentIsNullOrderByCreatedAtDesc(reviewId);
+        List<Comment> comments = commentRepository.findByReviewIdAndParentIsNullAndStatusOrderByCreatedAtDesc(reviewId, Comment.CommentStatus.ACTIVE);
         return comments.stream()
-                .map(CommentDto::fromEntity)
+                .map(comment -> {
+                    Long likeCount = getCommentLikeCount(comment.getId());
+                    return CommentDto.fromEntityWithLikeInfo(comment, likeCount, false);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 리뷰의 최상위 댓글 조회 (사용자별 좋아요 상태 포함)
+     */
+    public List<CommentDto> getTopLevelCommentsByReviewIdWithUserLikeStatus(Long reviewId, Long userId) {
+        List<Comment> comments = commentRepository.findByReviewIdAndParentIsNullAndStatusOrderByCreatedAtDesc(reviewId, Comment.CommentStatus.ACTIVE);
+        return comments.stream()
+                .map(comment -> {
+                    Long likeCount = getCommentLikeCount(comment.getId());
+                    boolean likedByMe = hasUserLikedComment(comment.getId(), userId);
+                    return CommentDto.fromEntityWithLikeInfo(comment, likeCount, likedByMe);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -128,7 +145,7 @@ public class REVCommentService {
      * 리뷰의 모든 댓글 조회
      */
     public List<CommentDto> getAllCommentsByReviewId(Long reviewId) {
-        List<Comment> comments = commentRepository.findByReviewIdOrderByCreatedAtDesc(reviewId);
+        List<Comment> comments = commentRepository.findByReviewIdAndStatusOrderByCreatedAtDesc(reviewId, Comment.CommentStatus.ACTIVE);
         return comments.stream()
                 .map(CommentDto::fromEntity)
                 .collect(Collectors.toList());
@@ -138,7 +155,7 @@ public class REVCommentService {
      * 특정 댓글의 대댓글 조회
      */
     public List<CommentDto> getRepliesByParentId(Long parentId) {
-        List<Comment> comments = commentRepository.findByParentIdOrderByCreatedAtAsc(parentId);
+        List<Comment> comments = commentRepository.findByParentIdAndStatusOrderByCreatedAtAsc(parentId, Comment.CommentStatus.ACTIVE);
         return comments.stream()
                 .map(CommentDto::fromEntity)
                 .collect(Collectors.toList());
@@ -148,7 +165,7 @@ public class REVCommentService {
      * 사용자의 댓글 조회
      */
     public List<CommentDto> getCommentsByUserId(Long userId) {
-        List<Comment> comments = commentRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Comment> comments = commentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, Comment.CommentStatus.ACTIVE);
         return comments.stream()
                 .map(CommentDto::fromEntity)
                 .collect(Collectors.toList());
