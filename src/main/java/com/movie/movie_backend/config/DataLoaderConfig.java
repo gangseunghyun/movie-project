@@ -213,60 +213,81 @@ public class DataLoaderConfig {
             allMovieCdsToProcess.addAll(emptyDescriptionMovieCds);
             
             if (!allMovieCdsToProcess.isEmpty()) {
-                log.info("총 {}개의 영화에 대해 줄거리를 채워넣습니다.", allMovieCdsToProcess.size());
+                log.info("총 {}개의 영화에 대해 줄거리를 채워넣습니다. (각 영화당 최대 3번 시도)", allMovieCdsToProcess.size());
                 
                 int successCount = 0;
                 int failCount = 0;
-                int attemptCount = 0;
-                int maxAttempts = allMovieCdsToProcess.size();
+                int totalAttempts = 0;
+                final int MAX_RETRIES = 3;
                 
                 for (String movieCd : allMovieCdsToProcess) {
-                    if (attemptCount >= maxAttempts) {
-                        log.info("MovieDetail 채워넣기 시도 횟수 제한에 도달했습니다. (최대 {}회)", maxAttempts);
-                        break;
+                    MovieList movieList = prdMovieListRepository.findById(movieCd).orElse(null);
+                    if (movieList == null) {
+                        log.warn("MovieList를 찾을 수 없음: {}", movieCd);
+                        failCount++;
+                        continue;
                     }
                     
-                    try {
-                        MovieList movieList = prdMovieListRepository.findById(movieCd).orElse(null);
-                        if (movieList == null) {
-                            log.warn("MovieList를 찾을 수 없음: {}", movieCd);
-                            failCount++;
-                            attemptCount++;
-                            continue;
+                    boolean isMissing = missingMovieCds.contains(movieCd);
+                    boolean isEmptyDescription = emptyDescriptionMovieCds.contains(movieCd);
+                    
+                    log.info("줄거리 채워넣기 시작: {} ({}) [누락: {}, 빈설명: {}]", 
+                        movieList.getMovieNm(), movieCd, isMissing, isEmptyDescription);
+                    
+                    boolean success = false;
+                    int retryCount = 0;
+                    
+                    // 최대 3번까지 재시도
+                    while (!success && retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        totalAttempts++;
+                        
+                        try {
+                            log.info("시도 {}/{}: {} ({})", retryCount, MAX_RETRIES, movieList.getMovieNm(), movieCd);
+                            
+                            // KOBIS API로 MovieDetail 가져오기 (Actor, Cast 포함)
+                            MovieDetail movieDetail = kobisPopularMovieService.getMovieDetailWithFallback(movieCd, movieList.getMovieNm());
+                            
+                            if (movieDetail != null && 
+                                movieDetail.getDescription() != null && 
+                                !movieDetail.getDescription().trim().isEmpty()) {
+                                success = true;
+                                successCount++;
+                                log.info("줄거리 채워넣기 성공: {} ({}) - 시도 {}회, description 길이: {}", 
+                                    movieList.getMovieNm(), movieCd, retryCount, 
+                                    movieDetail.getDescription().length());
+                            } else {
+                                log.warn("시도 {}/{} 실패: {} ({}) - description이 비어있음", 
+                                    retryCount, MAX_RETRIES, movieList.getMovieNm(), movieCd);
+                            }
+                            
+                        } catch (Exception e) {
+                            log.error("시도 {}/{} 실패: {} ({}) - {}", 
+                                retryCount, MAX_RETRIES, movieList.getMovieNm(), movieCd, e.getMessage());
                         }
                         
-                        boolean isMissing = missingMovieCds.contains(movieCd);
-                        boolean isEmptyDescription = emptyDescriptionMovieCds.contains(movieCd);
-                        
-                        log.info("줄거리 채워넣기 시도: {} ({}) - 시도 {}/{} [누락: {}, 빈설명: {}]", 
-                            movieList.getMovieNm(), movieCd, attemptCount + 1, maxAttempts, isMissing, isEmptyDescription);
-                        
-                        // KOBIS API로 MovieDetail 가져오기 (Actor, Cast 포함)
-                        MovieDetail movieDetail = kobisPopularMovieService.getMovieDetailWithFallback(movieCd, movieList.getMovieNm());
-                        
-                        if (movieDetail != null) {
-                            successCount++;
-                            log.info("줄거리 채워넣기 성공: {} ({}) - description 길이: {}", 
-                                movieList.getMovieNm(), movieCd, 
-                                movieDetail.getDescription() != null ? movieDetail.getDescription().length() : 0);
-                        } else {
-                            failCount++;
-                            log.warn("줄거리 채워넣기 실패: {} ({}) - KOBIS에서 데이터를 찾을 수 없음", movieList.getMovieNm(), movieCd);
+                        // 재시도 전 딜레이 (마지막 시도가 아니면)
+                        if (!success && retryCount < MAX_RETRIES) {
+                            try {
+                                Thread.sleep(500); // 재시도 간 0.5초 딜레이
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
                         }
-                        
-                        attemptCount++;
-                        
-                        // API 호출 제한을 위한 딜레이
-                        Thread.sleep(200);
-                        
-                    } catch (Exception e) {
-                        failCount++;
-                        attemptCount++;
-                        log.error("줄거리 채워넣기 실패: {} - {}", movieCd, e.getMessage());
                     }
+                    
+                    if (!success) {
+                        failCount++;
+                        log.warn("최종 실패: {} ({}) - {}회 시도 후에도 성공하지 못함", 
+                            movieList.getMovieNm(), movieCd, MAX_RETRIES);
+                    }
+                    
+                    // API 호출 제한을 위한 딜레이
+                    Thread.sleep(200);
                 }
                 
-                log.info("줄거리 채워넣기 완료: 성공={}, 실패={}", successCount, failCount);
+                log.info("줄거리 채워넣기 완료: 성공={}, 실패={}, 총시도={}", successCount, failCount, totalAttempts);
                 
                 // 업데이트 후 개수 재확인
                 long updatedMovieDetailCount = movieRepository.count();

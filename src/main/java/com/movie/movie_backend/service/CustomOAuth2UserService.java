@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Autowired private HttpServletRequest request;
 
     @Override
+    @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
         OAuth2User oAuth2User = super.loadUser(userRequest);
         String registrationId = userRequest.getClientRegistration().getRegistrationId(); // google, naver, kakao
