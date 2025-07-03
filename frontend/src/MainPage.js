@@ -64,7 +64,9 @@ const MainPage = ({
   handleRecentKeywordClick,
   handleDeleteRecentKeyword,
   popularKeywords,
-  handlePopularKeywordClick
+  handlePopularKeywordClick,
+  newGenreRecommendation,
+  fetchNewGenreRecommendation
 }) => {
   // 검색창 포커스 상태 추가
   const [searchFocus, setSearchFocus] = useState(false);

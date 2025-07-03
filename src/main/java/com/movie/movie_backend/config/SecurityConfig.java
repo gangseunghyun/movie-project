@@ -170,6 +170,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/distribution").permitAll()
                 .requestMatchers("/api/ratings/movie/*/distribution").permitAll()
+                .requestMatchers("/api/ratings/movie/*/average").permitAll()
                 .requestMatchers("/api/movies/*/like").authenticated()
                 .requestMatchers("/api/person/*/like").authenticated()
                 .requestMatchers("/api/person/*/like-status").permitAll()

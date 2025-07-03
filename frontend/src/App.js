@@ -127,6 +127,9 @@ function App() {
   const [socialRecommendation, setSocialRecommendation] = useState(null);
   const [socialRecommendationLoading, setSocialRecommendationLoading] = useState(false);
 
+  // 새로운 장르 추천 상태
+  const [newGenreRecommendation, setNewGenreRecommendation] = useState(null);
+
   // 소셜 추천 fetch 함수 최상단에 선언
   const fetchSocialRecommendation = async () => {
     if (!currentUser || !currentUser.id) return;
@@ -1182,25 +1185,7 @@ function App() {
     }));
   };
 
-  // 찜 추가
-  const handleLikeMovie = async (movieCd) => {
-    try {
-      await axios.post(`http://localhost:80/api/movies/${movieCd}/like`, {}, { withCredentials: true });
-      updateMovieLikeState(movieCd, true);
-    } catch (error) {
-      alert('찜에 실패했습니다.');
-    }
-  };
 
-  // 찜 취소
-  const handleUnlikeMovie = async (movieCd) => {
-    try {
-      await axios.delete(`http://localhost:80/api/movies/${movieCd}/like`, { withCredentials: true });
-      updateMovieLikeState(movieCd, false);
-    } catch (error) {
-      alert('찜 취소에 실패했습니다.');
-    }
-  };
 
   useEffect(() => {
     if (activeMenu === '메인 페이지') fetchStats();
@@ -1463,6 +1448,57 @@ function App() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+        {/* 새로운 장르 추천 */}
+        {newGenreRecommendation && newGenreRecommendation.success && newGenreRecommendation.genres && newGenreRecommendation.genres.length > 0 && (
+          <div style={{ background: '#f0fff0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '20px' }}>
+            <h3 style={{ marginBottom: '20px', color: '#333' }}>🎯 이런 영화 어때요?</h3>
+            <p style={{ marginBottom: '15px', color: '#666', fontSize: '14px' }}>아직 경험해보지 못한 장르의 대표 영화들을 추천해드려요!</p>
+            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+              {(() => {
+                const allMovies = [];
+                const seen = new Set();
+                const genres = newGenreRecommendation.genres;
+                let added = 0;
+                let idx = 0;
+                while (added < 20) {
+                  let found = false;
+                  for (let g = 0; g < genres.length; g++) {
+                    const movie = genres[g].movies[idx];
+                    if (movie && !seen.has(movie.movieCd)) {
+                      allMovies.push(movie);
+                      seen.add(movie.movieCd);
+                      added++;
+                      found = true;
+                      if (added === 20) break;
+                    }
+                  }
+                  if (!found) break;
+                  idx++;
+                }
+                return allMovies.map((movie, index) => (
+                  <div key={movie.movieCd || index} style={{ width: '120px', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} onClick={() => handleMovieClick(movie)}>
+                    <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {movie.posterUrl ? (
+                        <img src={movie.posterUrl} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '24px' }}>🎬</span>
+                      )}
+                    </div>
+                    <div>
+                      <p style={{ margin: '0 0 5px 0', fontSize: '12px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{movie.movieNm}</p>
+                      <p style={{ margin: '0', fontSize: '11px', color: '#666' }}>{movie.genreNm || ''}</p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#666' }}>
+                        {typeof movie.averageRating === 'number' && !isNaN(movie.averageRating)
+                          ? `${movie.averageRating.toFixed(1)}⭐`
+                          : '-'}
+                      </p>
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         )}
@@ -1975,31 +2011,6 @@ function App() {
     </div>
   );
 
-  // 별점 등록/수정
-  const handleStarChange = (score) => {
-    if (!selectedMovie) return;
-    setLoadingRating(true);
-    axios.post('http://localhost:80/api/ratings', {
-      movieCd: selectedMovie.movieCd,
-      score
-    }, {
-      withCredentials: true
-    })
-      .then(res => {
-        if (res.data.success) {
-          setUserRating(score);
-          // 평균 별점/참여자 수 갱신
-          return axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/average`);        }
-      })
-      .then(res => {
-        if (res && res.data.success) {
-          setAverageRating(res.data.averageRating);
-          setRatingCount(res.data.ratingCount);
-        }
-      })
-      .finally(() => setLoadingRating(false));
-  };
-
   // 예매 모달 핸들러
   const handleBookingClick = () => {
     if (!currentUser) {
@@ -2117,28 +2128,46 @@ function App() {
                   </button>
                 </div>
                 {/* ⭐️ 별점 입력 UI */}
-                <StarRating
-                  movieCd={selectedMovie.movieCd}
-                  userRating={userRating}
-                  onChange={score => {
-                    if (!currentUser) {
-                      setShowLoginAlert(true);
-                      return;
-                    }
-                    handleStarChange(score);
-                  }}
-                  average={averageRating}
-                  count={ratingCount}
-                  disabled={loadingRating}
-                />
+                <div style={{ textAlign: 'center', marginTop: 8 }}>
+                  <div style={{ marginBottom: 8, color: '#aaa', fontSize: 16 }}>
+                    평가하기
+                  </div>
+                  <StarRating
+                    movieCd={selectedMovie.movieCd}
+                    userRating={userRating}
+                    onChange={score => {
+                      if (!currentUser) {
+                        setShowLoginAlert(true);
+                        return;
+                      }
+                      handleStarChange(score);
+                    }}
+                    average={averageRating}
+                    count={ratingCount}
+                    disabled={loadingRating}
+                  />
+                  <div style={{ marginTop: 12, color: '#666', fontSize: 15 }}>
+                    평균 평점: <b>{typeof averageRating === 'number' && !isNaN(averageRating) ? averageRating.toFixed(1) : '0.0'}</b>점
+                    <span style={{ marginLeft: 8, fontSize: 13 }}>
+                      ({typeof ratingCount === 'number' && !isNaN(ratingCount) ? ratingCount : 0}명 참여)
+                    </span>
+                  </div>
+                </div>
                 {/* ⭐️ 별점 분포 차트 */}
                 {ratingDistribution && (
                   <div style={{ marginTop: 12 }}>
                     <RatingDistributionChart distribution={ratingDistribution} />
                   </div>
                 )}
-                {/* 평점 그래프 아래에 코멘트 남기기 버튼 */}
-                <div style={{ textAlign: 'center', marginTop: 40 }}>
+                {/* ⭐️ 평균 평점 및 참여 인원 표시 (그래프 아래, 버튼 위) */}
+                <div style={{ textAlign: 'center', margin: '16px 0 8px 0', color: '#666', fontSize: 15 }}>
+                  평균 평점: <b>{typeof averageRating === 'number' && !isNaN(averageRating) ? averageRating.toFixed(1) : '0.0'}</b>점
+                  <span style={{ marginLeft: 8, fontSize: 13 }}>
+                    ({typeof ratingCount === 'number' && !isNaN(ratingCount) ? ratingCount : 0}명 참여)
+                  </span>
+                </div>
+                {/* 코멘트 남기기 버튼 */}
+                <div style={{ textAlign: 'center', marginTop: 8 }}>
                   <button
                     onClick={() => {
                       if (!currentUser) {
@@ -3059,6 +3088,66 @@ function App() {
     );
   };
 
+  // 새로운 장르 추천 API 호출 함수
+  const fetchNewGenreRecommendation = async () => {
+    if (!currentUser || !currentUser.id) return;
+    try {
+      const res = await axios.get(`http://localhost:80/api/users/${currentUser.id}/new-genre-recommendation?sort=rating`, { withCredentials: true });
+      setNewGenreRecommendation(res.data);
+    } catch (error) {
+      setNewGenreRecommendation(null);
+    }
+  };
+
+  // 찜/찜해제, 별점 등록/삭제, 선호태그 추가/삭제 후 새로운 장르 추천 갱신
+  const handleLikeMovie = async (movieCd) => {
+    try {
+      await axios.post(`http://localhost:80/api/movies/${movieCd}/like`, {}, { withCredentials: true });
+      updateMovieLikeState(movieCd, true);
+      fetchNewGenreRecommendation();
+    } catch (error) {
+      alert('찜에 실패했습니다.');
+    }
+  };
+  const handleUnlikeMovie = async (movieCd) => {
+    try {
+      await axios.delete(`http://localhost:80/api/movies/${movieCd}/like`, { withCredentials: true });
+      updateMovieLikeState(movieCd, false);
+      fetchNewGenreRecommendation();
+    } catch (error) {
+      alert('찜 취소에 실패했습니다.');
+    }
+  };
+  const handleStarChange = (score) => {
+    if (!selectedMovie) return;
+    setLoadingRating(true);
+    axios.post('http://localhost:80/api/ratings', {
+      movieCd: selectedMovie.movieCd,
+      score
+    }, {
+      withCredentials: true
+    })
+      .then(res => {
+        if (res.data.success) {
+          setUserRating(score);
+          return axios.get(`http://localhost:80/api/ratings/movie/${selectedMovie.movieCd}/average`);
+        }
+      })
+      .then(res => {
+        if (res && res.data.success) {
+          setAverageRating(res.data.averageRating);
+          setRatingCount(res.data.ratingCount);
+        }
+        fetchNewGenreRecommendation();
+      })
+      .finally(() => setLoadingRating(false));
+  };
+
+  // 로그인/유저 변경 시 새로운 장르 추천 fetch
+  useEffect(() => {
+    fetchNewGenreRecommendation();
+  }, [currentUser?.id]);
+
   return (
     <>
       {/* 기존 헤더/네비게이션 등 */}
@@ -3111,6 +3200,8 @@ function App() {
             handleDeleteRecentKeyword={handleDeleteRecentKeyword}
             popularKeywords={popularKeywords}
             handlePopularKeywordClick={handlePopularKeywordClick}
+            newGenreRecommendation={newGenreRecommendation}
+            fetchNewGenreRecommendation={fetchNewGenreRecommendation}
           />
         } />
         <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
