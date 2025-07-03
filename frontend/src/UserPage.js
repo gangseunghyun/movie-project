@@ -10,6 +10,7 @@ import './UserPage.css';
 import UserReservations from './UserReservations';
 import ReservationReceipt from './ReservationReceipt';
 
+
 const UserPage = ({ onMovieClick }) => {
   const { nickname } = useParams();
   const navigate = useNavigate();
@@ -41,8 +42,24 @@ const UserPage = ({ onMovieClick }) => {
   const [likedComments, setLikedComments] = useState([]);
   const [likedCommentsLoading, setLikedCommentsLoading] = useState(false);
 
+  // 예매 관련 상태
   const [selectedReservationId, setSelectedReservationId] = useState(null);
   const [showReservations, setShowReservations] = useState(false);
+
+  // 팔로우/팔로워 관련 상태
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [showFollowModal, setShowFollowModal] = useState(false);
+  const [followModalType, setFollowModalType] = useState('followers'); // 'followers' or 'following'
+
+  // openUserReservations 이벤트 수신해서 예매목록 모달 자동 오픈
+  useEffect(() => {
+    const handleOpenReservations = () => setShowReservations(true);
+    window.addEventListener('openUserReservations', handleOpenReservations);
+    return () => window.removeEventListener('openUserReservations', handleOpenReservations);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -87,125 +104,161 @@ const UserPage = ({ onMovieClick }) => {
 
   // 찜한 영화 목록 가져오기
   useEffect(() => {
+    setLikedMovies([]);
+    let isCurrent = true;
     const fetchLikedMovies = async () => {
-      if (!user || !currentUser) {
-        console.log('fetchLikedMovies: user 또는 currentUser가 없음', { user, currentUser });
-        return;
-      }
-      
-      // 본인의 마이페이지인지 확인
-      if (currentUser.nickname !== nickname) {
-        console.log('fetchLikedMovies: 본인의 마이페이지가 아님', { 
-          currentUserNickname: currentUser.nickname, 
-          pageNickname: nickname 
-        });
-        return;
-      }
-      
-      console.log('fetchLikedMovies: 찜한 영화 목록 조회 시작', { userId: user.id });
+      if (!user || !user.id) return;
       setLikedMoviesLoading(true);
       try {
-        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-movies`, { 
-          withCredentials: true 
-        });
-        console.log('fetchLikedMovies: API 응답', response.data);
-        if (response.data.success) {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-movies`, { withCredentials: true });
+        if (response.data.success && isCurrent) {
           setLikedMovies(response.data.data);
-          console.log('fetchLikedMovies: 찜한 영화 설정 완료', response.data.data);
         }
       } catch (error) {
         console.error('fetchLikedMovies: 찜한 영화 목록 조회 실패:', error);
         console.error('fetchLikedMovies: 에러 응답:', error.response?.data);
       } finally {
-        setLikedMoviesLoading(false);
+        if (isCurrent) setLikedMoviesLoading(false);
       }
     };
-    
     fetchLikedMovies();
-  }, [user, currentUser, nickname]);
+    return () => { isCurrent = false; };
+  }, [user?.id, nickname]);
 
   // 좋아요한 배우 목록 가져오기
   useEffect(() => {
+    setLikedActors([]);
+    let isCurrent = true;
     const fetchLikedActors = async () => {
-      if (!user || !currentUser || currentUser.nickname !== nickname) return;
-      
+      if (!user || !user.id) return;
       setLikedActorsLoading(true);
       try {
-        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-actors`, { 
-          withCredentials: true 
-        });
-        if (response.data.success) {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-actors`, { withCredentials: true });
+        if (response.data.success && isCurrent) {
           setLikedActors(response.data.data);
         }
       } catch (error) {
         console.error('좋아요한 배우 목록 조회 실패:', error);
       } finally {
-        setLikedActorsLoading(false);
+        if (isCurrent) setLikedActorsLoading(false);
       }
     };
-    
     fetchLikedActors();
-  }, [user, currentUser, nickname]);
+    return () => { isCurrent = false; };
+  }, [user?.id, nickname]);
 
   // 좋아요한 감독 목록 가져오기
   useEffect(() => {
+    setLikedDirectors([]);
+    let isCurrent = true;
     const fetchLikedDirectors = async () => {
-      if (!user || !currentUser || currentUser.nickname !== nickname) return;
-      
+      if (!user || !user.id) return;
       setLikedDirectorsLoading(true);
       try {
-        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-directors`, { 
-          withCredentials: true 
-        });
-        if (response.data.success) {
+        const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-directors`, { withCredentials: true });
+        if (response.data.success && isCurrent) {
           setLikedDirectors(response.data.data);
         }
       } catch (error) {
         console.error('좋아요한 감독 목록 조회 실패:', error);
       } finally {
-        setLikedDirectorsLoading(false);
+        if (isCurrent) setLikedDirectorsLoading(false);
       }
     };
-    
     fetchLikedDirectors();
-  }, [user, currentUser, nickname]);
+    return () => { isCurrent = false; };
+  }, [user?.id, nickname]);
 
   useEffect(() => {
+    setMyComments([]);
+    let isCurrent = true;
     const fetchMyComments = async () => {
-      if (!user || !currentUser || currentUser.nickname !== nickname) return;
+      if (!user || !user.id) return;
       setMyCommentsLoading(true);
       try {
         const response = await axios.get(`http://localhost:80/api/users/${user.id}/my-comments`, { withCredentials: true });
-        if (response.data.success) {
+        if (response.data.success && isCurrent) {
           setMyComments(response.data.data);
         }
       } catch (error) {
         console.error('내가 작성한 코멘트 목록 조회 실패:', error);
       } finally {
-        setMyCommentsLoading(false);
+        if (isCurrent) setMyCommentsLoading(false);
       }
     };
     fetchMyComments();
-  }, [user, currentUser, nickname]);
+    return () => { isCurrent = false; };
+  }, [user?.id, nickname]);
 
   // 좋아요한 리뷰(코멘트) 목록 가져오기
   useEffect(() => {
+    setLikedComments([]);
+    let isCurrent = true;
     const fetchLikedComments = async () => {
-      if (!user || !currentUser || currentUser.nickname !== nickname) return;
+      if (!user || !user.id) return;
       setLikedCommentsLoading(true);
       try {
         const response = await axios.get(`http://localhost:80/api/users/${user.id}/liked-reviews`, { withCredentials: true });
-        if (response.data.success) {
+        if (response.data.success && isCurrent) {
           setLikedComments(response.data.data);
         }
       } catch (error) {
         console.error('좋아요한 리뷰 목록 조회 실패:', error);
       } finally {
-        setLikedCommentsLoading(false);
+        if (isCurrent) setLikedCommentsLoading(false);
       }
     };
     fetchLikedComments();
-  }, [user, currentUser, nickname]);
+    return () => { isCurrent = false; };
+  }, [user?.id, nickname]);
+
+  // 팔로우 상태 확인
+  useEffect(() => {
+    const checkFollowing = async () => {
+      if (!user || !currentUser || user.id === currentUser.id) return;
+      try {
+        const res = await axios.get(`http://localhost:80/api/users/${currentUser.id}/following`, { withCredentials: true });
+        if (res.data && res.data.data) {
+          setIsFollowing(res.data.data.some(u => u.id === user.id));
+        }
+      } catch (e) {
+        setIsFollowing(false);
+      }
+    };
+    checkFollowing();
+  }, [user, currentUser]);
+
+  // 팔로우 상태 확인 함수 (외부에서 호출 가능)
+  const checkFollowing = async () => {
+    if (!user || !currentUser || user.id === currentUser.id) return;
+    try {
+      const res = await axios.get(`http://localhost:80/api/users/${currentUser.id}/following`, { withCredentials: true });
+      if (res.data && res.data.data) {
+        setIsFollowing(res.data.data.some(u => u.id === user.id));
+      }
+    } catch (e) {
+      setIsFollowing(false);
+    }
+  };
+
+  // 팔로워/팔로잉 목록 불러오기
+  useEffect(() => {
+    if (!user) return;
+    const fetchFollowData = async () => {
+      try {
+        const [followersRes, followingRes] = await Promise.all([
+          axios.get(`http://localhost:80/api/users/${user.id}/followers`, { withCredentials: true }),
+          axios.get(`http://localhost:80/api/users/${user.id}/following`, { withCredentials: true })
+        ]);
+        setFollowers(followersRes.data.data || []);
+        setFollowing(followingRes.data.data || []);
+      } catch (e) {
+        setFollowers([]);
+        setFollowing([]);
+      }
+    };
+    fetchFollowData();
+  }, [user]);
 
   const handleTagChange = (tag) => {
     setSelectedTags(prev => {
@@ -246,11 +299,63 @@ const UserPage = ({ onMovieClick }) => {
     navigate('/');
   };
 
-  useEffect(() => {
-    const handler = () => setShowReservations(true);
-    window.addEventListener('openUserReservations', handler);
-    return () => window.removeEventListener('openUserReservations', handler);
-  }, []);
+  const handleFollow = async () => {
+    setFollowLoading(true);
+    try {
+      console.log('팔로우 버튼 클릭됨', { user, currentUser });
+      const res = await axios.post(`http://localhost:80/api/users/${user.id}/follow`, {}, { withCredentials: true });
+      console.log('팔로우 POST 응답:', res.data);
+      // 응답값에서 바로 최신 목록 반영
+      setFollowers(res.data.followers || []);
+      setFollowing(res.data.following || []);
+      await checkFollowing();
+      console.log('팔로우 후 setState 직전:', {
+        followers: res.data.followers,
+        following: res.data.following
+      });
+      setTimeout(() => {
+        console.log('팔로우 후 setState 적용 후:', {
+          isFollowing,
+          followers,
+          following
+        });
+      }, 500);
+    } catch (e) {
+      console.error('팔로우 에러:', e);
+      alert('팔로우에 실패했습니다.');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    setFollowLoading(true);
+    try {
+      console.log('언팔로우 버튼 클릭됨', { user, currentUser });
+      const res = await axios.delete(`http://localhost:80/api/users/${user.id}/unfollow`, { withCredentials: true });
+      console.log('언팔로우 DELETE 응답:', res.data);
+      // 응답값에서 바로 최신 목록 반영
+      setFollowers(res.data.followers || []);
+      setFollowing(res.data.following || []);
+      await checkFollowing();
+      console.log('언팔로우 후 setState 직전:', {
+        followers: res.data.followers,
+        following: res.data.following
+      });
+      setTimeout(() => {
+        console.log('언팔로우 후 setState 적용 후:', {
+          isFollowing,
+          followers,
+          following
+        });
+      }, 500);
+    } catch (e) {
+      console.error('언팔로우 에러:', e);
+      alert('언팔로우에 실패했습니다.');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   if (loading) return (
     <div className="user-page-container">
@@ -280,7 +385,21 @@ const UserPage = ({ onMovieClick }) => {
             </div>
             <h2 className="profile-title">마이페이지</h2>
           </div>
-          <button className="home-button" onClick={handleGoHome}>홈으로</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* 본인 페이지가 아니면 팔로우/언팔로우 버튼 노출 */}
+            {currentUser && user.id !== currentUser.id && (
+              isFollowing ? (
+                <button className="unfollow-button" onClick={handleUnfollow} disabled={followLoading}>
+                  {followLoading ? '처리 중...' : '언팔로우'}
+                </button>
+              ) : (
+                <button className="follow-button" onClick={handleFollow} disabled={followLoading}>
+                  {followLoading ? '처리 중...' : '팔로우'}
+                </button>
+              )
+            )}
+            <button className="home-button" onClick={handleGoHome}>홈으로</button>
+          </div>
         </div>
         
         <div className="profile-info">
@@ -292,12 +411,21 @@ const UserPage = ({ onMovieClick }) => {
             <label>이메일</label>
             <span>{user.email}</span>
           </div>
+          <div className="follow-stats" style={{ display: 'flex', gap: '20px', marginTop: 8 }}>
+            <span style={{ cursor: 'pointer', color: '#6c63ff', fontWeight: 600 }} onClick={() => { setFollowModalType('following'); setShowFollowModal(true); }}>
+              팔로잉 {following.length}
+            </span>
+            <span style={{ cursor: 'pointer', color: '#6c63ff', fontWeight: 600 }} onClick={() => { setFollowModalType('followers'); setShowFollowModal(true); }}>
+              팔로워 {followers.length}
+            </span>
+          </div>
         </div>
 
         <div className="preferred-tags-section">
           <div className="section-header">
             <h3>선호 태그</h3>
-            {!editMode && user && user.id && (
+            {/* 본인만 수정 버튼 노출 */}
+            {!editMode && user && user.id && currentUser && user.id === currentUser.id && (
               <button 
                 className="edit-button"
                 onClick={() => setEditMode(true)}
@@ -307,6 +435,7 @@ const UserPage = ({ onMovieClick }) => {
             )}
           </div>
           
+          {/* 본인만 태그 수정 UI 노출 */}
           {!editMode ? (
             <div className="tags-display">
               {preferredTags.length === 0 ? (
@@ -330,39 +459,41 @@ const UserPage = ({ onMovieClick }) => {
               )}
             </div>
           ) : (
-            <div className="tags-edit">
-              <div style={{ marginBottom: 10, color: '#a18cd1', fontWeight: 'bold', fontSize: '15px' }}>
-                선택: {selectedTags.filter(tag => genreTags.includes(tag)).length}/4
+            currentUser && user.id === currentUser.id && (
+              <div className="tags-edit">
+                <div style={{ marginBottom: 10, color: '#a18cd1', fontWeight: 'bold', fontSize: '15px' }}>
+                  선택: {selectedTags.filter(tag => genreTags.includes(tag)).length}/4
+                </div>
+                <div className="tag-selection">
+                  {genreTags.map(tag => (
+                    <label key={tag} className="tag-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedTags.includes(tag)}
+                        onChange={() => handleTagChange(tag)}
+                      />
+                      <span className="checkbox-label">{tag}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="edit-actions">
+                  <button 
+                    className="save-button"
+                    onClick={handleSaveTags}
+                    disabled={saving}
+                  >
+                    {saving ? '저장 중...' : '저장'}
+                  </button>
+                  <button 
+                    className="cancel-button"
+                    onClick={handleCancel}
+                    disabled={saving}
+                  >
+                    취소
+                  </button>
+                </div>
               </div>
-              <div className="tag-selection">
-                {genreTags.map(tag => (
-                  <label key={tag} className="tag-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={selectedTags.includes(tag)}
-                      onChange={() => handleTagChange(tag)}
-                    />
-                    <span className="checkbox-label">{tag}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="edit-actions">
-                <button 
-                  className="save-button"
-                  onClick={handleSaveTags}
-                  disabled={saving}
-                >
-                  {saving ? '저장 중...' : '저장'}
-                </button>
-                <button 
-                  className="cancel-button"
-                  onClick={handleCancel}
-                  disabled={saving}
-                >
-                  취소
-                </button>
-              </div>
-            </div>
+            )
           )}
         </div>
 
@@ -384,6 +515,77 @@ const UserPage = ({ onMovieClick }) => {
         >
           내 예매목록 보기
         </button>
+
+        {/* 예매 목록 모달 */}
+        {showReservations && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={e => {
+            if (e.target === e.currentTarget) {
+              setShowReservations(false);
+              setSelectedReservationId(null);
+            }
+          }}
+          >
+            <div style={{
+              background: '#f7f7fa',
+              borderRadius: 16,
+              padding: 32,
+              minWidth: 800,
+              maxWidth: 1000,
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+              position: 'relative',
+            }}>
+              <button
+                onClick={() => {
+                  setShowReservations(false);
+                  setSelectedReservationId(null);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: '#888',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                }}
+                aria-label="닫기"
+              >
+                ×
+              </button>
+              {!selectedReservationId ? (
+                <UserReservations 
+                  currentUser={user}
+                  onSelectReservation={(reservationId) => {
+                    setSelectedReservationId(reservationId);
+                  }}
+                />
+              ) : (
+                <ReservationReceipt 
+                  reservationId={selectedReservationId} 
+                  onBack={() => setSelectedReservationId(null)} 
+                  currentUser={user} 
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 찜한 영화 섹션 */}
         <div className="liked-movies-section">
@@ -637,64 +839,40 @@ const UserPage = ({ onMovieClick }) => {
           )}
         </div>
       </div>
-      {showReservations && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.5)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        onClick={e => {
-          if (e.target === e.currentTarget) {
-            setShowReservations(false);
-            setSelectedReservationId(null);
-          }
-        }}
-        >
-          <div style={{
-            background: '#f7f7fa',
-            borderRadius: 16,
-            padding: 32,
-            minWidth: 420,
-            maxWidth: 700,
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-            position: 'relative',
-          }}>
-            <button
-              onClick={() => {
-                setShowReservations(false);
-                setSelectedReservationId(null);
-              }}
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                background: 'transparent',
-                border: 'none',
-                fontSize: 24,
-                fontWeight: 700,
-                color: '#888',
-                cursor: 'pointer',
-                zIndex: 10,
-              }}
-              aria-label="닫기"
-            >
-              ×
-            </button>
-            {!selectedReservationId ? (
-              <UserReservations onSelectReservation={setSelectedReservationId} currentUser={currentUser} />
-            ) : (
-              <ReservationReceipt reservationId={selectedReservationId} onBack={() => setSelectedReservationId(null)} currentUser={currentUser} />
-            )}
+
+
+      {/* 팔로워/팔로잉 모달 */}
+      {showFollowModal && (
+        <div className="review-modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="review-modal" style={{ minWidth: 320, maxWidth: 400, padding: 24 }}>
+            <button className="close-btn" onClick={() => setShowFollowModal(false)}>&times;</button>
+            <h3 style={{ marginBottom: 16 }}>{followModalType === 'followers' ? '팔로워' : '팔로잉'} 목록</h3>
+            <ul style={{ listStyle: 'none', padding: 0, maxHeight: 300, overflowY: 'auto' }}>
+              {(followModalType === 'followers' ? followers : following).length === 0 ? (
+                <li style={{ color: '#aaa' }}>아직 없습니다.</li>
+              ) : (
+                (followModalType === 'followers' ? followers : following).map(u => (
+                  <li key={u.id} style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#6c63ff' }}>{u.nickname?.charAt(0)?.toUpperCase()}</div>
+                    <span
+                      style={{ cursor: 'pointer', color: '#6c63ff', textDecoration: 'underline' }}
+                      onClick={() => {
+                        setShowFollowModal(false);
+                        navigate(`/user/${u.nickname}`);
+                      }}
+                    >
+                      {u.nickname}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
           </div>
+          <style>{`
+            .review-modal-overlay { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+            .review-modal { background: white; border-radius: 16px; padding: 32px; min-width: 320px; max-width: 400px; box-shadow: 0 4px 32px rgba(0,0,0,0.15); position: relative; }
+            .close-btn { position: absolute; right: 16px; top: 16px; background: #eee; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 22px; cursor: pointer; }
+          `}</style>
         </div>
       )}
     </div>
