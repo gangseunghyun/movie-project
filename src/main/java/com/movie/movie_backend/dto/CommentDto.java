@@ -18,6 +18,7 @@ public class CommentDto {
     private boolean isReply;
     private Long likeCount;
     private boolean likedByMe;
+    private java.util.List<CommentDto> replies;
 
     public static CommentDto fromEntity(com.movie.movie_backend.entity.Comment comment) {
         return CommentDto.builder()

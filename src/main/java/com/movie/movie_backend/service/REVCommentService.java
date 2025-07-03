@@ -95,6 +95,7 @@ public class REVCommentService {
 
     /**
      * 댓글 삭제 (소프트 삭제)
+     * 부모 댓글 삭제 시 대댓글도 함께 삭제
      */
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
@@ -108,10 +109,20 @@ public class REVCommentService {
             throw new RuntimeException("댓글을 삭제할 권한이 없습니다.");
         }
 
-        // 소프트 삭제
+        // 재귀적으로 하위 댓글 모두 소프트 삭제
+        softDeleteRecursively(comment);
+
+        log.info("댓글 및 하위 댓글 삭제 완료: ID={}", commentId);
+    }
+
+    private void softDeleteRecursively(Comment comment) {
         comment.setStatus(Comment.CommentStatus.DELETED);
         commentRepository.save(comment);
-        log.info("댓글 삭제 완료: ID={}", commentId);
+
+        List<Comment> replies = commentRepository.findByParentIdAndStatusOrderByCreatedAtAsc(comment.getId(), Comment.CommentStatus.ACTIVE);
+        for (Comment reply : replies) {
+            softDeleteRecursively(reply);
+        }
     }
 
     /**
@@ -142,13 +153,76 @@ public class REVCommentService {
     }
 
     /**
+     * 리뷰의 모든 댓글을 평탄화(flat)된 리스트로 반환 (트리 구조 X, replies X)
+     */
+    public List<CommentDto> getAllCommentsByReviewIdFlat(Long reviewId) {
+        List<Comment> comments = commentRepository.findByReviewIdAndStatusOrderByCreatedAtDesc(reviewId, Comment.CommentStatus.ACTIVE);
+        // 트리 구조 없이, 각 댓글의 parentId만 남기고 replies는 null로 반환
+        return comments.stream()
+                .map(CommentDto::fromEntity)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
      * 리뷰의 모든 댓글 조회
      */
     public List<CommentDto> getAllCommentsByReviewId(Long reviewId) {
         List<Comment> comments = commentRepository.findByReviewIdAndStatusOrderByCreatedAtDesc(reviewId, Comment.CommentStatus.ACTIVE);
-        return comments.stream()
-                .map(CommentDto::fromEntity)
-                .collect(Collectors.toList());
+        // 1. 모든 댓글을 id -> dto로 매핑
+        java.util.Map<Long, CommentDto> dtoMap = new java.util.HashMap<>();
+        for (Comment c : comments) {
+            dtoMap.put(c.getId(), CommentDto.fromEntity(c));
+        }
+        // 2. 각 dto의 replies를 채움
+        for (Comment c : comments) {
+            if (c.getParent() != null) {
+                CommentDto parentDto = dtoMap.get(c.getParent().getId());
+                if (parentDto.getReplies() == null) parentDto.setReplies(new java.util.ArrayList<>());
+                parentDto.getReplies().add(dtoMap.get(c.getId()));
+            }
+        }
+        // 3. 최상위 댓글만 리스트로 반환
+        java.util.List<CommentDto> result = new java.util.ArrayList<>();
+        for (Comment c : comments) {
+            if (c.getParent() == null) {
+                CommentDto dto = dtoMap.get(c.getId());
+                if (dto.getReplies() == null) dto.setReplies(new java.util.ArrayList<>());
+                result.add(dto);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 리뷰의 모든 댓글 조회 (사용자별 좋아요 상태 포함)
+     */
+    public List<CommentDto> getAllCommentsByReviewIdWithUserLikeStatus(Long reviewId, Long userId) {
+        List<Comment> comments = commentRepository.findByReviewIdAndStatusOrderByCreatedAtDesc(reviewId, Comment.CommentStatus.ACTIVE);
+        // 1. 모든 댓글을 id -> dto로 매핑 (좋아요 정보 포함)
+        java.util.Map<Long, CommentDto> dtoMap = new java.util.HashMap<>();
+        for (Comment c : comments) {
+            Long likeCount = getCommentLikeCount(c.getId());
+            boolean likedByMe = hasUserLikedComment(c.getId(), userId);
+            dtoMap.put(c.getId(), CommentDto.fromEntityWithLikeInfo(c, likeCount, likedByMe));
+        }
+        // 2. 각 dto의 replies를 채움
+        for (Comment c : comments) {
+            if (c.getParent() != null) {
+                CommentDto parentDto = dtoMap.get(c.getParent().getId());
+                if (parentDto.getReplies() == null) parentDto.setReplies(new java.util.ArrayList<>());
+                parentDto.getReplies().add(dtoMap.get(c.getId()));
+            }
+        }
+        // 3. 최상위 댓글만 리스트로 반환
+        java.util.List<CommentDto> result = new java.util.ArrayList<>();
+        for (Comment c : comments) {
+            if (c.getParent() == null) {
+                CommentDto dto = dtoMap.get(c.getId());
+                if (dto.getReplies() == null) dto.setReplies(new java.util.ArrayList<>());
+                result.add(dto);
+            }
+        }
+        return result;
     }
 
     /**
