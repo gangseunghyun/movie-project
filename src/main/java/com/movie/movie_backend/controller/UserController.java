@@ -1158,4 +1158,70 @@ public class UserController {
             .collect(java.util.stream.Collectors.toList());
         return ResponseEntity.ok(java.util.Map.of("success", true, "data", following));
     }
+
+    @GetMapping("/api/users/{userId}/daily-social-recommendation")
+    public ResponseEntity<?> getDailySocialRecommendation(@PathVariable Long userId) {
+        return getSocialRecommendationInternal(userId);
+    }
+
+    // 메인페이지용 엔드포인트 추가
+    @GetMapping("/api/users/{userId}/main-recommendation")
+    public ResponseEntity<?> getMainSocialRecommendation(@PathVariable Long userId) {
+        return getSocialRecommendationInternal(userId);
+    }
+
+    // 내부 공통 로직 메서드
+    private ResponseEntity<?> getSocialRecommendationInternal(Long userId) {
+        var following = userService.getFollowing(userId);
+        if (following.isEmpty()) {
+            return ResponseEntity.ok(java.util.Map.of(
+                "success", true,
+                "message", "팔로잉한 유저가 없습니다.",
+                "recommender", null,
+                "movies", java.util.Collections.emptyList()
+            ));
+        }
+        var candidates = following.stream().filter(f -> {
+            boolean hasLiked = f.getLikes() != null && !f.getLikes().isEmpty();
+            boolean hasHighRating = f.getRatings() != null && f.getRatings().stream().anyMatch(r -> r.getScore() >= 4.0);
+            return hasLiked || hasHighRating;
+        }).toList();
+        if (candidates.isEmpty()) {
+            return ResponseEntity.ok(java.util.Map.of(
+                "success", true,
+                "message", "추천할 만한 팔로잉 유저가 없습니다.",
+                "recommender", null,
+                "movies", java.util.Collections.emptyList()
+            ));
+        }
+        java.time.format.DateTimeFormatter minuteFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String minuteKey = java.time.LocalDateTime.now().format(minuteFormatter);
+        int seed = (userId + minuteKey).hashCode();
+        java.util.Random random = new java.util.Random(seed);
+        var recommender = candidates.get(random.nextInt(candidates.size()));
+        List<MovieDetail> likedMovies = recommender.getLikes() == null ? java.util.Collections.emptyList() : recommender.getLikes().stream().map(like -> like.getMovieDetail()).toList();
+        List<MovieDetail> highRatedMovies = recommender.getRatings() == null ? java.util.Collections.emptyList() : recommender.getRatings().stream().filter(r -> r.getScore() >= 4.0).map(r -> r.getMovieDetail()).toList();
+        java.util.Set<MovieDetail> movieSet = new java.util.LinkedHashSet<>(likedMovies);
+        movieSet.addAll(highRatedMovies);
+        List<java.util.Map<String, Object>> movies = movieSet.stream()
+            .map(md -> {
+                java.util.Map<String, Object> m = new java.util.HashMap<>();
+                m.put("movieCd", md.getMovieCd());
+                m.put("movieNm", md.getMovieNm());
+                m.put("posterUrl", (md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null));
+                m.put("genreNm", md.getGenreNm());
+                m.put("openDt", md.getOpenDt());
+                return m;
+            })
+            .collect(java.util.stream.Collectors.toList());
+        var recommenderDto = java.util.Map.of(
+            "id", recommender.getId(),
+            "nickname", recommender.getNickname()
+        );
+        return ResponseEntity.ok(java.util.Map.of(
+            "success", true,
+            "recommender", recommenderDto,
+            "movies", movies
+        ));
+    }
 } 
