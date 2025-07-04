@@ -74,10 +74,10 @@ public class BoxOfficeService {
                     }
                 }
                 
-                // 그 다음 BoxOffice 저장 (상위 30개만)
+                // 그 다음 BoxOffice 저장 (상위 10개만)
                 int count = 0;
                 for (JsonNode movie : dailyBoxOfficeList) {
-                    if (count >= 30) break; // 상위 30개만 저장
+                    if (count >= 10) break; // 상위 10개만 저장
                     
                     BoxOffice boxOffice = parseBoxOfficeData(movie, yesterday, "DAILY");
                     if (boxOffice != null) {
@@ -89,7 +89,7 @@ public class BoxOfficeService {
                                 count);
                     }
                 }
-                log.info("일일 박스오피스 데이터 저장 완료: {}개 (상위 30개)", count);
+                log.info("일일 박스오피스 데이터 저장 완료: {}개 (상위 10개)", count);
             }
         } catch (Exception e) {
             log.error("일일 박스오피스 데이터 가져오기 실패", e);
@@ -129,10 +129,10 @@ public class BoxOfficeService {
                     }
                 }
                 
-                // 그 다음 BoxOffice 저장 (상위 30개만)
+                // 그 다음 BoxOffice 저장 (상위 10개만)
                 int count = 0;
                 for (JsonNode movie : weeklyBoxOfficeList) {
-                    if (count >= 30) break; // 상위 30개만 저장
+                    if (count >= 10) break; // 상위 10개만 저장
                     
                     BoxOffice boxOffice = parseBoxOfficeData(movie, lastWeek, "WEEKLY");
                     if (boxOffice != null) {
@@ -144,7 +144,7 @@ public class BoxOfficeService {
                                 count);
                     }
                 }
-                log.info("주간 박스오피스 데이터 저장 완료: {}개 (상위 30개)", count);
+                log.info("주간 박스오피스 데이터 저장 완료: {}개 (상위 10개)", count);
             }
         } catch (Exception e) {
             log.error("주간 박스오피스 데이터 가져오기 실패", e);

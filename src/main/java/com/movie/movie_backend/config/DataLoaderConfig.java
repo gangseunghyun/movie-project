@@ -321,37 +321,37 @@ public class DataLoaderConfig {
     }
 
     // 제작국가명/관람등급명만 빠르게 업데이트하는 Bean
-    @Bean
-    public CommandLineRunner updateNationAndGradeOnly() {
-        return args -> {
-            log.info("=== 제작국가명/관람등급명만 업데이트 시작 ===");
-            List<MovieList> movieLists = prdMovieListRepository.findAll();
-            int total = movieLists.size();
-            int updated = 0, failed = 0;
-            for (MovieList movieList : movieLists) {
-                try {
-                    String movieCd = movieList.getMovieCd();
-                    var result = kobisApiService.fetchNationAndGrade(movieCd);
-                    if (result != null) {
-                        MovieDetail detail = movieRepository.findByMovieCd(movieCd).orElse(null);
-                        if (detail == null) {
-                            detail = MovieDetail.builder()
-                                    .movieCd(movieCd)
-                                    .movieNm(movieList.getMovieNm())
-                                    .build();
-                        }
-                        detail.setNationNm(result.nationNm);
-                        detail.setWatchGradeNm(result.watchGradeNm);
-                        movieRepository.save(detail);
-                        updated++;
-                        log.info("[{} / {}] {} ({}) - 국가/등급 저장 완료: {}, {}", updated, total, movieList.getMovieNm(), movieCd, result.nationNm, result.watchGradeNm);
-                    }
-                } catch (Exception e) {
-                    failed++;
-                    log.warn("국가/등급 저장 실패: {} ({}) - {}", movieList.getMovieNm(), movieList.getMovieCd(), e.getMessage());
-                }
-            }
-            log.info("=== 제작국가명/관람등급명만 업데이트 완료: 성공 {}, 실패 {} ===", updated, failed);
-        };
-    }
+    // @Bean
+    // public CommandLineRunner updateNationAndGradeOnly() {
+    //     return args -> {
+    //         log.info("=== 제작국가명/관람등급명만 업데이트 시작 ===");
+    //         List<MovieList> movieLists = prdMovieListRepository.findAll();
+    //         int total = movieLists.size();
+    //         int updated = 0, failed = 0;
+    //         for (MovieList movieList : movieLists) {
+    //             try {
+    //                 String movieCd = movieList.getMovieCd();
+    //                 var result = kobisApiService.fetchNationAndGrade(movieCd);
+    //                 if (result != null) {
+    //                     MovieDetail detail = movieRepository.findByMovieCd(movieCd).orElse(null);
+    //                     if (detail == null) {
+    //                         detail = MovieDetail.builder()
+    //                                 .movieCd(movieCd)
+    //                                 .movieNm(movieList.getMovieNm())
+    //                                 .build();
+    //                     }
+    //                     detail.setNationNm(result.nationNm);
+    //                     detail.setWatchGradeNm(result.watchGradeNm);
+    //                     movieRepository.save(detail);
+    //                     updated++;
+    //                     log.info("[{} / {}] {} ({}) - 국가/등급 저장 완료: {}, {}", updated, total, movieList.getMovieNm(), movieCd, result.nationNm, result.watchGradeNm);
+    //                 }
+    //             } catch (Exception e) {
+    //                 failed++;
+    //                 log.warn("국가/등급 저장 실패: {} ({}) - {}", movieList.getMovieNm(), movieList.getMovieCd(), e.getMessage());
+    //             }
+    //         }
+    //         log.info("=== 제작국가명/관람등급명만 업데이트 완료: 성공 {}, 실패 {} ===", updated, failed);
+    //     };
+    // }
 } 

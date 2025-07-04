@@ -600,7 +600,7 @@ public class KobisApiService {
         try {
             log.info("KOBIS에서 개봉예정작 가져오기 시작 (제한: {}개)", limit);
             
-            // 현재 날짜부터 6개월 후까지의 개봉예정작 조회 (더 넓은 범위로 조회)
+            // 현재 날짜부터 6개월 후까지의 개봉예정작 조회
             java.time.LocalDate today = java.time.LocalDate.now();
             java.time.LocalDate endDate = today.plusMonths(6);
             
@@ -609,8 +609,11 @@ public class KobisApiService {
             
             log.info("개봉예정작 조회 기간: {} ~ {}", startDateStr, endDateStr);
             
-            String url = String.format("http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=%s&openStartDt=%s&openEndDt=%s&itemPerPage=%d", 
+            // KOBIS 개봉예정작 API URL - 더 정확한 방법으로 수정
+            String url = String.format("http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=%s&openStartDt=%s&openEndDt=%s&itemPerPage=%d&repNationCd=K&movieTypeCd=220101", 
                 kobisApiKey, startDateStr, endDateStr, limit);
+            
+            log.info("KOBIS API 호출 URL: {}", url);
             
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             if (!response.getStatusCode().is2xxSuccessful()) {
@@ -618,15 +621,34 @@ public class KobisApiService {
                 return comingSoonMovies;
             }
             
+            // API 응답 로깅 (디버깅용)
+            log.debug("KOBIS API 응답: {}", response.getBody());
+            
             JsonNode rootNode = objectMapper.readTree(response.getBody());
+            
+            // KOBIS API 응답 구조 확인
+            if (rootNode.has("faultInfo")) {
+                log.error("KOBIS API 오류: {}", rootNode.get("faultInfo").toPrettyString());
+                return comingSoonMovies;
+            }
+            
             JsonNode movieListResult = rootNode.get("movieListResult");
             
-            if (movieListResult == null || movieListResult.get("movieList") == null) {
-                log.warn("KOBIS API 응답에 movieList가 없음");
+            if (movieListResult == null) {
+                log.warn("KOBIS API 응답에 movieListResult가 없음");
+                log.warn("전체 응답 구조: {}", rootNode.toPrettyString());
                 return comingSoonMovies;
             }
             
             JsonNode movieList = movieListResult.get("movieList");
+            
+            if (movieList == null) {
+                log.warn("KOBIS API 응답에 movieList가 없음");
+                log.warn("movieListResult 구조: {}", movieListResult.toPrettyString());
+                return comingSoonMovies;
+            }
+            
+            log.info("KOBIS에서 {}개의 영화 데이터를 받았습니다.", movieList.size());
             
             for (JsonNode movie : movieList) {
                 try {
@@ -634,8 +656,11 @@ public class KobisApiService {
                     
                     // 개봉예정작 판별 로직 개선
                     if (openDt != null && isComingSoonMovie(openDt, today)) {
+                        String movieCd = movie.get("movieCd").asText();
+                        
+                        // MovieList에 저장
                         MovieListDto movieDto = MovieListDto.builder()
-                            .movieCd(movie.get("movieCd").asText())
+                            .movieCd(movieCd)
                             .movieNm(movie.get("movieNm").asText())
                             .movieNmEn(movie.has("movieNmEn") ? movie.get("movieNmEn").asText() : "")
                             .openDt(openDt)
@@ -647,7 +672,18 @@ public class KobisApiService {
                             .build();
                         
                         comingSoonMovies.add(movieDto);
-                        log.debug("개봉예정작 추가: {} (개봉일: {})", movie.get("movieNm").asText(), openDt);
+                        log.info("개봉예정작 추가: {} (개봉일: {})", movie.get("movieNm").asText(), openDt);
+                        
+                        // MovieDetail도 함께 생성 (상세정보가 없는 경우)
+                        try {
+                            if (movieRepository.findByMovieCd(movieCd).isEmpty()) {
+                                log.info("MovieDetail 생성 시작: {}", movieCd);
+                                fetchAndSaveMovieDetail(movieCd);
+                                log.info("MovieDetail 생성 완료: {}", movieCd);
+                            }
+                        } catch (Exception e) {
+                            log.warn("MovieDetail 생성 실패: {} - {}", movieCd, e.getMessage());
+                        }
                     } else {
                         log.debug("개봉예정작 제외: {} (개봉일: {}) - 이미 개봉했거나 너무 먼 미래", 
                             movie.get("movieNm").asText(), openDt);
