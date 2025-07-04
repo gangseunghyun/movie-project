@@ -208,19 +208,21 @@ public class BoxOfficeService {
     // ===== DTO 변환 메서드들 (왓챠피디아 스타일) =====
 
     /**
-     * 최신 일일 박스오피스 TOP-10 조회 (DTO)
+     * 최신 일일 박스오피스 TOP-20 조회 (DTO)
      */
     public List<BoxOfficeDto> getDailyBoxOfficeTop10AsDto() {
         List<BoxOffice> boxOfficeList = boxOfficeRepository.findLatestBoxOfficeTop10("DAILY");
-        return boxOfficeMapper.toDtoList(boxOfficeList);
+        // 상위 20개만 반환
+        return boxOfficeMapper.toDtoList(boxOfficeList.stream().limit(20).toList());
     }
 
     /**
-     * 최신 주간 박스오피스 TOP-10 조회 (DTO)
+     * 최신 주간 박스오피스 TOP-20 조회 (DTO)
      */
     public List<BoxOfficeDto> getWeeklyBoxOfficeTop10AsDto() {
         List<BoxOffice> boxOfficeList = boxOfficeRepository.findLatestBoxOfficeTop10("WEEKLY");
-        return boxOfficeMapper.toDtoList(boxOfficeList);
+        // 상위 20개만 반환
+        return boxOfficeMapper.toDtoList(boxOfficeList.stream().limit(20).toList());
     }
 
     /**
@@ -234,17 +236,21 @@ public class BoxOfficeService {
     // ===== 기존 엔티티 반환 메서드들 (하위 호환성) =====
 
     /**
-     * 최신 일일 박스오피스 TOP-10 조회
+     * 최신 일일 박스오피스 TOP-20 조회
      */
     public List<BoxOffice> getDailyBoxOfficeTop10() {
-        return boxOfficeRepository.findLatestBoxOfficeTop10("DAILY");
+        List<BoxOffice> boxOfficeList = boxOfficeRepository.findLatestBoxOfficeTop10("DAILY");
+        // 상위 20개만 반환
+        return boxOfficeList.stream().limit(20).toList();
     }
 
     /**
-     * 최신 주간 박스오피스 TOP-10 조회
+     * 최신 주간 박스오피스 TOP-20 조회
      */
     public List<BoxOffice> getWeeklyBoxOfficeTop10() {
-        return boxOfficeRepository.findLatestBoxOfficeTop10("WEEKLY");
+        List<BoxOffice> boxOfficeList = boxOfficeRepository.findLatestBoxOfficeTop10("WEEKLY");
+        // 상위 20개만 반환
+        return boxOfficeList.stream().limit(20).toList();
     }
 
     /**

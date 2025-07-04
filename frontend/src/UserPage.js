@@ -42,6 +42,8 @@ const UserPage = ({ onMovieClick }) => {
   const [likedComments, setLikedComments] = useState([]);
   const [likedCommentsLoading, setLikedCommentsLoading] = useState(false);
 
+
+
   // 예매 관련 상태
   const [selectedReservationId, setSelectedReservationId] = useState(null);
   const [showReservations, setShowReservations] = useState(false);

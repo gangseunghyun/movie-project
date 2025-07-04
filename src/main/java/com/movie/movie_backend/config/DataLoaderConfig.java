@@ -9,11 +9,11 @@ import com.movie.movie_backend.service.TagDataService;
 import com.movie.movie_backend.service.BoxOfficeService;
 import com.movie.movie_backend.service.NaverMovieBatchService;
 import com.movie.movie_backend.service.TmdbPopularMovieService;
+import com.movie.movie_backend.service.KobisPopularMovieService;
 import com.movie.movie_backend.repository.PRDMovieListRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.BoxOfficeRepository;
 import com.movie.movie_backend.repository.PRDDirectorRepository;
-import com.movie.movie_backend.service.KobisPopularMovieService;
 import com.movie.movie_backend.entity.MovieList;
 import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.Director;
@@ -52,7 +52,7 @@ public class DataLoaderConfig {
     // @Bean
     // public CommandLineRunner loadMovieDescriptionsOnly() {
     //     return args -> {
-    //         // 영화 줄거리(Description)만 채워넣기
+    //         // 영화 줄거리(Description) 및 관람등급, 제작국가명 등 채워넣기
     //         fillMissingMovieDetails();
     //     };
     // }
@@ -113,28 +113,27 @@ public class DataLoaderConfig {
     //     return args -> {
     //         log.info("=== KOBIS 영화 데이터 로드 시작 ===");
     //         try {
-    //             // 1. 매출액 기준 인기영화 500개 가져오기
-    //             log.info("인기영화 500개 가져오기 시작...");
-    //             kobisPopularMovieService.getPopularMoviesBySales(500);
-    //             log.info("인기영화 500개 가져오기 완료");
+    //             // 1. 매출액 기준 인기영화 700개 가져오기 (비활성화)
+    //             // log.info("인기영화 700개 가져오기 시작...");
+    //             // kobisPopularMovieService.getPopularMoviesBySales(700);
+    //             // log.info("인기영화 700개 가져오기 완료");
     //             
     //             // 2. 최신영화 가져오기 (비활성화)
     //             // log.info("최신영화 300개 가져오기 시작...");
     //             // kobisPopularMovieService.getRecentMoviesByOpenDate(300);
     //             // log.info("최신영화 300개 가져오기 완료");
     //             
-    //             // 3. 박스오피스 데이터 가져오기
-    //             log.info("박스오피스 데이터 가져오기 시작...");
-    //             boxOfficeService.fetchDailyBoxOffice();
-    //             log.info("일일 박스오피스 가져오기 완료");
+    //             // 3. 박스오피스 데이터 가져오기 (비활성화)
+    //             // log.info("박스오피스 데이터 가져오기 시작...");
+    //             // boxOfficeService.fetchDailyBoxOffice();
+    //             // log.info("일일 박스오피스 가져오기 완료");
+    //             // boxOfficeService.fetchWeeklyBoxOffice();
+    //             // log.info("주간 박스오피스 가져오기 완료");
     //             
-    //             boxOfficeService.fetchWeeklyBoxOffice();
-    //             log.info("주간 박스오피스 가져오기 완료");
-    //             
-    //             // 4. 영화 상세정보 채워넣기
-    //             log.info("영화 상세정보 채워넣기 시작...");
-    //             fillMissingMovieDetails();
-    //             log.info("영화 상세정보 채워넣기 완료");
+    //             // 4. 영화 상세정보 채워넣기 (비활성화)
+    //             // log.info("영화 상세정보 채워넣기 시작...");
+    //             // fillMissingMovieDetails();
+    //             // log.info("영화 상세정보 채워넣기 완료");
     //             
     //             log.info("=== KOBIS 영화 데이터 로드 완료 ===");
     //         } catch (Exception e) {
@@ -318,6 +317,41 @@ public class DataLoaderConfig {
         return args -> {
             log.info("=== TagDataService.setupTagData() 자동 실행 ===");
             tagDataService.setupTagData();
+        };
+    }
+
+    // 제작국가명/관람등급명만 빠르게 업데이트하는 Bean
+    @Bean
+    public CommandLineRunner updateNationAndGradeOnly() {
+        return args -> {
+            log.info("=== 제작국가명/관람등급명만 업데이트 시작 ===");
+            List<MovieList> movieLists = prdMovieListRepository.findAll();
+            int total = movieLists.size();
+            int updated = 0, failed = 0;
+            for (MovieList movieList : movieLists) {
+                try {
+                    String movieCd = movieList.getMovieCd();
+                    var result = kobisApiService.fetchNationAndGrade(movieCd);
+                    if (result != null) {
+                        MovieDetail detail = movieRepository.findByMovieCd(movieCd).orElse(null);
+                        if (detail == null) {
+                            detail = MovieDetail.builder()
+                                    .movieCd(movieCd)
+                                    .movieNm(movieList.getMovieNm())
+                                    .build();
+                        }
+                        detail.setNationNm(result.nationNm);
+                        detail.setWatchGradeNm(result.watchGradeNm);
+                        movieRepository.save(detail);
+                        updated++;
+                        log.info("[{} / {}] {} ({}) - 국가/등급 저장 완료: {}, {}", updated, total, movieList.getMovieNm(), movieCd, result.nationNm, result.watchGradeNm);
+                    }
+                } catch (Exception e) {
+                    failed++;
+                    log.warn("국가/등급 저장 실패: {} ({}) - {}", movieList.getMovieNm(), movieList.getMovieCd(), e.getMessage());
+                }
+            }
+            log.info("=== 제작국가명/관람등급명만 업데이트 완료: 성공 {}, 실패 {} ===", updated, failed);
         };
     }
 } 

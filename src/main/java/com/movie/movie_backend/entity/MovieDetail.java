@@ -89,4 +89,14 @@ public class MovieDetail {
     private Double averageRating;     // 평균 평점
     private Integer ratingCount;      // 평점 개수
     private LocalDateTime ratingUpdatedAt; // 평점 업데이트 시간
+
+    @Column(name = "audits", columnDefinition = "TEXT")
+    private String audits; // 심의정보 JSON 문자열 (auditNo, watchGradeNm 등)
+
+    public String getAudits() {
+        return audits;
+    }
+    public void setAudits(String audits) {
+        this.audits = audits;
+    }
 }

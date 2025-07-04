@@ -210,7 +210,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
         movieId: movie.movieCd,
         screeningId: selectedScreening.id,
         seatIds: selectedSeats.map(seat => seat.seatId),
-        totalPrice: selectedSeats.length * 1
+        totalPrice: selectedSeats.length * 100
       };
       const response = await axios.post('http://localhost:80/api/bookings', bookingData);
       if (response.data.success) {
@@ -253,7 +253,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
       pay_method: 'card',
       merchant_uid: 'order_' + new Date().getTime(),
       name: '영화 예매',
-      amount: selectedSeats.length * 1 || 1, // 최소 1좌석 금액
+      amount: selectedSeats.length * 100 || 100, // 최소 1좌석 금액
       buyer_email: 'test@example.com',
       buyer_name: '홍길동',
       buyer_tel: '010-1234-5678',
@@ -266,7 +266,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
           movieId: movie.movieCd,
           screeningId: selectedScreening.id,
           seatIds: selectedSeats.map(seat => seat.seatId),
-          totalPrice: selectedSeats.length * 1
+          totalPrice: selectedSeats.length * 100
         });
         if (bookingRes.data.success) {
           // 2. 결제정보 저장 API 호출
@@ -299,7 +299,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
       pay_method: 'card',
       merchant_uid: 'order_' + new Date().getTime(),
       name: '영화 예매',
-      amount: selectedSeats.length * 1 || 1, // 최소 1좌석 금액
+      amount: selectedSeats.length * 100 || 100, // 최소 1좌석 금액
       buyer_email: 'test@example.com',
       buyer_name: '홍길동',
       buyer_tel: '010-1234-5678',
@@ -312,7 +312,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
           movieId: movie.movieCd,
           screeningId: selectedScreening.id,
           seatIds: selectedSeats.map(seat => seat.seatId),
-          totalPrice: selectedSeats.length * 1
+          totalPrice: selectedSeats.length * 100
         });
         if (bookingRes.data.success) {
           // 2. 결제정보 저장 API 호출
@@ -345,7 +345,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
       pay_method: 'card',
       merchant_uid: 'order_' + new Date().getTime(),
       name: '영화 예매',
-      amount: selectedSeats.length * 1 || 1,
+      amount: selectedSeats.length * 100 || 100,
       buyer_email: 'test@example.com',
       buyer_name: '홍길동',
       buyer_tel: '010-1234-5678',
@@ -358,7 +358,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
           movieId: movie.movieCd,
           screeningId: selectedScreening.id,
           seatIds: selectedSeats.map(seat => seat.seatId),
-          totalPrice: selectedSeats.length * 1
+          totalPrice: selectedSeats.length * 100
         });
         if (bookingRes.data.success) {
           // 2. 결제정보 저장 API 호출
@@ -565,7 +565,7 @@ const BookingModal = ({ movie, onClose, onBookingComplete, goToMyReservations })
           {Array.isArray(selectedSeats) && selectedSeats.length > 0 && (
             <div className="booking-summary">
               <p>선택된 좌석: {selectedSeats.map(seat => seat.seatNumber).join(', ')}</p>
-              <p>총 금액: {selectedSeats.length * 1}원</p>
+              <p>총 금액: {selectedSeats.length * 100}원</p>
               <button
                 className="booking-btn"
                 onClick={handleBooking}
