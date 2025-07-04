@@ -2338,6 +2338,175 @@ function App() {
                     </div>
                   </div>
                 )}
+
+                {/* 추천 영화 섹션 */}
+                {currentUser && (
+                  <div className="movie-detail-section">
+                    <h4>🎬 당신을 위한 영화 추천</h4>
+                    <div style={{ 
+                      background: '#f8f9fa', 
+                      borderRadius: '12px', 
+                      padding: '20px',
+                      marginTop: '15px'
+                    }}>
+                      {(() => {
+                        // 현재 영화의 장르를 기반으로 추천 영화 표시
+                        const currentGenre = selectedMovie.genreNm;
+                        if (!currentGenre) {
+                          return (
+                            <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+                              <p>이 영화와 비슷한 영화를 추천하려면 장르 정보가 필요합니다.</p>
+                            </div>
+                          );
+                        }
+
+                        // 현재 영화의 장르들을 분리
+                        const currentGenres = currentGenre.split(',').map(g => g.trim());
+                        const firstGenre = currentGenres[0];
+                        const secondGenre = currentGenres[1];
+                        
+                        // 현재 영화와 같은 장르의 다른 영화들을 필터링하고 우선순위별로 정렬
+                        const similarMovies = movieDetailDtoData.data?.filter(movie => {
+                          if (movie.movieCd === selectedMovie.movieCd || !movie.genreNm) return false;
+                          
+                          const movieGenres = movie.genreNm.split(',').map(g => g.trim());
+                          
+                          // 첫 번째 장르가 일치하는 경우
+                          const hasFirstGenre = movieGenres.includes(firstGenre);
+                          
+                          // 두 번째 장르가 있고, 두 번째 장르도 일치하는 경우
+                          const hasSecondGenre = secondGenre && movieGenres.includes(secondGenre);
+                          
+                          // 첫 번째 장르가 일치하거나, 두 번째 장르까지 일치하는 경우 추천
+                          return hasFirstGenre || hasSecondGenre;
+                        }).sort((a, b) => {
+                          // 우선순위: 두 장르 모두 겹치는 영화 > 하나만 겹치는 영화
+                          const aGenres = a.genreNm.split(',').map(g => g.trim());
+                          const bGenres = b.genreNm.split(',').map(g => g.trim());
+                          
+                          const aHasBoth = firstGenre && secondGenre && 
+                            aGenres.includes(firstGenre) && aGenres.includes(secondGenre);
+                          const bHasBoth = firstGenre && secondGenre && 
+                            bGenres.includes(firstGenre) && bGenres.includes(secondGenre);
+                          
+                          if (aHasBoth && !bHasBoth) return -1; // a가 우선
+                          if (!aHasBoth && bHasBoth) return 1;  // b가 우선
+                          return 0; // 둘 다 같음
+                        }).slice(0, 6) || [];
+
+                        if (similarMovies.length === 0) {
+                          return (
+                            <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+                              <p>현재 이 장르의 다른 영화가 없습니다.</p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div>
+                            <p style={{ 
+                              marginBottom: '15px', 
+                              color: '#333', 
+                              fontSize: '14px',
+                              fontWeight: '500'
+                            }}>
+                              <strong>#{firstGenre}</strong>
+                              {secondGenre && <span> + <strong>#{secondGenre}</strong></span>}
+                              장르의 다른 영화들
+                            </p>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                              gap: '15px'
+                            }}>
+                              {similarMovies.map(movie => (
+                                <div
+                                  key={movie.movieCd}
+                                  onClick={() => handleMovieClick(movie)}
+                                  style={{
+                                    background: 'white',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    border: '1px solid #e0e0e0'
+                                  }}
+                                  onMouseOver={(e) => {
+                                    e.target.style.transform = 'translateY(-4px)';
+                                    e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
+                                  }}
+                                  onMouseOut={(e) => {
+                                    e.target.style.transform = 'translateY(0)';
+                                    e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                                  }}
+                                >
+                                  <div style={{ height: '200px', overflow: 'hidden' }}>
+                                    {movie.posterUrl ? (
+                                      <img 
+                                        src={movie.posterUrl} 
+                                        alt={movie.movieNm}
+                                        style={{
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'cover'
+                                        }}
+                                      />
+                                    ) : (
+                                      <div style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        background: '#e9ecef',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#6c757d',
+                                        fontSize: '12px'
+                                      }}>
+                                        No Poster
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ padding: '12px' }}>
+                                    <h5 style={{
+                                      margin: '0 0 4px 0',
+                                      fontSize: '14px',
+                                      fontWeight: '600',
+                                      color: '#333',
+                                      lineHeight: '1.2',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}>
+                                      {movie.movieNm}
+                                    </h5>
+                                    <p style={{
+                                      margin: '0',
+                                      fontSize: '12px',
+                                      color: '#666'
+                                    }}>
+                                      {movie.openDt}
+                                    </p>
+                                    {movie.averageRating && (
+                                      <div style={{
+                                        marginTop: '4px',
+                                        fontSize: '12px',
+                                        color: '#f39c12',
+                                        fontWeight: '600'
+                                      }}>
+                                        ⭐ {movie.averageRating.toFixed(1)}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

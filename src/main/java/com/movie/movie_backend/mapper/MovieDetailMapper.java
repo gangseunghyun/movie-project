@@ -7,6 +7,8 @@ import com.movie.movie_backend.repository.PRDMovieListRepository;
 import com.movie.movie_backend.repository.BoxOfficeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -19,6 +21,7 @@ public class MovieDetailMapper {
 
     private final PRDMovieListRepository movieListRepository;
     private final BoxOfficeRepository boxOfficeRepository;
+    private final ObjectMapper objectMapper;
 
     public MovieDetailDto toDto(MovieDetail movieDetail, int likeCount, boolean likedByMe) {
         MovieDetailDto dto = new MovieDetailDto();
@@ -112,6 +115,20 @@ public class MovieDetailMapper {
         
         dto.setLikeCount(likeCount);
         dto.setLikedByMe(likedByMe);
+
+        // audits(JSON) → List<Audit> 매핑
+        List<MovieDetailDto.Audit> auditsList = List.of();
+        if (movieDetail.getAudits() != null && !movieDetail.getAudits().isBlank()) {
+            try {
+                auditsList = objectMapper.readValue(
+                    movieDetail.getAudits(),
+                    new TypeReference<List<MovieDetailDto.Audit>>() {}
+                );
+            } catch (Exception e) {
+                // 변환 실패 시 빈 리스트 유지
+            }
+        }
+        dto.setAudits(auditsList);
         return dto;
     }
 

@@ -1247,4 +1247,35 @@ public class KobisApiService {
         
         return null;
     }
+
+    // 제작국가명/관람등급명만 빠르게 가져오는 용도
+    public static class NationAndGrade {
+        public final String nationNm;
+        public final String watchGradeNm;
+        public NationAndGrade(String nationNm, String watchGradeNm) {
+            this.nationNm = nationNm;
+            this.watchGradeNm = watchGradeNm;
+        }
+    }
+
+    public NationAndGrade fetchNationAndGrade(String movieCd) {
+        try {
+            String url = String.format("http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieInfo.json?key=%s&movieCd=%s", kobisApiKey, movieCd);
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            JsonNode rootNode = objectMapper.readTree(response.getBody());
+            JsonNode movieInfo = rootNode.path("movieInfoResult").path("movieInfo");
+            String nationNm = "";
+            if (movieInfo.has("nations") && movieInfo.get("nations").isArray() && movieInfo.get("nations").size() > 0) {
+                nationNm = movieInfo.get("nations").get(0).path("nationNm").asText("");
+            }
+            String watchGradeNm = "";
+            if (movieInfo.has("audits") && movieInfo.get("audits").isArray() && movieInfo.get("audits").size() > 0) {
+                watchGradeNm = movieInfo.get("audits").get(0).path("watchGradeNm").asText("");
+            }
+            return new NationAndGrade(nationNm, watchGradeNm);
+        } catch (Exception e) {
+            log.warn("KOBIS 국가/등급 파싱 실패: movieCd={}, {}", movieCd, e.getMessage());
+            return null;
+        }
+    }
 } 

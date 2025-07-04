@@ -932,7 +932,7 @@ public class KobisPopularMovieService {
             
             // 여러 페이지를 가져와서 충분한 데이터 확보
             int page = 1;
-            int maxPages = 10; // 최대 10페이지까지 조회 (페이지당 100개씩)
+            int maxPages = (limit + 99) / 100; // 목표 개수에 맞춰 페이지 수 계산 (600개면 6페이지)
             
             while (popularMovies.size() < limit && page <= maxPages) {
                 String url = String.format("%s?key=%s&openStartDt=%s&openEndDt=%s&itemPerPage=100&curPage=%d&salesAmt=desc", 
@@ -1017,7 +1017,7 @@ public class KobisPopularMovieService {
             String endDateStr = endDate.format(DateTimeFormatter.ofPattern("yyyy"));
             
             int page = 1;
-            int maxPages = 5; // 최대 5페이지까지 조회
+            int maxPages = (limit + 99) / 100; // 목표 개수에 맞춰 페이지 수 계산
             
             while (recentMovies.size() < limit && page <= maxPages) {
                 String url = String.format("%s?key=%s&openStartDt=%s&openEndDt=%s&itemPerPage=100&curPage=%d&openDt=desc", 
