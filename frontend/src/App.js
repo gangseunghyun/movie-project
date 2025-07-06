@@ -21,6 +21,7 @@ import ReviewModal from './components/ReviewModal';
 import ReviewList from './components/ReviewList';
 import UserReservations from './UserReservations';
 import ReservationReceipt from './ReservationReceipt';
+import ReasonBadges from './components/ReasonBadges';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -830,6 +831,15 @@ function App() {
 
   // 영화 관리 기능들
   const handleMovieClick = async (movie) => {
+    console.log('handleMovieClick 호출됨:', movie);
+    
+    // movieCd가 없으면 경고
+    if (!movie.movieCd) {
+      console.error('movieCd가 없습니다:', movie);
+      alert('영화 정보가 올바르지 않습니다.');
+      return;
+    }
+    
     // 상세 정보가 이미 있으면 바로 모달 오픈
     if (movie.directors && movie.actors && movie.stillcuts) {
       setSelectedMovie(movie);
@@ -838,6 +848,7 @@ function App() {
     }
     // 상세 정보 fetch
     try {
+      console.log('상세 정보 API 호출:', movie.movieCd);
       const res = await axios.get(`http://localhost:80/data/api/movie-detail-dto?movieCd=${movie.movieCd}`);
       if (res.data && res.data.data && res.data.data.length > 0) {
         setSelectedMovie(res.data.data[0]);
@@ -846,6 +857,7 @@ function App() {
         alert('상세 정보를 불러올 수 없습니다.');
       }
     } catch (e) {
+      console.error('상세 정보 조회 실패:', e);
       alert('상세 정보 조회 실패');
     }
   };
@@ -3109,6 +3121,25 @@ function App() {
             <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
               마이페이지에서 설정한 선호 장르 태그를 기반으로 추천된 영화입니다.
             </p>
+            <button 
+              onClick={() => {
+                console.log('추천 결과 강제 새로고침');
+                fetchRecommendedMovies();
+                fetchNewGenreRecommendation();
+              }}
+              style={{
+                marginTop: '10px',
+                padding: '5px 10px',
+                backgroundColor: '#a18cd1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              새로고침
+            </button>
           </div>
           
           {/* 태그별 탭 */}
@@ -3155,6 +3186,9 @@ function App() {
                       관객수: {movie.totalAudience.toLocaleString()}명
                     </p>
                   )}
+                  {movie.reasons && movie.reasons.length > 0 && (
+                    <ReasonBadges reasons={movie.reasons} max={3} />
+                  )}
                 </div>
               </div>
             ))}
@@ -3190,6 +3224,9 @@ function App() {
                   <p style={{ fontSize: '12px', color: '#666' }}>
                     관객수: {movie.totalAudience.toLocaleString()}명
                   </p>
+                )}
+                {movie.reasons && movie.reasons.length > 0 && (
+                  <ReasonBadges reasons={movie.reasons} max={3} />
                 )}
               </div>
             </div>
@@ -3267,13 +3304,24 @@ function App() {
     // 필요시 다른 모달도 닫기
   };
 
-  // 새로운 장르 추천 API 호출 함수
+      // 새로운 장르 추천 API 호출 함수
     const fetchNewGenreRecommendation = async () => {
       if (!currentUser || !currentUser.id) return;
       try {
-        const res = await axios.get(`http://localhost:80/api/users/${currentUser.id}/new-genre-recommendation?sort=rating`, { withCredentials: true });
+        // 캐시 무효화를 위해 타임스탬프 추가
+        const timestamp = new Date().getTime();
+        const res = await axios.get(`http://localhost:80/api/users/${currentUser.id}/new-genre-recommendation?sort=rating&_t=${timestamp}`, { 
+          withCredentials: true,
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        console.log('새로운 장르 추천 응답:', res.data);
         setNewGenreRecommendation(res.data);
       } catch (error) {
+        console.error('새로운 장르 추천 에러:', error);
         setNewGenreRecommendation(null);
       }
     };
@@ -3325,6 +3373,37 @@ function App() {
     // 로그인/유저 변경 시 새로운 장르 추천 fetch
     useEffect(() => {
       fetchNewGenreRecommendation();
+    }, [currentUser?.id]);
+
+    // 선호태그 업데이트 이벤트 수신
+    useEffect(() => {
+      const handlePreferredTagsUpdated = (event) => {
+        const { userId, tags } = event.detail;
+        // 현재 사용자의 선호태그가 업데이트된 경우에만 추천 결과 새로고침
+        if (currentUser && currentUser.id === userId) {
+          console.log('선호태그 업데이트 감지:', tags);
+          // 잠시 대기 후 추천 결과 새로고침 (백엔드 처리 시간 고려)
+          setTimeout(() => {
+            console.log('추천 결과 새로고침 시작');
+            // 추천 결과 새로고침
+            fetchRecommendedMovies();
+            // 새로운 장르 추천도 새로고침
+            fetchNewGenreRecommendation();
+          }, 1000);
+          
+          // 추가로 3초 후에도 한 번 더 새로고침 (확실성을 위해)
+          setTimeout(() => {
+            console.log('추천 결과 추가 새로고침');
+            fetchRecommendedMovies();
+            fetchNewGenreRecommendation();
+          }, 3000);
+        }
+      };
+
+      window.addEventListener('preferredTagsUpdated', handlePreferredTagsUpdated);
+      return () => {
+        window.removeEventListener('preferredTagsUpdated', handlePreferredTagsUpdated);
+      };
     }, [currentUser?.id]);
 
 

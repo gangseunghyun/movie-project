@@ -1,0 +1,20 @@
+.badge {
+  background: #ffe066;
+  color: #333;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 0.9em;
+  margin-right: 4px;
+  display: inline-block;
+}
+.badge-plus {
+  background: #ccc;
+  color: #222;
+}
+/* 근거별 색상 예시 */
+.badge-최신작 { background: #aaf; }
+.badge-평점 { background: #fa0; }
+.badge-평점우수 { background: #fa0; }
+.badge-좋아하는배우 { background: #b2f2ff; }
+.badge-좋아하는감독 { background: #ffd6e0; }
+.badge-이미본영화 { background: #e57373; color: #fff; } 

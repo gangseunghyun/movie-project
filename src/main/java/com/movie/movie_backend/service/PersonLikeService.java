@@ -26,6 +26,7 @@ public class PersonLikeService {
     private final USRUserRepository userRepository;
     private final PRDActorRepository actorRepository;
     private final PRDDirectorRepository directorRepository;
+    private final PersonalizedRecommendationService recommendationService;
 
     /**
      * 배우 좋아요 추가
@@ -50,6 +51,9 @@ public class PersonLikeService {
         // 좋아요 생성
         PersonLike personLike = PersonLike.createActorLike(user, actor);
         personLikeRepository.save(personLike);
+        
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
         
         log.info("배우 좋아요 추가 완료: ID={}", personLike.getId());
     }
@@ -78,6 +82,9 @@ public class PersonLikeService {
         PersonLike personLike = PersonLike.createDirectorLike(user, director);
         personLikeRepository.save(personLike);
         
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
+        
         log.info("감독 좋아요 추가 완료: ID={}", personLike.getId());
     }
 
@@ -92,6 +99,10 @@ public class PersonLikeService {
                 .orElseThrow(() -> new RuntimeException("좋아요를 찾을 수 없습니다."));
         
         personLikeRepository.delete(personLike);
+        
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
+        
         log.info("배우 좋아요 취소 완료");
     }
 
@@ -106,6 +117,10 @@ public class PersonLikeService {
                 .orElseThrow(() -> new RuntimeException("좋아요를 찾을 수 없습니다."));
         
         personLikeRepository.delete(personLike);
+        
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
+        
         log.info("감독 좋아요 취소 완료");
     }
 

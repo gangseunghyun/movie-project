@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import RatingDistributionChart from './components/RatingDistributionChart';
 import { useNavigate } from 'react-router-dom';
+import ReasonBadges from './components/ReasonBadges';
+import axios from 'axios';
 
 const menuList = [
   { icon: '🏠', label: '메인 페이지' },
@@ -72,11 +74,26 @@ const MainPage = ({
   const [searchFocus, setSearchFocus] = useState(false);
   const [localRecentKeywords, setLocalRecentKeywords] = useState(recentKeywords || []);
   const navigate = useNavigate();
+  const [showRecommendation, setShowRecommendation] = useState(false);
+  const [personalizedRecommendations, setPersonalizedRecommendations] = useState([]);
 
   // recentKeywords prop이 바뀌면 동기화
   useEffect(() => {
     setLocalRecentKeywords(recentKeywords || []);
   }, [recentKeywords]);
+
+  const handleToggleRecommendation = async () => {
+    if (!showRecommendation) {
+      if (!currentUser || !currentUser.id) return;
+      try {
+        const res = await axios.get('http://localhost:80/api/recommendations/personalized/liked-people?page=0&size=10', { withCredentials: true });
+        setPersonalizedRecommendations(res.data);
+      } catch (e) {
+        setPersonalizedRecommendations([]);
+      }
+    }
+    setShowRecommendation(!showRecommendation);
+  };
 
   // 최근 검색어 삭제 핸들러
   const handleDeleteKeyword = async (keyword, e) => {
@@ -288,6 +305,102 @@ const MainPage = ({
       
       {/* 영화 등록/수정 폼 모달 */}
       {renderMovieForm && renderMovieForm()}
+
+      {/* 추천 결과 토글 버튼 및 조건부 렌더링 */}
+      <div style={{ margin: '32px auto', maxWidth: 900 }}>
+        <button
+          onClick={handleToggleRecommendation}
+          style={{
+            marginBottom: 20,
+            padding: '10px 24px',
+            fontSize: '1.1em',
+            borderRadius: 8,
+            background: '#a9a6f7',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          {showRecommendation ? '추천 숨기기' : '추천 결과 보기'}
+        </button>
+        {showRecommendation && (
+          <div>
+            <h2 style={{ margin: '16px 0 8px 0', color: '#333' }}>맞춤형 추천 결과</h2>
+            {personalizedRecommendations.length === 0 ? (
+              <div style={{ color: '#aaa', fontSize: '1.1em' }}>추천 결과가 없습니다.</div>
+            ) : (
+              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 16 }}>
+                {personalizedRecommendations.map(item => (
+                  <div
+                    key={item.movieId}
+                    style={{
+                      width: 180,
+                      background: '#fff',
+                      borderRadius: 12,
+                      boxShadow: '0 2px 8px #eee',
+                      padding: 12,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleMovieClick({ ...item, movieCd: item.movieCd })}
+                  >
+                    {item.posterUrl ? (
+                      <img
+                        src={item.posterUrl}
+                        alt={item.movieNm}
+                        style={{ width: '100%', height: 240, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%', height: 240, background: '#eee', borderRadius: 8, marginBottom: 8,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa'
+                      }}>
+                        No Image
+                      </div>
+                    )}
+                    <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4, textAlign: 'center' }}>{item.movieNm}</div>
+                    <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>{item.genres && item.genres.join(', ')}</div>
+                    <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>
+                      {item.averageRating !== undefined ? `${item.averageRating.toFixed(1)}⭐` : '0.0⭐'}
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      {item.reasons && item.reasons.slice(0, 3).map((reason, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            background: '#a9a6f7',
+                            color: '#fff',
+                            borderRadius: '12px',
+                            padding: '2px 10px',
+                            marginRight: '4px',
+                            fontSize: '0.9em'
+                          }}
+                        >
+                          {reason}
+                        </span>
+                      ))}
+                      {item.reasons && item.reasons.length > 3 && (
+                        <span style={{
+                          background: '#a9a6f7',
+                          color: '#fff',
+                          borderRadius: '12px',
+                          padding: '2px 10px',
+                          fontSize: '0.9em'
+                        }}>
+                          +{item.reasons.length - 3}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#a9a6f7', fontWeight: 700 }}>추천 점수: {item.score}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

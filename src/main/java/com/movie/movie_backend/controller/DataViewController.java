@@ -168,7 +168,7 @@ public class DataViewController {
             int start = page * size;
             int end = Math.min(start + size, total);
             
-            List<MovieList> pagedList = movieList.subList(start, end);
+            List<MovieList> pagedList = new ArrayList<>(movieList.subList(start, end));
             
             return ResponseEntity.ok(Map.of(
                 "data", pagedList,
@@ -237,7 +237,7 @@ public class DataViewController {
             int start = page * size;
             int end = Math.min(start + size, total);
             
-            List<MovieDetail> pagedList = movieDetails.subList(start, end);
+            List<MovieDetail> pagedList = new ArrayList<>(movieDetails.subList(start, end));
             
             return ResponseEntity.ok(Map.of(
                 "data", pagedList,
@@ -283,7 +283,7 @@ public class DataViewController {
             int start = page * size;
             int end = Math.min(start + size, total);
             
-            List<BoxOffice> pagedList = boxOffices.subList(start, end);
+            List<BoxOffice> pagedList = new ArrayList<>(boxOffices.subList(start, end));
             
             return ResponseEntity.ok(Map.of(
                 "data", pagedList,
@@ -329,7 +329,7 @@ public class DataViewController {
             int start = page * size;
             int end = Math.min(start + size, total);
             
-            List<BoxOfficeDto> pagedList = boxOfficeDtos.subList(start, end);
+            List<BoxOfficeDto> pagedList = new ArrayList<>(boxOfficeDtos.subList(start, end));
             
             return ResponseEntity.ok(Map.of(
                 "data", pagedList,
@@ -415,7 +415,7 @@ public class DataViewController {
             int start = page * size;
             int end = Math.min(start + size, total);
             
-            List<MovieDetail> pagedList = movieDetails.subList(start, end);
+            List<MovieDetail> pagedList = new ArrayList<>(movieDetails.subList(start, end));
             User currentUser = getCurrentUser(request);
             List<MovieDetailDto> dtoList = pagedList.stream()
                 .map(md -> movieDetailMapper.toDto(

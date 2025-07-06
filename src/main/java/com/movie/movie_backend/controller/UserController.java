@@ -35,6 +35,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -780,6 +781,13 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    // [2-6] 추천 캐시 완전 삭제 (디버깅용)
+    @PostMapping("/api/users/{userId}/clear-recommendation-cache")
+    public ResponseEntity<?> clearRecommendationCache(@PathVariable Long userId) {
+        userService.clearRecommendationCache(userId);
+        return ResponseEntity.ok().build();
+    }
+
     // [3] 사용자 선호 태그 기반 영화 추천 (태그별 그룹화)
     @GetMapping("/api/users/{userId}/recommended-movies")
     public ResponseEntity<Map<String, List<MovieDetailDto>>> getRecommendedMovies(@PathVariable Long userId) {
@@ -1307,6 +1315,11 @@ public class UserController {
             @PathVariable Long userId,
             @RequestParam(value = "sort", defaultValue = "rating") String sort
     ) {
+        // 캐시 무효화 헤더 설정
+        HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl("no-cache, no-store, must-revalidate");
+        headers.setPragma("no-cache");
+        headers.setExpires(0);
         // 1. 전체 장르 목록
         List<Tag> allGenres = tagRepository.findGenreTags();
         Set<String> allGenreNames = allGenres.stream().map(Tag::getName).collect(java.util.stream.Collectors.toSet());
@@ -1316,15 +1329,24 @@ public class UserController {
         Set<String> preferredGenres = user != null && user.getPreferredTags() != null
                 ? user.getPreferredTags().stream().map(Tag::getName).collect(java.util.stream.Collectors.toSet())
                 : java.util.Collections.emptySet();
+        
+        // 선호태그 확인을 위한 추가 로그
+        System.out.println("[새로운 장르 추천] 사용자 조회: " + (user != null ? "성공" : "실패"));
+        if (user != null) {
+            System.out.println("[새로운 장르 추천] 사용자 ID: " + user.getId());
+            System.out.println("[새로운 장르 추천] 사용자 선호태그 엔티티: " + user.getPreferredTags());
+        }
 
-        // 3. 사용자가 평점 남긴 영화의 장르
-        Set<String> ratedGenres = user != null && user.getRatings() != null
-                ? user.getRatings().stream()
-                    .filter(r -> r.getMovieDetail() != null && r.getMovieDetail().getGenreNm() != null)
-                    .flatMap(r -> java.util.Arrays.stream(r.getMovieDetail().getGenreNm().split(",")))
-                    .map(String::trim)
-                    .collect(java.util.stream.Collectors.toSet())
-                : java.util.Collections.emptySet();
+        // 3. 사용자가 평점 남긴 영화의 장르 (Review 엔티티에서 조회)
+        Set<String> ratedGenres = new java.util.HashSet<>();
+        if (user != null) {
+            List<Review> ratedReviews = reviewRepository.findByUserIdAndRatingIsNotNullAndStatusOrderByCreatedAtDesc(userId, Review.ReviewStatus.ACTIVE);
+            ratedGenres = ratedReviews.stream()
+                .filter(r -> r.getMovieDetail() != null && r.getMovieDetail().getGenreNm() != null)
+                .flatMap(r -> java.util.Arrays.stream(r.getMovieDetail().getGenreNm().split(",")))
+                .map(String::trim)
+                .collect(java.util.stream.Collectors.toSet());
+        }
 
         // 4. 사용자가 찜한 영화의 장르
         Set<String> likedGenres = user != null && user.getLikes() != null
@@ -1335,15 +1357,41 @@ public class UserController {
                     .collect(java.util.stream.Collectors.toSet())
                 : java.util.Collections.emptySet();
 
-        // 5. 본 적 있는 장르 = 선호 + 평점 + 찜
+        // 5. 사용자가 리뷰한 영화의 장르 (평점이 없는 리뷰도 포함)
+        Set<String> reviewedGenres = new java.util.HashSet<>();
+        if (user != null) {
+            List<Review> allReviews = reviewRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, Review.ReviewStatus.ACTIVE);
+            reviewedGenres = allReviews.stream()
+                .filter(r -> r.getMovieDetail() != null && r.getMovieDetail().getGenreNm() != null)
+                .flatMap(r -> java.util.Arrays.stream(r.getMovieDetail().getGenreNm().split(",")))
+                .map(String::trim)
+                .collect(java.util.stream.Collectors.toSet());
+        }
+
+        // 6. 본 적 있는 장르 = 평점 + 찜 + 리뷰 (선호 태그는 제외 - 선호하는 장르와 경험한 장르는 다름)
         Set<String> experiencedGenres = new java.util.HashSet<>();
-        experiencedGenres.addAll(preferredGenres);
         experiencedGenres.addAll(ratedGenres);
         experiencedGenres.addAll(likedGenres);
+        experiencedGenres.addAll(reviewedGenres);
+
+        // 디버깅 로그
+        System.out.println("[새로운 장르 추천] userId=" + userId);
+        System.out.println("[새로운 장르 추천] 선호 태그: " + preferredGenres);
+        System.out.println("[새로운 장르 추천] 평점한 영화 장르: " + ratedGenres);
+        System.out.println("[새로운 장르 추천] 찜한 영화 장르: " + likedGenres);
+        System.out.println("[새로운 장르 추천] 리뷰한 영화 장르: " + reviewedGenres);
+        System.out.println("[새로운 장르 추천] 경험한 장르: " + experiencedGenres);
 
         // 6. 미경험 장르 = 전체 - 본 적 있는 장르
         Set<String> newGenres = new java.util.HashSet<>(allGenreNames);
         newGenres.removeAll(experiencedGenres);
+        
+        // 선호 태그도 명시적으로 제외 (이중 안전장치)
+        newGenres.removeAll(preferredGenres);
+        
+        System.out.println("[새로운 장르 추천] 미경험 장르: " + newGenres);
+        System.out.println("[새로운 장르 추천] 선호 태그 제외 후 미경험 장르: " + newGenres);
+        System.out.println("[새로운 장르 추천] 최종 추천 장르 수: " + newGenres.size());
 
         // 7. 각 미경험 장르별 대표 영화 20개 추천
         java.util.List<java.util.Map<String, Object>> genreResults = new java.util.ArrayList<>();
@@ -1385,9 +1433,11 @@ public class UserController {
                 "movies", movieDtos
             ));
         }
-        return ResponseEntity.ok(java.util.Map.of(
-            "success", true,
-            "genres", genreResults
-        ));
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(java.util.Map.of(
+                "success", true,
+                "genres", genreResults
+            ));
     }
 } 

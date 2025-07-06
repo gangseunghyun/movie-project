@@ -321,7 +321,7 @@ public class DataLoaderConfig {
     }
 
     // 제작국가명/관람등급명만 빠르게 업데이트하는 Bean
-    @Bean
+    // @Bean
     public CommandLineRunner updateNationAndGradeOnly() {
         return args -> {
             log.info("=== 제작국가명/관람등급명만 업데이트 시작 ===");
