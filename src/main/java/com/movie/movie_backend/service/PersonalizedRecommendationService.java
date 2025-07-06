@@ -15,6 +15,7 @@ import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.PRDTagRepository;
 import com.movie.movie_backend.repository.REVReviewRepository;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
 import com.movie.movie_backend.constant.RoleType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -38,10 +39,13 @@ public class PersonalizedRecommendationService {
     private final PRDMovieRepository movieRepository;
     private final PRDTagRepository tagRepository;
     private final REVReviewRepository reviewRepository;
+    private final PRDMovieListRepository movieListRepository;
 
     @Transactional
-    @Cacheable(value = "recommendations", key = "#userId + '_' + #page + '_' + #size")
+    // @Cacheable(value = "recommendations", key = "#userId + '_' + #page + '_' + #size")  // 임시로 캐시 비활성화
     public List<RecommendationDto> recommendByLikedPeople(Long userId, int page, int size) {
+        System.out.println("=== [추천 디버깅] recommendByLikedPeople 진입: userId=" + userId + ", page=" + page + ", size=" + size);
+        System.out.println("=== [테스트] 이 로그가 보이면 코드가 실행되고 있습니다!");
         // 1. 좋아요한 감독/배우 ID 조회
         List<Long> directorIds = personLikeRepository.findLikedDirectorIdsByUserId(userId);
         List<Long> actorIds = personLikeRepository.findLikedActorIdsByUserId(userId);
@@ -85,41 +89,52 @@ public class PersonalizedRecommendationService {
             });
         }
         
-        // 평점한 영화들의 정보 수집
+        // 평점 4점 이상 준 영화들의 정보 수집 (감독/배우/장르 모두)
+        Set<String> highRatedGenres = new HashSet<>();
         for (Long movieId : ratedMovieIds) {
             movieDetailRepository.findById(movieId).ifPresent(movie -> {
-                if (movie.getDirector() != null) {
-                    relatedDirectorIds.add(movie.getDirector().getId());
-                }
-                movie.getCasts().stream()
-                    .filter(c -> RoleType.LEAD.equals(c.getRoleType()))
-                    .forEach(c -> relatedActorIds.add(c.getActor().getId()));
-                if (movie.getGenreNm() != null) {
-                    Arrays.stream(movie.getGenreNm().split(","))
-                        .map(String::trim)
-                        .forEach(relatedGenres::add);
-                }
-            });
-        }
-        
-        // 리뷰한 영화들의 정보 수집
-        for (Long movieId : reviewedMovieIds) {
-            movieDetailRepository.findById(movieId).ifPresent(movie -> {
-                if (movie.getDirector() != null) {
-                    relatedDirectorIds.add(movie.getDirector().getId());
-                }
-                movie.getCasts().stream()
-                    .filter(c -> RoleType.LEAD.equals(c.getRoleType()))
-                    .forEach(c -> relatedActorIds.add(c.getActor().getId()));
-                if (movie.getGenreNm() != null) {
-                    Arrays.stream(movie.getGenreNm().split(","))
-                        .map(String::trim)
-                        .forEach(relatedGenres::add);
+                // 평점 4점 이상인지 확인
+                boolean isHighRated = movie.getRatings().stream()
+                    .anyMatch(rating -> rating.getUser().getId().equals(userId) && rating.getScore() >= 4.0);
+                
+                if (isHighRated) {
+                    // 평점 4점 이상인 영화의 감독/배우/장르 모두 수집
+                    if (movie.getDirector() != null) {
+                        relatedDirectorIds.add(movie.getDirector().getId());
+                    }
+                    movie.getCasts().stream()
+                        .filter(c -> RoleType.LEAD.equals(c.getRoleType()))
+                        .forEach(c -> relatedActorIds.add(c.getActor().getId()));
+                    if (movie.getGenreNm() != null) {
+                        Arrays.stream(movie.getGenreNm().split(","))
+                            .map(String::trim)
+                            .forEach(highRatedGenres::add);
+                    }
                 }
             });
         }
+        relatedGenres.addAll(highRatedGenres);
         
-        System.out.println("[추천] 평점/찜한 영화 연관 정보 - 감독: " + relatedDirectorIds.size() + "명, 배우: " + relatedActorIds.size() + "명, 장르: " + relatedGenres);
+        // 리뷰만 한 영화는 관련 감독/배우/장르에 포함하지 않음 (찜하거나 평점 4점 이상 준 영화만 포함)
+        // for (Long movieId : reviewedMovieIds) {
+        //     movieDetailRepository.findById(movieId).ifPresent(movie -> {
+        //         if (movie.getDirector() != null) {
+        //             relatedDirectorIds.add(movie.getDirector().getId());
+        //         }
+        //         movie.getCasts().stream()
+        //             .filter(c -> RoleType.LEAD.equals(c.getRoleType()))
+        //             .forEach(c -> relatedActorIds.add(c.getActor().getId()));
+        //         // 리뷰만 한 영화는 관련 장르에 포함하지 않음
+        //     });
+        // }
+        
+        System.out.println("[추천] 평점/찜한 영화 연관 정보 - 감독: " + relatedDirectorIds.size() + "명, 배우: " + relatedActorIds.size() + "명, 관련 장르(평점4점이상): " + relatedGenres);
+        System.out.println("[추천 디버깅] 관련 감독 ID: " + relatedDirectorIds);
+        System.out.println("[추천 디버깅] 관련 배우 ID: " + relatedActorIds);
+        System.out.println("[추천 디버깅] 찜한 영화 수: " + likedMovieIds.size() + ", 평점한 영화 수: " + ratedMovieIds.size() + ", 리뷰한 영화 수: " + reviewedMovieIds.size());
+        if (!relatedGenres.isEmpty()) {
+            System.out.println("[추천 디버깅] 관련 장르 상세: " + relatedGenres);
+        }
         
         // 연관 영화 후보군 추출
         List<MovieDetail> relatedDirectorMovies = relatedDirectorIds.isEmpty() ? List.of() : movieDetailRepository.findMoviesByDirectorIds(new ArrayList<>(relatedDirectorIds));
@@ -161,6 +176,19 @@ public class PersonalizedRecommendationService {
         // 7. 내가 이미 본/평점/찜한 영화 ID 조회 (중복 제거)
         // likedMovieIds, ratedMovieIds, reviewedMovieIds는 이미 위에서 정의됨
         System.out.println("[추천] userId=" + userId + ", 찜한 영화: " + likedMovieIds.size() + "개, 평점한 영화: " + ratedMovieIds.size() + "개, 리뷰한 영화: " + reviewedMovieIds.size() + "개");
+
+        // 찜/평점/리뷰/관련 장르 로그는 기존 위치에 아래처럼 추가
+        System.out.println("[추천 디버깅] 찜한 영화 ID: " + likedMovieIds);
+        System.out.println("[추천 디버깅] 평점한 영화 ID: " + ratedMovieIds);
+        System.out.println("[추천 디버깅] 리뷰한 영화 ID: " + reviewedMovieIds);
+        System.out.println("[추천 디버깅] 관련 장르(평점4점이상/찜): " + relatedGenres);
+        
+        // 리뷰한 영화의 장르 정보 확인
+        for (Long movieId : reviewedMovieIds) {
+            movieDetailRepository.findById(movieId).ifPresent(movie -> {
+                System.out.println("[추천 디버깅] 리뷰한 영화 '" + movie.getMovieNm() + "' (ID=" + movieId + ") 장르: " + movie.getGenreNm());
+            });
+        }
 
         // 5. 점수화 및 추천 근거 태깅
         List<RecommendationDto> result = new ArrayList<>();
@@ -259,12 +287,28 @@ public class PersonalizedRecommendationService {
             }
             System.out.println("  => 최종 점수: " + score);
 
-            if (score > 0) {
+            if (score >= 3) {
+                // MovieList에서 포스터 URL 가져오기 (LAZY 로딩 문제 해결)
+                String posterUrl = null;
+                try {
+                    var movieList = movieListRepository.findById(movie.getMovieCd()).orElse(null);
+                    if (movieList != null && movieList.getPosterUrl() != null) {
+                        posterUrl = movieList.getPosterUrl();
+                    } else if (movie.getStillcuts() != null && !movie.getStillcuts().isEmpty()) {
+                        posterUrl = movie.getStillcuts().get(0).getImageUrl();
+                    }
+                } catch (Exception e) {
+                    // 에러 발생 시 스틸컷으로 fallback
+                    if (movie.getStillcuts() != null && !movie.getStillcuts().isEmpty()) {
+                        posterUrl = movie.getStillcuts().get(0).getImageUrl();
+                    }
+                }
+                
                 result.add(RecommendationDto.builder()
                     .movieId(movie.getId())
                     .movieCd(movie.getMovieCd())
                     .movieNm(movie.getMovieNm())
-                    .posterUrl((movie.getStillcuts() != null && !movie.getStillcuts().isEmpty()) ? movie.getStillcuts().get(0).getImageUrl() : null)
+                    .posterUrl(posterUrl)
                     .genreNm(movie.getGenreNm())
                     .averageRating(movie.getAverageRating())
                     .score(score)

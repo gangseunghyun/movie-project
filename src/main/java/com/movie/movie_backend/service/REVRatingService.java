@@ -198,7 +198,7 @@ public class REVRatingService {
      * 영화의 평균 평점 조회
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "averageRatings", key = "#movieCd")
+    @Cacheable(value = "averageRatings", key = "#movieCd", unless="#result == null")
     public Double getAverageRating(String movieCd) {
         List<Rating> ratings = ratingRepository.findByMovieDetailMovieCd(movieCd);
         if (ratings.isEmpty()) {

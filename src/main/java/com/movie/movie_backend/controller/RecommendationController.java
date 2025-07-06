@@ -42,4 +42,22 @@ public class RecommendationController {
         if (userId == null) throw new RuntimeException("로그인 유저 식별 불가");
         return recommendationService.recommendByLikedPeople(userId, page, size);
     }
+
+    @GetMapping("/clear-cache")
+    public String clearCache(@AuthenticationPrincipal Object principal) {
+        Long userId = null;
+        if (principal instanceof User) {
+            userId = ((User) principal).getId();
+        } else if (principal instanceof DefaultOAuth2User) {
+            Object email = ((DefaultOAuth2User) principal).getAttribute("email");
+            if (email != null) {
+                User user = userRepository.findByEmail(email.toString()).orElse(null);
+                if (user != null) userId = user.getId();
+            }
+        }
+        if (userId == null) throw new RuntimeException("로그인 유저 식별 불가");
+        
+        recommendationService.evictUserRecommendations(userId);
+        return "캐시가 비워졌습니다. userId=" + userId;
+    }
 } 
