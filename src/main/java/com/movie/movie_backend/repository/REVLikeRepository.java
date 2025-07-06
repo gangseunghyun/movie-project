@@ -24,4 +24,8 @@ public interface REVLikeRepository extends JpaRepository<Like, Long> {
     
     // 사용자가 찜한 영화 개수 조회
     int countByUser(User user);
+    
+    // 유저가 찜한 영화의 MovieDetail ID 리스트 조회
+    @Query("SELECT l.movieDetail.id FROM Like l WHERE l.user.id = :userId")
+    List<Long> findMovieIdsByUserId(@Param("userId") Long userId);
 } 

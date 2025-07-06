@@ -21,12 +21,12 @@ public interface CastRepository extends JpaRepository<Cast, Long> {
     List<Cast> findByMovieDetailMovieCdAndRoleTypeOrderByOrderInCreditsAsc(String movieCd, RoleType roleType);
     
     // 특정 영화의 주연 배우 조회
-    @Query("SELECT c FROM Cast c WHERE c.movieDetail.movieCd = :movieCd AND c.roleType = 'LEAD' ORDER BY c.orderInCredits ASC")
-    List<Cast> findLeadActorsByMovieCd(@Param("movieCd") String movieCd);
+    @Query("SELECT c FROM Cast c WHERE c.movieDetail.movieCd = :movieCd AND c.roleType = :roleType ORDER BY c.orderInCredits ASC")
+    List<Cast> findLeadActorsByMovieCd(@Param("movieCd") String movieCd, @Param("roleType") RoleType roleType);
     
     // 특정 영화의 조연 배우 조회
-    @Query("SELECT c FROM Cast c WHERE c.movieDetail.movieCd = :movieCd AND c.roleType = 'SUPPORTING' ORDER BY c.orderInCredits ASC")
-    List<Cast> findSupportingActorsByMovieCd(@Param("movieCd") String movieCd);
+    @Query("SELECT c FROM Cast c WHERE c.movieDetail.movieCd = :movieCd AND c.roleType = :roleType ORDER BY c.orderInCredits ASC")
+    List<Cast> findSupportingActorsByMovieCd(@Param("movieCd") String movieCd, @Param("roleType") RoleType roleType);
     
     // 특정 배우가 출연한 모든 영화 조회 (개봉일 순으로 내림차순)
     List<Cast> findByActorIdOrderByMovieDetailOpenDtDesc(Long actorId);

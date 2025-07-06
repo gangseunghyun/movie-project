@@ -27,6 +27,7 @@ public class REVRatingService {
     private final REVRatingRepository ratingRepository;
     private final PRDMovieRepository movieRepository;
     private final USRUserRepository userRepository;
+    private final PersonalizedRecommendationService recommendationService;
 
     /**
      * 사용자가 영화에 별점 등록/수정
@@ -71,6 +72,9 @@ public class REVRatingService {
         // MovieDetail의 평점 캐시 업데이트
         updateMovieRatingCache(movieCd);
         
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(user.getId());
+        
         return convertToDto(savedRating);
     }
     
@@ -97,6 +101,9 @@ public class REVRatingService {
             
             // MovieDetail의 평점 캐시 업데이트
             updateMovieRatingCache(movieCd);
+            
+            // 추천 캐시 무효화
+            recommendationService.evictUserRecommendations(user.getId());
         } else {
             log.warn("삭제할 별점이 없습니다: user={}, movie={}", userEmail, movieCd);
         }
