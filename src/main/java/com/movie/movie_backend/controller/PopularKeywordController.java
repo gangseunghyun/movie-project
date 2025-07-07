@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Slf4j
 @RestController
@@ -26,7 +27,7 @@ public class PopularKeywordController {
         log.info("인기검색어 조회 요청");
         List<PopularKeyword> keywords = popularKeywordRepository.findTop10ByOrderBySearchCountDesc();
         log.info("인기검색어 조회 결과: {}개", keywords.size());
-        return keywords;
+        return new ArrayList<>(keywords);
     }
 
     @PostMapping("/aggregate")

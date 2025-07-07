@@ -11,6 +11,7 @@ import com.movie.movie_backend.repository.PRDTagRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.PasswordResetTokenRepository;
 import com.movie.movie_backend.constant.UserRole;
+import com.movie.movie_backend.service.PersonalizedRecommendationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class USRUserService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PRDTagRepository tagRepository;
     private final PRDMovieRepository movieRepository;
+    private final PersonalizedRecommendationService recommendationService;
 
     public User register(User user) {
         // 회원가입 로직
@@ -242,6 +244,8 @@ public class USRUserService {
         }
         user.setPreferredTags(selectedTags);
         userRepository.save(user);
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
     }
 
     // 사용자 선호 태그 조회 (모든 카테고리)
@@ -267,8 +271,23 @@ public class USRUserService {
                 selectedTags.add(tag);
             }
         }
+        
+        System.out.println("[선호태그 변경] userId=" + userId + ", 기존 태그=" + user.getPreferredTags().stream().map(Tag::getName).collect(Collectors.toList()) + ", 새 태그=" + selectedTags.stream().map(Tag::getName).collect(Collectors.toList()));
+        
         user.setPreferredTags(selectedTags);
         userRepository.save(user);
+        
+        // 추천 캐시 무효화
+        System.out.println("[선호태그 변경] 추천 캐시 무효화 호출");
+        recommendationService.evictUserRecommendations(userId);
+        // 추가로 모든 캐시 무효화 (확실성을 위해)
+        recommendationService.evictAllRecommendations();
+    }
+
+    // 추천 캐시 완전 삭제 (디버깅용)
+    public void clearRecommendationCache(Long userId) {
+        System.out.println("[캐시 삭제] userId=" + userId + "의 추천 캐시를 완전 삭제합니다.");
+        recommendationService.evictAllRecommendations();
     }
 
     // 사용자 특징 태그 제거 (장르 태그만 남김)
@@ -286,6 +305,8 @@ public class USRUserService {
         
         user.setPreferredTags(filteredTags);
         userRepository.save(user);
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
     }
 
     // 사용자 선호 태그 기반 영화 추천

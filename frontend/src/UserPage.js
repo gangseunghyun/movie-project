@@ -281,10 +281,28 @@ const UserPage = ({ onMovieClick }) => {
     try {
       // genreTags에 존재하는 selectedTags만 저장
       const validTags = selectedTags.filter(tag => genreTags.includes(tag));
+      console.log('[선호태그 저장] 저장할 태그:', validTags);
+      console.log('[선호태그 저장] 사용자 ID:', user.id);
+      
       await axios.put(`http://localhost:80/api/users/${user.id}/preferred-tags`, validTags);
+      console.log('[선호태그 저장] 백엔드 저장 완료');
+      
       setPreferredTags(validTags);
       setEditMode(false);
       alert('선호 태그가 저장되었습니다!');
+      
+      // 메인페이지의 추천 결과 새로고침을 위한 이벤트 발생
+      window.dispatchEvent(new CustomEvent('preferredTagsUpdated', { 
+        detail: { userId: user.id, tags: validTags } 
+      }));
+      
+      // 백엔드 캐시 강제 삭제 (확실성을 위해)
+      try {
+        await axios.post(`http://localhost:80/api/users/${user.id}/clear-recommendation-cache`, {}, { withCredentials: true });
+        console.log('추천 캐시 강제 삭제 완료');
+      } catch (cacheError) {
+        console.error('캐시 삭제 실패:', cacheError);
+      }
     } catch (e) {
       alert('저장에 실패했습니다.');
     } finally {

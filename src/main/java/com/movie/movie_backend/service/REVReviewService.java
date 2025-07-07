@@ -20,6 +20,7 @@ import com.movie.movie_backend.entity.ReviewLike;
 import com.movie.movie_backend.entity.Comment;
 import com.movie.movie_backend.repository.ReviewLikeRepository;
 import com.movie.movie_backend.repository.REVCommentRepository;
+import com.movie.movie_backend.service.PersonalizedRecommendationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,6 +38,7 @@ public class REVReviewService {
     private final PRDMovieRepository movieRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final REVCommentRepository commentRepository;
+    private final PersonalizedRecommendationService recommendationService;
 
     /**
      * 리뷰 작성 (댓글만, 평점만, 둘 다 가능)
@@ -71,6 +73,9 @@ public class REVReviewService {
         Review savedReview = reviewRepository.save(review);
         log.info("리뷰 작성 완료: ID={}, 타입={}", savedReview.getId(), getReviewType(savedReview));
 
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
+
         return savedReview;
     }
 
@@ -97,6 +102,9 @@ public class REVReviewService {
         Review updatedReview = reviewRepository.save(review);
         log.info("리뷰 수정 완료: ID={}, 타입={}", updatedReview.getId(), getReviewType(updatedReview));
 
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
+
         return updatedReview;
     }
 
@@ -119,6 +127,9 @@ public class REVReviewService {
         review.setStatus(Review.ReviewStatus.DELETED);
         reviewRepository.save(review);
         log.info("리뷰 삭제 완료: ID={}", reviewId);
+
+        // 추천 캐시 무효화
+        recommendationService.evictUserRecommendations(userId);
     }
 
     /**

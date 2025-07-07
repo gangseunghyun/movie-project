@@ -39,4 +39,15 @@ public interface REVReviewRepository extends JpaRepository<Review, Long> {
 
     // 영화별 리뷰 조회 (최신순, movieId로, 삭제되지 않은 것만)
     List<Review> findByMovieDetailIdAndStatusOrderByCreatedAtDesc(Long movieId, Review.ReviewStatus status);
+
+    // 사용자가 리뷰를 쓴 영화의 MovieDetail ID 리스트 조회
+    @Query("SELECT r.movieDetail.id FROM Review r WHERE r.user.id = :userId AND r.status = :status")
+    List<Long> findMovieIdsByUserId(@Param("userId") Long userId, @Param("status") Review.ReviewStatus status);
+
+    // 사용자가 평점을 준 영화의 MovieDetail ID 리스트 조회 (평점이 있는 리뷰만)
+    @Query("SELECT r.movieDetail.id FROM Review r WHERE r.user.id = :userId AND r.rating IS NOT NULL AND r.status = :status")
+    List<Long> findRatedMovieIdsByUserId(@Param("userId") Long userId, @Param("status") Review.ReviewStatus status);
+
+    // 사용자가 평점을 준 리뷰 목록 조회 (평점이 있는 리뷰만)
+    List<Review> findByUserIdAndRatingIsNotNullAndStatusOrderByCreatedAtDesc(Long userId, Review.ReviewStatus status);
 } 
