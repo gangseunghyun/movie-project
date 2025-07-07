@@ -63,6 +63,9 @@ public class RedisConfig {
                 // 추천 캐시: 1시간 TTL
                 .withCacheConfiguration("recommendations", 
                     defaultConfig.entryTtl(Duration.ofHours(1)))
+                // 이메일 인증 코드 캐시: 3분 TTL
+                .withCacheConfiguration("verificationCodes", 
+                    defaultConfig.entryTtl(Duration.ofMinutes(3)))
                 .build();
     }
 } 

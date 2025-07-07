@@ -28,6 +28,7 @@ public class REVCommentService {
     private final REVCommentLikeRepository commentLikeRepository;
     private final REVReviewRepository reviewRepository;
     private final USRUserRepository userRepository;
+    private final ForbiddenWordService forbiddenWordService;
 
     /**
      * 댓글 작성
@@ -50,6 +51,9 @@ public class REVCommentService {
                     .orElseThrow(() -> new RuntimeException("부모 댓글을 찾을 수 없습니다: " + parentId));
         }
 
+        // 욕설 감지
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(content);
+
         // 댓글 생성
         Comment comment = Comment.builder()
                 .content(content)
@@ -59,6 +63,7 @@ public class REVCommentService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .status(Comment.CommentStatus.ACTIVE)
+                .isBlockedByCleanbot(isBlocked)
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
@@ -83,9 +88,13 @@ public class REVCommentService {
             throw new RuntimeException("댓글을 수정할 권한이 없습니다.");
         }
 
+        // 욕설 감지
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(content);
+
         // 댓글 수정
         comment.setContent(content);
         comment.setUpdatedAt(LocalDateTime.now());
+        comment.setBlockedByCleanbot(isBlocked);
 
         Comment updatedComment = commentRepository.save(comment);
         log.info("댓글 수정 완료: ID={}", updatedComment.getId());

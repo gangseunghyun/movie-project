@@ -41,6 +41,9 @@ public class Review {
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments; // 리뷰에 달린 댓글 목록
 
+    @Column(nullable = false)
+    private boolean isBlockedByCleanbot = false;
+
     // 리뷰 타입 확인 메서드
     public boolean hasContent() {
         return content != null && !content.trim().isEmpty();

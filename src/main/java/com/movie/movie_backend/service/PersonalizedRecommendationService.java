@@ -287,7 +287,7 @@ public class PersonalizedRecommendationService {
             }
             System.out.println("  => 최종 점수: " + score);
 
-            if (score >= 3) {
+            if (score >= 5) {
                 // MovieList에서 포스터 URL 가져오기 (LAZY 로딩 문제 해결)
                 String posterUrl = null;
                 try {

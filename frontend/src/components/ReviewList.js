@@ -14,6 +14,7 @@ function ReviewList({ movieCd, currentUser }) {
   const [editingReview, setEditingReview] = useState(null);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [commentReviewId, setCommentReviewId] = useState(null);
+  const [showBlocked, setShowBlocked] = useState({});
 
   useEffect(() => {
     if (movieCd) {
@@ -29,6 +30,19 @@ function ReviewList({ movieCd, currentUser }) {
       const response = await axios.get(`${API_BASE_URL}/api/reviews/movie/${movieCd}`, { withCredentials: true });
       
       if (response.data.success) {
+        console.log('API 응답 전체:', response.data);
+        console.log('리뷰 목록:', response.data.data);
+        
+        // 각 리뷰의 isBlockedByCleanbot 값 확인
+        response.data.data.forEach((review, index) => {
+          console.log(`리뷰 ${index + 1}:`, {
+            id: review.id,
+            content: review.content,
+            isBlockedByCleanbot: review.isBlockedByCleanbot,
+            userNickname: review.userNickname
+          });
+        });
+        
         setReviews(response.data.data);
       } else {
         setError('리뷰를 불러오는데 실패했습니다.');
@@ -219,10 +233,23 @@ function ReviewList({ movieCd, currentUser }) {
           
           {renderStars(review.rating)}
           
-          {review.content && (
-            <div className="review-content">
-              {review.content}
+          {/* 블라인드 처리 */}
+          {review.blockedByCleanbot ? (
+            <div className="review-content" style={{ color: '#888', fontStyle: 'italic' }}>
+              {showBlocked[review.id] ? (
+                <>
+                  <span style={{ color: '#ff2f6e', fontWeight: 600 }}>[클린봇 감지]</span> {review.content}
+                </>
+              ) : (
+                <>
+                  이 리뷰는 클린봇이 감지한 악성 리뷰입니다. <button style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowBlocked(prev => ({ ...prev, [review.id]: true }))}>보기</button>
+                </>
+              )}
             </div>
+          ) : (
+            review.content && (
+              <div className="review-content">{review.content}</div>
+            )
           )}
           
           <div className="review-footer">
