@@ -5,7 +5,7 @@ import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.User;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
 import com.movie.movie_backend.repository.REVLikeRepository;
-import com.movie.movie_backend.service.TmdbRatingService;
+import com.movie.movie_backend.service.TmdbPosterService;
 import com.movie.movie_backend.dto.RatingDto;
 import com.movie.movie_backend.dto.RatingRequestDto;
 import com.movie.movie_backend.service.REVRatingService;
@@ -29,7 +29,7 @@ import java.util.HashMap;
 @RequiredArgsConstructor
 public class RatingController {
 
-    private final TmdbRatingService tmdbRatingService;
+    private final TmdbPosterService tmdbPosterService;
     private final MovieDetailMapper movieDetailMapper;
     private final REVLikeRepository likeRepository;
     private final REVRatingService ratingService;
@@ -149,7 +149,7 @@ public class RatingController {
         try {
             log.info("평균 별점이 높은 영화 TOP-{} 조회", limit);
             
-            List<MovieDetail> topRatedMovies = tmdbRatingService.getTopRatedMovies(limit);
+            List<MovieDetail> topRatedMovies = tmdbPosterService.getTopRatedMovies(limit);
             User currentUser = getCurrentUser();
             List<MovieDetailDto> movieDtos = topRatedMovies.stream()
                     .map(md -> movieDetailMapper.toDto(
@@ -173,29 +173,7 @@ public class RatingController {
         }
     }
 
-    /**
-     * TMDB 평점 가져오기 실행
-     */
-    @PostMapping("/fetch-tmdb")
-    public ResponseEntity<Map<String, Object>> fetchTmdbRatings() {
-        try {
-            log.info("TMDB 평점 가져오기 시작");
-            
-            // 비동기로 실행 (실제로는 @Async 사용 권장)
-            tmdbRatingService.fetchAndSaveTmdbRatings();
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "TMDB 평점 가져오기가 시작되었습니다."
-            ));
-        } catch (Exception e) {
-            log.error("TMDB 평점 가져오기 실패", e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "TMDB 평점 가져오기에 실패했습니다: " + e.getMessage()
-            ));
-        }
-    }
+
 
     // 유틸: 응답 포맷 통일
     private ResponseEntity<Map<String, Object>> ok(Object data, String message) {

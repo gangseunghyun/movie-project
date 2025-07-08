@@ -31,7 +31,7 @@ public class BoxOfficeService {
     private final ObjectMapper objectMapper;
     private final KobisApiService kobisApiService;
     private final BoxOfficeMapper boxOfficeMapper;
-    private final TmdbRatingService tmdbRatingService;
+    private final TmdbPosterService tmdbPosterService;
 
     @Value("${kobis.api.key}")
     private String apiKey;
@@ -293,6 +293,6 @@ public class BoxOfficeService {
      * 평균 별점이 높은 영화 TOP-N 조회
      */
     public List<MovieDetail> getTopRatedMovies(int limit) {
-        return tmdbRatingService.getTopRatedMovies(limit);
+        return tmdbPosterService.getTopRatedMovies(limit);
     }
 } 

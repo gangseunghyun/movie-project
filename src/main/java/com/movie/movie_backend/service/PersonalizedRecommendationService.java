@@ -42,7 +42,7 @@ public class PersonalizedRecommendationService {
     private final PRDMovieListRepository movieListRepository;
 
     @Transactional
-    // @Cacheable(value = "recommendations", key = "#userId + '_' + #page + '_' + #size")  // 임시로 캐시 비활성화
+    @Cacheable(value = "recommendations", key = "#userId + '_' + #page + '_' + #size")
     public List<RecommendationDto> recommendByLikedPeople(Long userId, int page, int size) {
         System.out.println("=== [추천 디버깅] recommendByLikedPeople 진입: userId=" + userId + ", page=" + page + ", size=" + size);
         System.out.println("=== [테스트] 이 로그가 보이면 코드가 실행되고 있습니다!");
