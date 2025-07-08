@@ -38,7 +38,7 @@ public class AdminMovieService {
 
     private final PRDMovieRepository movieRepository;
     private final PRDTagRepository tagRepository;
-    private final TmdbRatingService tmdbRatingService;
+    private final TmdbPosterService tmdbPosterService;
     private final DataMigrationService dataMigrationService;
     private final TagDataService tagDataService;
     private final RestTemplate restTemplate;
@@ -576,7 +576,7 @@ public class AdminMovieService {
      * 평균 별점이 높은 영화 조회 (DTO 사용)
      */
     public List<AdminMovieDto> getTopRatedMoviesAsDto(int limit) {
-        return tmdbRatingService.getTopRatedMovies(limit).stream()
+        return tmdbPosterService.getTopRatedMovies(limit).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

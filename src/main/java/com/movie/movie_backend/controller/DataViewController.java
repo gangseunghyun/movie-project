@@ -15,7 +15,7 @@ import com.movie.movie_backend.service.TmdbPopularMovieService;
 import com.movie.movie_backend.service.KobisApiService;
 import com.movie.movie_backend.service.DataMigrationService;
 import com.movie.movie_backend.service.NaverMovieService;
-import com.movie.movie_backend.service.TmdbRatingService;
+import com.movie.movie_backend.service.TmdbPosterService;
 import com.movie.movie_backend.repository.PRDMovieListRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.BoxOfficeRepository;
@@ -72,7 +72,7 @@ public class DataViewController {
     private final MovieListMapper movieListMapper;
     private final DataMigrationService dataMigrationService;
     private final NaverMovieService naverMovieService;
-    private final TmdbRatingService tmdbRatingService;
+    private final TmdbPosterService tmdbPosterService;
     private final TopRatedMovieMapper topRatedMovieMapper;
     private final PRDMovieService prdMovieService;
     private final PRDMovieListService prdMovieListService;
@@ -664,7 +664,7 @@ public class DataViewController {
     public ResponseEntity<List<TopRatedMovieDto>> getTopRatedMovies(
             @RequestParam(defaultValue = "10") int limit) {
         try {
-            List<TopRatedMovieDto> topRatedDtos = tmdbRatingService.getTopRatedMoviesAsDto(limit);
+            List<TopRatedMovieDto> topRatedDtos = tmdbPosterService.getTopRatedMoviesAsDto(limit);
             return ResponseEntity.ok(topRatedDtos);
         } catch (Exception e) {
             log.error("평균 별점이 높은 영화 조회 실패", e);
