@@ -46,7 +46,7 @@ public class REVReviewService {
      * 리뷰 작성 (댓글만, 평점만, 둘 다 가능)
      */
     @Transactional
-    public Review createReview(String movieCd, Long userId, String content, Integer rating) {
+    public Review createReview(String movieCd, Long userId, String content, Double rating) {
         log.info("리뷰 작성: 영화={}, 사용자={}, 평점={}", movieCd, userId, rating);
 
         // 사용자와 영화 조회
@@ -88,7 +88,7 @@ public class REVReviewService {
      * 리뷰 수정
      */
     @Transactional
-    public Review updateReview(Long reviewId, Long userId, String content, Integer rating) {
+    public Review updateReview(Long reviewId, Long userId, String content, Double rating) {
         log.info("리뷰 수정: 리뷰ID={}, 사용자={}, 평점={}", reviewId, userId, rating);
 
         Review review = reviewRepository.findById(reviewId)
@@ -281,8 +281,8 @@ public class REVReviewService {
     public ReviewResponseDto createReviewDto(ReviewRequestDto dto) {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + dto.getUserId()));
-        MovieDetail movie = movieRepository.findById(dto.getMovieId())
-                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + dto.getMovieId()));
+        MovieDetail movie = movieRepository.findById(dto.getMovieDetailId())
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + dto.getMovieDetailId()));
         Review review = Review.builder()
                 .content(dto.getContent())
                 .rating(dto.getRating())
@@ -403,7 +403,7 @@ public class REVReviewService {
                 .updatedAt(review.getUpdatedAt())
                 .username(review.getUser().getNickname())
                 .userId(review.getUser().getId())
-                .movieId(review.getMovieDetail().getId())
+                .movieDetailId(review.getMovieDetail().getId())
                 .likeCount(likeCount)
                 .likedByMe(likedByMe)
                 .commentCount(commentCount)
