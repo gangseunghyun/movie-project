@@ -19,4 +19,10 @@ public interface MovieDetailRepository extends JpaRepository<MovieDetail, Long> 
 
     @Query("SELECT md FROM MovieDetail md WHERE md.movieCd = :movieCd")
     MovieDetail findByMovieCd(@Param("movieCd") String movieCd);
+
+    // 장르 포함 검색
+    List<MovieDetail> findByGenreNmContaining(String genreNm);
+
+    // 관객수 기준 상위 20개 영화
+    List<MovieDetail> findTop20ByOrderByTotalAudienceDesc();
 } 

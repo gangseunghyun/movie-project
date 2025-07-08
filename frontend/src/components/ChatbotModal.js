@@ -289,14 +289,16 @@ const ChatbotModal = ({ isOpen, onClose }) => {
         let movies = data.result.movies || [];
         // status 값 실제로 어떻게 오는지 콘솔 출력
         console.log('추천 영화 리스트:', movies.map(m => ({ title: m.movieNm, status: m.status })));
-        // 다양한 케이스 방어적으로 필터링 (영문, 한글, 카멜케이스 모두 포함)
+        // status가 없으면 모든 영화를 현재 상영중으로 처리
         const nowOrSoon = movies.filter(m => {
+          if (!m.status) return true; // status가 없으면 모든 영화 포함
           const s = (m.status || '').toUpperCase();
           return s === 'NOW_PLAYING' || s === 'COMING_SOON' ||
                  s === '개봉중' || s === '개봉예정' ||
                  s === 'NOWPLAYING' || s === 'COMINGSOON';
         });
         const ended = movies.filter(m => {
+          if (!m.status) return false; // status가 없으면 상영종료로 분류하지 않음
           const s = (m.status || '').toUpperCase();
           return s === 'ENDED' || s === '상영종료' || s === 'ENDED';
         });

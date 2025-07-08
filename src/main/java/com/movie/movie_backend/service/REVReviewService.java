@@ -21,6 +21,7 @@ import com.movie.movie_backend.entity.Comment;
 import com.movie.movie_backend.repository.ReviewLikeRepository;
 import com.movie.movie_backend.repository.REVCommentRepository;
 import com.movie.movie_backend.service.PersonalizedRecommendationService;
+import com.movie.movie_backend.service.ForbiddenWordService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,12 +40,13 @@ public class REVReviewService {
     private final ReviewLikeRepository reviewLikeRepository;
     private final REVCommentRepository commentRepository;
     private final PersonalizedRecommendationService recommendationService;
+    private final ForbiddenWordService forbiddenWordService;
 
     /**
      * 리뷰 작성 (댓글만, 평점만, 둘 다 가능)
      */
     @Transactional
-    public Review createReview(String movieCd, Long userId, String content, Integer rating) {
+    public Review createReview(String movieCd, Long userId, String content, Double rating) {
         log.info("리뷰 작성: 영화={}, 사용자={}, 평점={}", movieCd, userId, rating);
 
         // 사용자와 영화 조회
@@ -70,6 +72,9 @@ public class REVReviewService {
         review.setUpdatedAt(LocalDateTime.now());
         review.setStatus(Review.ReviewStatus.ACTIVE);
 
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(content);
+        review.setBlockedByCleanbot(isBlocked);
+
         Review savedReview = reviewRepository.save(review);
         log.info("리뷰 작성 완료: ID={}, 타입={}", savedReview.getId(), getReviewType(savedReview));
 
@@ -83,7 +88,7 @@ public class REVReviewService {
      * 리뷰 수정
      */
     @Transactional
-    public Review updateReview(Long reviewId, Long userId, String content, Integer rating) {
+    public Review updateReview(Long reviewId, Long userId, String content, Double rating) {
         log.info("리뷰 수정: 리뷰ID={}, 사용자={}, 평점={}", reviewId, userId, rating);
 
         Review review = reviewRepository.findById(reviewId)
@@ -98,6 +103,9 @@ public class REVReviewService {
         review.setContent(content);
         review.setRating(rating);
         review.setUpdatedAt(LocalDateTime.now());
+
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(content);
+        review.setBlockedByCleanbot(isBlocked);
 
         Review updatedReview = reviewRepository.save(review);
         log.info("리뷰 수정 완료: ID={}, 타입={}", updatedReview.getId(), getReviewType(updatedReview));
@@ -273,8 +281,8 @@ public class REVReviewService {
     public ReviewResponseDto createReviewDto(ReviewRequestDto dto) {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + dto.getUserId()));
-        MovieDetail movie = movieRepository.findById(dto.getMovieId())
-                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + dto.getMovieId()));
+        MovieDetail movie = movieRepository.findById(dto.getMovieDetailId())
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + dto.getMovieDetailId()));
         Review review = Review.builder()
                 .content(dto.getContent())
                 .rating(dto.getRating())
@@ -284,6 +292,8 @@ public class REVReviewService {
                 .updatedAt(LocalDateTime.now())
                 .status(Review.ReviewStatus.ACTIVE)
                 .build();
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(dto.getContent());
+        review.setBlockedByCleanbot(isBlocked);
         Review saved = reviewRepository.save(review);
         return toResponseDto(saved, false);
     }
@@ -299,6 +309,8 @@ public class REVReviewService {
         review.setContent(dto.getContent());
         review.setRating(dto.getRating());
         review.setUpdatedAt(LocalDateTime.now());
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(dto.getContent());
+        review.setBlockedByCleanbot(isBlocked);
         Review updated = reviewRepository.save(review);
         return toResponseDto(updated, false);
     }
@@ -391,7 +403,7 @@ public class REVReviewService {
                 .updatedAt(review.getUpdatedAt())
                 .username(review.getUser().getNickname())
                 .userId(review.getUser().getId())
-                .movieId(review.getMovieDetail().getId())
+                .movieDetailId(review.getMovieDetail().getId())
                 .likeCount(likeCount)
                 .likedByMe(likedByMe)
                 .commentCount(commentCount)

@@ -15,7 +15,8 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String content; // 리뷰 내용 (null 가능 - 평점만 달 수도 있음)
     
-    private Integer rating; // 평점 (1~5, null 가능 - 댓글만 달 수도 있음)
+    @Column(nullable = true)
+    private Double rating; // 평점 (1~5, null 가능 - 댓글만 달 수도 있음)
     
     private LocalDateTime createdAt; // 작성 시각
     private LocalDateTime updatedAt; // 수정 시각
@@ -41,6 +42,9 @@ public class Review {
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments; // 리뷰에 달린 댓글 목록
 
+    @Column(nullable = false)
+    private boolean isBlockedByCleanbot = false;
+
     // 리뷰 타입 확인 메서드
     public boolean hasContent() {
         return content != null && !content.trim().isEmpty();
@@ -65,7 +69,7 @@ public class Review {
     // 평점 표시 메서드
     public String getRatingDisplay() {
         if (!hasRating()) return null;
-        return "★".repeat(rating) + "☆".repeat(5 - rating);
+        return "★".repeat(rating.intValue()) + "☆".repeat(5 - rating.intValue());
     }
 
     // 리뷰 상태 enum

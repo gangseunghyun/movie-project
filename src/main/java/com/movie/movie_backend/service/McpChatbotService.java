@@ -108,14 +108,16 @@ public class McpChatbotService {
     private List<MovieDetailDto> getRealPopularMovies() {
         List<MovieDetailDto> movies = new ArrayList<>();
         try {
-            List<MovieList> nowPlayingMovies = movieListRepository.findByStatus(MovieStatus.NOW_PLAYING);
-            List<MovieList> filtered = nowPlayingMovies.stream()
-                .limit(5)
-                .collect(Collectors.toList());
-            for (MovieList movie : filtered) {
-                MovieListDto movieListDto = movieListMapper.toDto(movie);
-                MovieDetailDto movieDto = createMovieDetailDtoFromMovieList(movieListDto);
-                movies.add(movieDto);
+            List<MovieDetail> popularMovies = movieDetailRepository.findTop20ByOrderByTotalAudienceDesc();
+            popularMovies = popularMovies.stream().distinct().limit(5).collect(Collectors.toList());
+            for (MovieDetail detail : popularMovies) {
+                MovieList movieList = movieListRepository.findById(detail.getMovieCd()).orElse(null);
+                MovieDetailDto dto = movieDetailMapper.toDto(detail, 0, false);
+                if (movieList != null) {
+                    dto.setPosterUrl(movieList.getPosterUrl());
+                    dto.setStatus(movieList.getStatus() != null ? movieList.getStatus().name() : null);
+                }
+                movies.add(dto);
             }
         } catch (Exception e) {
             System.err.println("Error fetching popular movies: " + e.getMessage());
@@ -129,15 +131,16 @@ public class McpChatbotService {
     private List<MovieDetailDto> getRomanceMovies() {
         List<MovieDetailDto> movies = new ArrayList<>();
         try {
-            List<MovieList> romanceMovies = movieListRepository.findByGenreNmContaining("로맨스");
-            List<MovieList> filtered = romanceMovies.stream()
-                .filter(m -> m.getStatus() == MovieStatus.NOW_PLAYING)
-                .limit(5)
-                .collect(Collectors.toList());
-            for (MovieList movie : filtered) {
-                MovieListDto movieListDto = movieListMapper.toDto(movie);
-                MovieDetailDto movieDto = createMovieDetailDtoFromMovieList(movieListDto);
-                movies.add(movieDto);
+            List<MovieDetail> romanceMovies = movieDetailRepository.findByGenreNmContaining("로맨스");
+            romanceMovies = romanceMovies.stream().distinct().limit(5).collect(Collectors.toList());
+            for (MovieDetail detail : romanceMovies) {
+                MovieList movieList = movieListRepository.findById(detail.getMovieCd()).orElse(null);
+                MovieDetailDto dto = movieDetailMapper.toDto(detail, 0, false);
+                if (movieList != null) {
+                    dto.setPosterUrl(movieList.getPosterUrl());
+                    dto.setStatus(movieList.getStatus() != null ? movieList.getStatus().name() : null);
+                }
+                movies.add(dto);
             }
         } catch (Exception e) {
             System.err.println("Error fetching romance movies: " + e.getMessage());
@@ -151,15 +154,16 @@ public class McpChatbotService {
     private List<MovieDetailDto> getActionMovies() {
         List<MovieDetailDto> movies = new ArrayList<>();
         try {
-            List<MovieList> actionMovies = movieListRepository.findByGenreNmContaining("액션");
-            List<MovieList> filtered = actionMovies.stream()
-                .filter(m -> m.getStatus() == MovieStatus.NOW_PLAYING)
-                .limit(5)
-                .collect(Collectors.toList());
-            for (MovieList movie : filtered) {
-                MovieListDto movieListDto = movieListMapper.toDto(movie);
-                MovieDetailDto movieDto = createMovieDetailDtoFromMovieList(movieListDto);
-                movies.add(movieDto);
+            List<MovieDetail> actionMovies = movieDetailRepository.findByGenreNmContaining("액션");
+            actionMovies = actionMovies.stream().distinct().limit(5).collect(Collectors.toList());
+            for (MovieDetail detail : actionMovies) {
+                MovieList movieList = movieListRepository.findById(detail.getMovieCd()).orElse(null);
+                MovieDetailDto dto = movieDetailMapper.toDto(detail, 0, false);
+                if (movieList != null) {
+                    dto.setPosterUrl(movieList.getPosterUrl());
+                    dto.setStatus(movieList.getStatus() != null ? movieList.getStatus().name() : null);
+                }
+                movies.add(dto);
             }
         } catch (Exception e) {
             System.err.println("Error fetching action movies: " + e.getMessage());
@@ -173,19 +177,20 @@ public class McpChatbotService {
     private List<MovieDetailDto> getHealingMovies() {
         List<MovieDetailDto> movies = new ArrayList<>();
         try {
-            List<MovieList> healingMovies = new ArrayList<>();
-            healingMovies.addAll(movieListRepository.findByGenreNmContaining("로맨스"));
-            healingMovies.addAll(movieListRepository.findByGenreNmContaining("코미디"));
-            healingMovies.addAll(movieListRepository.findByGenreNmContaining("드라마"));
-            healingMovies = healingMovies.stream().distinct().collect(Collectors.toList());
-            List<MovieList> filtered = healingMovies.stream()
-                .filter(m -> m.getStatus() == MovieStatus.NOW_PLAYING)
-                .limit(5)
-                .collect(Collectors.toList());
-            for (MovieList movie : filtered) {
-                MovieListDto movieListDto = movieListMapper.toDto(movie);
-                MovieDetailDto movieDto = createMovieDetailDtoFromMovieList(movieListDto);
-                movies.add(movieDto);
+            List<MovieDetail> healingMovies = new ArrayList<>();
+            healingMovies.addAll(movieDetailRepository.findByGenreNmContaining("로맨스"));
+            healingMovies.addAll(movieDetailRepository.findByGenreNmContaining("코미디"));
+            healingMovies.addAll(movieDetailRepository.findByGenreNmContaining("드라마"));
+            healingMovies = healingMovies.stream().distinct().limit(5).collect(Collectors.toList());
+
+            for (MovieDetail detail : healingMovies) {
+                MovieList movieList = movieListRepository.findById(detail.getMovieCd()).orElse(null);
+                MovieDetailDto dto = movieDetailMapper.toDto(detail, 0, false);
+                if (movieList != null) {
+                    dto.setPosterUrl(movieList.getPosterUrl());
+                    dto.setStatus(movieList.getStatus() != null ? movieList.getStatus().name() : null);
+                }
+                movies.add(dto);
             }
         } catch (Exception e) {
             System.err.println("Error fetching healing movies: " + e.getMessage());

@@ -1310,6 +1310,11 @@ public class UserController {
         ));
     }
 
+    /**
+     * 이런 영화 어때요? (새로운 장르 추천)
+     * - 사용자가 경험하지 않은(평점/찜/리뷰하지 않은) 장르별 대표 영화를 추천
+     * - 각 장르별로 내가 이미 본 영화(평점/찜/리뷰한 영화)는 추천에서 제외
+     */
     @GetMapping("/api/users/{userId}/new-genre-recommendation")
     public ResponseEntity<?> getNewGenreRecommendation(
             @PathVariable Long userId,
@@ -1337,69 +1342,49 @@ public class UserController {
             System.out.println("[새로운 장르 추천] 사용자 선호태그 엔티티: " + user.getPreferredTags());
         }
 
-        // 3. 사용자가 평점 남긴 영화의 장르 (Review 엔티티에서 조회)
-        Set<String> ratedGenres = new java.util.HashSet<>();
+        // 3. 사용자가 평점 남긴 영화의 ID
+        Set<Long> ratedMovieIds = new java.util.HashSet<>();
         if (user != null) {
             List<Review> ratedReviews = reviewRepository.findByUserIdAndRatingIsNotNullAndStatusOrderByCreatedAtDesc(userId, Review.ReviewStatus.ACTIVE);
-            ratedGenres = ratedReviews.stream()
-                .filter(r -> r.getMovieDetail() != null && r.getMovieDetail().getGenreNm() != null)
-                .flatMap(r -> java.util.Arrays.stream(r.getMovieDetail().getGenreNm().split(",")))
-                .map(String::trim)
+            ratedMovieIds = ratedReviews.stream()
+                .filter(r -> r.getMovieDetail() != null)
+                .map(r -> r.getMovieDetail().getId())
                 .collect(java.util.stream.Collectors.toSet());
         }
-
-        // 4. 사용자가 찜한 영화의 장르
-        Set<String> likedGenres = user != null && user.getLikes() != null
+        // 4. 사용자가 찜한 영화의 ID
+        Set<Long> likedMovieIds = user != null && user.getLikes() != null
                 ? user.getLikes().stream()
-                    .filter(l -> l.getMovieDetail() != null && l.getMovieDetail().getGenreNm() != null)
-                    .flatMap(l -> java.util.Arrays.stream(l.getMovieDetail().getGenreNm().split(",")))
-                    .map(String::trim)
+                    .filter(l -> l.getMovieDetail() != null)
+                    .map(l -> l.getMovieDetail().getId())
                     .collect(java.util.stream.Collectors.toSet())
                 : java.util.Collections.emptySet();
-
-        // 5. 사용자가 리뷰한 영화의 장르 (평점이 없는 리뷰도 포함)
-        Set<String> reviewedGenres = new java.util.HashSet<>();
+        // 5. 사용자가 리뷰한 영화의 ID (평점이 없는 리뷰도 포함)
+        Set<Long> reviewedMovieIds = new java.util.HashSet<>();
         if (user != null) {
             List<Review> allReviews = reviewRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, Review.ReviewStatus.ACTIVE);
-            reviewedGenres = allReviews.stream()
-                .filter(r -> r.getMovieDetail() != null && r.getMovieDetail().getGenreNm() != null)
-                .flatMap(r -> java.util.Arrays.stream(r.getMovieDetail().getGenreNm().split(",")))
-                .map(String::trim)
+            reviewedMovieIds = allReviews.stream()
+                .filter(r -> r.getMovieDetail() != null)
+                .map(r -> r.getMovieDetail().getId())
                 .collect(java.util.stream.Collectors.toSet());
         }
-
-        // 6. 본 적 있는 장르 = 평점 + 찜 + 리뷰 (선호 태그는 제외 - 선호하는 장르와 경험한 장르는 다름)
-        Set<String> experiencedGenres = new java.util.HashSet<>();
-        experiencedGenres.addAll(ratedGenres);
-        experiencedGenres.addAll(likedGenres);
-        experiencedGenres.addAll(reviewedGenres);
-
-        // 디버깅 로그
-        System.out.println("[새로운 장르 추천] userId=" + userId);
-        System.out.println("[새로운 장르 추천] 선호 태그: " + preferredGenres);
-        System.out.println("[새로운 장르 추천] 평점한 영화 장르: " + ratedGenres);
-        System.out.println("[새로운 장르 추천] 찜한 영화 장르: " + likedGenres);
-        System.out.println("[새로운 장르 추천] 리뷰한 영화 장르: " + reviewedGenres);
-        System.out.println("[새로운 장르 추천] 경험한 장르: " + experiencedGenres);
-
-        // 6. 미경험 장르 = 전체 - 본 적 있는 장르
-        Set<String> newGenres = new java.util.HashSet<>(allGenreNames);
-        newGenres.removeAll(experiencedGenres);
-        
-        // 선호 태그도 명시적으로 제외 (이중 안전장치)
-        newGenres.removeAll(preferredGenres);
-        
-        System.out.println("[새로운 장르 추천] 미경험 장르: " + newGenres);
-        System.out.println("[새로운 장르 추천] 선호 태그 제외 후 미경험 장르: " + newGenres);
-        System.out.println("[새로운 장르 추천] 최종 추천 장르 수: " + newGenres.size());
+        // 6. 본 적 있는 영화 ID = 평점 + 찜 + 리뷰
+        Set<Long> experiencedMovieIds = new java.util.HashSet<>();
+        experiencedMovieIds.addAll(ratedMovieIds);
+        experiencedMovieIds.addAll(likedMovieIds);
+        experiencedMovieIds.addAll(reviewedMovieIds);
 
         // 7. 각 미경험 장르별 대표 영화 20개 추천
         java.util.List<java.util.Map<String, Object>> genreResults = new java.util.ArrayList<>();
-        for (String genre : newGenres) {
+        for (String genre : allGenreNames) {
             // 해당 장르 영화 전체 조회
-            List<MovieDetail> movies = movieRepository.findByGenreNmContaining(genre);
+            List<MovieDetail> movies = new ArrayList<>(movieRepository.findByGenreNmContaining(genre));
+            // 내가 본 영화 제외
+            movies = movies.stream()
+                .filter(md -> md.getId() != null && !experiencedMovieIds.contains(md.getId()))
+                .toList();
             // 정렬
             if ("latest".equalsIgnoreCase(sort)) {
+                movies = new ArrayList<>(movies); // 가변 리스트로 변환
                 movies.sort((a, b) -> {
                     if (a.getOpenDt() == null && b.getOpenDt() == null) return 0;
                     if (a.getOpenDt() == null) return 1;
@@ -1407,8 +1392,10 @@ public class UserController {
                     return b.getOpenDt().compareTo(a.getOpenDt());
                 });
             } else if ("random".equalsIgnoreCase(sort)) {
+                movies = new ArrayList<>(movies); // 가변 리스트로 변환
                 java.util.Collections.shuffle(movies);
             } else { // 평점순(기본)
+                movies = new ArrayList<>(movies); // 가변 리스트로 변환
                 movies.sort((a, b) -> {
                     Double ar = a.getAverageRating() != null ? a.getAverageRating() : 0.0;
                     Double br = b.getAverageRating() != null ? b.getAverageRating() : 0.0;

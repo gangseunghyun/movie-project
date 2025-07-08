@@ -25,6 +25,25 @@ public class MovieDetailMapper {
 
     public MovieDetailDto toDto(MovieDetail movieDetail, int likeCount, boolean likedByMe) {
         MovieDetailDto dto = new MovieDetailDto();
+        dto.setMovieDetailId(movieDetail.getId());
+        dto.setMovieCd(movieDetail.getMovieCd());
+        dto.setMovieNm(movieDetail.getMovieNm());
+        dto.setMovieNmEn(movieDetail.getMovieNmEn());
+        dto.setPrdtYear(movieDetail.getPrdtYear());
+        dto.setShowTm(movieDetail.getShowTm());
+        dto.setOpenDt(movieDetail.getOpenDt());
+        dto.setPrdtStatNm(movieDetail.getPrdtStatNm());
+        dto.setTypeNm(movieDetail.getTypeNm());
+        dto.setGenreNm(movieDetail.getGenreNm());
+        dto.setNationNm(movieDetail.getNationNm());
+        dto.setWatchGradeNm(movieDetail.getWatchGradeNm());
+        dto.setCompanyNm(movieDetail.getCompanyNm());
+        dto.setDescription(movieDetail.getDescription());
+        dto.setReservationRank(getReservationRank(movieDetail.getMovieCd()));
+        dto.setReservationRate(calculateReservationRate(getReservationRank(movieDetail.getMovieCd())));
+        dto.setDaysSinceRelease(calculateDaysSinceRelease(movieDetail.getOpenDt()));
+        dto.setTotalAudience(getTotalAudience(movieDetail.getMovieCd()));
+        
         // MovieList에서 포스터 URL 가져오기
         String posterUrl = null;
         String directorName = null;
@@ -43,31 +62,6 @@ public class MovieDetailMapper {
         } catch (Exception e) {
             // 로그는 남기되 에러는 발생시키지 않음
         }
-
-        // 왓챠피디아 스타일 정보 계산
-        int calculatedDaysSinceRelease = calculateDaysSinceRelease(movieDetail != null ? movieDetail.getOpenDt() : null);
-        int reservationRank = getReservationRank(movieDetail.getMovieCd());
-        double reservationRate = calculateReservationRate(reservationRank);
-        int totalAudience = getTotalAudience(movieDetail.getMovieCd());
-
-        dto.setId(movieDetail.getMovieCd());
-        dto.setMovieCd(movieDetail.getMovieCd());
-        dto.setMovieNm(movieDetail.getMovieNm());
-        dto.setMovieNmEn(movieDetail.getMovieNmEn());
-        dto.setPrdtYear(movieDetail.getPrdtYear());
-        dto.setShowTm(movieDetail.getShowTm());
-        dto.setOpenDt(movieDetail.getOpenDt());
-        dto.setPrdtStatNm(movieDetail.getPrdtStatNm());
-        dto.setTypeNm(movieDetail.getTypeNm());
-        dto.setGenreNm(movieDetail.getGenreNm());
-        dto.setNationNm(movieDetail.getNationNm());
-        dto.setWatchGradeNm(movieDetail.getWatchGradeNm());
-        dto.setCompanyNm(movieDetail.getCompanyNm());
-        dto.setDescription(movieDetail.getDescription());
-        dto.setReservationRank(reservationRank);
-        dto.setReservationRate(reservationRate);
-        dto.setDaysSinceRelease(calculatedDaysSinceRelease);
-        dto.setTotalAudience(totalAudience);
         dto.setPosterUrl(posterUrl);
         dto.setDirectorName(directorName);
         dto.setAverageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0);

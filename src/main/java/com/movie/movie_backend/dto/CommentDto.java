@@ -1,5 +1,6 @@
 package com.movie.movie_backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,8 @@ public class CommentDto {
     private Long likeCount;
     private boolean likedByMe;
     private java.util.List<CommentDto> replies;
+    @JsonProperty("isBlockedByCleanbot")
+    private boolean isBlockedByCleanbot;
 
     public static CommentDto fromEntity(com.movie.movie_backend.entity.Comment comment) {
         return CommentDto.builder()
@@ -34,6 +37,7 @@ public class CommentDto {
             .isReply(comment.isReply())
             .likeCount(0L) // 기본값
             .likedByMe(false) // 기본값
+            .isBlockedByCleanbot(comment.isBlockedByCleanbot())
             .build();
     }
 
@@ -53,6 +57,7 @@ public class CommentDto {
             .isReply(comment.isReply())
             .likeCount(likeCount)
             .likedByMe(likedByMe)
+            .isBlockedByCleanbot(comment.isBlockedByCleanbot())
             .build();
     }
 } 

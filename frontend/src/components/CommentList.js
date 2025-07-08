@@ -3,6 +3,35 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:80';
 
+// 백엔드와 동일한 forbiddenWords 리스트
+const forbiddenWords = [
+  "씨발","시발", "병신", "개새끼", "미친", "바보", "멍청이", "돌아이", "등신", "호구", "찌질이",
+  "fuck", "shit", "bitch", "asshole", "damn", "hell", "bastard", "dick", "pussy", "cock",
+  "씨발놈", "씨발년", "씨팔", "씨빨", "씨바", "ㅆㅂ",
+  "좆", "좃", "존나", "개년", "개같", "미친놈", "미친년",
+  "ㅈㄴ", "ㅈ같", "븅신", "병쉰", "ㅂㅅ",
+  "씹", "씹새끼", "씹년", "씹할", "쌍놈", "쌍년", "죽어버려",
+  "꺼져", "좇같", "좇같이", "좇같은", "개씨발", "애미", "애비",
+  "좆같", "좃같", "좆빠", "좃빠", "좃빨", "좆빨",
+  "빨아", "걸레", "보지", "보짓", "보져", "보전",
+  "애미뒤진", "애비뒤진", "엿같", "엿머",
+  "닥쳐", "지랄", "지럴", "ㅈㄹ", "몰라씨발",
+  "헐좃", "지같", "후장", "뒈져", "뒤져",
+  "니미", "니미럴", "니애미", "니애비",
+  "개노답", "좆노답", "썅", "ㅅㅂ", "ㅄ",
+  "꺼지라", "개지랄", "대가리깨져", "꺼지라고", "개빡쳐",
+  "씨댕", "시댕", "씨댕이", "시댕이",
+  "똥같", "지랄맞", "개도살", "개패듯", "졸라",
+  "지옥가라", "개후려", "후려패", "싸가지", "개망나니",
+  "지랄발광", "미친개", "개지옥", "좇밥", "좃밥",
+  "개털려", "개처맞", "처맞는다", "처발린다",
+  "개쳐맞", "쳐죽일", "좆빨아", "좇빨아", "개한심", "극혐"
+];
+const containsForbiddenWords = (text) => {
+  if (!text) return false;
+  return forbiddenWords.some(word => text.includes(word));
+};
+
 function CommentList({ reviewId, currentUser, isOpen, onClose }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -13,6 +42,7 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
   const [likeLoading, setLikeLoading] = useState({});
   const [replyInput, setReplyInput] = useState({});
   const [replyOpen, setReplyOpen] = useState({});
+  const [showBlocked, setShowBlocked] = useState({});
 
   useEffect(() => {
     if (isOpen && reviewId) {
@@ -56,6 +86,11 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
       return;
     }
 
+    if (containsForbiddenWords(newComment.trim())) {
+      const proceed = window.confirm('클린봇에 의해 게시가 제한될 수 있습니다. 그래도 작성하시겠습니까?');
+      if (!proceed) return;
+    }
+
     try {
       const response = await axios.post(`http://localhost:80/api/comments`, {
         reviewId: reviewId,
@@ -79,6 +114,11 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
     if (!editContent.trim()) {
       alert('댓글 내용을 입력해주세요.');
       return;
+    }
+
+    if (containsForbiddenWords(editContent.trim())) {
+      const proceed = window.confirm('클린봇에 의해 게시가 제한될 수 있습니다. 그래도 작성하시겠습니까?');
+      if (!proceed) return;
     }
 
     try {
@@ -159,6 +199,10 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
       alert('로그인이 필요합니다.');
       return;
     }
+    if (containsForbiddenWords(replyInput[parentId].trim())) {
+      const proceed = window.confirm('클린봇에 의해 게시가 제한될 수 있습니다. 그래도 작성하시겠습니까?');
+      if (!proceed) return;
+    }
     try {
       const response = await axios.post(`http://localhost:80/api/comments`, {
         reviewId: reviewId,
@@ -231,7 +275,22 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
             }}>
               <b>{parent.userNickname}</b>
               <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(parent.createdAt)}</span>
-              <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line' }}>{parent.content}</div>
+              {/* 블라인드 처리 */}
+              {parent.isBlockedByCleanbot ? (
+                <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line', color: '#888', fontStyle: 'italic' }}>
+                  {showBlocked[parent.id] ? (
+                    <>
+                      <span style={{ color: '#ff2f6e', fontWeight: 600 }}>[클린봇 감지]</span> {parent.content}
+                    </>
+                  ) : (
+                    <>
+                      이 댓글은 클린봇이 감지한 악성 댓글입니다. <button style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowBlocked(prev => ({ ...prev, [parent.id]: true }))}>보기</button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line' }}>{parent.content}</div>
+              )}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
                 <span style={{ color: '#ff2f6e', cursor: 'pointer' }} onClick={() => setReplyOpen(prev => ({ ...prev, [parent.id]: !prev[parent.id] }))}>
                   답글
@@ -297,7 +356,22 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
                 <b>{reply.userNickname}</b>
                 <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(reply.createdAt)}</span>
                 <span style={{ color: '#3b82f6', fontWeight: 600, marginLeft: 8 }}>@{parent.userNickname}</span>
-                <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line' }}>{reply.content}</div>
+                {/* 블라인드 처리 (대댓글) */}
+                {reply.isBlockedByCleanbot ? (
+                  <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line', color: '#888', fontStyle: 'italic' }}>
+                    {showBlocked[reply.id] ? (
+                      <>
+                        <span style={{ color: '#ff2f6e', fontWeight: 600 }}>[클린봇 감지]</span> {reply.content}
+                      </>
+                    ) : (
+                      <>
+                        이 댓글은 클린봇이 감지한 악성 댓글입니다. <button style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowBlocked(prev => ({ ...prev, [reply.id]: true }))}>보기</button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line' }}>{reply.content}</div>
+                )}
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
                   <span style={{ color: '#ff2f6e', cursor: 'pointer' }} onClick={() => setReplyOpen(prev => ({ ...prev, [reply.id]: !prev[reply.id] }))}>
                     답글

@@ -61,10 +61,10 @@ public class ReviewController {
             }
             
             String content = (String) request.get("content");
-            Integer rating = null;
+            Double rating = null;
             if (request.get("rating") != null) {
                 try {
-                    rating = Integer.valueOf(request.get("rating").toString());
+                    rating = Double.valueOf(request.get("rating").toString());
                 } catch (NumberFormatException e) {
                     log.warn("평점 형식이 올바르지 않습니다: {}", request.get("rating"));
                 }
@@ -108,8 +108,8 @@ public class ReviewController {
             }
             
             String content = (String) request.get("content");
-            Integer rating = request.get("rating") != null ? 
-                Integer.valueOf(request.get("rating").toString()) : null;
+            Double rating = request.get("rating") != null ? 
+                Double.valueOf(request.get("rating").toString()) : null;
 
             Review review = reviewService.updateReview(reviewId, currentUserId, content, rating);
             
@@ -163,26 +163,65 @@ public class ReviewController {
     }
 
     /**
-     * 영화의 모든 리뷰 조회
+     * 영화의 모든 리뷰 조회 (페이지네이션 + 정렬)
      */
     @GetMapping("/movie/{movieCd}")
     public ResponseEntity<Map<String, Object>> getReviewsByMovie(
             @PathVariable String movieCd,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "latest") String sort,
             @AuthenticationPrincipal Object principal) {
         try {
-            // 사용자 정보 추출 - 로그인하지 않은 사용자도 처리 가능
             Long currentUserId = null;
             if (principal != null) {
                 currentUserId = getCurrentUserId(principal);
             }
             log.info("리뷰 목록 조회 - 현재 사용자 ID: {}", currentUserId);
-            
+
+            // 전체 리뷰 가져오기
             List<ReviewDto> reviews = reviewService.getReviewsByMovieCdWithLikeInfo(movieCd, currentUserId);
-            
+
+            // 정렬
+            switch (sort) {
+                case "like":
+                    reviews.sort((a, b) -> Integer.compare(b.getLikeCount(), a.getLikeCount()));
+                    break;
+                case "ratingDesc":
+                    reviews.sort((a, b) -> Double.compare(
+                        b.getRating() != null ? b.getRating() : 0.0,
+                        a.getRating() != null ? a.getRating() : 0.0));
+                    break;
+                case "ratingAsc":
+                    reviews.sort((a, b) -> Double.compare(
+                        a.getRating() != null ? a.getRating() : 0.0,
+                        b.getRating() != null ? b.getRating() : 0.0));
+                    break;
+                case "latest":
+                default:
+                    reviews.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+                    break;
+            }
+
+            // 페이지네이션
+            int total = reviews.size();
+            int start = page * size;
+            int end = Math.min(start + size, total);
+            List<ReviewDto> pagedList = (start < end) ? reviews.subList(start, end) : List.of();
+
+            for (ReviewDto review : pagedList) {
+                log.info("리뷰 ID: {}, isBlockedByCleanbot: {}, content: {}", 
+                    review.getId(), review.isBlockedByCleanbot(), review.getContent());
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", reviews);
-            response.put("count", reviews.size());
+            response.put("data", pagedList);
+            response.put("count", pagedList.size());
+            response.put("page", page);
+            response.put("size", size);
+            response.put("total", total);
+            response.put("totalPages", (int) Math.ceil((double) total / size));
             response.put("message", "리뷰 목록을 조회했습니다.");
             return ResponseEntity.ok(response);
         } catch (Exception e) {

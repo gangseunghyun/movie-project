@@ -3,6 +3,8 @@ import RatingDistributionChart from './components/RatingDistributionChart';
 import { useNavigate } from 'react-router-dom';
 import ReasonBadges from './components/ReasonBadges';
 import axios from 'axios';
+import ReviewPreview from './components/ReviewPreview';
+import ReviewList from './components/ReviewList';
 
 const menuList = [
   { icon: '🏠', label: '메인 페이지' },
@@ -76,11 +78,21 @@ const MainPage = ({
   const navigate = useNavigate();
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [personalizedRecommendations, setPersonalizedRecommendations] = useState([]);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [reviews, setReviews] = useState([]);
 
   // recentKeywords prop이 바뀌면 동기화
   useEffect(() => {
     setLocalRecentKeywords(recentKeywords || []);
   }, [recentKeywords]);
+
+  useEffect(() => {
+    if (activeMenu === '영화 상세' && selectedMovie) {
+      fetch(`/api/reviews/dto/list?movieId=${selectedMovie.movieDetailId}`)
+        .then(res => res.json())
+        .then(data => setReviews(data.content || []));
+    }
+  }, [activeMenu, selectedMovie]);
 
   const handleToggleRecommendation = async () => {
     if (!showRecommendation) {
@@ -108,6 +120,8 @@ const MainPage = ({
       alert('삭제에 실패했습니다.');
     }
   };
+
+  const handleShowAllReviews = () => setShowAllReviews(true);
 
   // 탭별 렌더링 함수 매핑
   const renderByMenu = {
@@ -295,6 +309,13 @@ const MainPage = ({
                     </div>
                 }
               </section>
+              {activeMenu === '영화 상세' && selectedMovie && (
+                !showAllReviews ? (
+                  <ReviewPreview reviews={reviews} onShowAll={handleShowAllReviews} />
+                ) : (
+                  <ReviewList movieCd={selectedMovie.movieCd} currentUser={currentUser} />
+                )
+              )}
             </>
           )}
         </main>
