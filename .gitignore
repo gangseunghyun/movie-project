@@ -99,3 +99,8 @@ react-app/.env.production.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Ollama 관련 파일
+ollama*.zip
+ollama*.exe
+ollama-latest.zip

@@ -21,7 +21,6 @@ public class MovieDetailDto {
     private String watchGradeNm;      // 관람등급명
     private String companyNm;         // 영화사명
     private String description;       // 영화설명
-    private String status;            // 상태
     private int reservationRank;      // 예매순위
     private double reservationRate;   // 예매율
     private int daysSinceRelease;     // 개봉후일수
@@ -41,6 +40,7 @@ public class MovieDetailDto {
     private List<Tag> tags;     // 태그 목록
     private int likeCount;      // 찜 수
     private boolean likedByMe;  // 내가 찜을 눌렀는지
+    private String status; // 영화 상태 (예: 개봉예정, 개봉중 등)
 
     // 내부 DTO들 (필요하면 더 세분화 가능)
 

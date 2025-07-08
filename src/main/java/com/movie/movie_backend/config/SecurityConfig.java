@@ -164,8 +164,10 @@ public class SecurityConfig {
                     "/api/users/*/follow",
                     "/api/users/*/unfollow",
                     "/api/users/*/followers",
-                    "/api/users/*/following"
+                    "/api/users/*/following",
+                    "/api/users/*/liked-directors"
                 ).permitAll()
+                .requestMatchers("/api/mcp/tools/**").permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/distribution").permitAll()

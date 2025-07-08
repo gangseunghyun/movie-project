@@ -22,6 +22,7 @@ import ReviewList from './components/ReviewList';
 import UserReservations from './UserReservations';
 import ReservationReceipt from './ReservationReceipt';
 import ReasonBadges from './components/ReasonBadges';
+import ChatbotModal from './components/ChatbotModal';
 
 // axios 기본 설정 - baseURL 제거하고 절대 경로 사용
 axios.defaults.withCredentials = true;
@@ -131,6 +132,9 @@ function App() {
 
   // 새로운 장르 추천 상태
   const [newGenreRecommendation, setNewGenreRecommendation] = useState(null);
+
+  // 챗봇 모달 상태
+  const [showChatbotModal, setShowChatbotModal] = useState(false);
 
   // 소셜 추천 fetch 함수 최상단에 선언
   const fetchSocialRecommendation = async () => {
@@ -2078,19 +2082,26 @@ function App() {
                     borderRadius: '12px',
                     fontSize: '1.2rem',
                     fontWeight: '700',
-                    cursor: 'pointer',
+                    cursor: selectedMovie.status === 'ENDED' ? 'not-allowed' : 'pointer',
+                    opacity: selectedMovie.status === 'ENDED' ? 0.5 : 1,
                     transition: 'all 0.3s',
                     boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
                   }}
+                  disabled={selectedMovie.status === 'ENDED'}
+                  title={selectedMovie.status === 'ENDED' ? '상영이 종료된 영화는 예매할 수 없습니다.' : ''}
                   onMouseOver={(e) => {
-                    e.target.style.backgroundColor = '#5a6fd8';
-                    e.target.style.transform = 'translateY(-3px)';
-                    e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                    if (selectedMovie.status !== 'ENDED') {
+                      e.target.style.backgroundColor = '#5a6fd8';
+                      e.target.style.transform = 'translateY(-3px)';
+                      e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                    }
                   }}
                   onMouseOut={(e) => {
-                    e.target.style.backgroundColor = '#667eea';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                    if (selectedMovie.status !== 'ENDED') {
+                      e.target.style.backgroundColor = '#667eea';
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                    }
                   }}
                 >
                   🎬 예매하기
@@ -3678,6 +3689,46 @@ function App() {
           onClose={() => setShowReviewModal(false)}
         />
       )}
+
+      {/* 챗봇 모달 */}
+      <ChatbotModal 
+        isOpen={showChatbotModal} 
+        onClose={() => setShowChatbotModal(false)} 
+      />
+
+      {/* 챗봇 플로팅 버튼 */}
+      <div
+        onClick={() => setShowChatbotModal(true)}
+        style={{
+          position: 'fixed',
+          bottom: '30px',
+          right: '30px',
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '24px',
+          cursor: 'pointer',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.4)',
+          zIndex: 9999,
+          transition: 'transform 0.2s, box-shadow 0.2s'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.boxShadow = '0 6px 25px rgba(102, 126, 234, 0.6)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(102, 126, 234, 0.4)';
+        }}
+        title="AI 영화 챗봇"
+      >
+        🤖
+      </div>
 
     </>
   );

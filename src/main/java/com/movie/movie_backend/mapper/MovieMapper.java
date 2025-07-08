@@ -5,7 +5,10 @@ import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.Director;
 import com.movie.movie_backend.entity.Actor;
 import com.movie.movie_backend.entity.Cast;
+import com.movie.movie_backend.entity.MovieList;
 import com.movie.movie_backend.constant.MovieStatus;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -17,6 +20,9 @@ import java.util.stream.Collectors;
 public class MovieMapper {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    @Autowired
+    private PRDMovieListRepository movieListRepository;
 
     /**
      * MovieDetailDto를 MovieDetail 엔티티로 변환
@@ -38,7 +44,7 @@ public class MovieMapper {
                 .watchGradeNm(dto.getWatchGradeNm())
                 .companyNm(dto.getCompanyNm())
                 .description(dto.getDescription() != null ? dto.getDescription() : "")
-                .status(determineMovieStatus(dto.getOpenDt()))
+//                .status(determineMovieStatus(dto.getOpenDt()))
                 .reservationRank(dto.getReservationRank())
                 .reservationRate(dto.getReservationRate())
                 .daysSinceRelease(dto.getDaysSinceRelease())
@@ -53,8 +59,17 @@ public class MovieMapper {
         if (entity == null) return null;
 
         String posterUrl = null;
-        if (entity.getMovieList() != null) {
-            posterUrl = entity.getMovieList().getPosterUrl();
+        String status = null;
+        
+        // MovieList에서 포스터 URL과 status 가져오기
+        try {
+            MovieList movieList = movieListRepository.findById(entity.getMovieCd()).orElse(null);
+            if (movieList != null) {
+                posterUrl = movieList.getPosterUrl();
+                status = movieList.getStatus() != null ? movieList.getStatus().name() : null;
+            }
+        } catch (Exception e) {
+            // 로그는 남기되 에러는 발생시키지 않음
         }
 
         return MovieDetailDto.builder()
@@ -71,7 +86,7 @@ public class MovieMapper {
                 .watchGradeNm(entity.getWatchGradeNm())
                 .companyNm(entity.getCompanyNm())
                 .description(entity.getDescription())
-                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
+                .status(status)
                 .reservationRank(entity.getReservationRank())
                 .reservationRate(entity.getReservationRate())
                 .daysSinceRelease(entity.getDaysSinceRelease())

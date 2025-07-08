@@ -1,0 +1,32 @@
+{
+  "tools": [
+    {
+      "name": "searchMovies",
+      "description": "영화 제목으로 영화를 검색합니다",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "검색할 영화 제목이나 키워드"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "getMovieInfo",
+      "description": "영화 코드로 상세 정보를 조회합니다",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "movieCd": {
+            "type": "string",
+            "description": "영화 코드"
+          }
+        },
+        "required": ["movieCd"]
+      }
+    }
+  ]
+} 

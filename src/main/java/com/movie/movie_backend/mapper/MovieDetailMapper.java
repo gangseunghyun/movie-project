@@ -28,11 +28,13 @@ public class MovieDetailMapper {
         // MovieList에서 포스터 URL 가져오기
         String posterUrl = null;
         String directorName = null;
+        String status = null;
         
         try {
             MovieList movieList = movieListRepository.findById(movieDetail.getMovieCd()).orElse(null);
             if (movieList != null) {
                 posterUrl = movieList.getPosterUrl();
+                status = movieList.getStatus() != null ? movieList.getStatus().name() : null;
             }
             
             if (movieDetail.getDirector() != null) {
@@ -43,7 +45,7 @@ public class MovieDetailMapper {
         }
 
         // 왓챠피디아 스타일 정보 계산
-        int calculatedDaysSinceRelease = calculateDaysSinceRelease(movieDetail.getOpenDt());
+        int calculatedDaysSinceRelease = calculateDaysSinceRelease(movieDetail != null ? movieDetail.getOpenDt() : null);
         int reservationRank = getReservationRank(movieDetail.getMovieCd());
         double reservationRate = calculateReservationRate(reservationRank);
         int totalAudience = getTotalAudience(movieDetail.getMovieCd());
@@ -62,7 +64,6 @@ public class MovieDetailMapper {
         dto.setWatchGradeNm(movieDetail.getWatchGradeNm());
         dto.setCompanyNm(movieDetail.getCompanyNm());
         dto.setDescription(movieDetail.getDescription());
-        dto.setStatus(movieDetail.getStatus() != null ? movieDetail.getStatus().name() : null);
         dto.setReservationRank(reservationRank);
         dto.setReservationRate(reservationRate);
         dto.setDaysSinceRelease(calculatedDaysSinceRelease);
@@ -70,6 +71,7 @@ public class MovieDetailMapper {
         dto.setPosterUrl(posterUrl);
         dto.setDirectorName(directorName);
         dto.setAverageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0);
+        dto.setStatus(status);
         
         // 감독 정보 매핑
         if (movieDetail.getDirector() != null) {

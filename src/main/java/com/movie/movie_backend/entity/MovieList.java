@@ -22,6 +22,8 @@ public class MovieList {
     private String watchGradeNm; // 관람등급
     @Column(nullable = true)
     private String posterUrl; // 포스터 이미지 URL
+    @Column(nullable = true)
+    private String kmdbId; // KMDb 영화 ID (nullable)
 
     @Enumerated(EnumType.STRING)
     private MovieStatus status; // 영화 상태

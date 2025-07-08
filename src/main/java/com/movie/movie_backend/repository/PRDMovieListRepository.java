@@ -30,7 +30,7 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
     /**
      * 영화 상태별 조회
      */
-    List<MovieList> findByStatus(String status);
+    List<MovieList> findByStatus(com.movie.movie_backend.constant.MovieStatus status);
     
     /**
      * 영화 상태별 조회 (개봉일 오름차순)
@@ -68,4 +68,9 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
      * 영화 코드 목록으로 조회
      */
     List<MovieList> findByMovieCdIn(List<String> movieCds);
+    
+    /**
+     * kmdbId가 있는 영화 목록 조회
+     */
+    List<MovieList> findByKmdbIdIsNotNull();
 } 

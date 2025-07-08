@@ -16,7 +16,6 @@ public interface PRDMovieRepository extends JpaRepository<MovieDetail, Long> {
     Optional<MovieDetail> findByMovieCd(String movieCd);
     boolean existsByMovieCd(String movieCd);
     Optional<MovieDetail> findByMovieNmContaining(String movieNm);
-    List<MovieDetail> findByStatus(MovieStatus status);
     List<MovieDetail> findByMovieNmContainingIgnoreCase(String movieNm);
     
     // 장르별 조회

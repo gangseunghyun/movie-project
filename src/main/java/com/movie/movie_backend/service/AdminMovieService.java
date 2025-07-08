@@ -64,9 +64,9 @@ public class AdminMovieService {
         }
         
         // 기본값 설정
-        if (movieDetail.getStatus() == null) {
-            movieDetail.setStatus(MovieStatus.COMING_SOON); // 상영예정
-        }
+//        if (movieDetail.getStatus() == null) {
+//            movieDetail.setStatus(MovieStatus.COMING_SOON); // 상영예정
+//        }
         
         MovieDetail savedMovie = movieRepository.save(movieDetail);
         log.info("영화 등록 완료: {} ({})", savedMovie.getMovieNm(), savedMovie.getMovieCd());
@@ -125,9 +125,9 @@ public class AdminMovieService {
         if (updateDto.getDescription() != null) {
             movie.setDescription(updateDto.getDescription());
         }
-        if (updateDto.getStatus() != null) {
-            movie.setStatus(updateDto.getStatus());
-        }
+//        if (updateDto.getStatus() != null) {
+//            movie.setStatus(updateDto.getStatus());
+//        }
         
         // 태그 업데이트
         if (updateDto.getTagNames() != null) {
@@ -153,7 +153,7 @@ public class AdminMovieService {
         }
         
         MovieDetail movie = existingMovie.get();
-        movie.setStatus(MovieStatus.ENDED); // 상영종료로 변경
+//        movie.setStatus(MovieStatus.ENDED); // 상영종료로 변경
         
         MovieDetail deactivatedMovie = movieRepository.save(movie);
         log.info("영화 비활성화 완료: {} ({})", deactivatedMovie.getMovieNm(), movieCd);
@@ -174,7 +174,7 @@ public class AdminMovieService {
         }
         
         MovieDetail movie = existingMovie.get();
-        movie.setStatus(MovieStatus.NOW_PLAYING); // 상영중으로 변경
+//        movie.setStatus(MovieStatus.NOW_PLAYING); // 상영중으로 변경
         
         MovieDetail activatedMovie = movieRepository.save(movie);
         log.info("영화 활성화 완료: {} ({})", activatedMovie.getMovieNm(), movieCd);
@@ -195,7 +195,7 @@ public class AdminMovieService {
         }
         
         MovieDetail movie = existingMovie.get();
-        movie.setStatus(newStatus);
+//        movie.setStatus(newStatus);
         
         MovieDetail updatedMovie = movieRepository.save(movie);
         log.info("영화 상태 업데이트 완료: {} ({}) -> {}", 
@@ -318,8 +318,8 @@ public class AdminMovieService {
     /**
      * 상태별 영화 조회
      */
-    public List<MovieDetail> getMoviesByStatus(MovieStatus status) {
-        return movieRepository.findByStatus(status);
+    public List<MovieList> getMoviesByStatus(MovieStatus status) {
+        return movieListRepository.findByStatus(status);
     }
 
     /**
@@ -487,9 +487,24 @@ public class AdminMovieService {
      * 상태별 영화 조회 (DTO 사용)
      */
     public List<AdminMovieDto> getMoviesByStatusAsDto(MovieStatus status) {
-        return movieRepository.findByStatus(status).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return movieListRepository.findByStatus(status).stream()
+            .map(this::convertMovieListToDto)
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    private AdminMovieDto convertMovieListToDto(MovieList movieList) {
+        // MovieList를 AdminMovieDto로 변환하는 로직 구현 필요 (기존 convertToDto 참고)
+        AdminMovieDto dto = new AdminMovieDto();
+        dto.setMovieCd(movieList.getMovieCd());
+        dto.setMovieNm(movieList.getMovieNm());
+        dto.setMovieNmEn(movieList.getMovieNmEn());
+        dto.setOpenDt(movieList.getOpenDt());
+        dto.setGenreNm(movieList.getGenreNm());
+        dto.setNationNm(movieList.getNationNm());
+        dto.setWatchGradeNm(movieList.getWatchGradeNm());
+        dto.setStatus(movieList.getStatus());
+        // 필요한 필드 추가 매핑
+        return dto;
     }
 
     /**
@@ -521,7 +536,7 @@ public class AdminMovieService {
         movie.setWatchGradeNm(dto.getWatchGradeNm());
         movie.setCompanyNm(dto.getCompanyNm());
         movie.setDescription(dto.getDescription());
-        movie.setStatus(dto.getStatus());
+//        movie.setStatus(dto.getStatus());
         
         return movie;
     }
@@ -546,7 +561,7 @@ public class AdminMovieService {
         dto.setWatchGradeNm(movie.getWatchGradeNm());
         dto.setCompanyNm(movie.getCompanyNm());
         dto.setDescription(movie.getDescription());
-        dto.setStatus(movie.getStatus());
+//        dto.setStatus(movie.getStatus());
         
         // 태그 정보
         List<String> tagNames = movie.getTags().stream()

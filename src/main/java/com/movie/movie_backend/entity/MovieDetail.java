@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.movie.movie_backend.constant.MovieStatus;
 
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -39,9 +38,6 @@ public class MovieDetail {
     
     @Column(columnDefinition = "TEXT")
     private String description; // 영화 설명 (줄거리)
-    
-    @Enumerated(EnumType.STRING)
-    private MovieStatus status; // 영화 상태 (상영중, 상영예정, 상영종료)
     
     // 예매 순위 관련
     private int reservationRank; // 예매 순위

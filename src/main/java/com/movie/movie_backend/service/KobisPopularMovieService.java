@@ -341,7 +341,7 @@ public class KobisPopularMovieService {
                             .totalAudience(tmdbDetailDto.getTotalAudience())
                             .reservationRate(tmdbDetailDto.getReservationRate())
                             .averageRating(tmdbDetailDto.getAverageRating())
-                            .status(MovieStatus.NOW_PLAYING)
+//                            .status(MovieStatus.NOW_PLAYING)
                             .build();
                     
                     // TMDB에서 감독과 배우 정보 가져오기

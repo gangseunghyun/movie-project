@@ -351,7 +351,7 @@ public class DataMigrationService {
                             .totalAudience(movieDto.getTotalAudience())
                             .reservationRate(movieDto.getReservationRate())
                             .averageRating(movieDto.getAverageRating())
-                            .status(MovieStatus.NOW_PLAYING)
+//                            .status(MovieStatus.NOW_PLAYING)
                             .build();
                     
                     // 감독 정보가 있으면 저장

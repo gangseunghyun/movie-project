@@ -15,4 +15,5 @@ public class MovieListDto {
     private String watchGradeNm;      // 관람등급
     private String posterUrl;         // 포스터 이미지 URL
     private MovieStatus status;       // 영화 상태
+    private String kmdbId;              // KMDb 영화 ID (nullable)
 } 

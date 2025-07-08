@@ -488,7 +488,7 @@ public class DataViewController {
                     movieDetail.setGenreNm(movieListDto.getGenreNm());
                     movieDetail.setNationNm(movieListDto.getNationNm());
                     movieDetail.setWatchGradeNm(movieListDto.getWatchGradeNm());
-                    movieDetail.setStatus(movieListDto.getStatus());
+//                    movieDetail.setStatus(movieListDto.getStatus());
                     movieListResults.add(movieDetail);
                 }
                 log.info("movie_list 검색 결과: {}개", movieListResults.size());
