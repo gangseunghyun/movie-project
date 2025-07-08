@@ -8,7 +8,7 @@ import com.movie.movie_backend.entity.Tag;
 import com.movie.movie_backend.constant.MovieStatus;
 import com.movie.movie_backend.entity.MovieList;
 import com.movie.movie_backend.repository.PRDMovieListRepository;
-import com.movie.movie_backend.service.TmdbRatingService;
+import com.movie.movie_backend.service.TmdbPosterService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -22,11 +22,11 @@ import java.util.Locale;
 public class BoxOfficeMapper {
 
     private final PRDMovieListRepository movieListRepository;
-    private final TmdbRatingService tmdbRatingService;
+    private final TmdbPosterService tmdbPosterService;
 
-    public BoxOfficeMapper(PRDMovieListRepository movieListRepository, TmdbRatingService tmdbRatingService) {
+    public BoxOfficeMapper(PRDMovieListRepository movieListRepository, TmdbPosterService tmdbPosterService) {
         this.movieListRepository = movieListRepository;
-        this.tmdbRatingService = tmdbRatingService;
+        this.tmdbPosterService = tmdbPosterService;
     }
 
     /**

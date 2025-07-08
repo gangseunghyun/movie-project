@@ -8,7 +8,7 @@ import com.movie.movie_backend.constant.MovieStatus;
 import com.movie.movie_backend.dto.AdminMovieDto;
 import com.movie.movie_backend.service.AdminMovieService;
 import com.movie.movie_backend.service.BoxOfficeService;
-import com.movie.movie_backend.service.TmdbRatingService;
+import com.movie.movie_backend.service.TmdbPosterService;
 import com.movie.movie_backend.service.KobisPopularMovieService;
 import com.movie.movie_backend.service.DataMigrationService;
 import com.movie.movie_backend.service.TmdbPosterBatchService;
@@ -30,7 +30,7 @@ public class AdminController {
 
     private final AdminMovieService adminMovieService;
     private final BoxOfficeService boxOfficeService;
-    private final TmdbRatingService tmdbRatingService;
+    private final TmdbPosterService tmdbPosterService;
     private final KobisPopularMovieService kobisPopularMovieService;
     private final DataMigrationService dataMigrationService;
     private final TmdbPosterBatchService tmdbPosterBatchService;
@@ -392,19 +392,6 @@ public class AdminController {
 
     // ===== 평점 관리 =====
 
-    /**
-     * TMDB 평점 가져오기
-     */
-    @PostMapping("/ratings/fetch-tmdb")
-    public ResponseEntity<Map<String, String>> fetchTmdbRatings() {
-        try {
-            tmdbRatingService.fetchAndSaveTmdbRatings();
-            return ResponseEntity.ok(Map.of("message", "TMDB 평점 가져오기 완료"));
-        } catch (Exception e) {
-            log.error("TMDB 평점 가져오기 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 
     /**
      * 평균 별점이 높은 영화 TOP-10 조회
