@@ -1,6 +1,7 @@
 package com.movie.movie_backend.dto;
 
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
@@ -19,6 +20,12 @@ public class ReviewDto {
     private int likeCount;
     private boolean likedByMe;
     private int commentCount;
+    @JsonProperty("blockedByCleanbot")
+    private boolean blockedByCleanbot;
+
+    public boolean isBlockedByCleanbot() {
+        return blockedByCleanbot;
+    }
 
     public static ReviewDto fromEntity(com.movie.movie_backend.entity.Review review) {
         return ReviewDto.builder()
@@ -32,6 +39,10 @@ public class ReviewDto {
             .userNickname(review.getUser() != null ? review.getUser().getNickname() : null)
             .movieCd(review.getMovieDetail() != null ? review.getMovieDetail().getMovieCd() : null)
             .movieNm(review.getMovieDetail() != null ? review.getMovieDetail().getMovieNm() : null)
+            .blockedByCleanbot(review.isBlockedByCleanbot())
+            .likeCount(0)
+            .commentCount(0)
+            .likedByMe(false)
             .build();
     }
 } 

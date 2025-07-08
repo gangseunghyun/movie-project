@@ -39,6 +39,9 @@ public class Comment {
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentLike> likes; // 댓글에 달린 좋아요 목록
 
+    @Column(nullable = false)
+    private boolean isBlockedByCleanbot = false;
+
     // 댓글 타입 확인 메서드
     public boolean isReply() {
         return parent != null;

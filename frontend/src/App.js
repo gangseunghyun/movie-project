@@ -3648,7 +3648,7 @@ function App() {
           movieTitle={selectedMovie?.movieNm || '영화 제목'}
           movieCd={selectedMovie?.movieCd}
           onSave={(content, spoiler) => {
-            // 영화 상세 페이지에서 이미 입력된 별점 사용
+            // 욕설 감지/confirm 코드 삭제!
             const reviewData = {
               content,
               rating: userRating, // 영화 상세 페이지의 별점 사용
@@ -3656,7 +3656,6 @@ function App() {
               movieCd: selectedMovie.movieCd,
             };
             console.log('리뷰 저장 요청 데이터:', reviewData);
-            
             axios.post(`${API_BASE_URL}/reviews`, reviewData, { withCredentials: true })
             .then(res => {
               console.log('리뷰 저장 성공', res.data);

@@ -179,6 +179,12 @@ public class ReviewController {
             
             List<ReviewDto> reviews = reviewService.getReviewsByMovieCdWithLikeInfo(movieCd, currentUserId);
             
+            // 각 리뷰의 isBlockedByCleanbot 값 로그 출력
+            for (ReviewDto review : reviews) {
+                log.info("리뷰 ID: {}, isBlockedByCleanbot: {}, content: {}", 
+                    review.getId(), review.isBlockedByCleanbot(), review.getContent());
+            }
+            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", reviews);

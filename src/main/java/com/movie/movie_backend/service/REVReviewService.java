@@ -21,6 +21,7 @@ import com.movie.movie_backend.entity.Comment;
 import com.movie.movie_backend.repository.ReviewLikeRepository;
 import com.movie.movie_backend.repository.REVCommentRepository;
 import com.movie.movie_backend.service.PersonalizedRecommendationService;
+import com.movie.movie_backend.service.ForbiddenWordService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +40,7 @@ public class REVReviewService {
     private final ReviewLikeRepository reviewLikeRepository;
     private final REVCommentRepository commentRepository;
     private final PersonalizedRecommendationService recommendationService;
+    private final ForbiddenWordService forbiddenWordService;
 
     /**
      * 리뷰 작성 (댓글만, 평점만, 둘 다 가능)
@@ -70,6 +72,9 @@ public class REVReviewService {
         review.setUpdatedAt(LocalDateTime.now());
         review.setStatus(Review.ReviewStatus.ACTIVE);
 
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(content);
+        review.setBlockedByCleanbot(isBlocked);
+
         Review savedReview = reviewRepository.save(review);
         log.info("리뷰 작성 완료: ID={}, 타입={}", savedReview.getId(), getReviewType(savedReview));
 
@@ -98,6 +103,9 @@ public class REVReviewService {
         review.setContent(content);
         review.setRating(rating);
         review.setUpdatedAt(LocalDateTime.now());
+
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(content);
+        review.setBlockedByCleanbot(isBlocked);
 
         Review updatedReview = reviewRepository.save(review);
         log.info("리뷰 수정 완료: ID={}, 타입={}", updatedReview.getId(), getReviewType(updatedReview));
@@ -284,6 +292,8 @@ public class REVReviewService {
                 .updatedAt(LocalDateTime.now())
                 .status(Review.ReviewStatus.ACTIVE)
                 .build();
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(dto.getContent());
+        review.setBlockedByCleanbot(isBlocked);
         Review saved = reviewRepository.save(review);
         return toResponseDto(saved, false);
     }
@@ -299,6 +309,8 @@ public class REVReviewService {
         review.setContent(dto.getContent());
         review.setRating(dto.getRating());
         review.setUpdatedAt(LocalDateTime.now());
+        boolean isBlocked = forbiddenWordService.containsForbiddenWords(dto.getContent());
+        review.setBlockedByCleanbot(isBlocked);
         Review updated = reviewRepository.save(review);
         return toResponseDto(updated, false);
     }

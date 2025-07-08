@@ -9,6 +9,35 @@ function ReviewModal({ movieTitle, movieCd, onSave, onClose }) {
   const [existingReviewMessage, setExistingReviewMessage] = useState('');
   const maxLength = 10000;
 
+  // 프론트 욕설 리스트 (백엔드와 동일하게 맞추는 것이 이상적)
+  const forbiddenWords = [
+    "씨발","시발", "병신", "개새끼", "미친", "바보", "멍청이", "돌아이", "등신", "호구", "찌질이",
+    "fuck", "shit", "bitch", "asshole", "damn", "hell", "bastard", "dick", "pussy", "cock",
+    "씨발놈", "씨발년", "씨팔", "씨빨", "씨바", "ㅆㅂ",
+    "좆", "좃", "존나", "개년", "개같", "미친놈", "미친년",
+    "ㅈㄴ", "ㅈ같", "븅신", "병쉰", "ㅂㅅ",
+    "씹", "씹새끼", "씹년", "씹할", "쌍놈", "쌍년", "죽어버려",
+    "꺼져", "좇같", "좇같이", "좇같은", "개씨발", "애미", "애비",
+    "좆같", "좃같", "좆빠", "좃빠", "좃빨", "좆빨",
+    "빨아", "걸레", "보지", "보짓", "보져", "보전",
+    "애미뒤진", "애비뒤진", "엿같", "엿머",
+    "닥쳐", "지랄", "지럴", "ㅈㄹ", "몰라씨발",
+    "헐좃", "지같", "후장", "뒈져", "뒤져",
+    "니미", "니미럴", "니애미", "니애비",
+    "개노답", "좆노답", "썅", "ㅅㅂ", "ㅄ",
+    "꺼지라", "개지랄", "대가리깨져", "꺼지라고", "개빡쳐",
+    "씨댕", "시댕", "씨댕이", "시댕이",
+    "똥같", "지랄맞", "개도살", "개패듯", "졸라",
+    "지옥가라", "개후려", "후려패", "싸가지", "개망나니",
+    "지랄발광", "미친개", "개지옥", "좇밥", "좃밥",
+    "개털려", "개처맞", "처맞는다", "처발린다",
+    "개쳐맞", "쳐죽일", "좆빨아", "좇빨아", "개한심", "극혐"
+  ];
+  const containsForbiddenWords = (text) => {
+    if (!text) return false;
+    return forbiddenWords.some(word => text.includes(word));
+  };
+
   useEffect(() => {
     const checkExistingReview = async () => {
       console.log('ReviewModal useEffect 호출 - movieCd:', movieCd);
@@ -44,6 +73,19 @@ function ReviewModal({ movieTitle, movieCd, onSave, onClose }) {
 
     checkExistingReview();
   }, [movieCd]);
+
+  useEffect(() => {
+    setContent('');
+    setSpoiler(false);
+  }, [movieCd, onClose]);
+
+  const handleSave = () => {
+    if (containsForbiddenWords(content)) {
+      const proceed = window.confirm('클린봇에 의해 게시가 제한될 수 있습니다. 그래도 작성하시겠습니까?');
+      if (!proceed) return;
+    }
+    onSave(content, spoiler);
+  };
 
   if (isChecking) {
     return (
@@ -141,7 +183,7 @@ function ReviewModal({ movieTitle, movieCd, onSave, onClose }) {
           <button
             className="save-btn"
             style={{ background: '#ff2f6e', color: 'white', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 18, marginLeft: 16 }}
-            onClick={() => onSave(content, spoiler)}
+            onClick={handleSave}
             disabled={!content.trim()}
           >저장</button>
         </div>
