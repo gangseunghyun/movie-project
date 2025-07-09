@@ -92,15 +92,14 @@ public class MovieManagementService {
         movieDetail.setWatchGradeNm(movieDto.getWatchGradeNm());
         
         // 기본값 설정
-        movieDetail.setStatus(MovieStatus.COMING_SOON); // 상영예정으로 기본 설정
         movieDetail.setReservationRank(0);
         movieDetail.setReservationRate(0.0);
         movieDetail.setDaysSinceRelease(0);
         movieDetail.setTotalAudience(movieDto.getTotalAudience());
         movieDetail.setAverageRating(movieDto.getAverageRating());
         
-        log.info("영화 엔티티 생성 완료: movieCd={}, movieNm={}, status={}", 
-                movieCd, movieDto.getMovieNm(), movieDetail.getStatus());
+        log.info("영화 엔티티 생성 완료: movieCd={}, movieNm={}", 
+                movieCd, movieDto.getMovieNm());
         
         // 감독 정보 저장
         if (movieDto.getDirectors() != null && !movieDto.getDirectors().isEmpty()) {
@@ -135,7 +134,6 @@ public class MovieManagementService {
         log.info("저장된 영문명: {}", savedMovie.getMovieNmEn());
         log.info("저장된 장르: {}", savedMovie.getGenreNm());
         log.info("저장된 국가: {}", savedMovie.getNationNm());
-        log.info("저장된 상태: {}", savedMovie.getStatus());
         log.info("저장된 상영시간: {}", savedMovie.getShowTm());
         log.info("저장된 개봉일: {}", savedMovie.getOpenDt());
         log.info("저장된 감독: {}", savedMovie.getDirector() != null ? savedMovie.getDirector().getName() : "없음");

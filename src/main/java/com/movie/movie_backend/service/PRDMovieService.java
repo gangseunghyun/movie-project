@@ -33,7 +33,6 @@ public class PRDMovieService {
             movieDetail.setWatchGradeNm(update.getWatchGradeNm());
             movieDetail.setCompanyNm(update.getCompanyNm());
             movieDetail.setDescription(update.getDescription());
-            movieDetail.setStatus(update.getStatus());
             movieDetail.setReservationRank(update.getReservationRank());
             movieDetail.setReservationRate(update.getReservationRate());
             movieDetail.setDaysSinceRelease(update.getDaysSinceRelease());

@@ -172,6 +172,18 @@ public class REVCommentService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    // userId를 받아 likeCount, likedByMe를 포함해서 반환하는 flat 버전 오버로드
+    public List<CommentDto> getAllCommentsByReviewIdFlat(Long reviewId, Long userId) {
+        List<Comment> comments = commentRepository.findByReviewIdAndStatusOrderByCreatedAtDesc(reviewId, Comment.CommentStatus.ACTIVE);
+        return comments.stream()
+                .map(c -> CommentDto.fromEntityWithLikeInfo(
+                    c,
+                    getCommentLikeCount(c.getId()),
+                    userId != null ? hasUserLikedComment(c.getId(), userId) : false
+                ))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     /**
      * 리뷰의 모든 댓글 조회
      */

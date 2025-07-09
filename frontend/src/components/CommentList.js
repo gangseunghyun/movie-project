@@ -54,7 +54,7 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
     setLoading(true);
     setError('');
     try {
-      // 평탄화(flat) 리스트로 모든 댓글을 가져오는 API 사용
+      // 원래대로 flat 엔드포인트로 복구
       const url = currentUser 
         ? `http://localhost:80/api/comments/review/${reviewId}/flat?userId=${currentUser.id}`
         : `http://localhost:80/api/comments/review/${reviewId}/flat`;
@@ -62,6 +62,10 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
       if (response.data.success) {
         setComments(response.data.data);
         console.log('댓글 평탄화(flat) 데이터:', response.data.data);
+        // 디버깅: 각 댓글의 likedByMe, likeCount, userId, id 출력
+        response.data.data.forEach((c, i) => {
+          console.log(`댓글${i+1}: id=${c.id}, userId=${c.userId}, likedByMe=${c.likedByMe}, likeCount=${c.likeCount}`);
+        });
       } else {
         setError('댓글을 불러오는데 실패했습니다.');
       }
@@ -163,7 +167,7 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
   };
 
   const handleLikeComment = async (commentId, currentLiked) => {
-    if (!currentUser) {
+    if (!currentUser || !currentUser.id) {
       alert('로그인이 필요합니다.');
       return;
     }
@@ -295,35 +299,51 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
                 <span style={{ color: '#ff2f6e', cursor: 'pointer' }} onClick={() => setReplyOpen(prev => ({ ...prev, [parent.id]: !prev[parent.id] }))}>
                   답글
                 </span>
-                <span 
-                  style={{ 
-                    color: parent.likedByMe ? '#ff2f6e' : '#888', 
-                    cursor: 'pointer',
-                    fontWeight: parent.likedByMe ? 'bold' : 'normal'
-                  }} 
+                {/* 좋아요 버튼 - 리뷰와 동일한 스타일로 변경 */}
+                <button
+                  className={`action-btn ${parent.likedByMe ? 'liked' : ''}`}
                   onClick={() => handleLikeComment(parent.id, parent.likedByMe)}
                   disabled={likeLoading[parent.id]}
+                  style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: parent.likedByMe ? '#ff2f6e' : '#666', fontWeight: parent.likedByMe ? 'bold' : 'normal', padding: '0 4px', borderRadius: 4 }}
                 >
-                  {likeLoading[parent.id] ? '처리중...' : `좋아요 ${parent.likeCount || 0}`}
-                </span>
+                  <span style={{ marginRight: 4, color: parent.likedByMe ? '#ff2f6e' : '#666' }}>
+                    {parent.likedByMe ? '❤️' : '🤍'}
+                  </span>
+                  좋아요{parent.likeCount > 0 && ` (${parent.likeCount})`}
+                </button>
                 {currentUser && parent.userId === currentUser.id && (
-                  <>
-                    <span 
-                      style={{ color: '#666', cursor: 'pointer' }} 
-                      onClick={() => {
-                        setEditingComment(parent.id);
-                        setEditContent(parent.content);
-                      }}
-                    >
-                      수정
-                    </span>
-                    <span 
-                      style={{ color: '#ff4757', cursor: 'pointer' }} 
-                      onClick={() => handleDeleteComment(parent.id)}
-                    >
-                      삭제
-                    </span>
-                  </>
+                  editingComment === parent.id ? (
+                    <>
+                      <textarea
+                        value={editContent}
+                        onChange={e => setEditContent(e.target.value)}
+                        style={{ width: '100%', minHeight: 60, margin: '8px 0', fontSize: 14 }}
+                        maxLength={500}
+                      />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleEditComment(parent.id)} style={{ fontSize: 13, padding: '4px 12px', background: '#ff2f6e', color: 'white', border: 'none', borderRadius: 4 }}>저장</button>
+                        <button onClick={() => { setEditingComment(null); setEditContent(''); }} style={{ fontSize: 13, padding: '4px 12px', background: '#eee', color: '#333', border: 'none', borderRadius: 4 }}>취소</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span 
+                        style={{ color: '#666', cursor: 'pointer' }} 
+                        onClick={() => {
+                          setEditingComment(parent.id);
+                          setEditContent(parent.content);
+                        }}
+                      >
+                        수정
+                      </span>
+                      <span 
+                        style={{ color: '#ff4757', cursor: 'pointer' }} 
+                        onClick={() => handleDeleteComment(parent.id)}
+                      >
+                        삭제
+                      </span>
+                    </>
+                  )
                 )}
               </div>
               {replyOpen[parent.id] && (
@@ -376,35 +396,51 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
                   <span style={{ color: '#ff2f6e', cursor: 'pointer' }} onClick={() => setReplyOpen(prev => ({ ...prev, [reply.id]: !prev[reply.id] }))}>
                     답글
                   </span>
-                  <span 
-                    style={{ 
-                      color: reply.likedByMe ? '#ff2f6e' : '#888', 
-                      cursor: 'pointer',
-                      fontWeight: reply.likedByMe ? 'bold' : 'normal'
-                    }} 
+                  {/* 대댓글 좋아요 버튼도 동일하게 변경 */}
+                  <button
+                    className={`action-btn ${reply.likedByMe ? 'liked' : ''}`}
                     onClick={() => handleLikeComment(reply.id, reply.likedByMe)}
                     disabled={likeLoading[reply.id]}
+                    style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: reply.likedByMe ? '#ff2f6e' : '#666', fontWeight: reply.likedByMe ? 'bold' : 'normal', padding: '0 4px', borderRadius: 4 }}
                   >
-                    {likeLoading[reply.id] ? '처리중...' : `좋아요 ${reply.likeCount || 0}`}
-                  </span>
+                    <span style={{ marginRight: 4, color: reply.likedByMe ? '#ff2f6e' : '#666' }}>
+                      {reply.likedByMe ? '❤️' : '🤍'}
+                    </span>
+                    좋아요{reply.likeCount > 0 && ` (${reply.likeCount})`}
+                  </button>
                   {currentUser && reply.userId === currentUser.id && (
-                    <>
-                      <span 
-                        style={{ color: '#666', cursor: 'pointer' }} 
-                        onClick={() => {
-                          setEditingComment(reply.id);
-                          setEditContent(reply.content);
-                        }}
-                      >
-                        수정
-                      </span>
-                      <span 
-                        style={{ color: '#ff4757', cursor: 'pointer' }} 
-                        onClick={() => handleDeleteComment(reply.id)}
-                      >
-                        삭제
-                      </span>
-                    </>
+                    editingComment === reply.id ? (
+                      <>
+                        <textarea
+                          value={editContent}
+                          onChange={e => setEditContent(e.target.value)}
+                          style={{ width: '100%', minHeight: 60, margin: '8px 0', fontSize: 14 }}
+                          maxLength={500}
+                        />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button onClick={() => handleEditComment(reply.id)} style={{ fontSize: 13, padding: '4px 12px', background: '#ff2f6e', color: 'white', border: 'none', borderRadius: 4 }}>저장</button>
+                          <button onClick={() => { setEditingComment(null); setEditContent(''); }} style={{ fontSize: 13, padding: '4px 12px', background: '#eee', color: '#333', border: 'none', borderRadius: 4 }}>취소</button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span 
+                          style={{ color: '#666', cursor: 'pointer' }} 
+                          onClick={() => {
+                            setEditingComment(reply.id);
+                            setEditContent(reply.content);
+                          }}
+                        >
+                          수정
+                        </span>
+                        <span 
+                          style={{ color: '#ff4757', cursor: 'pointer' }} 
+                          onClick={() => handleDeleteComment(reply.id)}
+                        >
+                          삭제
+                        </span>
+                      </>
+                    )
                   )}
                 </div>
                 {replyOpen[reply.id] && (

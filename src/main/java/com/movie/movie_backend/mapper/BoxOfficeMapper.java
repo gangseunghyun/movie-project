@@ -88,7 +88,11 @@ public class BoxOfficeMapper {
                 .rankTypeDisplay(getRankTypeDisplay(boxOffice.getRankType()))
                 
                 // 영화 상태 정보
-                .movieStatus(getMovieStatusDisplay(movieDetail != null ? movieDetail.getStatus() : null))
+                .movieStatus(getMovieStatusDisplay(
+                    movieDetail != null && movieDetail.getMovieList() != null
+                        ? movieDetail.getMovieList().getStatus()
+                        : null
+                ))
                 .daysSinceRelease(calculateDaysSinceRelease(movieDetail != null ? movieDetail.getOpenDt() : null))
                 
                 // 감독 정보

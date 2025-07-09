@@ -1,0 +1,16 @@
+# Cursor MCP Configuration
+# This file tells Cursor how to use the MCP server
+
+MCP_SERVER_CONFIG:
+  - name: "movie-tools"
+    command: "node"
+    args: ["mcp-server.js"]
+    env: {}
+    description: "Movie search and information tools"
+
+# Available tools:
+# - searchMovies: 영화 제목으로 영화를 검색합니다
+# - getMovieInfo: 영화 코드로 상세 정보를 조회합니다
+
+# Usage:
+# The AI can now use these tools automatically when you ask about movies 

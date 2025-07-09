@@ -16,4 +16,13 @@ public interface MovieDetailRepository extends JpaRepository<MovieDetail, Long> 
     // 배우가 주연으로 출연한 영화
     @Query("SELECT md FROM MovieDetail md JOIN md.casts c WHERE c.actor.id IN :actorIds AND c.roleType = :roleType")
     List<MovieDetail> findMoviesByMainActorIds(@Param("actorIds") List<Long> actorIds, @Param("roleType") com.movie.movie_backend.constant.RoleType roleType);
+
+    @Query("SELECT md FROM MovieDetail md WHERE md.movieCd = :movieCd")
+    MovieDetail findByMovieCd(@Param("movieCd") String movieCd);
+
+    // 장르 포함 검색
+    List<MovieDetail> findByGenreNmContaining(String genreNm);
+
+    // 관객수 기준 상위 20개 영화
+    List<MovieDetail> findTop20ByOrderByTotalAudienceDesc();
 } 

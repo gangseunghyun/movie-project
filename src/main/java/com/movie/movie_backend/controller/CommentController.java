@@ -169,9 +169,12 @@ public class CommentController {
      */
     @GetMapping("/review/{reviewId}/flat")
     public ResponseEntity<Map<String, Object>> getAllCommentsFlat(
-            @PathVariable Long reviewId) {
+            @PathVariable Long reviewId,
+            @RequestParam(required = false) Long userId) {
         try {
-            List<CommentDto> comments = commentService.getAllCommentsByReviewIdFlat(reviewId);
+            List<CommentDto> comments = (userId != null)
+                ? commentService.getAllCommentsByReviewIdFlat(reviewId, userId)
+                : commentService.getAllCommentsByReviewIdFlat(reviewId);
             Long commentCount = commentService.getCommentCountByReviewId(reviewId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

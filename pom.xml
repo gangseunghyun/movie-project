@@ -156,10 +156,17 @@
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 		
-		<!-- Ollama HTTP Client (WebClient) -->
+		        <!-- WebClient for HTTP requests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+		
+		<!-- org.json library -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20240303</version>
 		</dependency>
 	</dependencies>
 

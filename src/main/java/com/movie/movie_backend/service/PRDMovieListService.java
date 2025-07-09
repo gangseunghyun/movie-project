@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import com.movie.movie_backend.constant.MovieStatus;
 
 @Slf4j
 @Service
@@ -137,7 +138,7 @@ public class PRDMovieListService {
     /**
      * 영화 상태별 조회
      */
-    public List<MovieListDto> getMoviesByStatus(String status) {
+    public List<MovieListDto> getMoviesByStatus(MovieStatus status) {
         return movieListRepository.findByStatus(status).stream()
                 .map(movieListMapper::toDto)
                 .collect(Collectors.toList());
@@ -189,7 +190,7 @@ public class PRDMovieListService {
     /**
      * 영화 상태별 개수 조회
      */
-    public long getMovieCountByStatus(String status) {
+    public long getMovieCountByStatus(MovieStatus status) {
         return movieListRepository.findByStatus(status).size();
     }
 } 

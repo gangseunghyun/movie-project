@@ -233,7 +233,7 @@ public class KobisApiService {
                 .totalAudience(0)
                 .reservationRate(0.0)
                 .averageRating(voteAverage)
-                .status(movieList.getStatus())
+//                .status(movieList.getStatus())
                 .build();
             
             // 감독 정보 저장
@@ -512,7 +512,7 @@ public class KobisApiService {
                 .totalAudience(0)
                 .reservationRate(0.0)
                 .averageRating(0.0)
-                .status(movieList.getStatus())
+//                .status(movieList.getStatus())
                 .build();
             
             if (director != null) {
@@ -1144,7 +1144,7 @@ public class KobisApiService {
                 .totalAudience(0)
                 .reservationRate(0.0)
                 .averageRating(0.0)
-                .status(movieList.getStatus())
+//                .status(movieList.getStatus())
                 .build();
             
             if (director != null) {

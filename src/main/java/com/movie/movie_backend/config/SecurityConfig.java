@@ -165,9 +165,11 @@ public class SecurityConfig {
                     "/api/users/*/unfollow",
                     "/api/users/*/followers",
                     "/api/users/*/following",
+                    "/api/users/*/liked-directors",
                     "/api/forbidden-words/filter",
                     "/api/forbidden-words/check"
                 ).permitAll()
+                .requestMatchers("/api/mcp/tools/**").permitAll()
                 .requestMatchers("/api/user-login").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/average").permitAll()
                 .requestMatchers("/api/user-ratings/movie/*/distribution").permitAll()

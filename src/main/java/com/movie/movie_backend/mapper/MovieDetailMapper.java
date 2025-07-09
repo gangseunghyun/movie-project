@@ -39,7 +39,6 @@ public class MovieDetailMapper {
         dto.setWatchGradeNm(movieDetail.getWatchGradeNm());
         dto.setCompanyNm(movieDetail.getCompanyNm());
         dto.setDescription(movieDetail.getDescription());
-        dto.setStatus(movieDetail.getStatus() != null ? movieDetail.getStatus().name() : null);
         dto.setReservationRank(getReservationRank(movieDetail.getMovieCd()));
         dto.setReservationRate(calculateReservationRate(getReservationRank(movieDetail.getMovieCd())));
         dto.setDaysSinceRelease(calculateDaysSinceRelease(movieDetail.getOpenDt()));
@@ -48,11 +47,13 @@ public class MovieDetailMapper {
         // MovieList에서 포스터 URL 가져오기
         String posterUrl = null;
         String directorName = null;
+        String status = null;
         
         try {
             MovieList movieList = movieListRepository.findById(movieDetail.getMovieCd()).orElse(null);
             if (movieList != null) {
                 posterUrl = movieList.getPosterUrl();
+                status = movieList.getStatus() != null ? movieList.getStatus().name() : null;
             }
             
             if (movieDetail.getDirector() != null) {
@@ -61,10 +62,10 @@ public class MovieDetailMapper {
         } catch (Exception e) {
             // 로그는 남기되 에러는 발생시키지 않음
         }
-
         dto.setPosterUrl(posterUrl);
         dto.setDirectorName(directorName);
         dto.setAverageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0);
+        dto.setStatus(status);
         
         // 감독 정보 매핑
         if (movieDetail.getDirector() != null) {
