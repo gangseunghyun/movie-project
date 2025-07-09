@@ -5,17 +5,27 @@ const ChatbotModal = ({ isOpen, onClose }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // 챗봇 안내 메시지 (실제 동작과 맞게 수정)
+  const SYSTEM_GUIDE = `💡 시스템 안내\n안녕하세요! MCP 기반 AI 영화 챗봇입니다! 🤖\n\n자연어로 영화에 대해 무엇이든 물어보세요!\n\n예시:\n• "오늘 기분이 우울한데 영화 추천해줘"\n• "로맨스 영화 중에서 가장 재밌는 거 뭐야?"\n• "인터스텔라 영화에 대해 자세히 알려줘"\n• "F! 더 무비 정보 알려줘"\n• "액션 영화 추천해줘"\n\n💡 감정, 상황, 장르, 영화명 등 어떤 방식으로도 물어보면 챗봇이 알아서 맞춤 추천 또는 영화 정보를 안내합니다!`;
 
   useEffect(() => {
     if (isOpen) {
       setMessages([
-        { 
-          type: 'bot', 
-          content: '안녕하세요! MCP 기반 AI 영화 챗봇입니다! 🤖\n\n자연어로 영화에 대해 무엇이든 물어보세요!\n\n예시:\n• "오늘 기분이 우울한데 영화 추천해줘"\n• "로맨스 영화 중에서 가장 재밌는 거 뭐야?"\n• "인터스텔라 영화에 대해 자세히 알려줘"\n\n💡 MCP 도구를 사용하여 정확한 영화 정보를 제공합니다!',
+        {
+          type: 'bot',
+          content: SYSTEM_GUIDE,
           isSystem: true
         }
       ]);
       setInput('');
+      // 모달이 열릴 때 입력창에 포커스 주기
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
     }
   }, [isOpen]);
 
@@ -71,70 +81,53 @@ const ChatbotModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // 영화명 추출 로직 개선
-  const extractMovieName = (msg) => {
-    console.log('=== 영화명 추출 시작 ===');
-    console.log('입력 메시지:', msg);
-    
-    // 제외할 단어들 (감정, 상황 관련)
-    const excludeWords = [
-      '우울', '슬픔', '힐링', '기분', '스트레스', '위로', '추천', '보고싶', '재밌는', '좋은',
-      '영화', '무슨', '어떤', '알려줘', '정보', '뭐야', '보고싶어', '어떤가', '로맨스', '액션',
-      '코미디', '공포', '호러', '스릴러', '사랑', '러브', '어드벤처', '웃음', '재미'
-    ];
-    
-    // 명확한 영화명 패턴들
-    const moviePatterns = [
-      /([가-힣A-Za-z0-9\s]+)(?:은|는|이|가)?\s*(?:무슨|어떤)?\s*영화/, // 라라랜드는 무슨 영화
-      /([가-힣A-Za-z0-9\s]+)\s*에 대해/, // 라라랜드에 대해
-      /([가-힣A-Za-z0-9\s]+)\s*알려줘/, // 라라랜드 알려줘
-      /([가-힣A-Za-z0-9\s]+)\s*정보/, // 라라랜드 정보
-      /([가-힣A-Za-z0-9\s]+)\s*이 뭐야/, // 라라랜드가 뭐야
-      /([가-힣A-Za-z0-9\s]+)\s*에 대해 설명해줘/, // 라라랜드에 대해 설명해줘
-      /([가-힣A-Za-z0-9\s]+)\s*movie/i, // 라라랜드 movie
-      /([가-힣A-Za-z0-9\s]+)\s*영화/, // 라라랜드 영화
-      /([가-힣A-Za-z0-9\s]+)\s*보고싶어/, // 라라랜드 보고싶어
-      /([가-힣A-Za-z0-9\s]+)\s*어떤가/, // 라라랜드 어떤가
-    ];
+  // 추천/감정/상황/장르 키워드 (더 구체적으로 정리)
+  const recommendKeywords = [
+    '우울', '스트레스', '슬플', '힐링', '행복', '기분이 좋',
+    '로맨스', '액션', '코미디', '공포', '스릴러', '사랑', '러브', '스릴', '어드벤처', '웃음', '재미', '호러',
+    '인기', '최고', '베스트', '추천', '볼만한', '재밌는', '좋은'
+  ];
+  // 불용어
+  const stopwords = [
+    '볼', '볼만한', '추천', '추천해줘', '할 때', '영화', '정보', '알려줘', '뭐야', '어떤가', '어떤지', '어때', '어떻니', '어떠니'
+  ];
 
-    for (let i = 0; i < moviePatterns.length; i++) {
-      const pattern = moviePatterns[i];
+  // 영화명 추출 패턴 (특수문자 포함)
+  const patterns = [
+    /([가-힣A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~` ]+)(?:은|는|이|가)?\s*(?:무슨|어떤)?\s*영화/,
+    /([가-힣A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~` ]+)\s*에 대해/,
+    /([가-힣A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~` ]+)\s*알려줘/,
+    /([가-힣A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~` ]+)\s*정보/,
+    /([가-힣A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~` ]+)\s*뭐야/,
+    /([가-힣A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~` ]+)\s*영화/
+  ];
+
+  // 영화명 추출 (실제 서비스 수준)
+  const extractMovieName = (msg) => {
+    let simpleMovieName = msg.trim().replace(/[는은이가을를의에에서로으로]$/, '');
+    // 불용어/추천어 포함시 영화명으로 인정하지 않음
+    if (
+      simpleMovieName.length >= 2 &&
+      simpleMovieName.length <= 30 &&
+      !stopwords.some(word => simpleMovieName.includes(word)) &&
+      !recommendKeywords.some(word => simpleMovieName.includes(word))
+    ) {
+      return simpleMovieName;
+    }
+    for (const pattern of patterns) {
       const match = msg.match(pattern);
-      console.log(`패턴 ${i + 1} 테스트:`, pattern.source);
-      console.log('매치 결과:', match);
-      
       if (match && match[1]) {
-        const extracted = match[1].trim();
-        console.log('추출된 텍스트:', extracted);
-        
-        // 제외 조건들
-        if (extracted.length < 3) {
-          console.log('길이 부족으로 제외 (3글자 미만)');
-          continue; // 최소 3글자
+        let extracted = match[1].trim().replace(/[는은이가을를의에에서로으로]$/, '');
+        if (
+          extracted.length >= 2 &&
+          extracted.length <= 30 &&
+          !stopwords.some(word => extracted.includes(word)) &&
+          !recommendKeywords.some(word => extracted.includes(word))
+        ) {
+          return extracted;
         }
-        
-        // 제외 단어 목록에 포함된 경우 제외
-        const isExcluded = excludeWords.some(word => 
-          extracted.toLowerCase().includes(word.toLowerCase())
-        );
-        if (isExcluded) {
-          console.log('제외 단어 포함으로 제외:', excludeWords.find(word => 
-            extracted.toLowerCase().includes(word.toLowerCase())
-          ));
-          continue;
-        }
-        
-        // 숫자만 있는 경우 제외
-        if (/^\d+$/.test(extracted)) {
-          console.log('숫자만 있어서 제외');
-          continue;
-        }
-        
-        console.log('영화명으로 인정됨:', extracted);
-        return extracted;
       }
     }
-    console.log('영화명 추출 실패');
     return null;
   };
 
@@ -155,35 +148,52 @@ const ChatbotModal = ({ isOpen, onClose }) => {
     return null;
   };
 
-  // 질문 유형 분류
+  // classifyQuery 개선: 감정/상황별로 situation 파라미터를 넘김
   const classifyQuery = (input) => {
-    const emotionType = classifyEmotion(input);
-    if (emotionType === 'HEALING') return { type: 'EMOTIONAL_RECOMMENDATION', emotion: 'healing' };
-    if (emotionType === 'HAPPY') return { type: 'HAPPY_RECOMMENDATION', emotion: 'happy' };
-    if (emotionType === 'ANGER') return { type: 'ANGER_RECOMMENDATION', emotion: 'anger' };
-
-    // ...장르, 영화명 추출 등 기존 로직 이어서...
     const lowerInput = input.toLowerCase();
-    if (lowerInput.includes('로맨스') || lowerInput.includes('사랑') || lowerInput.includes('러브')) {
-      return { type: 'GENRE_RECOMMENDATION', genre: 'romance' };
+    // 0. 인기/박스오피스 키워드 우선 분기
+    if (lowerInput.includes('인기') || lowerInput.includes('요즘 인기') || lowerInput.includes('박스오피스')) {
+      return { type: 'BOXOFFICE_RECOMMENDATION' };
     }
-    if (lowerInput.includes('액션') || lowerInput.includes('스릴') || lowerInput.includes('어드벤처')) {
-      return { type: 'GENRE_RECOMMENDATION', genre: 'action' };
+    // 1. 감정/상황/장르 키워드가 있으면 situation 파라미터로 분기
+    if (recommendKeywords.some(word => lowerInput.includes(word))) {
+      if (lowerInput.includes('우울')) return { type: 'EMOTIONAL_RECOMMENDATION', situation: '우울할 때' };
+      if (lowerInput.includes('스트레스')) return { type: 'EMOTIONAL_RECOMMENDATION', situation: '스트레스 받을 때' };
+      if (lowerInput.includes('행복') || lowerInput.includes('기분이 좋')) return { type: 'EMOTIONAL_RECOMMENDATION', situation: '기분이 좋을 때' };
+      if (lowerInput.includes('힐링')) return { type: 'EMOTIONAL_RECOMMENDATION', situation: '힐링이 필요할 때' };
+      if (lowerInput.includes('슬픔') || lowerInput.includes('슬플')) return { type: 'EMOTIONAL_RECOMMENDATION', situation: '슬플 때' };
+      // 장르별
+      if (lowerInput.includes('로맨스') || lowerInput.includes('사랑') || lowerInput.includes('러브')) return { type: 'GENRE_RECOMMENDATION', genre: '로맨스' };
+      if (lowerInput.includes('액션') || lowerInput.includes('스릴') || lowerInput.includes('어드벤처')) return { type: 'GENRE_RECOMMENDATION', genre: '액션' };
+      if (lowerInput.includes('코미디') || lowerInput.includes('웃음') || lowerInput.includes('재미')) return { type: 'GENRE_RECOMMENDATION', genre: '코미디' };
+      if (lowerInput.includes('공포') || lowerInput.includes('호러')) return { type: 'GENRE_RECOMMENDATION', genre: '공포' };
+      if (lowerInput.includes('스릴러') || lowerInput.includes('thriller')) return { type: 'GENRE_RECOMMENDATION', genre: '스릴러' };
+      // 기타 상황/감정은 일반 추천
+      return { type: 'RECOMMENDATION' };
     }
-    if (lowerInput.includes('코미디') || lowerInput.includes('웃음') || lowerInput.includes('재미')) {
-      return { type: 'GENRE_RECOMMENDATION', genre: 'comedy' };
-    }
-    if (lowerInput.includes('공포') || lowerInput.includes('호러') || lowerInput.includes('스릴러')) {
-      return { type: 'GENRE_RECOMMENDATION', genre: 'horror' };
-    }
-    if (lowerInput.includes('추천') || lowerInput.includes('보고싶') || lowerInput.includes('재밌는') || lowerInput.includes('좋은') || lowerInput.includes('인기') || lowerInput.includes('베스트')) {
-      return { type: 'GENERAL_RECOMMENDATION' };
-    }
+    // 2. 영화명 추출 (불용어/추천어 포함시 제외)
     const movieName = extractMovieName(input);
-    if (movieName && movieName.length >= 3) {
-      return { type: 'MOVIE_INFO', movieName };
+    if (movieName && movieName.length >= 2) {
+      return { type: 'MOVIE_INFO', movieName: movieName };
     }
-    return { type: 'GENERAL_RECOMMENDATION' };
+    // 3. 아무것도 아니면 일반 추천
+    return { type: 'RECOMMENDATION' };
+  };
+
+  // 상황별 안내 멘트 및 추천 장르 매핑
+  const situationMessages = {
+    '우울할 때': '기분이 우울하시군요! 😔 그런 날에는 마음을 따뜻하게 해주는 영화가 최고예요.\n제가 특별히 힐링 영화를 찾아봤어요!',
+    '힐링이 필요할 때': '마음이 지칠 땐 이런 힐링 영화가 도움이 될 거예요! 🌱',
+    '슬플 때': '마음을 위로해줄 영화들을 추천해드릴게요! 💧',
+    '스트레스 받을 때': '스트레스를 확 날려줄 영화들을 추천해드릴게요! 💥\n액션이나 코미디 영화로 기분 전환하세요!',
+    '기분이 좋을 때': '기분 좋은 날엔 이런 영화들이 잘 어울려요! 😄',
+  };
+  const situationGenres = {
+    '우울할 때': 'healing',
+    '힐링이 필요할 때': 'healing',
+    '슬플 때': 'healing',
+    '스트레스 받을 때': 'action_comedy',
+    '기분이 좋을 때': 'bright',
   };
 
   // 메시지 전송 처리
@@ -200,7 +210,34 @@ const ChatbotModal = ({ isOpen, onClose }) => {
       console.log('질문 유형:', queryType);
 
       if (queryType.type === 'MOVIE_INFO') {
-        // 영화 정보 조회
+        // 카테고리성 키워드가 영화명으로 들어온 경우 searchMovies로 분기
+        const lowerMovieName = queryType.movieName.toLowerCase();
+        if (['개봉예정작', '개봉 예정작', 'coming soon'].includes(lowerMovieName)) {
+          // 개봉예정작은 searchMovies(type: 'coming_soon')로 분기
+          const aiResponse = await generateRecommendationResponse({ type: 'RECOMMENDATION' }, input, '개봉 예정 영화들을 추천해드릴게요! 📅', { type: 'coming_soon' });
+          setMessages(prev => [...prev, {
+            type: 'bot',
+            content: aiResponse.message,
+            movies: aiResponse.movies || [],
+            endedMovies: aiResponse.endedMovies || [],
+            messageType: aiResponse.type
+          }]);
+          setIsLoading(false);
+          return;
+        } else if ([ '상영중', '상영 중', 'now playing', '현재 상영작', '현재 상영중' ].includes(lowerMovieName)) {
+          // 상영중은 searchMovies(type: 'now_playing')로 분기
+          const aiResponse = await generateRecommendationResponse({ type: 'RECOMMENDATION' }, input, '현재 상영중인 영화들을 추천해드릴게요! 🎬', { type: 'now_playing' });
+          setMessages(prev => [...prev, {
+            type: 'bot',
+            content: aiResponse.message,
+            movies: aiResponse.movies || [],
+            endedMovies: aiResponse.endedMovies || [],
+            messageType: aiResponse.type
+          }]);
+          setIsLoading(false);
+          return;
+        }
+        // 일반 영화명은 기존대로 getMovieInfo 사용
         const movieInfo = await fetchMovieInfo(queryType.movieName);
         if (movieInfo.error) {
           setMessages(prev => [...prev, { 
@@ -217,8 +254,50 @@ const ChatbotModal = ({ isOpen, onClose }) => {
           }]);
         }
       } else {
-        // 추천 응답 생성
-        const aiResponse = await generateRecommendationResponse(queryType, input);
+        let message = '';
+        let apiParameters = {};
+        if (queryType.type === 'BOXOFFICE_RECOMMENDATION') {
+          message = '요즘 박스오피스 상위 영화를 추천해드릴게요! 🎬';
+          apiParameters = { type: 'boxoffice' };
+        } else if (queryType.type === 'EMOTIONAL_RECOMMENDATION' && queryType.situation) {
+          message = situationMessages[queryType.situation] || '흥미로운 질문이네요! 🤔\n제가 인기 있는 영화들을 추천해드릴게요!';
+          // 상황별 추천 장르 파라미터 추가
+          if (situationGenres[queryType.situation] === 'healing') {
+            apiParameters = { situation: queryType.situation };
+          } else if (situationGenres[queryType.situation] === 'action_comedy') {
+            apiParameters = { genre: '액션,코미디' };
+          } else if (situationGenres[queryType.situation] === 'bright') {
+            apiParameters = { genre: '코미디,음악,가족,모험' };
+          } else {
+            apiParameters = { situation: queryType.situation };
+          }
+        } else if (queryType.type === 'GENRE_RECOMMENDATION') {
+          message = `장르별 추천! \"${queryType.genre}\" 영화를 추천해드릴게요! 🎬`;
+          apiParameters = { genre: queryType.genre };
+        } else {
+          // 기본 추천: 다양한 카테고리로 분산 추천
+          const randomCategory = Math.floor(Math.random() * 4);
+          switch (randomCategory) {
+            case 0:
+              message = '인기 있는 영화들을 추천해드릴게요! 🎬\n현재 가장 많은 관객들이 찾고 있는 영화들입니다.';
+              apiParameters = { type: 'popular' };
+              break;
+            case 1:
+              message = '최신 개봉 영화들을 추천해드릴게요! 🆕\n새롭게 개봉한 영화들로 신선한 감동을 느껴보세요.';
+              apiParameters = { type: 'latest' };
+              break;
+            case 2:
+              message = '개봉 예정 영화들을 추천해드릴게요! 📅\n곧 개봉할 영화들을 미리 확인해보세요.';
+              apiParameters = { type: 'coming_soon' };
+              break;
+            case 3:
+              message = '다양한 장르의 영화들을 추천해드릴게요! 🎭\n로맨스, 액션, 코미디 등 다양한 장르를 골고루 준비했어요.';
+              apiParameters = { genre: '로맨스,액션,코미디' };
+              break;
+          }
+        }
+        // 추천 응답 생성 (message, apiParameters를 인자로 전달)
+        const aiResponse = await generateRecommendationResponse(queryType, input, message, apiParameters);
         setMessages(prev => [...prev, {
           type: 'bot',
           content: aiResponse.message,
@@ -238,39 +317,18 @@ const ChatbotModal = ({ isOpen, onClose }) => {
       }]);
     } finally {
       setIsLoading(false);
+      // 메시지 전송 후 입력창에 포커스 다시 주기
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
     }
   };
 
-  // 추천 응답 생성
-  const generateRecommendationResponse = async (queryType, originalInput) => {
+  // generateRecommendationResponse에서 상황별로 안내 멘트/추천 장르 분기
+  const generateRecommendationResponse = async (queryType, originalInput, message, apiParameters) => {
     try {
-      // 백엔드 API 호출을 위한 파라미터 설정
-      let apiParameters = {};
-      
-      switch (queryType.type) {
-        case 'EMOTIONAL_RECOMMENDATION':
-          apiParameters = { situation: "우울할 때" };
-          break;
-        case 'HAPPY_RECOMMENDATION':
-          apiParameters = { situation: "기분이 좋을 때" };
-          break;
-        case 'ANGER_RECOMMENDATION':
-          apiParameters = { situation: "스트레스 받을 때" };
-          break;
-        case 'GENRE_RECOMMENDATION':
-          if (queryType.genre === 'romance') {
-            apiParameters = { genre: "로맨스" };
-          } else if (queryType.genre === 'action') {
-            apiParameters = { genre: "액션" };
-          }
-          break;
-        case 'GENERAL_RECOMMENDATION':
-        default:
-          // 일반 추천은 인기 영화로 처리
-          apiParameters = {};
-          break;
-      }
-
       // 백엔드 API 호출
       const response = await fetch('http://localhost:80/api/mcp/tools/searchMovies', {
         method: 'POST',
@@ -283,55 +341,26 @@ const ChatbotModal = ({ isOpen, onClose }) => {
       }
 
       const data = await response.json();
-      console.log('영화 추천 API 응답:', data);
-
       if (data.success && data.result && data.result.movies) {
         let movies = data.result.movies || [];
-        // status 값 실제로 어떻게 오는지 콘솔 출력
-        console.log('추천 영화 리스트:', movies.map(m => ({ title: m.movieNm, status: m.status })));
-        // status가 없으면 모든 영화를 현재 상영중으로 처리
-        const nowOrSoon = movies.filter(m => {
-          if (!m.status) return true; // status가 없으면 모든 영화 포함
+        // 중복 제거: movieCd 기준으로 중복 제거
+        const uniqueMovies = Array.from(new Map(movies.map(m => [m.movieCd, m])).values());
+        const nowOrSoon = uniqueMovies.filter(m => {
+          if (!m.status) return true;
           const s = (m.status || '').toUpperCase();
-          return s === 'NOW_PLAYING' || s === 'COMING_SOON' ||
-                 s === '개봉중' || s === '개봉예정' ||
-                 s === 'NOWPLAYING' || s === 'COMINGSOON';
+          return s === 'NOW_PLAYING' || s === 'COMING_SOON' || s === '개봉중' || s === '개봉예정' || s === 'NOWPLAYING' || s === 'COMINGSOON';
         });
-        const ended = movies.filter(m => {
-          if (!m.status) return false; // status가 없으면 상영종료로 분류하지 않음
+        const ended = uniqueMovies.filter(m => {
+          if (!m.status) return false;
           const s = (m.status || '').toUpperCase();
           return s === 'ENDED' || s === '상영종료' || s === 'ENDED';
         });
-        let message = '';
-        switch (queryType.type) {
-          case 'EMOTIONAL_RECOMMENDATION':
-            message = `아, 기분이 우울하시군요! 😔 그런 날에는 마음을 따뜻하게 해주는 영화가 최고예요.\n\n제가 특별히 힐링 영화들을 찾아봤어요! 🎬\n\n이 영화들은 우울한 마음을 밝게 해줄 거예요. 오늘 밤에 이 영화들 중 하나를 보시면서 따뜻한 시간 보내세요! ☺️`;
-            break;
-          case 'HAPPY_RECOMMENDATION':
-            message = `기분이 정말 좋으시군요! 😄 이런 날엔 신나고 유쾌한 영화가 제격이죠!\n\n제가 기분 좋은 영화들을 추천해드릴게요! 🎬`;
-            break;
-          case 'ANGER_RECOMMENDATION':
-            message = `스트레스나 분노가 쌓일 땐 시원한 액션이나 빵 터지는 코미디가 최고죠! 💥\n\n제가 기분 전환에 도움이 될 영화들을 찾아봤어요! 🎬`;
-            break;
-          case 'GENRE_RECOMMENDATION':
-            if (queryType.genre === 'romance') {
-              message = `로맨스 영화를 찾고 계시는군요! 💕\n\n제가 가장 인기 있는 로맨스 영화들을 추천해드릴게요! 🎬`;
-            } else if (queryType.genre === 'action') {
-              message = `액션 영화를 원하시는군요! 💥\n\n제가 가장 화끈한 액션 영화들을 추천해드릴게요! 🔥`;
-            }
-            break;
-          case 'GENERAL_RECOMMENDATION':
-          default:
-            message = `흥미로운 질문이네요! 🤔\n\n제가 인기 있는 영화들을 추천해드릴게요! 🎬`;
-            break;
-        }
-        // 안내 메시지 및 방어적 처리
         if (nowOrSoon.length > 0) {
           return {
             message: message,
             movies: nowOrSoon,
             endedMovies: ended,
-            type: "RECOMMENDATION"
+            type: queryType.type
           };
         } else if (ended.length > 0) {
           message += `\n\n⚠️ 현재 상영중이거나 개봉예정인 영화가 없어 상영종료 영화를 안내합니다.`;
@@ -339,7 +368,7 @@ const ChatbotModal = ({ isOpen, onClose }) => {
             message: message,
             movies: ended,
             endedMovies: [],
-            type: "RECOMMENDATION"
+            type: queryType.type
           };
         } else if (movies.length > 0) {
           message += `\n\n⚠️ 추천할 영화가 없습니다. 하지만 아래 영화들을 참고해보세요.`;
@@ -347,7 +376,7 @@ const ChatbotModal = ({ isOpen, onClose }) => {
             message: message,
             movies: movies,
             endedMovies: [],
-            type: "RECOMMENDATION"
+            type: queryType.type
           };
         } else {
           message += `\n\n⚠️ 추천할 영화가 없습니다.`;
@@ -355,21 +384,18 @@ const ChatbotModal = ({ isOpen, onClose }) => {
             message: message,
             movies: [],
             endedMovies: [],
-            type: "RECOMMENDATION"
+            type: queryType.type
           };
         }
       } else {
         throw new Error(data.error || '영화 추천을 가져오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('영화 추천 API 호출 실패:', error);
-      
-      // 에러 발생 시 기본 메시지 반환
       return {
         message: `죄송합니다. 영화 추천을 가져오는 중에 문제가 발생했습니다. 😅\n\n잠시 후 다시 시도해주세요!`,
         movies: [],
         endedMovies: [],
-        type: "ERROR"
+        type: 'ERROR'
       };
     }
   };
@@ -508,7 +534,7 @@ const ChatbotModal = ({ isOpen, onClose }) => {
                     <div style={{ fontSize: 12, marginBottom: 8, opacity: 0.7 }}>
                       🎬 추천 영화
                     </div>
-                    {msg.movies.map(renderMovieCard)}
+                    {Array.from(new Map(msg.movies.map(m => [m.movieCd, m])).values()).map(renderMovieCard)}
                   </div>
                 )}
                 {msg.endedMovies && msg.endedMovies.length > 0 && (
@@ -516,7 +542,7 @@ const ChatbotModal = ({ isOpen, onClose }) => {
                     <div style={{ fontSize: 12, marginBottom: 8, opacity: 0.7 }}>
                       ⚠️ 상영이 종료된 영화
                     </div>
-                    {msg.endedMovies.map(renderMovieCard)}
+                    {Array.from(new Map(msg.endedMovies.map(m => [m.movieCd, m])).values()).map(renderMovieCard)}
                   </div>
                 )}
               </div>
@@ -549,6 +575,7 @@ const ChatbotModal = ({ isOpen, onClose }) => {
         <div style={{ padding: '16px 20px', borderTop: '1px solid #eee', background: '#fff' }}>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}

@@ -28,6 +28,27 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
     List<MovieList> findByMovieNmContainingIgnoreCase(String movieNm);
     
     /**
+     * 영화명으로 검색 (단어별 검색)
+     */
+    @Query("SELECT m FROM MovieList m WHERE LOWER(m.movieNm) LIKE LOWER(CONCAT('%', :word, '%'))")
+    List<MovieList> findByMovieNmContainingWord(@Param("word") String word);
+    
+    /**
+     * 영화명으로 검색 (띄어쓰기 무시)
+     */
+    @Query("SELECT m FROM MovieList m WHERE REPLACE(LOWER(m.movieNm), ' ', '') LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%'))")
+    List<MovieList> findByMovieNmIgnoreSpace(@Param("keyword") String keyword);
+    
+    /**
+     * 영화명으로 검색 (유사도 기반)
+     */
+    @Query("SELECT m FROM MovieList m WHERE " +
+           "LOWER(m.movieNm) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.movieNmEn) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "REPLACE(LOWER(m.movieNm), ' ', '') LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%'))")
+    List<MovieList> findByMovieNmSimilar(@Param("keyword") String keyword);
+    
+    /**
      * 영화 상태별 조회
      */
     List<MovieList> findByStatus(com.movie.movie_backend.constant.MovieStatus status);
