@@ -774,6 +774,11 @@
   color: #e74c3c;
   font-weight: 500;
 }
+
+.comment-replies {
+  color: #3498db;
+  font-weight: 500;
+}
 .comment-content {
   font-size: 14px;
   color: #444;
