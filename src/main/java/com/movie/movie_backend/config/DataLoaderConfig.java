@@ -363,113 +363,113 @@ public class DataLoaderConfig {
     //     };
     // }
 
-    // @Bean
-    // public CommandLineRunner matchAndSaveKmdbIds() {
-    //     return args -> {
-    //         log.info("=== KMDb ID 매칭 및 저장 배치 시작 ===");
-    //         
-    //         // KMDb API 테스트 먼저 실행
-    //         log.info("=== KMDb API 테스트 시작 ===");
-    //         testKmdbApi();
-    //         log.info("=== KMDb API 테스트 완료 ===");
-    //         
-    //         // 1차 매칭 실행
-    //         performInitialMatching();
-    //         
-    //         // 2차 매칭 실행 (실패한 영화들에 대해 추가 전략 적용)
-    //         performSecondaryMatching();
-    //         
-    //         // 배치 크기 설정
-    //         final int BATCH_SIZE = 10;
-    //         final int MAX_CONCURRENT_REQUESTS = 3;
-    //         
-    //         List<MovieList> movieLists = prdMovieListRepository.findAll();
-    //         List<MovieList> unmappedMovies = movieLists.stream()
-    //             .filter(movie -> !StringUtils.hasText(movie.getKmdbId()))
-    //             .collect(java.util.stream.Collectors.toList());
-    //         
-    //         log.info("총 {}개 영화 중 {}개가 매칭 필요", movieLists.size(), unmappedMovies.size());
-    //         
-    //         // 디버깅: 매칭이 필요한 영화들의 제목 확인
-    //         if (unmappedMovies.size() > 0) {
-    //             log.info("매칭 필요한 영화 샘플 (처음 5개):");
-    //             unmappedMovies.stream().limit(5).forEach(movie -> 
-    //                 log.info("  - {} ({})", movie.getMovieNm(), movie.getMovieCd()));
-    //         }
-    //         
-    //         if (unmappedMovies.isEmpty()) {
-    //             log.info("모든 영화가 이미 매칭되어 있습니다.");
-    //             return;
-    //         }
-    //         
-    //         int updated = 0, failed = 0, skipped = movieLists.size() - unmappedMovies.size();
-    //         
-    //         // 배치 단위로 처리
-    //         for (int i = 0; i < unmappedMovies.size(); i += BATCH_SIZE) {
-    //             int endIndex = Math.min(i + BATCH_SIZE, unmappedMovies.size());
-    //             List<MovieList> batch = unmappedMovies.subList(i, endIndex);
-    //             
-    //             log.info("배치 처리 중: {}/{} ({}-{})", 
-    //                 (i / BATCH_SIZE) + 1, 
-    //                 (unmappedMovies.size() + BATCH_SIZE - 1) / BATCH_SIZE,
-    //                 i + 1, endIndex);
-    //             
-    //             // 배치 내에서 병렬 처리 (최대 3개 동시 요청)
-    //             java.util.concurrent.ExecutorService executor = 
-    //                 java.util.concurrent.Executors.newFixedThreadPool(MAX_CONCURRENT_REQUESTS);
-    //             
-    //             try {
-    //                 java.util.List<java.util.concurrent.Future<MovieMappingResult>> futures = new ArrayList<>();
-    //                 
-    //                 for (MovieList movie : batch) {
-    //                         futures.add(executor.submit(() -> processMovie(movie)));
-    //                     }
-    //                     
-    //                     // 결과 수집
-    //                     for (java.util.concurrent.Future<MovieMappingResult> future : futures) {
-    //                             try {
-    //                                 MovieMappingResult result = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
-    //                                 if (result.success) {
-    //                                     updated++;
-    //                                     log.info("매칭 성공: {} ({}) -> kmdbId={}", 
-    //                                         result.movieNm, result.movieCd, result.kmdbId);
-    //                                 } else {
-    //                                     failed++;
-    //                                     // 실패한 영화들의 상세 로깅 (처음 20개)
-    //                                     if (failed <= 20) {
-    //                                         log.warn("KMDb 매칭 실패: {} ({}) - 검색어: {}", result.movieNm, result.movieCd, result.movieNm);
-    //                                     } else if (failed % 50 == 0) {
-    //                                         log.warn("KMDb 매칭 실패: {} ({})", result.movieNm, result.movieCd);
-    //                                     }
-    //                                 }
-    //                             } catch (Exception e) {
-    //                                 failed++;
-    //                                 log.error("영화 처리 중 오류 발생: {}", e.getMessage());
-    //                             }
-    //                         }
-    //                         
-    //                     } finally {
-    //                         executor.shutdown();
-    //                         try {
-    //                             if (!executor.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
-    //                                 executor.shutdownNow();
-    //                             }
-    //                         } catch (InterruptedException e) {
-    //                             executor.shutdownNow();
-    //                             Thread.currentThread().interrupt();
-    //                         }
-    //                     }
-    //                     
-    //                     // 배치 간 딜레이 (API 쿼터 보호)
-    //                     if (i + BATCH_SIZE < unmappedMovies.size()) {
-    //                         Thread.sleep(100);
-    //                     }
-    //                 }
-    //                 
-    //                 log.info("=== 1차 KMDb ID 매칭 완료: 성공 {}, 실패 {}, 스킵 {} ===", updated, failed, skipped);
-    //             };
-    //         }
-    
+    @Bean
+    public CommandLineRunner matchAndSaveKmdbIds() {
+        return args -> {
+            log.info("=== KMDb ID 매칭 및 저장 배치 시작 ===");
+            
+            // KMDb API 테스트 먼저 실행
+            log.info("=== KMDb API 테스트 시작 ===");
+            testKmdbApi();
+            log.info("=== KMDb API 테스트 완료 ===");
+            
+            // 1차 매칭 실행
+            performInitialMatching();
+            
+            // 2차 매칭 실행 (실패한 영화들에 대해 추가 전략 적용)
+            performSecondaryMatching();
+            
+            // 배치 크기 설정
+            final int BATCH_SIZE = 10;
+            final int MAX_CONCURRENT_REQUESTS = 3;
+            
+            List<MovieList> movieLists = prdMovieListRepository.findAll();
+            List<MovieList> unmappedMovies = movieLists.stream()
+                .filter(movie -> !StringUtils.hasText(movie.getKmdbId()))
+                .collect(java.util.stream.Collectors.toList());
+            
+            log.info("총 {}개 영화 중 {}개가 매칭 필요", movieLists.size(), unmappedMovies.size());
+            
+            // 디버깅: 매칭이 필요한 영화들의 제목 확인
+            if (unmappedMovies.size() > 0) {
+                log.info("매칭 필요한 영화 샘플 (처음 5개):");
+                unmappedMovies.stream().limit(5).forEach(movie -> 
+                    log.info("  - {} ({})", movie.getMovieNm(), movie.getMovieCd()));
+            }
+            
+            if (unmappedMovies.isEmpty()) {
+                log.info("모든 영화가 KMDb ID와 매핑되어 있습니다.");
+                return;
+            }
+            
+            int updated = 0, failed = 0, skipped = movieLists.size() - unmappedMovies.size();
+            
+            // 배치 단위로 처리
+            for (int i = 0; i < unmappedMovies.size(); i += BATCH_SIZE) {
+                int endIndex = Math.min(i + BATCH_SIZE, unmappedMovies.size());
+                List<MovieList> batch = unmappedMovies.subList(i, endIndex);
+                
+                log.info("배치 처리 중: {}/{} ({}-{})", 
+                    (i / BATCH_SIZE) + 1, 
+                    (unmappedMovies.size() + BATCH_SIZE - 1) / BATCH_SIZE,
+                    i + 1, endIndex);
+                
+                // 배치 내에서 병렬 처리 (최대 3개 동시 요청)
+                java.util.concurrent.ExecutorService executor = 
+                    java.util.concurrent.Executors.newFixedThreadPool(MAX_CONCURRENT_REQUESTS);
+                
+                try {
+                    java.util.List<java.util.concurrent.Future<MovieMappingResult>> futures = new ArrayList<>();
+                    
+                    for (MovieList movie : batch) {
+                            futures.add(executor.submit(() -> processMovie(movie)));
+                        }
+                        
+                        // 결과 수집
+                        for (java.util.concurrent.Future<MovieMappingResult> future : futures) {
+                                try {
+                                    MovieMappingResult result = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
+                                    if (result.success) {
+                                        updated++;
+                                        log.info("매칭 성공: {} ({}) -> kmdbId={}", 
+                                            result.movieNm, result.movieCd, result.kmdbId);
+                                    } else {
+                                        failed++;
+                                        // 실패한 영화들의 상세 로깅 (처음 20개)
+                                        if (failed <= 20) {
+                                            log.warn("KMDb 매칭 실패: {} ({}) - 검색어: {}", result.movieNm, result.movieCd, result.movieNm);
+                                        } else if (failed % 50 == 0) {
+                                            log.warn("KMDb 매칭 실패: {} ({})", result.movieNm, result.movieCd);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    failed++;
+                                    log.error("영화 처리 중 오류 발생: {}", e.getMessage());
+                                }
+                            }
+                            
+                        } finally {
+                            executor.shutdown();
+                            try {
+                                if (!executor.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+                                    executor.shutdownNow();
+                                }
+                            } catch (InterruptedException e) {
+                                executor.shutdownNow();
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                        
+                        // 배치 간 딜레이 (API 쿼터 보호)
+                        if (i + BATCH_SIZE < unmappedMovies.size()) {
+                            Thread.sleep(100);
+                        }
+                    }
+                    
+                    log.info("=== 1차 KMDb ID 매칭 완료: 성공 {}, 실패 {}, 스킵 {} ===", updated, failed, skipped);
+                };
+            }
+        
     // 1차 매칭 실행 메서드
     private void performInitialMatching() {
         log.info("=== 1차 KMDb ID 매칭 시작 ===");
@@ -1055,67 +1055,67 @@ public class DataLoaderConfig {
         return null;
     }
 
-    // @Bean
-    // public CommandLineRunner updateMovieStatusFromKmdb() {
-    //     return args -> {
-    //         log.info("=== KMDb status 동기화 시작 ===");
-    //         List<MovieList> movies = prdMovieListRepository.findByKmdbIdIsNotNull();
-    //         RestTemplate restTemplate = new RestTemplate();
-    //         int updated = 0, failed = 0;
-    //         for (MovieList movie : movies) {
-    //             try {
-    //                 String kmdbId = movie.getKmdbId();
-    //                 String url = String.format(
-    //                     "https://api.koreafilm.or.kr/openapi-data2/wisenut/search_api/search_json2.jsp?collection=kmdb_new2&DOCID=%s&ServiceKey=%s",
-    //                     kmdbId, kmdbApiKey
-    //                 );
-    //                 ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-    //                 String repRlsDate = null;
-    //                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-    //                     JSONObject json = new JSONObject(response.getBody());
-    //                     JSONArray dataArr = json.optJSONArray("Data");
-    //                     if (dataArr != null && dataArr.length() > 0) {
-    //                         JSONObject firstData = dataArr.getJSONObject(0);
-    //                         JSONArray resultArr = firstData.optJSONArray("Result");
-    //                         if (resultArr != null && resultArr.length() > 0) {
-    //                             JSONObject movieObj = resultArr.getJSONObject(0);
-    //                             repRlsDate = movieObj.optString("repRlsDate", "");
-    //                         }
-    //                     }
-    //                 }
-    //                 // repRlsDate가 없으면 openDt(내 DB) 사용
-    //                 String baseDate = null;
-    //                 if (repRlsDate != null && !repRlsDate.isBlank()) {
-    //                     baseDate = repRlsDate.replace("-", "");
-    //                 } else if (movie.getOpenDt() != null) {
-    //                     baseDate = movie.getOpenDt().toString().replace("-", "");
-    //                 }
-    //                 String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE); // yyyyMMdd
-    //                 MovieStatus status;
-    //                 if (baseDate == null || baseDate.isBlank()) {
-    //                     status = MovieStatus.COMING_SOON;
-    //                 } else {
-    //                     java.time.LocalDate openDate = java.time.LocalDate.parse(baseDate, java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
-    //                     java.time.LocalDate todayDate = java.time.LocalDate.now();
-    //                     if (openDate.isAfter(todayDate)) {
-    //                         status = MovieStatus.COMING_SOON;
-    //                     } else if (openDate.plusDays(45).isBefore(todayDate)) {
-    //                         status = MovieStatus.ENDED;
-    //                     } else {
-    //                         status = MovieStatus.NOW_PLAYING;
-    //                     }
-    //                 }
-    //                 movie.setStatus(status);
-    //                 prdMovieListRepository.save(movie);
-    //                 updated++;
-    //                 log.info("상태 업데이트: {}({}) -> {} (repRlsDate: {}, openDt: {})", movie.getMovieNm(), kmdbId, status, repRlsDate, movie.getOpenDt());
-    //                 Thread.sleep(100);
-    //             } catch (Exception e) {
-    //                 failed++;
-    //                 log.error("상태 업데이트 실패: {}({}) - {}", movie.getMovieNm(), movie.getKmdbId(), e.getMessage());
-    //             }
-    //         }
-    //         log.info("=== KMDb status 동기화 완료: 성공 {}, 실패 {} ===", updated, failed);
-    //     };
-    // }
+    @Bean
+    public CommandLineRunner updateMovieStatusFromKmdb() {
+        return args -> {
+            log.info("=== KMDb status 동기화 시작 ===");
+            List<MovieList> movies = prdMovieListRepository.findByKmdbIdIsNotNull();
+            RestTemplate restTemplate = new RestTemplate();
+            int updated = 0, failed = 0;
+            for (MovieList movie : movies) {
+                try {
+                    String kmdbId = movie.getKmdbId();
+                    String url = String.format(
+                        "https://api.koreafilm.or.kr/openapi-data2/wisenut/search_api/search_json2.jsp?collection=kmdb_new2&DOCID=%s&ServiceKey=%s",
+                        kmdbId, kmdbApiKey
+                    );
+                    ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+                    String repRlsDate = null;
+                    if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                        JSONObject json = new JSONObject(response.getBody());
+                        JSONArray dataArr = json.optJSONArray("Data");
+                        if (dataArr != null && dataArr.length() > 0) {
+                            JSONObject firstData = dataArr.getJSONObject(0);
+                            JSONArray resultArr = firstData.optJSONArray("Result");
+                            if (resultArr != null && resultArr.length() > 0) {
+                                JSONObject movieObj = resultArr.getJSONObject(0);
+                                repRlsDate = movieObj.optString("repRlsDate", "");
+                            }
+                        }
+                    }
+                    // repRlsDate가 없으면 openDt(내 DB) 사용
+                    String baseDate = null;
+                    if (repRlsDate != null && !repRlsDate.isBlank()) {
+                        baseDate = repRlsDate.replace("-", "");
+                    } else if (movie.getOpenDt() != null) {
+                        baseDate = movie.getOpenDt().toString().replace("-", "");
+                    }
+                    String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE); // yyyyMMdd
+                    MovieStatus status;
+                    if (baseDate == null || baseDate.isBlank()) {
+                        status = MovieStatus.COMING_SOON;
+                    } else {
+                        java.time.LocalDate openDate = java.time.LocalDate.parse(baseDate, java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+                        java.time.LocalDate todayDate = java.time.LocalDate.now();
+                        if (openDate.isAfter(todayDate)) {
+                            status = MovieStatus.COMING_SOON;
+                        } else if (openDate.plusDays(45).isBefore(todayDate)) {
+                            status = MovieStatus.ENDED;
+                        } else {
+                            status = MovieStatus.NOW_PLAYING;
+                        }
+                    }
+                    movie.setStatus(status);
+                    prdMovieListRepository.save(movie);
+                    updated++;
+                    log.info("상태 업데이트: {}({}) -> {} (repRlsDate: {}, openDt: {})", movie.getMovieNm(), kmdbId, status, repRlsDate, movie.getOpenDt());
+                    Thread.sleep(100);
+                } catch (Exception e) {
+                    failed++;
+                    log.error("상태 업데이트 실패: {}({}) - {}", movie.getMovieNm(), movie.getKmdbId(), e.getMessage());
+                }
+            }
+            log.info("=== KMDb status 동기화 완료: 성공 {}, 실패 {} ===", updated, failed);
+        };
+    }
 } 
