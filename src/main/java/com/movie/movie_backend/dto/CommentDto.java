@@ -14,6 +14,7 @@ public class CommentDto {
     private LocalDateTime updatedAt;
     private Long userId;
     private String userNickname;
+    private String userProfileImageUrl;
     private Long reviewId;
     private Long parentId;
     private boolean isReply;
@@ -32,6 +33,7 @@ public class CommentDto {
             .updatedAt(comment.getUpdatedAt())
             .userId(comment.getUser() != null ? comment.getUser().getId() : null)
             .userNickname(comment.getUser() != null ? comment.getUser().getNickname() : null)
+            .userProfileImageUrl(comment.getUser() != null ? comment.getUser().getProfileImageUrl() : null)
             .reviewId(comment.getReview() != null ? comment.getReview().getId() : null)
             .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
             .isReply(comment.isReply())
@@ -52,6 +54,7 @@ public class CommentDto {
             .updatedAt(comment.getUpdatedAt())
             .userId(comment.getUser() != null ? comment.getUser().getId() : null)
             .userNickname(comment.getUser() != null ? comment.getUser().getNickname() : null)
+            .userProfileImageUrl(comment.getUser() != null ? comment.getUser().getProfileImageUrl() : null)
             .reviewId(comment.getReview() != null ? comment.getReview().getId() : null)
             .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
             .isReply(comment.isReply())

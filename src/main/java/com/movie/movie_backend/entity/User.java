@@ -171,6 +171,12 @@ public class User implements UserDetails {
         return role == UserRole.USER;
     }
 
+    public String getProfileImageUrl() {
+        if (profileImageUrl == null || profileImageUrl.isEmpty()) return null;
+        if (profileImageUrl.startsWith("http")) return profileImageUrl;
+        return "http://localhost:80" + profileImageUrl;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -12,6 +12,7 @@ public class ReviewResponseDto {
     private LocalDateTime updatedAt;
     private String username;
     private Long userId;
+    private String userProfileImageUrl;
     private Long movieDetailId;
     private int likeCount;
     private boolean likedByMe;

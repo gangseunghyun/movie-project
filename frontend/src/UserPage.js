@@ -941,7 +941,18 @@ const UserPage = ({ onMovieClick }) => {
               ) : (
                 (followModalType === 'followers' ? followers : following).map(u => (
                   <li key={u.id} style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#6c63ff' }}>{u.nickname?.charAt(0)?.toUpperCase()}</div>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#6c63ff' }}>
+                      {u.profileImageUrl ? (
+                        <img
+                          src={u.profileImageUrl}
+                          alt={u.nickname}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                          onError={e => { e.target.onerror = null; e.target.src = '/placeholder-actor.png'; }}
+                        />
+                      ) : (
+                        u.nickname?.charAt(0)?.toUpperCase()
+                      )}
+                    </div>
                     <span
                       style={{ cursor: 'pointer', color: '#6c63ff', textDecoration: 'underline' }}
                       onClick={() => {

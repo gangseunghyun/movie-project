@@ -1249,12 +1249,15 @@ public class UserController {
     public static class UserSimpleDto {
         private Long id;
         private String nickname;
+        private String profileImageUrl;
         public UserSimpleDto(User user) {
             this.id = user.getId();
             this.nickname = user.getNickname();
+            this.profileImageUrl = user.getProfileImageUrl();
         }
         public Long getId() { return id; }
         public String getNickname() { return nickname; }
+        public String getProfileImageUrl() { return profileImageUrl; }
     }
 
     @GetMapping("/api/users/{userId}/followers")
@@ -1334,7 +1337,8 @@ public class UserController {
             .collect(java.util.stream.Collectors.toList());
         var recommenderDto = java.util.Map.of(
             "id", recommender.getId(),
-            "nickname", recommender.getNickname()
+            "nickname", recommender.getNickname(),
+            "profileImageUrl", recommender.getProfileImageUrl()
         );
         return ResponseEntity.ok(java.util.Map.of(
             "success", true,
