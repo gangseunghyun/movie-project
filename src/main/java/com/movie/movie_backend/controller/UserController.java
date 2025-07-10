@@ -26,6 +26,7 @@ import com.movie.movie_backend.repository.PersonLikeRepository;
 import com.movie.movie_backend.repository.ReviewLikeRepository;
 import com.movie.movie_backend.repository.REVReviewRepository;
 import com.movie.movie_backend.repository.CommentLikeRepository;
+import com.movie.movie_backend.repository.REVCommentRepository;
 import com.movie.movie_backend.service.MailService;
 import com.movie.movie_backend.service.USRUserService;
 import com.movie.movie_backend.constant.Provider;
@@ -86,6 +87,7 @@ public class UserController {
     private final ReviewLikeRepository reviewLikeRepository;
     private final REVReviewRepository reviewRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final REVCommentRepository commentRepository;
     private final ReservationRepository reservationRepository;
     private final ScreeningSeatRepository screeningSeatRepository;
     private final PaymentRepository paymentRepository;
@@ -960,6 +962,10 @@ public class UserController {
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     reviewDto.put("likeCount", likeCount);
                     
+                    // 댓글 수 추가
+                    Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
+                    reviewDto.put("commentCount", commentCount != null ? commentCount.intValue() : 0);
+                    
                     return reviewDto;
                 })
                 .collect(Collectors.toList());
@@ -1010,6 +1016,13 @@ public class UserController {
                     dto.put("posterUrl", md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null);
                     dto.put("genreNm", md.getGenreNm());
                     dto.put("openDt", md.getOpenDt());
+                    // 좋아요 수 추가
+                    int likeCount = reviewLikeRepository.countByReviewId(review.getId());
+                    dto.put("likeCount", likeCount);
+                    
+                    // 댓글 수 추가
+                    Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
+                    dto.put("commentCount", commentCount != null ? commentCount.intValue() : 0);
                     return dto;
                 })
                 .collect(Collectors.toList());

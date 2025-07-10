@@ -787,17 +787,18 @@ const UserPage = ({ onMovieClick }) => {
                       <div className="no-poster">No Poster</div>
                     )}
                   </div>
-                  <div className="comment-info">
-                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
-                    <div className="comment-meta">
-                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      {comment.rating && (
-                        <span className="comment-rating">★ {comment.rating}</span>
-                      )}
-                      <span className="comment-likes">♥ {comment.likeCount}</span>
+                                      <div className="comment-info">
+                      <h4 className="comment-movie-title">{comment.movieNm}</h4>
+                      <div className="comment-meta">
+                        <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                        {comment.rating && (
+                          <span className="comment-rating">★ {comment.rating}</span>
+                        )}
+                        <span className="comment-likes">♥ {comment.likeCount}</span>
+                        <span className="comment-replies">💬 {comment.commentCount}</span>
+                      </div>
+                      <div className="comment-content">{comment.content}</div>
                     </div>
-                    <div className="comment-content">{comment.content}</div>
-                  </div>
                 </div>
               ))}
             </div>
@@ -850,6 +851,7 @@ const UserPage = ({ onMovieClick }) => {
                         <span className="comment-rating">★ {comment.rating}</span>
                       )}
                       <span className="comment-likes">♥ {comment.likeCount}</span>
+                      <span className="comment-replies">💬 {comment.commentCount}</span>
                     </div>
                     <div className="comment-content">{comment.content}</div>
                   </div>
