@@ -514,7 +514,8 @@ public class UserController {
                                         "nickname", socialUser.getNickname(),
                                         "role", socialUser.getRole().name(),
                                         "isAdmin", socialUser.isAdmin(),
-                                        "isUser", socialUser.isUser()
+                                        "isUser", socialUser.isUser(),
+                                        "profileImageUrl", socialUser.getProfileImageUrl()
                                     )
                                 ));
                         }
@@ -541,7 +542,8 @@ public class UserController {
                                     "nickname", sessionUser.getNickname(),
                                     "role", sessionUser.getRole().name(),
                                     "isAdmin", sessionUser.isAdmin(),
-                                    "isUser", sessionUser.isUser()
+                                    "isUser", sessionUser.isUser(),
+                                    "profileImageUrl", sessionUser.getProfileImageUrl()
                                 )
                             ));
                     }
@@ -631,7 +633,8 @@ public class UserController {
                         "nickname", currentUser.getNickname() != null ? currentUser.getNickname() : "",
                         "role", currentUser.getRole().name(),
                         "isAdmin", currentUser.isAdmin(),
-                        "isUser", currentUser.isUser()
+                        "isUser", currentUser.isUser(),
+                        "profileImageUrl", currentUser.getProfileImageUrl()
                     )
                 ));
         } catch (Exception e) {
@@ -737,6 +740,7 @@ public class UserController {
         result.put("id", user.getId());
         result.put("nickname", user.getNickname());
         result.put("email", user.getEmail());
+        result.put("profileImageUrl", user.getProfileImageUrl()); // 추가
         return ResponseEntity.ok(result);
     }
 

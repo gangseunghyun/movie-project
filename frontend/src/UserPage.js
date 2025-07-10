@@ -9,6 +9,7 @@ import axios from 'axios';
 import './UserPage.css';
 import UserReservations from './UserReservations';
 import ReservationReceipt from './ReservationReceipt';
+import ProfileImageUpload from './components/ProfileImageUpload';
 
 
 const UserPage = ({ onMovieClick }) => {
@@ -55,6 +56,9 @@ const UserPage = ({ onMovieClick }) => {
   const [following, setFollowing] = useState([]);
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followModalType, setFollowModalType] = useState('followers'); // 'followers' or 'following'
+
+  // 프로필 이미지 업로드 모달 상태
+  const [showProfileImageModal, setShowProfileImageModal] = useState(false);
 
   // openUserReservations 이벤트 수신해서 예매목록 모달 자동 오픈
   useEffect(() => {
@@ -262,6 +266,12 @@ const UserPage = ({ onMovieClick }) => {
     fetchFollowData();
   }, [user]);
 
+  // 디버깅: user, currentUser 값 콘솔 출력
+  useEffect(() => {
+    console.log('user:', user);
+    console.log('currentUser:', currentUser);
+  }, [user, currentUser]);
+
   const handleTagChange = (tag) => {
     setSelectedTags(prev => {
       if (prev.includes(tag)) {
@@ -281,28 +291,10 @@ const UserPage = ({ onMovieClick }) => {
     try {
       // genreTags에 존재하는 selectedTags만 저장
       const validTags = selectedTags.filter(tag => genreTags.includes(tag));
-      console.log('[선호태그 저장] 저장할 태그:', validTags);
-      console.log('[선호태그 저장] 사용자 ID:', user.id);
-      
       await axios.put(`http://localhost:80/api/users/${user.id}/preferred-tags`, validTags);
-      console.log('[선호태그 저장] 백엔드 저장 완료');
-      
       setPreferredTags(validTags);
       setEditMode(false);
       alert('선호 태그가 저장되었습니다!');
-      
-      // 메인페이지의 추천 결과 새로고침을 위한 이벤트 발생
-      window.dispatchEvent(new CustomEvent('preferredTagsUpdated', { 
-        detail: { userId: user.id, tags: validTags } 
-      }));
-      
-      // 백엔드 캐시 강제 삭제 (확실성을 위해)
-      try {
-        await axios.post(`http://localhost:80/api/users/${user.id}/clear-recommendation-cache`, {}, { withCredentials: true });
-        console.log('추천 캐시 강제 삭제 완료');
-      } catch (cacheError) {
-        console.error('캐시 삭제 실패:', cacheError);
-      }
     } catch (e) {
       alert('저장에 실패했습니다.');
     } finally {
@@ -313,6 +305,14 @@ const UserPage = ({ onMovieClick }) => {
   const handleCancel = () => {
     setSelectedTags(preferredTags);
     setEditMode(false);
+  };
+
+  // 프로필 이미지 업데이트 핸들러
+  const handleProfileImageUpdate = (newImageUrl) => {
+    setUser(prevUser => ({
+      ...prevUser,
+      profileImageUrl: newImageUrl
+    }));
   };
 
   const handleGoHome = () => {
@@ -400,8 +400,41 @@ const UserPage = ({ onMovieClick }) => {
       <div className="user-profile-card">
         <div className="profile-header" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div className="profile-avatar">
-              <span>{user.nickname.charAt(0).toUpperCase()}</span>
+            <div className="profile-avatar" style={{ position: 'relative' }}>
+              {user.profileImageUrl ? (
+                <img 
+                  src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `http://localhost:80${user.profileImageUrl}`}
+                  alt="프로필 이미지"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span>{user.nickname.charAt(0).toUpperCase()}</span>
+              )}
+              {currentUser && String(user.id) === String(currentUser.id) && (
+                <button
+                  className="avatar-edit-btn"
+                  onClick={() => setShowProfileImageModal(true)}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    bottom: 0,
+                    background: '#fff',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 32,
+                    height: 32,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                  aria-label="프로필 이미지 수정"
+                >
+                  <span role="img" aria-label="설정">⚙️</span>
+                </button>
+              )}
             </div>
             <h2 className="profile-title">마이페이지</h2>
           </div>
@@ -516,6 +549,41 @@ const UserPage = ({ onMovieClick }) => {
             )
           )}
         </div>
+
+        {showProfileImageModal && (
+          <div
+            className="modal-overlay"
+            style={{
+              position: 'fixed',
+              top: 0, left: 0, width: '100vw', height: '100vh',
+              background: 'rgba(0,0,0,0.3)', zIndex: 3000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onClick={e => {
+              if (e.target === e.currentTarget) setShowProfileImageModal(false);
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: '#fff', borderRadius: 16, padding: 32, minWidth: 350, position: 'relative'
+              }}
+            >
+              <button
+                onClick={() => setShowProfileImageModal(false)}
+                style={{
+                  position: 'absolute', top: 16, right: 16, background: 'transparent', border: 'none', fontSize: 24, cursor: 'pointer'
+                }}
+                aria-label="닫기"
+              >×</button>
+              <ProfileImageUpload
+                currentImageUrl={user.profileImageUrl}
+                onImageUpdate={handleProfileImageUpdate}
+                onSuccess={() => setShowProfileImageModal(false)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* '내 예매목록 보기' 버튼을 선호태그 바로 아래에 위치 */}
         <button
@@ -787,18 +855,17 @@ const UserPage = ({ onMovieClick }) => {
                       <div className="no-poster">No Poster</div>
                     )}
                   </div>
-                                      <div className="comment-info">
-                      <h4 className="comment-movie-title">{comment.movieNm}</h4>
-                      <div className="comment-meta">
-                        <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                        {comment.rating && (
-                          <span className="comment-rating">★ {comment.rating}</span>
-                        )}
-                        <span className="comment-likes">♥ {comment.likeCount}</span>
-                        <span className="comment-replies">💬 {comment.commentCount}</span>
-                      </div>
-                      <div className="comment-content">{comment.content}</div>
+                  <div className="comment-info">
+                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
+                    <div className="comment-meta">
+                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                      {comment.rating && (
+                        <span className="comment-rating">★ {comment.rating}</span>
+                      )}
+                      <span className="comment-likes">♥ {comment.likeCount}</span>
                     </div>
+                    <div className="comment-content">{comment.content}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -851,7 +918,6 @@ const UserPage = ({ onMovieClick }) => {
                         <span className="comment-rating">★ {comment.rating}</span>
                       )}
                       <span className="comment-likes">♥ {comment.likeCount}</span>
-                      <span className="comment-replies">💬 {comment.commentCount}</span>
                     </div>
                     <div className="comment-content">{comment.content}</div>
                   </div>
@@ -901,4 +967,7 @@ const UserPage = ({ onMovieClick }) => {
   );
 };
 
-export default UserPage; 
+
+
+export default UserPage;
+

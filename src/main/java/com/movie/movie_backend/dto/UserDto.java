@@ -11,6 +11,7 @@ public class UserDto {
     private String role;
     private boolean emailVerified;
     private boolean socialJoinCompleted;
+    private String profileImageUrl;
 
     public static UserDto fromEntity(com.movie.movie_backend.entity.User user) {
         return UserDto.builder()
@@ -21,6 +22,7 @@ public class UserDto {
             .role(user.getRole() != null ? user.getRole().name() : null)
             .emailVerified(user.isEmailVerified())
             .socialJoinCompleted(user.isSocialJoinCompleted())
+            .profileImageUrl(user.getProfileImageUrl())
             .build();
     }
 } 
