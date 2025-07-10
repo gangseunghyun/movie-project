@@ -167,7 +167,8 @@ public class SecurityConfig {
                     "/api/users/*/following",
                     "/api/users/*/liked-directors",
                     "/api/forbidden-words/filter",
-                    "/api/forbidden-words/check"
+                    "/api/forbidden-words/check",
+                    "/api/profile/images/**"
                 ).permitAll()
                 .requestMatchers("/api/mcp/tools/**").permitAll()
                 .requestMatchers("/api/user-login").permitAll()
