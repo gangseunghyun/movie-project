@@ -277,9 +277,28 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
               marginBottom: 8,
               boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
             }}>
-              <b>{parent.userNickname}</b>
-              <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(parent.createdAt)}</span>
-              {/* 블라인드 처리 */}
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                <img 
+                  src={parent.userProfileImageUrl || '/placeholder-actor.png'} 
+                  alt="프로필" 
+                  style={{ 
+                    width: 32, 
+                    height: 32, 
+                    borderRadius: '50%', 
+                    marginRight: 8,
+                    objectFit: 'cover',
+                    border: '1px solid #e1e5e9'
+                  }} 
+                  onError={(e) => {
+                    e.target.src = '/placeholder-actor.png';
+                  }}
+                />
+                <div>
+                  <b>{parent.userNickname}</b>
+                  <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(parent.createdAt)}</span>
+                </div>
+                              </div>
+                {/* 블라인드 처리 */}
               {parent.isBlockedByCleanbot ? (
                 <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line', color: '#888', fontStyle: 'italic' }}>
                   {showBlocked[parent.id] ? (
@@ -373,9 +392,28 @@ function CommentList({ reviewId, currentUser, isOpen, onClose }) {
                 boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                 marginLeft: 32
               }}>
-                <b>{reply.userNickname}</b>
-                <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(reply.createdAt)}</span>
-                <span style={{ color: '#3b82f6', fontWeight: 600, marginLeft: 8 }}>@{parent.userNickname}</span>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                  <img 
+                    src={reply.userProfileImageUrl || '/placeholder-actor.png'} 
+                    alt="프로필" 
+                    style={{ 
+                      width: 28, 
+                      height: 28, 
+                      borderRadius: '50%', 
+                      marginRight: 8,
+                      objectFit: 'cover',
+                      border: '1px solid #e1e5e9'
+                    }} 
+                    onError={(e) => {
+                      e.target.src = '/placeholder-actor.png';
+                    }}
+                  />
+                  <div>
+                    <b>{reply.userNickname}</b>
+                    <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{formatDate(reply.createdAt)}</span>
+                    <span style={{ color: '#3b82f6', fontWeight: 600, marginLeft: 8 }}>@{parent.userNickname}</span>
+                  </div>
+                </div>
                 {/* 블라인드 처리 (대댓글) */}
                 {reply.isBlockedByCleanbot ? (
                   <div style={{ margin: '4px 0 8px 0', whiteSpace: 'pre-line', color: '#888', fontStyle: 'italic' }}>
