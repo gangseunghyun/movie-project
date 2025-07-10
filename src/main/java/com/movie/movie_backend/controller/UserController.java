@@ -1288,6 +1288,17 @@ public class UserController {
         List<MovieDetail> highRatedMovies = recommender.getRatings() == null ? java.util.Collections.emptyList() : recommender.getRatings().stream().filter(r -> r.getScore() >= 4.0).map(r -> r.getMovieDetail()).toList();
         java.util.Set<MovieDetail> movieSet = new java.util.LinkedHashSet<>(likedMovies);
         movieSet.addAll(highRatedMovies);
+        if (movieSet.isEmpty()) {
+            return ResponseEntity.ok(java.util.Map.of(
+                "success", true,
+                "message", "추천할 영화가 없습니다.",
+                "recommender", java.util.Map.of(
+                    "id", recommender.getId(),
+                    "nickname", recommender.getNickname()
+                ),
+                "movies", java.util.Collections.emptyList()
+            ));
+        }
         List<java.util.Map<String, Object>> movies = movieSet.stream()
             .map(md -> {
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
