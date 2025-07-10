@@ -515,7 +515,7 @@ public class UserController {
                                         "role", socialUser.getRole().name(),
                                         "isAdmin", socialUser.isAdmin(),
                                         "isUser", socialUser.isUser(),
-                                        "profileImageUrl", socialUser.getProfileImageUrl()
+                                        "profileImageUrl", socialUser.getProfileImageUrl() != null ? socialUser.getProfileImageUrl() : ""
                                     )
                                 ));
                         }
@@ -543,7 +543,7 @@ public class UserController {
                                     "role", sessionUser.getRole().name(),
                                     "isAdmin", sessionUser.isAdmin(),
                                     "isUser", sessionUser.isUser(),
-                                    "profileImageUrl", sessionUser.getProfileImageUrl()
+                                    "profileImageUrl", sessionUser.getProfileImageUrl() != null ? sessionUser.getProfileImageUrl() : ""
                                 )
                             ));
                     }
@@ -553,10 +553,14 @@ public class UserController {
             // Spring Security Authentication에서 사용자 정보 가져오기
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             log.info("Authentication: {}", authentication);
-            log.info("Authentication Principal: {}", authentication.getPrincipal());
-            log.info("Authentication Principal Type: {}", authentication.getPrincipal().getClass().getName());
-            log.info("Authentication Name: {}", authentication.getName());
-            log.info("Authentication isAuthenticated: {}", authentication.isAuthenticated());
+            if (authentication != null && authentication.getPrincipal() != null) {
+                log.info("Authentication Principal: {}", authentication.getPrincipal());
+                log.info("Authentication Principal Type: {}", authentication.getPrincipal().getClass().getName());
+                log.info("Authentication Name: {}", authentication.getName());
+                log.info("Authentication isAuthenticated: {}", authentication.isAuthenticated());
+            } else {
+                log.warn("Authentication 또는 Principal이 null입니다");
+            }
             
             User currentUser = null;
             
@@ -565,45 +569,57 @@ public class UserController {
                 
                 // OAuth2 사용자인 경우
                 if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User) {
-                    org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
-                        (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
-                    
-                    String email = oauth2User.getAttribute("email");
-                    String provider = oauth2User.getAttribute("provider");
-                    String providerId = oauth2User.getAttribute("providerId");
-                    
-                    log.info("OAuth2 사용자 정보 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
-                    
-                    // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
-                    if (email == null && "KAKAO".equals(provider)) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
-                        if (kakaoAccount != null) {
-                            email = (String) kakaoAccount.get("email");
+                    try {
+                        org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
+                            (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
+                        
+                        String email = oauth2User.getAttribute("email");
+                        String provider = oauth2User.getAttribute("provider");
+                        String providerId = oauth2User.getAttribute("providerId");
+                        
+                        log.info("OAuth2 사용자 정보 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
+                        
+                        // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+                        if (email == null && "KAKAO".equals(provider)) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+                            if (kakaoAccount != null) {
+                                email = (String) kakaoAccount.get("email");
+                            }
                         }
-                    }
-                    
-                    if (email != null && provider != null && providerId != null) {
-                        try {
-                            Provider providerEnum = Provider.valueOf(provider.toUpperCase());
-                            currentUser = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
-                            log.info("OAuth2 사용자 조회 결과: {}", currentUser);
-                        } catch (Exception e) {
-                            log.error("OAuth2 사용자 조회 실패", e);
+                        
+                        if (email != null && provider != null && providerId != null) {
+                            try {
+                                Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+                                currentUser = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
+                                log.info("OAuth2 사용자 조회 결과: {}", currentUser);
+                            } catch (Exception e) {
+                                log.error("OAuth2 사용자 조회 실패", e);
+                            }
                         }
+                    } catch (Exception e) {
+                        log.error("OAuth2 사용자 정보 추출 실패", e);
                     }
                 }
                 // Spring Security로 로그인한 사용자인 경우 (User 엔티티가 Principal)
                 else if (authentication.getPrincipal() instanceof User) {
-                    currentUser = (User) authentication.getPrincipal();
-                    log.info("Spring Security 사용자 조회: {}", currentUser);
+                    try {
+                        currentUser = (User) authentication.getPrincipal();
+                        log.info("Spring Security 사용자 조회: {}", currentUser);
+                    } catch (Exception e) {
+                        log.error("Spring Security User 엔티티 캐스팅 실패", e);
+                    }
                 }
                 // 기타 경우 (loginId로 조회) - Spring Security의 UserDetails 구현체
                 else {
-                    String loginId = authentication.getName();
-                    log.info("loginId로 사용자 조회 시도: {}", loginId);
-                    currentUser = userRepository.findByLoginId(loginId).orElse(null);
-                    log.info("loginId로 사용자 조회 결과: {}", currentUser);
+                    try {
+                        String loginId = authentication.getName();
+                        log.info("loginId로 사용자 조회 시도: {}", loginId);
+                        currentUser = userRepository.findByLoginId(loginId).orElse(null);
+                        log.info("loginId로 사용자 조회 결과: {}", currentUser);
+                    } catch (Exception e) {
+                        log.error("loginId로 사용자 조회 실패", e);
+                    }
                 }
             }
             
@@ -634,15 +650,15 @@ public class UserController {
                         "role", currentUser.getRole().name(),
                         "isAdmin", currentUser.isAdmin(),
                         "isUser", currentUser.isUser(),
-                        "profileImageUrl", currentUser.getProfileImageUrl()
+                        "profileImageUrl", currentUser.getProfileImageUrl() != null ? currentUser.getProfileImageUrl() : ""
                     )
                 ));
         } catch (Exception e) {
             log.error("현재 사용자 정보 조회 실패", e);
             Map<String, Object> result = new HashMap<>();
             result.put("success", false);
-            result.put("message", "사용자 정보 조회에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest()
+            result.put("message", "사용자 정보 조회에 실패했습니다: " + (e.getMessage() != null ? e.getMessage() : "알 수 없는 오류"));
+            return ResponseEntity.ok()
                 .header("Cache-Control", "no-cache, no-store, must-revalidate")
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
