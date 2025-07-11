@@ -739,8 +739,17 @@ public class UserController {
     @GetMapping("/api/users/search")
     public ResponseEntity<?> searchUsersByNickname(@RequestParam String nickname) {
         var users = userRepository.findByNicknameContainingIgnoreCase(nickname);
-        // 닉네임만 리스트로 반환
-        return ResponseEntity.ok(users.stream().map(User::getNickname).toList());
+        // 유저 정보를 포함한 리스트로 반환
+        List<Map<String, Object>> userResults = users.stream().map(user -> {
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", user.getId());
+            userInfo.put("nickname", user.getNickname());
+            userInfo.put("profileImageUrl", user.getProfileImageUrl());
+            userInfo.put("followingCount", user.getFollowing().size());
+            userInfo.put("followersCount", user.getFollowers().size());
+            return userInfo;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(userResults);
     }
 
     // 유저 닉네임 단일 조회 API (마이페이지)
