@@ -755,18 +755,34 @@ public class UserController {
     // 유저 닉네임 단일 조회 API (마이페이지)
     @GetMapping("/api/users/nickname/{nickname}")
     public ResponseEntity<?> getUserByNickname(@PathVariable String nickname) {
-        var userOpt = userRepository.findOneByNickname(nickname);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        log.info("=== getUserByNickname 호출됨 ===");
+        log.info("요청된 닉네임: {}", nickname);
+        
+        try {
+            var userOpt = userRepository.findByNickname(nickname);
+            log.info("데이터베이스 조회 결과: {}", userOpt.isPresent() ? "유저 찾음" : "유저 없음");
+            
+            if (userOpt.isEmpty()) {
+                log.warn("닉네임 '{}'에 해당하는 유저를 찾을 수 없습니다.", nickname);
+                return ResponseEntity.notFound().build();
+            }
+            
+            var user = userOpt.get();
+            log.info("유저 정보: id={}, nickname={}, email={}", user.getId(), user.getNickname(), user.getEmail());
+            
+            // 마이페이지: 닉네임, 이메일, ID 반환
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", user.getId());
+            result.put("nickname", user.getNickname());
+            result.put("email", user.getEmail());
+            result.put("profileImageUrl", user.getProfileImageUrl()); // 추가
+            
+            log.info("응답 데이터: {}", result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("getUserByNickname 에러 발생: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "유저 정보 조회 중 오류가 발생했습니다."));
         }
-        var user = userOpt.get();
-        // 마이페이지: 닉네임, 이메일, ID 반환
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", user.getId());
-        result.put("nickname", user.getNickname());
-        result.put("email", user.getEmail());
-        result.put("profileImageUrl", user.getProfileImageUrl()); // 추가
-        return ResponseEntity.ok(result);
     }
 
     // [1] 장르 태그 전체 조회
