@@ -856,14 +856,30 @@ const UserPage = ({ onMovieClick }) => {
                     )}
                   </div>
                   <div className="comment-info">
-                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
-                    <div className="comment-meta">
-                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      {comment.rating && (
-                        <span className="comment-rating">★ {comment.rating}</span>
-                      )}
-                      <span className="comment-likes">♥ {comment.likeCount}</span>
+                    <div className="comment-header">
+                      <div className="comment-author-info">
+                        <div className="author-profile-image">
+                          {comment.authorProfileImageUrl ? (
+                            <img 
+                              src={comment.authorProfileImageUrl.startsWith('http') ? comment.authorProfileImageUrl : `http://localhost:80${comment.authorProfileImageUrl}`}
+                              alt={comment.authorNickname}
+                              onError={e => { e.target.onerror = null; e.target.src = '/placeholder-actor.png'; }}
+                            />
+                          ) : (
+                            <span>{comment.authorNickname?.charAt(0)?.toUpperCase()}</span>
+                          )}
+                        </div>
+                        <span className="author-nickname">{comment.authorNickname}</span>
+                      </div>
+                      <div className="comment-meta">
+                        <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                        {comment.rating && (
+                          <span className="comment-rating">★ {comment.rating}</span>
+                        )}
+                        <span className="comment-likes">♥ {comment.likeCount}</span>
+                      </div>
                     </div>
+                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
                     <div className="comment-content">{comment.content}</div>
                   </div>
                 </div>
@@ -908,17 +924,30 @@ const UserPage = ({ onMovieClick }) => {
                     )}
                   </div>
                   <div className="comment-info">
+                    <div className="comment-header">
+                      <div className="comment-author-info">
+                        <div className="author-profile-image">
+                          {comment.authorProfileImageUrl ? (
+                            <img 
+                              src={comment.authorProfileImageUrl.startsWith('http') ? comment.authorProfileImageUrl : `http://localhost:80${comment.authorProfileImageUrl}`}
+                              alt={comment.authorNickname}
+                              onError={e => { e.target.onerror = null; e.target.src = '/placeholder-actor.png'; }}
+                            />
+                          ) : (
+                            <span>{comment.authorNickname?.charAt(0)?.toUpperCase()}</span>
+                          )}
+                        </div>
+                        <span className="author-nickname">by {comment.authorNickname}</span>
+                      </div>
+                      <div className="comment-meta">
+                        <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                        {comment.rating && (
+                          <span className="comment-rating">★ {comment.rating}</span>
+                        )}
+                        <span className="comment-likes">♥ {comment.likeCount}</span>
+                      </div>
+                    </div>
                     <h4 className="comment-movie-title">{comment.movieNm}</h4>
-                    <div className="comment-author">
-                      <span className="author-nickname">by {comment.authorNickname}</span>
-                    </div>
-                    <div className="comment-meta">
-                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      {comment.rating && (
-                        <span className="comment-rating">★ {comment.rating}</span>
-                      )}
-                      <span className="comment-likes">♥ {comment.likeCount}</span>
-                    </div>
                     <div className="comment-content">{comment.content}</div>
                   </div>
                 </div>

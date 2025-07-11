@@ -970,12 +970,22 @@ public class UserController {
                     reviewDto.put("createdAt", review.getCreatedAt());
                     reviewDto.put("updatedAt", review.getUpdatedAt());
                     
+                    // 작성자 정보 추가 (프로필 이미지 포함)
+                    User reviewUser = review.getUser();
+                    if (reviewUser != null) {
+                        reviewDto.put("authorId", reviewUser.getId());
+                        reviewDto.put("authorNickname", reviewUser.getNickname());
+                        reviewDto.put("authorProfileImageUrl", reviewUser.getProfileImageUrl());
+                    }
+                    
                     // 영화 정보 추가
                     MovieDetail movie = review.getMovieDetail();
                     if (movie != null) {
                         reviewDto.put("movieCd", movie.getMovieCd());
                         reviewDto.put("movieNm", movie.getMovieNm());
                         reviewDto.put("posterUrl", movie.getMovieList() != null ? movie.getMovieList().getPosterUrl() : null);
+                        reviewDto.put("genreNm", movie.getGenreNm());
+                        reviewDto.put("openDt", movie.getOpenDt());
                     }
                     
                     // 좋아요 수 추가
@@ -1029,6 +1039,7 @@ public class UserController {
                     User reviewUser = review.getUser();
                     dto.put("authorNickname", reviewUser.getNickname());
                     dto.put("authorId", reviewUser.getId());
+                    dto.put("authorProfileImageUrl", reviewUser.getProfileImageUrl());
                     // 영화 정보
                     MovieDetail md = review.getMovieDetail();
                     dto.put("movieCd", md.getMovieCd());

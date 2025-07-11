@@ -752,6 +752,41 @@
 .comment-info {
   flex: 1;
 }
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.comment-author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.author-profile-image {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.author-profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
 .comment-movie-title {
   margin: 0 0 4px 0;
   font-size: 15px;
@@ -832,6 +867,42 @@
   font-size: 12px;
   color: #667eea;
   font-weight: 500;
+}
+
+/* 좋아요한 코멘트 섹션에서도 동일한 스타일 적용 */
+.liked-comment-card .comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.liked-comment-card .comment-author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.liked-comment-card .author-profile-image {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.liked-comment-card .author-profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
  
