@@ -992,6 +992,9 @@ public class UserController {
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     reviewDto.put("likeCount", likeCount);
                     
+                    // 내가 좋아요했는지 여부 추가 (내가 작성한 코멘트이므로 true)
+                    reviewDto.put("likedByMe", true);
+                    
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
                     reviewDto.put("commentCount", commentCount != null ? commentCount.intValue() : 0);
@@ -1050,6 +1053,9 @@ public class UserController {
                     // 좋아요 수 추가
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     dto.put("likeCount", likeCount);
+                    
+                    // 내가 좋아요했는지 여부 추가 (좋아요한 코멘트이므로 true)
+                    dto.put("likedByMe", true);
                     
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
