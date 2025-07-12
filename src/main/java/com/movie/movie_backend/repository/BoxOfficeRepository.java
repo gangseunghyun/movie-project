@@ -34,4 +34,7 @@ public interface BoxOfficeRepository extends JpaRepository<BoxOffice, Long> {
     
     // 특정 날짜와 타입으로 기존 데이터 삭제
     void deleteByTargetDateAndRankType(LocalDate targetDate, String rankType);
+    
+    // 중복 체크를 위한 메서드 추가
+    boolean existsByMovieCdAndTargetDateAndRankType(String movieCd, LocalDate targetDate, String rankType);
 } 

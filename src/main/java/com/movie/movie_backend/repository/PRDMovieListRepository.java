@@ -103,11 +103,5 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
      */
     List<MovieList> findByKmdbIdIsNotNull();
     
-    /**
-     * 상세정보가 없는 movieList를 일괄 삭제
-     */
-    @Modifying
-    @Transactional
-    @Query("DELETE FROM MovieList ml WHERE ml.movieCd NOT IN (SELECT md.movieCd FROM MovieDetail md)")
-    int deleteOrphanMovieLists();
+
 } 

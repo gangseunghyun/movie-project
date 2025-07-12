@@ -48,27 +48,33 @@ public class MovieLoaderConfig {
     private String tmdbApiKey;
 
     @Bean
-    @Order(2)  // BoxOffice 다음에 실행
+    @Order(1)  // BoxOffice보다 먼저 실행
     public CommandLineRunner loadKobisMoviesAndDetails() {
         return args -> {
             log.info("=== KOBIS MovieList 로드 시작 (2025년 이후 영화) ===");
             try {
-                // 연도별 limit 변수 선언
-                int limit2025 = 400;
-                int limit2024 = 400;
-                int limit2023 = 300;
+                // 연도별 limit 변수 선언 (청불 제외 후 1000개 목표, API 키 2개 사용)
+                int limit2025 = 1200;
+                int limit2024 = 1200;
+                int limit2023 = 1000;
                 int[] years = {2025, 2024, 2023};
                 int[] limits = {limit2025, limit2024, limit2023};
                 List<MovieListDto> allMovies = new ArrayList<>();
                 Set<String> addedMovieCds = new HashSet<>();
-                for (int i = 0; i < years.length; i++) {
-                    List<MovieListDto> yearMovies = kobisPopularMovieService.getPopularMoviesBySales(limits[i], years[i]);
-                    for (MovieListDto dto : yearMovies) {
-                        if (!addedMovieCds.contains(dto.getMovieCd())) {
-                            allMovies.add(dto);
-                            addedMovieCds.add(dto.getMovieCd());
+                // MovieList 가져오기 (API 제한 고려)
+                try {
+                    for (int i = 0; i < years.length; i++) {
+                        List<MovieListDto> yearMovies = kobisPopularMovieService.getPopularMoviesBySales(limits[i], years[i]);
+                        for (MovieListDto dto : yearMovies) {
+                            if (!addedMovieCds.contains(dto.getMovieCd())) {
+                                allMovies.add(dto);
+                                addedMovieCds.add(dto.getMovieCd());
+                            }
                         }
                     }
+                } catch (Exception e) {
+                    log.warn("MovieList 가져오기 중 API 제한 또는 오류 발생: {}", e.getMessage());
+                    log.info("기존 MovieList에서 MovieDetail 추가를 계속 진행합니다.");
                 }
                 log.info("연도별 인기영화 합산 후 총 MovieList 수: {}개", allMovies.size());
                 if (allMovies.isEmpty()) {
@@ -91,9 +97,9 @@ public class MovieLoaderConfig {
                 log.info("MovieList 적재 완료: {}개 저장, {}개 스킵 (이미 존재)", savedMovieList, skippedMovieList);
                 log.info("=== KOBIS MovieList 로드 완료 ===");
 
-                // MovieDetail 저장 (청불 제외, 1100개 제한)
-                log.info("=== MovieDetail 로드 시작 (청불 제외, 1100개 제한) ===");
-                long targetDetailCount = 1100L;
+                // MovieDetail 저장 (청불 제외, 2000개 제한 - API 호출 제한 고려)
+                log.info("=== MovieDetail 로드 시작 (청불 제외, 2000개 제한) ===");
+                long targetDetailCount = 2000L;
                 long initialDetailCount = movieRepository.count();
                 long savedDetailCount = initialDetailCount;
                 Set<String> alreadySavedMovieCds = new HashSet<>();
@@ -144,7 +150,7 @@ public class MovieLoaderConfig {
                         }
                     }
                 }
-                log.info("MovieDetail 적재 완료: 기존 {}개, 추가 {}개, 스킵(이미있음) {}개, 스킵(청불) {}개, 실패 {}개, 총 {}개", initialDetailCount, addedCount, skippedCount, restrictedCount, failedCount, savedDetailCount);
+                log.info("MovieDetail 적재 완료: 기존 {}개, 추가 {}개, 스킵(이미있음) {}개, 스킵(청불) {}개, 실패 {}개, 총 {}개 (2000개 제한)", initialDetailCount, addedCount, skippedCount, restrictedCount, failedCount, savedDetailCount);
                 log.info("=== MovieDetail 로드 완료: 상세정보 {}개 확보 ===", savedDetailCount);
             } catch (Exception e) {
                 log.error("KOBIS MovieList/Detail 로드 실패", e);

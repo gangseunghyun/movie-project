@@ -81,7 +81,7 @@ function App() {
   const [movieListDto, setMovieListDto] = useState([]);
   const [movieDetailDto, setMovieDetailDto] = useState([]);
   const [topRated, setTopRated] = useState([]);
-  const [popularMovies, setPopularMovies] = useState([]);
+
   const [comingSoon, setComingSoon] = useState([]);
   const [nowPlaying, setNowPlaying] = useState([]);
   const [ended, setEnded] = useState([]);
@@ -114,7 +114,7 @@ function App() {
   const [movieDetailDtoData, setMovieDetailDtoData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [movieListDtoData, setMovieListDtoData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [topRatedData, setTopRatedData] = useState([]);
-  const [popularMoviesData, setPopularMoviesData] = useState([]);
+
   const [comingSoonData, setComingSoonData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [nowPlayingData, setNowPlayingData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
   const [endedData, setEndedData] = useState({ data: [], total: 0, page: 0, totalPages: 0 });
@@ -680,15 +680,7 @@ function App() {
     }
   };
 
-  const fetchPopularMovies = async () => {
-    try {
-      const response = await axios.get('http://localhost:80/data/api/popular-movies?limit=100');
-      setPopularMoviesData(response.data);
-    } catch (error) {
-      console.error('인기 영화 조회 실패:', error);
-      setError('인기 영화 조회에 실패했습니다.');
-    }
-  };
+
 
   const fetchComingSoon = async (page = 0) => {
     setLoading(true);
@@ -1122,20 +1114,7 @@ function App() {
       ) : prev
     );
 
-    // popularMoviesData 업데이트
-    setPopularMoviesData(prev => 
-      prev ? prev.map(movie =>
-        movie.movieCd === movieCd
-          ? {
-              ...movie,
-              likedByMe: liked,
-              likeCount: liked
-                ? (movie.likeCount || 0) + 1
-                : Math.max((movie.likeCount || 1) - 1, 0)
-            }
-          : movie
-      ) : prev
-    );
+
 
     // comingSoonData 업데이트
     setComingSoonData(prev => ({
@@ -1213,7 +1192,7 @@ function App() {
     else if (activeMenu === '영화 상세 DTO') fetchMovieDetailDto();
     else if (activeMenu === '영화 목록 DTO') fetchMovieListDto();
     else if (activeMenu === '평점 높은 영화') fetchTopRated();
-    else if (activeMenu === '인기 영화') fetchPopularMovies();
+
     else if (activeMenu === '개봉예정작') fetchComingSoon();
     else if (activeMenu === '개봉중') fetchNowPlaying();
     else if (activeMenu === '상영종료') fetchEnded();
@@ -1234,7 +1213,7 @@ function App() {
     else if (activeMenu === '영화 상세 DTO') fetchMovieDetailDto();
     else if (activeMenu === '영화 목록 DTO') fetchMovieListDto();
     else if (activeMenu === '평점 높은 영화') fetchTopRated();
-    else if (activeMenu === '인기 영화') fetchPopularMovies();
+
     else if (activeMenu === '개봉예정작') fetchComingSoon();
     else if (activeMenu === '개봉중') fetchNowPlaying();
     else if (activeMenu === '상영종료') fetchEnded();
@@ -1261,9 +1240,7 @@ function App() {
       fetchMovieListDto(0);
     } else if (menu === '평점 높은 영화') {
       fetchTopRated();
-    } else if (menu === '인기 영화') {
-      fetchPopularMovies();
-    } else if (menu === '개봉예정작') {
+    }  else if (menu === '개봉예정작') {
       fetchComingSoon(0);
     } else if (menu === '개봉중') {
       fetchNowPlaying(0);
@@ -3123,27 +3100,7 @@ function App() {
     </div>
   );
 
-  // 인기 영화 렌더링
-  const renderPopularMovies = () => (
-    <div className="movie-grid">
-      {popularMoviesData.map((movie) => (
-        <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
-          <div className="movie-poster">
-            {movie.posterUrl ? (
-              <img src={movie.posterUrl} alt={movie.movieNm} />
-            ) : (
-              <div className="no-poster">No Poster</div>
-            )}
-          </div>
-          <div className="movie-info">
-            <h3>{movie.movieNm}</h3>
-            <p>{movie.genreNm}</p>
-            <p>{movie.openDt}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+ 
 
   const renderRecommendedMovies = () => {
     if (!currentUser) {
@@ -3655,7 +3612,6 @@ function App() {
             renderMovieDetailDto={renderMovieDetailDto}
             renderMovieListDto={renderMovieListDto}
             renderTopRated={renderTopRated}
-            renderPopularMovies={renderPopularMovies}
             renderRecommendedMovies={renderRecommendedMovies}
             renderComingSoon={renderComingSoon}
             renderNowPlaying={renderNowPlaying}

@@ -56,10 +56,6 @@ public class BoxOfficeService {
             if (boxOfficeResult != null && boxOfficeResult.get("dailyBoxOfficeList") != null) {
                 JsonNode dailyBoxOfficeList = boxOfficeResult.get("dailyBoxOfficeList");
                 
-                // 기존 데이터 삭제 (항상 최신 데이터로 덮어쓰기)
-                boxOfficeRepository.deleteByTargetDateAndRankType(yesterday, "DAILY");
-                log.info("기존 일일 박스오피스 데이터 삭제 완료: {}", yesterday);
-                
                 // 먼저 모든 MovieDetail을 저장
                 for (JsonNode movie : dailyBoxOfficeList) {
                     String movieCd = movie.get("movieCd").asText();
@@ -74,10 +70,20 @@ public class BoxOfficeService {
                     }
                 }
                 
-                // 그 다음 BoxOffice 저장 (상위 10개만)
+                // 그 다음 BoxOffice 저장 (상위 10개만, 중복 체크 포함)
                 int count = 0;
+                int skipped = 0;
                 for (JsonNode movie : dailyBoxOfficeList) {
                     if (count >= 10) break; // 상위 10개만 저장
+                    
+                    String movieCd = movie.get("movieCd").asText();
+                    
+                    // 중복 체크
+                    if (boxOfficeRepository.existsByMovieCdAndTargetDateAndRankType(movieCd, yesterday, "DAILY")) {
+                        log.info("이미 존재하는 일일 박스오피스 데이터 스킵: {} ({}위)", movieCd, movie.get("rank").asInt());
+                        skipped++;
+                        continue;
+                    }
                     
                     BoxOffice boxOffice = parseBoxOfficeData(movie, yesterday, "DAILY");
                     if (boxOffice != null) {
@@ -89,7 +95,7 @@ public class BoxOfficeService {
                                 count);
                     }
                 }
-                log.info("일일 박스오피스 데이터 저장 완료: {}개 (상위 10개)", count);
+                log.info("일일 박스오피스 데이터 처리 완료: 저장 {}개, 스킵 {}개 (상위 10개)", count, skipped);
             }
         } catch (Exception e) {
             log.error("일일 박스오피스 데이터 가져오기 실패", e);
@@ -111,10 +117,6 @@ public class BoxOfficeService {
             if (boxOfficeResult != null && boxOfficeResult.get("weeklyBoxOfficeList") != null) {
                 JsonNode weeklyBoxOfficeList = boxOfficeResult.get("weeklyBoxOfficeList");
                 
-                // 기존 데이터 삭제 (항상 최신 데이터로 덮어쓰기)
-                boxOfficeRepository.deleteByTargetDateAndRankType(lastWeek, "WEEKLY");
-                log.info("기존 주간 박스오피스 데이터 삭제 완료: {}", lastWeek);
-                
                 // 먼저 모든 MovieDetail을 저장
                 for (JsonNode movie : weeklyBoxOfficeList) {
                     String movieCd = movie.get("movieCd").asText();
@@ -129,10 +131,20 @@ public class BoxOfficeService {
                     }
                 }
                 
-                // 그 다음 BoxOffice 저장 (상위 10개만)
+                // 그 다음 BoxOffice 저장 (상위 10개만, 중복 체크 포함)
                 int count = 0;
+                int skipped = 0;
                 for (JsonNode movie : weeklyBoxOfficeList) {
                     if (count >= 10) break; // 상위 10개만 저장
+                    
+                    String movieCd = movie.get("movieCd").asText();
+                    
+                    // 중복 체크
+                    if (boxOfficeRepository.existsByMovieCdAndTargetDateAndRankType(movieCd, lastWeek, "WEEKLY")) {
+                        log.info("이미 존재하는 주간 박스오피스 데이터 스킵: {} ({}위)", movieCd, movie.get("rank").asInt());
+                        skipped++;
+                        continue;
+                    }
                     
                     BoxOffice boxOffice = parseBoxOfficeData(movie, lastWeek, "WEEKLY");
                     if (boxOffice != null) {
@@ -144,7 +156,7 @@ public class BoxOfficeService {
                                 count);
                     }
                 }
-                log.info("주간 박스오피스 데이터 저장 완료: {}개 (상위 10개)", count);
+                log.info("주간 박스오피스 데이터 처리 완료: 저장 {}개, 스킵 {}개 (상위 10개)", count, skipped);
             }
         } catch (Exception e) {
             log.error("주간 박스오피스 데이터 가져오기 실패", e);

@@ -19,7 +19,7 @@ public class BoxOfficeLoader {
     private final BoxOfficeService boxOfficeService;
 
     @Bean
-    @Order(1)
+    @Order(2)
     public CommandLineRunner loadBoxOfficeData() {
         return args -> {
             log.info("=== 박스오피스 데이터 로드 시작 ===");
