@@ -178,8 +178,6 @@ public class TmdbPopularMovieService {
             String overview = tmdbMovie.has("overview") ? tmdbMovie.get("overview").asText() : "";
             String releaseDate = tmdbMovie.has("release_date") ? tmdbMovie.get("release_date").asText() : "";
             double popularity = tmdbMovie.has("popularity") ? tmdbMovie.get("popularity").asDouble() : 0.0;
-            double voteAverage = tmdbMovie.has("vote_average") ? tmdbMovie.get("vote_average").asDouble() : 0.0;
-            int voteCount = tmdbMovie.has("vote_count") ? tmdbMovie.get("vote_count").asInt() : 0;
             
             // TMDB overview 필드 로깅 추가
             if (!overview.isEmpty()) {
@@ -248,7 +246,7 @@ public class TmdbPopularMovieService {
                     .directorName(kobisMovie != null && kobisMovie.getDirector() != null ? kobisMovie.getDirector().getName() : "")
                     .totalAudience(kobisMovie != null ? kobisMovie.getTotalAudience() : 0)
                     .reservationRate(kobisMovie != null ? kobisMovie.getReservationRate() : 0.0)
-                    .averageRating(voteAverage)
+                    .averageRating(0.0)
                     .build();
                     
         } catch (Exception e) {
@@ -354,8 +352,6 @@ public class TmdbPopularMovieService {
             String overview = tmdbMovie.has("overview") ? tmdbMovie.get("overview").asText() : "";
             String releaseDate = tmdbMovie.has("release_date") ? tmdbMovie.get("release_date").asText() : "";
             int runtime = tmdbMovie.has("runtime") ? tmdbMovie.get("runtime").asInt() : 0;
-            double voteAverage = tmdbMovie.has("vote_average") ? tmdbMovie.get("vote_average").asDouble() : 0.0;
-            int voteCount = tmdbMovie.has("vote_count") ? tmdbMovie.get("vote_count").asInt() : 0;
             
             // 포스터 URL
             String posterPath = tmdbMovie.has("poster_path") ? tmdbMovie.get("poster_path").asText() : null;
@@ -426,7 +422,7 @@ public class TmdbPopularMovieService {
                     .directorName(directorName)
                     .totalAudience(0) // TMDB에는 관객수 정보 없음
                     .reservationRate(0.0) // TMDB에는 예매율 정보 없음
-                    .averageRating(voteAverage)
+                    .averageRating(0.0)
                     .build();
                     
         } catch (Exception e) {

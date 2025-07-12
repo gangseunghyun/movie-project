@@ -2791,13 +2791,81 @@ function App() {
         <div className="search-user-result">
           <h3>유저 결과</h3>
           {userResults && userResults.length > 0 ? (
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {userResults.map(nickname => (
-                <li key={nickname} style={{ padding: 8, borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => handleUserClick(nickname)}>
-                  {nickname}
-                </li>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {userResults.map(user => (
+                <div 
+                  key={user.id} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 12, 
+                    padding: 12, 
+                    border: '1px solid #eee', 
+                    borderRadius: 8, 
+                    cursor: 'pointer',
+                    background: 'white',
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }} 
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                  onClick={() => handleUserClick(user.nickname)}
+                >
+                  {/* 프로필 이미지 */}
+                  <div style={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: '50%', 
+                    overflow: 'hidden', 
+                    background: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    {user.profileImageUrl ? (
+                      <img 
+                        src={user.profileImageUrl} 
+                        alt={user.nickname} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={e => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div style={{ 
+                      display: user.profileImageUrl ? 'none' : 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '100%',
+                      height: '100%',
+                      fontSize: '18px',
+                      fontWeight: 'bold',
+                      color: '#6c63ff'
+                    }}>
+                      {user.nickname?.charAt(0)?.toUpperCase()}
+                    </div>
+                  </div>
+                  
+                  {/* 유저 정보 */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '4px' }}>
+                      {user.nickname}
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#666' }}>
+                      <span>팔로잉 {user.followingCount}</span>
+                      <span>팔로워 {user.followersCount}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <div>검색 결과가 없습니다.</div>
           )}

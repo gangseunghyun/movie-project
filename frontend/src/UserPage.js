@@ -100,9 +100,14 @@ const UserPage = ({ onMovieClick }) => {
         const response = await axios.get('http://localhost:80/api/current-user', { withCredentials: true });
         if (response.data.success) {
           setCurrentUser(response.data.user);
+        } else {
+          // 비로그인 상태일 때 currentUser를 null로 설정
+          setCurrentUser(null);
         }
       } catch (error) {
         console.log('로그인되지 않은 사용자');
+        // 에러가 발생해도 currentUser를 null로 설정
+        setCurrentUser(null);
       }
     };
     fetchCurrentUser();
@@ -247,7 +252,7 @@ const UserPage = ({ onMovieClick }) => {
     }
   };
 
-  // 팔로워/팔로잉 목록 불러오기
+  // 팔로워/팔로잉 목록 불러오기 (비로그인 상태에서도 작동)
   useEffect(() => {
     if (!user) return;
     const fetchFollowData = async () => {
@@ -259,6 +264,7 @@ const UserPage = ({ onMovieClick }) => {
         setFollowers(followersRes.data.data || []);
         setFollowing(followingRes.data.data || []);
       } catch (e) {
+        console.log('팔로우 데이터 조회 실패 (비로그인 상태일 수 있음):', e);
         setFollowers([]);
         setFollowing([]);
       }
@@ -398,6 +404,7 @@ const UserPage = ({ onMovieClick }) => {
   return (
     <div className="user-page-container">
       <div className="user-profile-card">
+        {/* 닉네임, 프로필, 팔로워/팔로잉, 선호태그 */}
         <div className="profile-header" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
             <div className="profile-avatar" style={{ position: 'relative' }}>
@@ -585,24 +592,26 @@ const UserPage = ({ onMovieClick }) => {
           </div>
         )}
 
-        {/* '내 예매목록 보기' 버튼을 선호태그 바로 아래에 위치 */}
-        <button
-          style={{
-            background: '#1976d2',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            padding: '12px 24px',
-            fontWeight: 600,
-            fontSize: 18,
-            cursor: 'pointer',
-            margin: '0 0 24px 0',
-            display: 'block',
-          }}
-          onClick={() => setShowReservations(true)}
-        >
-          내 예매목록 보기
-        </button>
+        {/* '내 예매목록 보기' 버튼을 선호태그 바로 아래에 위치 (본인만 표시) */}
+        {currentUser && user.id === currentUser.id && (
+          <button
+            style={{
+              background: '#1976d2',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 24px',
+              fontWeight: 600,
+              fontSize: 18,
+              cursor: 'pointer',
+              margin: '0 0 24px 0',
+              display: 'block',
+            }}
+            onClick={() => setShowReservations(true)}
+          >
+            내 예매목록 보기
+          </button>
+        )}
 
         {/* 예매 목록 모달 */}
         {showReservations && (
@@ -676,256 +685,295 @@ const UserPage = ({ onMovieClick }) => {
         )}
 
         {/* 찜한 영화 섹션 */}
-        <div className="liked-movies-section">
-          <div className="section-header">
-            <h3>내가 찜한 영화</h3>
-            <span className="movie-count">({likedMovies.length}개)</span>
-          </div>
-          
-          {(() => {
-            console.log('찜한 영화 섹션 렌더링:', { 
-              likedMoviesLoading, 
-              likedMoviesLength: likedMovies.length, 
-              likedMovies,
-              currentUser,
-              nickname
-            });
+        {currentUser && (
+          <div className="liked-movies-section">
+            <div className="section-header">
+              <h3>{currentUser && user.id === currentUser.id ? '내가 찜한 영화' : `${user.nickname}님이 찜한 영화`}</h3>
+              <span className="movie-count">({likedMovies.length}개)</span>
+            </div>
             
-            if (likedMoviesLoading) {
-              return <div className="loading-movies">찜한 영화를 불러오는 중...</div>;
-            } else if (likedMovies.length === 0) {
-              return (
-                <div className="no-liked-movies">
-                  <span>아직 찜한 영화가 없습니다.</span>
-                  <p>영화 목록에서 마음에 드는 영화를 찜해보세요!</p>
-                </div>
-              );
-            } else {
-              return (
-                <div className="liked-movies-grid">
-                  {likedMovies.map(movie => (
-                    <div
-                      key={movie.movieCd}
-                      className="liked-movie-card"
-                      onClick={() => onMovieClick && onMovieClick(movie)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="movie-poster">
-                        {movie.posterUrl ? (
-                          <img src={movie.posterUrl} alt={movie.movieNm} />
-                        ) : (
-                          <div className="no-poster">No Poster</div>
-                        )}
+            {(() => {
+              console.log('찜한 영화 섹션 렌더링:', { 
+                likedMoviesLoading, 
+                likedMoviesLength: likedMovies.length, 
+                likedMovies,
+                currentUser,
+                nickname
+              });
+              
+              if (likedMoviesLoading) {
+                return <div className="loading-movies">찜한 영화를 불러오는 중...</div>;
+              } else if (likedMovies.length === 0) {
+                return (
+                  <div className="no-liked-movies">
+                    <span>아직 찜한 영화가 없습니다.</span>
+                    <p>영화 목록에서 마음에 드는 영화를 찜해보세요!</p>
+                  </div>
+                );
+              } else {
+                return (
+                  <div className="liked-movies-grid">
+                    {likedMovies.map(movie => (
+                      <div
+                        key={movie.movieCd}
+                        className="liked-movie-card"
+                        onClick={() => onMovieClick && onMovieClick(movie)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="movie-poster">
+                          {movie.posterUrl ? (
+                            <img src={movie.posterUrl} alt={movie.movieNm} />
+                          ) : (
+                            <div className="no-poster">No Poster</div>
+                          )}
+                        </div>
+                        <div className="movie-info">
+                          <h4 className="movie-title">{movie.movieNm}</h4>
+                          <p className="movie-genre">{movie.genreNm}</p>
+                          <p className="movie-year">{movie.openDt}</p>
+                          {movie.averageRating && (
+                            <div className="movie-rating">
+                              <span className="rating-star">⭐</span>
+                              <span className="rating-score">{movie.averageRating.toFixed(1)}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="movie-info">
-                        <h4 className="movie-title">{movie.movieNm}</h4>
-                        <p className="movie-genre">{movie.genreNm}</p>
-                        <p className="movie-year">{movie.openDt}</p>
-                        {movie.averageRating && (
-                          <div className="movie-rating">
-                            <span className="rating-star">⭐</span>
-                            <span className="rating-score">{movie.averageRating.toFixed(1)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            }
-          })()}
-        </div>
+                    ))}
+                  </div>
+                );
+              }
+            })()}
+          </div>
+        )}
 
         {/* 좋아요한 배우 섹션 */}
-        <div className="liked-actors-section">
-          <div className="section-header">
-            <h3>내가 좋아요한 배우</h3>
-            <span className="actor-count">({likedActors.length}명)</span>
-          </div>
-          
-          {likedActorsLoading ? (
-            <div className="loading-actors">좋아요한 배우를 불러오는 중...</div>
-          ) : likedActors.length === 0 ? (
-            <div className="no-liked-actors">
-              <span>아직 좋아요한 배우가 없습니다.</span>
-              <p>배우 상세페이지에서 마음에 드는 배우를 좋아요해보세요!</p>
+        {currentUser && (
+          <div className="liked-actors-section">
+            <div className="section-header">
+              <h3>{currentUser && user.id === currentUser.id ? '내가 좋아요한 배우' : `${user.nickname}님이 좋아요한 배우`}</h3>
+              <span className="actor-count">({likedActors.length}명)</span>
             </div>
-          ) : (
-            <div className="liked-actors-grid">
-              {likedActors.map(actor => (
-                <div
-                  key={actor.id}
-                  className="liked-actor-card"
-                  onClick={() => navigate(`/actor/${actor.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="actor-photo">
-                    {actor.photoUrl ? (
-                      <img src={actor.photoUrl} alt={actor.name} />
-                    ) : (
-                      <div className="no-photo">No Photo</div>
-                    )}
-                  </div>
-                  <div className="actor-info">
-                    <h4 className="actor-name">{actor.name}</h4>
-                    <div className="actor-likes">
-                      <span className="like-count">♥ {actor.likeCount}</span>
+            
+            {likedActorsLoading ? (
+              <div className="loading-actors">좋아요한 배우를 불러오는 중...</div>
+            ) : likedActors.length === 0 ? (
+              <div className="no-liked-actors">
+                <span>아직 좋아요한 배우가 없습니다.</span>
+                <p>배우 상세페이지에서 마음에 드는 배우를 좋아요해보세요!</p>
+              </div>
+            ) : (
+              <div className="liked-actors-grid">
+                {likedActors.map(actor => (
+                  <div
+                    key={actor.id}
+                    className="liked-actor-card"
+                    onClick={() => navigate(`/actor/${actor.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="actor-photo">
+                      {actor.photoUrl ? (
+                        <img src={actor.photoUrl} alt={actor.name} />
+                      ) : (
+                        <div className="no-photo">No Photo</div>
+                      )}
+                    </div>
+                    <div className="actor-info">
+                      <h4 className="actor-name">{actor.name}</h4>
+                      <div className="actor-likes">
+                        <span className="like-count">♥ {actor.likeCount}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 좋아요한 감독 섹션 */}
-        <div className="liked-directors-section">
-          <div className="section-header">
-            <h3>내가 좋아요한 감독</h3>
-            <span className="director-count">({likedDirectors.length}명)</span>
-          </div>
-          
-          {likedDirectorsLoading ? (
-            <div className="loading-directors">좋아요한 감독을 불러오는 중...</div>
-          ) : likedDirectors.length === 0 ? (
-            <div className="no-liked-directors">
-              <span>아직 좋아요한 감독이 없습니다.</span>
-              <p>감독 상세페이지에서 마음에 드는 감독을 좋아요해보세요!</p>
+        {currentUser && (
+          <div className="liked-directors-section">
+            <div className="section-header">
+              <h3>{currentUser && user.id === currentUser.id ? '내가 좋아요한 감독' : `${user.nickname}님이 좋아요한 감독`}</h3>
+              <span className="director-count">({likedDirectors.length}명)</span>
             </div>
-          ) : (
-            <div className="liked-directors-grid">
-              {likedDirectors.map(director => (
-                <div
-                  key={director.id}
-                  className="liked-director-card"
-                  onClick={() => navigate(`/director/${director.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="director-photo">
-                    {director.photoUrl ? (
-                      <img src={director.photoUrl} alt={director.name} />
-                    ) : (
-                      <div className="no-photo">No Photo</div>
-                    )}
-                  </div>
-                  <div className="director-info">
-                    <h4 className="director-name">{director.name}</h4>
-                    <div className="director-likes">
-                      <span className="like-count">♥ {director.likeCount}</span>
+            
+            {likedDirectorsLoading ? (
+              <div className="loading-directors">좋아요한 감독을 불러오는 중...</div>
+            ) : likedDirectors.length === 0 ? (
+              <div className="no-liked-directors">
+                <span>아직 좋아요한 감독이 없습니다.</span>
+                <p>감독 상세페이지에서 마음에 드는 감독을 좋아요해보세요!</p>
+              </div>
+            ) : (
+              <div className="liked-directors-grid">
+                {likedDirectors.map(director => (
+                  <div
+                    key={director.id}
+                    className="liked-director-card"
+                    onClick={() => navigate(`/director/${director.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="director-photo">
+                      {director.photoUrl ? (
+                        <img src={director.photoUrl} alt={director.name} />
+                      ) : (
+                        <div className="no-photo">No Photo</div>
+                      )}
+                    </div>
+                    <div className="director-info">
+                      <h4 className="director-name">{director.name}</h4>
+                      <div className="director-likes">
+                        <span className="like-count">♥ {director.likeCount}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 내가 작성한 코멘트(리뷰) 섹션 */}
-        <div className="my-comments-section">
-          <div className="section-header">
-            <h3>내가 작성한 코멘트</h3>
-            <span className="comment-count">({myComments.length}개)</span>
-          </div>
-          {myCommentsLoading ? (
-            <div className="loading-comments">코멘트를 불러오는 중...</div>
-          ) : myComments.length === 0 ? (
-            <div className="no-my-comments">
-              <span>아직 작성한 코멘트가 없습니다.</span>
-              <p>영화 상세페이지에서 코멘트를 남겨보세요!</p>
+        {currentUser && (
+          <div className="my-comments-section">
+            <div className="section-header">
+              <h3>{currentUser && user.id === currentUser.id ? '내가 작성한 코멘트' : `${user.nickname}님이 작성한 코멘트`}</h3>
+              <span className="comment-count">({myComments.length}개)</span>
             </div>
-          ) : (
-            <div className="my-comments-grid">
-              {myComments.map(comment => (
-                <div
-                  key={comment.id}
-                  className="my-comment-card"
-                  onClick={() => onMovieClick && onMovieClick({
-                    movieCd: comment.movieCd,
-                    movieNm: comment.movieNm,
-                    posterUrl: comment.posterUrl,
-                    genreNm: comment.genreNm,
-                    openDt: comment.openDt
-                  })}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="comment-movie-poster">
-                    {comment.posterUrl ? (
-                      <img src={comment.posterUrl} alt={comment.movieNm} />
-                    ) : (
-                      <div className="no-poster">No Poster</div>
-                    )}
-                  </div>
-                  <div className="comment-info">
-                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
-                    <div className="comment-meta">
-                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      {comment.rating && (
-                        <span className="comment-rating">★ {comment.rating}</span>
+            {myCommentsLoading ? (
+              <div className="loading-comments">코멘트를 불러오는 중...</div>
+            ) : myComments.length === 0 ? (
+              <div className="no-my-comments">
+                <span>아직 작성한 코멘트가 없습니다.</span>
+                <p>영화 상세페이지에서 코멘트를 남겨보세요!</p>
+              </div>
+            ) : (
+              <div className="my-comments-grid">
+                {myComments.map(comment => (
+                  <div
+                    key={comment.id}
+                    className="my-comment-card"
+                    onClick={() => onMovieClick && onMovieClick({
+                      movieCd: comment.movieCd,
+                      movieNm: comment.movieNm,
+                      posterUrl: comment.posterUrl,
+                      genreNm: comment.genreNm,
+                      openDt: comment.openDt
+                    })}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="comment-movie-poster">
+                      {comment.posterUrl ? (
+                        <img src={comment.posterUrl} alt={comment.movieNm} />
+                      ) : (
+                        <div className="no-poster">No Poster</div>
                       )}
-                      <span className="comment-likes">♥ {comment.likeCount}</span>
                     </div>
-                    <div className="comment-content">{comment.content}</div>
+                    <div className="comment-info">
+                      <div className="comment-header">
+                        <div className="comment-author-info">
+                          <div className="author-profile-image">
+                            {comment.authorProfileImageUrl ? (
+                              <img 
+                                src={comment.authorProfileImageUrl.startsWith('http') ? comment.authorProfileImageUrl : `http://localhost:80${comment.authorProfileImageUrl}`}
+                                alt={comment.authorNickname}
+                                onError={e => { e.target.onerror = null; e.target.src = '/placeholder-actor.png'; }}
+                              />
+                            ) : (
+                              <span>{comment.authorNickname?.charAt(0)?.toUpperCase()}</span>
+                            )}
+                          </div>
+                          <span className="author-nickname">{comment.authorNickname}</span>
+                        </div>
+                        <div className="comment-meta">
+                          <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                          {comment.rating && (
+                            <span className="comment-rating">★ {comment.rating}</span>
+                          )}
+                          <span className="comment-likes">♥ {comment.likeCount}</span>
+                        </div>
+                      </div>
+                      <h4 className="comment-movie-title">{comment.movieNm}</h4>
+                      <div className="comment-content">{comment.content}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 내가 좋아요한 코멘트 섹션 */}
-        <div className="liked-comments-section">
-          <div className="section-header">
-            <h3>내가 좋아요한 코멘트</h3>
-            <span className="comment-count">({likedComments.length}개)</span>
-          </div>
-          {likedCommentsLoading ? (
-            <div className="loading-comments">코멘트를 불러오는 중...</div>
-          ) : likedComments.length === 0 ? (
-            <div className="no-liked-comments">
-              <span>아직 좋아요한 코멘트가 없습니다.</span>
-              <p>영화 상세페이지에서 마음에 드는 코멘트를 좋아요해보세요!</p>
+        {currentUser && (
+          <div className="liked-comments-section">
+            <div className="section-header">
+              <h3>{currentUser && user.id === currentUser.id ? '내가 좋아요한 코멘트' : `${user.nickname}님이 좋아요한 코멘트`}</h3>
+              <span className="comment-count">({likedComments.length}개)</span>
             </div>
-          ) : (
-            <div className="liked-comments-grid">
-              {likedComments.map(comment => (
-                <div
-                  key={comment.id}
-                  className="liked-comment-card"
-                  onClick={() => onMovieClick && onMovieClick({
-                    movieCd: comment.movieCd,
-                    movieNm: comment.movieNm,
-                    posterUrl: comment.posterUrl,
-                    genreNm: comment.genreNm,
-                    openDt: comment.openDt
-                  })}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="comment-movie-poster">
-                    {comment.posterUrl ? (
-                      <img src={comment.posterUrl} alt={comment.movieNm} />
-                    ) : (
-                      <div className="no-poster">No Poster</div>
-                    )}
-                  </div>
-                  <div className="comment-info">
-                    <h4 className="comment-movie-title">{comment.movieNm}</h4>
-                    <div className="comment-author">
-                      <span className="author-nickname">by {comment.authorNickname}</span>
-                    </div>
-                    <div className="comment-meta">
-                      <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      {comment.rating && (
-                        <span className="comment-rating">★ {comment.rating}</span>
+            {likedCommentsLoading ? (
+              <div className="loading-comments">코멘트를 불러오는 중...</div>
+            ) : likedComments.length === 0 ? (
+              <div className="no-liked-comments">
+                <span>아직 좋아요한 코멘트가 없습니다.</span>
+                <p>영화 상세페이지에서 마음에 드는 코멘트를 좋아요해보세요!</p>
+              </div>
+            ) : (
+              <div className="liked-comments-grid">
+                {likedComments.map(comment => (
+                  <div
+                    key={comment.id}
+                    className="liked-comment-card"
+                    onClick={() => onMovieClick && onMovieClick({
+                      movieCd: comment.movieCd,
+                      movieNm: comment.movieNm,
+                      posterUrl: comment.posterUrl,
+                      genreNm: comment.genreNm,
+                      openDt: comment.openDt
+                    })}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="comment-movie-poster">
+                      {comment.posterUrl ? (
+                        <img src={comment.posterUrl} alt={comment.movieNm} />
+                      ) : (
+                        <div className="no-poster">No Poster</div>
                       )}
-                      <span className="comment-likes">♥ {comment.likeCount}</span>
                     </div>
-                    <div className="comment-content">{comment.content}</div>
+                    <div className="comment-info">
+                      <div className="comment-header">
+                        <div className="comment-author-info">
+                          <div className="author-profile-image">
+                            {comment.authorProfileImageUrl ? (
+                              <img 
+                                src={comment.authorProfileImageUrl.startsWith('http') ? comment.authorProfileImageUrl : `http://localhost:80${comment.authorProfileImageUrl}`}
+                                alt={comment.authorNickname}
+                                onError={e => { e.target.onerror = null; e.target.src = '/placeholder-actor.png'; }}
+                              />
+                            ) : (
+                              <span>{comment.authorNickname?.charAt(0)?.toUpperCase()}</span>
+                            )}
+                          </div>
+                          <span className="author-nickname">by {comment.authorNickname}</span>
+                        </div>
+                        <div className="comment-meta">
+                          <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                          {comment.rating && (
+                            <span className="comment-rating">★ {comment.rating}</span>
+                          )}
+                          <span className="comment-likes">♥ {comment.likeCount}</span>
+                        </div>
+                      </div>
+                      <h4 className="comment-movie-title">{comment.movieNm}</h4>
+                      <div className="comment-content">{comment.content}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
 
@@ -941,7 +989,18 @@ const UserPage = ({ onMovieClick }) => {
               ) : (
                 (followModalType === 'followers' ? followers : following).map(u => (
                   <li key={u.id} style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#6c63ff' }}>{u.nickname?.charAt(0)?.toUpperCase()}</div>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#6c63ff' }}>
+                      {u.profileImageUrl ? (
+                        <img
+                          src={u.profileImageUrl}
+                          alt={u.nickname}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                          onError={e => { e.target.onerror = null; e.target.src = '/placeholder-actor.png'; }}
+                        />
+                      ) : (
+                        u.nickname?.charAt(0)?.toUpperCase()
+                      )}
+                    </div>
                     <span
                       style={{ cursor: 'pointer', color: '#6c63ff', textDecoration: 'underline' }}
                       onClick={() => {

@@ -515,7 +515,7 @@ public class UserController {
                                         "role", socialUser.getRole().name(),
                                         "isAdmin", socialUser.isAdmin(),
                                         "isUser", socialUser.isUser(),
-                                        "profileImageUrl", socialUser.getProfileImageUrl()
+                                        "profileImageUrl", socialUser.getProfileImageUrl() != null ? socialUser.getProfileImageUrl() : ""
                                     )
                                 ));
                         }
@@ -543,7 +543,7 @@ public class UserController {
                                     "role", sessionUser.getRole().name(),
                                     "isAdmin", sessionUser.isAdmin(),
                                     "isUser", sessionUser.isUser(),
-                                    "profileImageUrl", sessionUser.getProfileImageUrl()
+                                    "profileImageUrl", sessionUser.getProfileImageUrl() != null ? sessionUser.getProfileImageUrl() : ""
                                 )
                             ));
                     }
@@ -553,10 +553,14 @@ public class UserController {
             // Spring Security Authentication에서 사용자 정보 가져오기
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             log.info("Authentication: {}", authentication);
-            log.info("Authentication Principal: {}", authentication.getPrincipal());
-            log.info("Authentication Principal Type: {}", authentication.getPrincipal().getClass().getName());
-            log.info("Authentication Name: {}", authentication.getName());
-            log.info("Authentication isAuthenticated: {}", authentication.isAuthenticated());
+            if (authentication != null && authentication.getPrincipal() != null) {
+                log.info("Authentication Principal: {}", authentication.getPrincipal());
+                log.info("Authentication Principal Type: {}", authentication.getPrincipal().getClass().getName());
+                log.info("Authentication Name: {}", authentication.getName());
+                log.info("Authentication isAuthenticated: {}", authentication.isAuthenticated());
+            } else {
+                log.warn("Authentication 또는 Principal이 null입니다");
+            }
             
             User currentUser = null;
             
@@ -565,45 +569,57 @@ public class UserController {
                 
                 // OAuth2 사용자인 경우
                 if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User) {
-                    org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
-                        (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
-                    
-                    String email = oauth2User.getAttribute("email");
-                    String provider = oauth2User.getAttribute("provider");
-                    String providerId = oauth2User.getAttribute("providerId");
-                    
-                    log.info("OAuth2 사용자 정보 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
-                    
-                    // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
-                    if (email == null && "KAKAO".equals(provider)) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
-                        if (kakaoAccount != null) {
-                            email = (String) kakaoAccount.get("email");
+                    try {
+                        org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
+                            (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
+                        
+                        String email = oauth2User.getAttribute("email");
+                        String provider = oauth2User.getAttribute("provider");
+                        String providerId = oauth2User.getAttribute("providerId");
+                        
+                        log.info("OAuth2 사용자 정보 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
+                        
+                        // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
+                        if (email == null && "KAKAO".equals(provider)) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> kakaoAccount = (Map<String, Object>) oauth2User.getAttribute("kakao_account");
+                            if (kakaoAccount != null) {
+                                email = (String) kakaoAccount.get("email");
+                            }
                         }
-                    }
-                    
-                    if (email != null && provider != null && providerId != null) {
-                        try {
-                            Provider providerEnum = Provider.valueOf(provider.toUpperCase());
-                            currentUser = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
-                            log.info("OAuth2 사용자 조회 결과: {}", currentUser);
-                        } catch (Exception e) {
-                            log.error("OAuth2 사용자 조회 실패", e);
+                        
+                        if (email != null && provider != null && providerId != null) {
+                            try {
+                                Provider providerEnum = Provider.valueOf(provider.toUpperCase());
+                                currentUser = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
+                                log.info("OAuth2 사용자 조회 결과: {}", currentUser);
+                            } catch (Exception e) {
+                                log.error("OAuth2 사용자 조회 실패", e);
+                            }
                         }
+                    } catch (Exception e) {
+                        log.error("OAuth2 사용자 정보 추출 실패", e);
                     }
                 }
                 // Spring Security로 로그인한 사용자인 경우 (User 엔티티가 Principal)
                 else if (authentication.getPrincipal() instanceof User) {
-                    currentUser = (User) authentication.getPrincipal();
-                    log.info("Spring Security 사용자 조회: {}", currentUser);
+                    try {
+                        currentUser = (User) authentication.getPrincipal();
+                        log.info("Spring Security 사용자 조회: {}", currentUser);
+                    } catch (Exception e) {
+                        log.error("Spring Security User 엔티티 캐스팅 실패", e);
+                    }
                 }
                 // 기타 경우 (loginId로 조회) - Spring Security의 UserDetails 구현체
                 else {
-                    String loginId = authentication.getName();
-                    log.info("loginId로 사용자 조회 시도: {}", loginId);
-                    currentUser = userRepository.findByLoginId(loginId).orElse(null);
-                    log.info("loginId로 사용자 조회 결과: {}", currentUser);
+                    try {
+                        String loginId = authentication.getName();
+                        log.info("loginId로 사용자 조회 시도: {}", loginId);
+                        currentUser = userRepository.findByLoginId(loginId).orElse(null);
+                        log.info("loginId로 사용자 조회 결과: {}", currentUser);
+                    } catch (Exception e) {
+                        log.error("loginId로 사용자 조회 실패", e);
+                    }
                 }
             }
             
@@ -634,15 +650,15 @@ public class UserController {
                         "role", currentUser.getRole().name(),
                         "isAdmin", currentUser.isAdmin(),
                         "isUser", currentUser.isUser(),
-                        "profileImageUrl", currentUser.getProfileImageUrl()
+                        "profileImageUrl", currentUser.getProfileImageUrl() != null ? currentUser.getProfileImageUrl() : ""
                     )
                 ));
         } catch (Exception e) {
             log.error("현재 사용자 정보 조회 실패", e);
             Map<String, Object> result = new HashMap<>();
             result.put("success", false);
-            result.put("message", "사용자 정보 조회에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest()
+            result.put("message", "사용자 정보 조회에 실패했습니다: " + (e.getMessage() != null ? e.getMessage() : "알 수 없는 오류"));
+            return ResponseEntity.ok()
                 .header("Cache-Control", "no-cache, no-store, must-revalidate")
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
@@ -723,25 +739,50 @@ public class UserController {
     @GetMapping("/api/users/search")
     public ResponseEntity<?> searchUsersByNickname(@RequestParam String nickname) {
         var users = userRepository.findByNicknameContainingIgnoreCase(nickname);
-        // 닉네임만 리스트로 반환
-        return ResponseEntity.ok(users.stream().map(User::getNickname).toList());
+        // 유저 정보를 포함한 리스트로 반환
+        List<Map<String, Object>> userResults = users.stream().map(user -> {
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", user.getId());
+            userInfo.put("nickname", user.getNickname());
+            userInfo.put("profileImageUrl", user.getProfileImageUrl());
+            userInfo.put("followingCount", user.getFollowing().size());
+            userInfo.put("followersCount", user.getFollowers().size());
+            return userInfo;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(userResults);
     }
 
     // 유저 닉네임 단일 조회 API (마이페이지)
     @GetMapping("/api/users/nickname/{nickname}")
     public ResponseEntity<?> getUserByNickname(@PathVariable String nickname) {
-        var userOpt = userRepository.findOneByNickname(nickname);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+        log.info("=== getUserByNickname 호출됨 ===");
+        log.info("요청된 닉네임: {}", nickname);
+        
+        try {
+            var userOpt = userRepository.findByNickname(nickname);
+            log.info("데이터베이스 조회 결과: {}", userOpt.isPresent() ? "유저 찾음" : "유저 없음");
+            
+            if (userOpt.isEmpty()) {
+                log.warn("닉네임 '{}'에 해당하는 유저를 찾을 수 없습니다.", nickname);
+                return ResponseEntity.notFound().build();
+            }
+            
+            var user = userOpt.get();
+            log.info("유저 정보: id={}, nickname={}, email={}", user.getId(), user.getNickname(), user.getEmail());
+            
+            // 마이페이지: 닉네임, 이메일, ID 반환
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", user.getId());
+            result.put("nickname", user.getNickname());
+            result.put("email", user.getEmail());
+            result.put("profileImageUrl", user.getProfileImageUrl()); // 추가
+            
+            log.info("응답 데이터: {}", result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("getUserByNickname 에러 발생: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "유저 정보 조회 중 오류가 발생했습니다."));
         }
-        var user = userOpt.get();
-        // 마이페이지: 닉네임, 이메일, ID 반환
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", user.getId());
-        result.put("nickname", user.getNickname());
-        result.put("email", user.getEmail());
-        result.put("profileImageUrl", user.getProfileImageUrl()); // 추가
-        return ResponseEntity.ok(result);
     }
 
     // [1] 장르 태그 전체 조회
@@ -954,17 +995,30 @@ public class UserController {
                     reviewDto.put("createdAt", review.getCreatedAt());
                     reviewDto.put("updatedAt", review.getUpdatedAt());
                     
+                    // 작성자 정보 추가 (프로필 이미지 포함)
+                    User reviewUser = review.getUser();
+                    if (reviewUser != null) {
+                        reviewDto.put("authorId", reviewUser.getId());
+                        reviewDto.put("authorNickname", reviewUser.getNickname());
+                        reviewDto.put("authorProfileImageUrl", reviewUser.getProfileImageUrl());
+                    }
+                    
                     // 영화 정보 추가
                     MovieDetail movie = review.getMovieDetail();
                     if (movie != null) {
                         reviewDto.put("movieCd", movie.getMovieCd());
                         reviewDto.put("movieNm", movie.getMovieNm());
                         reviewDto.put("posterUrl", movie.getMovieList() != null ? movie.getMovieList().getPosterUrl() : null);
+                        reviewDto.put("genreNm", movie.getGenreNm());
+                        reviewDto.put("openDt", movie.getOpenDt());
                     }
                     
                     // 좋아요 수 추가
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     reviewDto.put("likeCount", likeCount);
+                    
+                    // 내가 좋아요했는지 여부 추가 (내가 작성한 코멘트이므로 true)
+                    reviewDto.put("likedByMe", true);
                     
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
@@ -1013,6 +1067,7 @@ public class UserController {
                     User reviewUser = review.getUser();
                     dto.put("authorNickname", reviewUser.getNickname());
                     dto.put("authorId", reviewUser.getId());
+                    dto.put("authorProfileImageUrl", reviewUser.getProfileImageUrl());
                     // 영화 정보
                     MovieDetail md = review.getMovieDetail();
                     dto.put("movieCd", md.getMovieCd());
@@ -1023,6 +1078,9 @@ public class UserController {
                     // 좋아요 수 추가
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     dto.put("likeCount", likeCount);
+                    
+                    // 내가 좋아요했는지 여부 추가 (좋아요한 코멘트이므로 true)
+                    dto.put("likedByMe", true);
                     
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
@@ -1233,12 +1291,15 @@ public class UserController {
     public static class UserSimpleDto {
         private Long id;
         private String nickname;
+        private String profileImageUrl;
         public UserSimpleDto(User user) {
             this.id = user.getId();
             this.nickname = user.getNickname();
+            this.profileImageUrl = user.getProfileImageUrl();
         }
         public Long getId() { return id; }
         public String getNickname() { return nickname; }
+        public String getProfileImageUrl() { return profileImageUrl; }
     }
 
     @GetMapping("/api/users/{userId}/followers")
@@ -1329,7 +1390,8 @@ public class UserController {
             .collect(java.util.stream.Collectors.toList());
         var recommenderDto = java.util.Map.of(
             "id", recommender.getId(),
-            "nickname", recommender.getNickname()
+            "nickname", recommender.getNickname(),
+            "profileImageUrl", recommender.getProfileImageUrl()
         );
         return ResponseEntity.ok(java.util.Map.of(
             "success", true,

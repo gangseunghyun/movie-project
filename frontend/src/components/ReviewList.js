@@ -226,8 +226,26 @@ function ReviewList({ movieCd, currentUser }) {
         <div key={review.id} className="review-item">
           <div className="review-header">
             <div className="reviewer-info">
-              <div className="reviewer-name">{review.userNickname}</div>
-              <div className="review-date">{formatDate(review.createdAt)}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <img 
+                  src={review.userProfileImageUrl || '/placeholder-actor.png'} 
+                  alt="프로필" 
+                  style={{ 
+                    width: 36, 
+                    height: 36, 
+                    borderRadius: '50%', 
+                    objectFit: 'cover',
+                    border: '1px solid #e1e5e9'
+                  }} 
+                  onError={(e) => {
+                    e.target.src = '/placeholder-actor.png';
+                  }}
+                />
+                <div>
+                  <div className="reviewer-name">{review.userNickname}</div>
+                  <div className="review-date">{formatDate(review.createdAt)}</div>
+                </div>
+              </div>
             </div>
           </div>
           

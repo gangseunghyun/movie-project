@@ -403,6 +403,7 @@ public class REVReviewService {
                 .updatedAt(review.getUpdatedAt())
                 .username(review.getUser().getNickname())
                 .userId(review.getUser().getId())
+                .userProfileImageUrl(review.getUser().getProfileImageUrl())
                 .movieDetailId(review.getMovieDetail().getId())
                 .likeCount(likeCount)
                 .likedByMe(likedByMe)

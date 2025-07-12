@@ -15,6 +15,7 @@ public class ReviewDto {
     private LocalDateTime updatedAt;
     private Long userId;
     private String userNickname;
+    private String userProfileImageUrl;
     private String movieCd;
     private String movieNm;
     private int likeCount;
@@ -42,6 +43,7 @@ public class ReviewDto {
             .updatedAt(review.getUpdatedAt())
             .userId(review.getUser() != null ? review.getUser().getId() : null)
             .userNickname(review.getUser() != null ? review.getUser().getNickname() : null)
+            .userProfileImageUrl(review.getUser() != null ? review.getUser().getProfileImageUrl() : null)
             .movieCd(review.getMovieDetail() != null ? review.getMovieDetail().getMovieCd() : null)
             .movieNm(review.getMovieDetail() != null ? review.getMovieDetail().getMovieNm() : null)
             .movieDetailId(review.getMovieDetail() != null ? review.getMovieDetail().getId() : null)
