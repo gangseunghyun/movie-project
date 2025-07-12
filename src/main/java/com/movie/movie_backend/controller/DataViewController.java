@@ -66,7 +66,7 @@ public class DataViewController {
     private final PRDMovieRepository movieRepository;
     private final BoxOfficeRepository boxOfficeRepository;
     private final BoxOfficeService boxOfficeService;
-    private final TmdbPopularMovieService tmdbPopularMovieService;
+
     private final KobisApiService kobisApiService;
     private final MovieDetailMapper movieDetailMapper;
     private final MovieListMapper movieListMapper;
@@ -672,55 +672,7 @@ public class DataViewController {
         }
     }
 
-    /**
-     * TMDB 인기 영화 조회 API
-     * 
-     * React에서 사용법:
-     * - TMDB에서 인기 영화를 조회할 때 사용
-     * - KOBIS 정보와 TMDB 정보가 결합된 완전한 영화 정보
-     * - 기본값: limit=50
-     * 
-     * 예시:
-     * fetch('/data/api/popular-movies?limit=50')
-     *   .then(res => res.json())
-     *   .then(data => {
-     *     console.log('성공:', data.success);
-     *     console.log('영화 목록:', data.data);
-     *     console.log('개수:', data.count);
-     *   });
-     */
-    @GetMapping("/api/popular-movies")
-    @ResponseBody
-    @Operation(summary = "TMDB 인기 영화 조회 API", 
-               description = "TMDB에서 인기 영화를 조회합니다. KOBIS 정보와 TMDB 정보가 결합된 완전한 영화 정보. 기본값: limit=50. React에서 사용할 때: fetch('/data/api/popular-movies?limit=50')")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "TMDB 인기 영화 조회 성공"),
-        @ApiResponse(responseCode = "400", description = "TMDB 인기 영화 조회 실패")
-    })
-    public ResponseEntity<Map<String, Object>> getPopularMovies(
-            @RequestParam(defaultValue = "50") int limit) {
-        try {
-            // limit을 최대 50개로 제한
-            int actualLimit = Math.min(limit, 50);
-            
-            log.info("TMDB 인기 영화 조회 시작: limit={} (실제: {})", limit, actualLimit);
-            
-            List<MovieDetailDto> popularMovies = tmdbPopularMovieService.getPopularMovies(actualLimit);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", popularMovies,
-                "count", popularMovies.size(),
-                "message", "인기 영화 " + popularMovies.size() + "개를 성공적으로 가져왔습니다."
-            ));
-        } catch (Exception e) {
-            log.error("TMDB 인기 영화 조회 실패", e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "인기 영화 조회에 실패했습니다: " + e.getMessage()
-            ));
-        }
-    }
+
 
     /**
      * 개봉예정작 조회 API

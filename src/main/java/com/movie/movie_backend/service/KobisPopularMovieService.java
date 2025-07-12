@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
+import com.movie.movie_backend.util.MovieTitleUtil;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +33,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -196,7 +199,7 @@ public class KobisPopularMovieService {
             }
             
             // TMDB에서 포스터 URL 가져오기
-            String posterUrl = getPosterUrlFromTmdb(movieNm, openDate);
+            String posterUrl = getPosterUrl(movieNm, openDate);
             
             return MovieListDto.builder()
                     .movieCd(movieCd)
@@ -215,37 +218,72 @@ public class KobisPopularMovieService {
     }
 
     /**
-     * TMDB에서 영화 포스터 URL 가져오기
+     * TMDB에서 포스터 URL 가져오기
      */
-    private String getPosterUrlFromTmdb(String movieNm, LocalDate openDate) {
+    private String getPosterUrl(String movieNm, LocalDate openDt) {
         try {
-            // TMDB에서 영화 검색
-            String query = java.net.URLEncoder.encode(movieNm, java.nio.charset.StandardCharsets.UTF_8);
-            String year = (openDate != null) ? String.valueOf(openDate.getYear()) : null;
+            // 1차 시도: 한글 제목으로 검색
+            String posterUrl = searchPosterFromTmdb(movieNm, openDt);
+            if (posterUrl != null && !posterUrl.isEmpty()) {
+                log.debug("TMDB 포스터 1차 시도 성공 (한글): {} -> {}", movieNm, posterUrl);
+                return posterUrl;
+            }
             
-            String searchUrl = String.format("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s&language=ko-KR%s", 
+            // 2차 시도: 영문 제목으로 검색 (영문 제목이 있는 경우)
+            if (movieNm != null && !movieNm.isEmpty()) {
+                // 영문 제목 추출 시도 (괄호 안 영문 제목)
+                String englishTitle = MovieTitleUtil.extractEnglishTitle(movieNm);
+                if (englishTitle != null && !englishTitle.isEmpty()) {
+                    posterUrl = searchPosterFromTmdb(englishTitle, openDt);
+                    if (posterUrl != null && !posterUrl.isEmpty()) {
+                        log.debug("TMDB 포스터 2차 시도 성공 (영문): {} -> {} (원본: {})", englishTitle, posterUrl, movieNm);
+                        return posterUrl;
+                    }
+                }
+            }
+            
+            log.debug("TMDB 포스터 검색 실패: {} (한글/영문 모두 시도)", movieNm);
+            
+        } catch (Exception e) {
+            log.warn("TMDB 포스터 조회 실패: {} - {}", movieNm, e.getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * TMDB에서 포스터 검색 (공통 로직)
+     */
+    private String searchPosterFromTmdb(String title, LocalDate openDt) {
+        try {
+            String query = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
+            String year = (openDt != null) ? String.valueOf(openDt.getYear()) : null;
+            
+            String url = String.format("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s&language=ko-KR%s", 
                 tmdbPopularMovieService.getTmdbApiKey(), query, year != null ? "&year=" + year : "");
             
-            String response = restTemplate.getForObject(searchUrl, String.class);
-            if (response != null) {
-                JsonNode root = objectMapper.readTree(response);
-                JsonNode results = root.get("results");
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JsonNode rootNode = objectMapper.readTree(response.getBody());
+                JsonNode results = rootNode.get("results");
                 
-                if (results != null && results.isArray() && results.size() > 0) {
-                    JsonNode firstResult = results.get(0);
-                    String posterPath = firstResult.has("poster_path") ? firstResult.get("poster_path").asText() : null;
+                if (results != null && results.size() > 0) {
+                    JsonNode movie = results.get(0);
+                    String posterPath = movie.has("poster_path") ? movie.get("poster_path").asText() : "";
                     
-                    if (posterPath != null && !posterPath.isEmpty()) {
+                    if (!posterPath.isEmpty() && !posterPath.equals("null")) {
                         return "https://image.tmdb.org/t/p/w500" + posterPath;
                     }
                 }
             }
         } catch (Exception e) {
-            log.debug("TMDB 포스터 URL 가져오기 실패: {} - {}", movieNm, e.getMessage());
+            log.debug("TMDB 포스터 검색 실패: {} - {}", title, e.getMessage());
         }
         
-        return ""; // 실패시 빈 문자열 반환
+        return null;
     }
+
+    // extractEnglishTitle 메서드는 MovieTitleUtil로 이동됨
 
     /**
      * 중복 영화 체크
@@ -690,21 +728,21 @@ public class KobisPopularMovieService {
         try {
             log.info("=== KOBIS 영화목록 API에서 다양한 영화 가져오기 시작 (목표: {}개) ===", limit);
             
-            // 1. 최근 2년간의 모든 영화 (인기순)
-            allMovies.addAll(getMoviesByYearRange(2023, 2024, 100, addedMovieCds));
+            // 1. 최근 3년간의 모든 영화 (인기순)
+            allMovies.addAll(getMoviesByYearRange(2023, 2025, 100, addedMovieCds));
             
-            // 2. 주요 장르별 영화
+            // 2. 주요 장르별 영화 (제한 완화)
             String[] popularGenres = {"드라마", "액션", "코미디", "스릴러", "로맨스", "SF", "애니메이션"};
             for (String genre : popularGenres) {
                 if (allMovies.size() >= limit) break;
-                allMovies.addAll(getMoviesByGenre(genre, 50, addedMovieCds));
+                allMovies.addAll(getMoviesByGenre(genre, 1000, addedMovieCds));
             }
             
-            // 3. 주요 국가별 영화
+            // 3. 주요 국가별 영화 (제한 완화)
             String[] countries = {"한국", "미국", "일본", "중국", "프랑스", "영국"};
             for (String country : countries) {
                 if (allMovies.size() >= limit) break;
-                allMovies.addAll(getMoviesByCountry(country, 30, addedMovieCds));
+                allMovies.addAll(getMoviesByCountry(country, 500, addedMovieCds));
             }
             
             log.info("KOBIS 영화목록 API에서 총 {}개 영화 가져오기 완료", allMovies.size());
@@ -721,36 +759,26 @@ public class KobisPopularMovieService {
      */
     private List<MovieListDto> getMoviesByYearRange(int startYear, int endYear, int maxPerYear, Set<String> addedMovieCds) {
         List<MovieListDto> movies = new ArrayList<>();
-        
-        for (int year = startYear; year <= endYear; year++) {
+        for (int year = endYear; year >= startYear; year--) {
             try {
-                String startDate = year + "0101";
-                String endDate = year + "1231";
-                
+                String yearStr = String.valueOf(year);
                 String url = String.format("%s?key=%s&openStartDt=%s&openEndDt=%s&itemPerPage=%d", 
-                    MOVIE_LIST_URL, kobisApiKey, startDate, endDate, maxPerYear);
-                
+                    MOVIE_LIST_URL, kobisApiKey, yearStr, yearStr, maxPerYear);
                 log.info("KOBIS 영화목록 API 호출 (연도 {}): {}", year, url);
                 String response = restTemplate.getForObject(url, String.class);
-                
                 if (response != null) {
                     JsonNode root = objectMapper.readTree(response);
                     JsonNode movieListResult = root.get("movieListResult");
-                    
                     if (movieListResult != null && movieListResult.get("movieList") != null) {
                         JsonNode movieList = movieListResult.get("movieList");
-                        
                         for (JsonNode movie : movieList) {
                             if (movies.size() >= maxPerYear) break;
-                            
                             String movieCd = movie.get("movieCd").asText();
                             if (!addedMovieCds.contains(movieCd)) {
                                 MovieListDto movieDto = convertMovieListToDto(movie);
                                 if (movieDto != null) {
                                     movies.add(movieDto);
                                     addedMovieCds.add(movieCd);
-                                    
-                                    // MovieList에 저장
                                     if (!movieListRepository.existsByMovieCd(movieCd)) {
                                         MovieList entity = movieListMapper.toEntity(movieDto);
                                         movieListRepository.save(entity);
@@ -760,14 +788,11 @@ public class KobisPopularMovieService {
                         }
                     }
                 }
-                
                 Thread.sleep(200); // API 호출 제한
-                
             } catch (Exception e) {
                 log.warn("연도 {} 영화 가져오기 실패: {}", year, e.getMessage());
             }
         }
-        
         log.info("연도 범위 {}~{}에서 {}개 영화 가져오기 완료", startYear, endYear, movies.size());
         return movies;
     }
@@ -883,7 +908,7 @@ public class KobisPopularMovieService {
             String openDt = movie.has("openDt") ? movie.get("openDt").asText() : "";
             String genreNm = movie.has("genreNm") ? movie.get("genreNm").asText() : "";
             String nationNm = movie.has("nationNm") ? movie.get("nationNm").asText() : "";
-            
+            String watchGradeNm = movie.has("watchGradeNm") ? movie.get("watchGradeNm").asText() : "";
             // 날짜 파싱
             LocalDate openDate = null;
             if (!openDt.isEmpty()) {
@@ -893,10 +918,8 @@ public class KobisPopularMovieService {
                     log.warn("날짜 파싱 실패: {}", openDt);
                 }
             }
-            
             // TMDB에서 포스터 URL 가져오기
-            String posterUrl = getPosterUrlFromTmdb(movieNm, openDate);
-            
+            String posterUrl = getPosterUrl(movieNm, openDate);
             return MovieListDto.builder()
                     .movieCd(movieCd)
                     .movieNm(movieNm)
@@ -905,8 +928,8 @@ public class KobisPopularMovieService {
                     .genreNm(genreNm)
                     .nationNm(nationNm)
                     .posterUrl(posterUrl)
+                    .watchGradeNm(watchGradeNm)
                     .build();
-                    
         } catch (Exception e) {
             log.warn("영화목록 API 응답 변환 실패", e);
             return null;
@@ -960,15 +983,15 @@ public class KobisPopularMovieService {
                 int pageMovieCount = 0;
                 for (JsonNode movie : movieList) {
                     if (popularMovies.size() >= limit) break;
-                    
                     String movieCd = movie.get("movieCd").asText();
                     if (!addedMovieCds.contains(movieCd)) {
                         MovieListDto movieDto = convertMovieListToDto(movie);
                         if (movieDto != null) {
+                            // 청소년관람불가 영화는 건너뜀
+                            if ("청소년관람불가".equals(movieDto.getWatchGradeNm())) continue;
                             popularMovies.add(movieDto);
                             addedMovieCds.add(movieCd);
                             pageMovieCount++;
-                            
                             // MovieList에 저장
                             if (!movieListRepository.existsByMovieCd(movieCd)) {
                                 MovieList entity = movieListMapper.toEntity(movieDto);
@@ -995,6 +1018,70 @@ public class KobisPopularMovieService {
             
         } catch (Exception e) {
             log.error("KOBIS 영화목록 API에서 매출액순 인기 영화 가져오기 실패", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * KOBIS 영화목록 API에서 특정 연도의 매출액순 인기 영화 가져오기
+     */
+    public List<MovieListDto> getPopularMoviesBySales(int limit, int year) {
+        List<MovieListDto> popularMovies = new ArrayList<>();
+        Set<String> addedMovieCds = new HashSet<>();
+        try {
+            log.info("=== KOBIS 영화목록 API에서 {}년 매출액순 인기 영화 가져오기 시작 (목표: {}개) ===", year, limit);
+            String yearStr = String.valueOf(year);
+            int page = 1;
+            int maxPages = (limit + 99) / 100;
+            while (popularMovies.size() < limit && page <= maxPages) {
+                String url = String.format("%s?key=%s&openStartDt=%s&openEndDt=%s&itemPerPage=100&curPage=%d&salesAmt=desc",
+                    MOVIE_LIST_URL, kobisApiKey, yearStr, yearStr, page);
+                log.info("KOBIS 영화목록 API 호출 ({}년, 매출액순, 페이지 {}): {}", year, page, url);
+                String response = restTemplate.getForObject(url, String.class);
+                if (response == null) {
+                    log.error("KOBIS API 응답이 null입니다. page={}", page);
+                    break;
+                }
+                JsonNode root = objectMapper.readTree(response);
+                JsonNode movieListResult = root.get("movieListResult");
+                if (movieListResult == null || movieListResult.get("movieList") == null) {
+                    log.warn("KOBIS API 응답에 movieList가 없습니다. page={}", page);
+                    break;
+                }
+                JsonNode movieList = movieListResult.get("movieList");
+                log.info("KOBIS API 응답에서 영화 {}개 발견 ({}년, 페이지 {}, 매출액순)", movieList.size(), year, page);
+                int pageMovieCount = 0;
+                for (JsonNode movie : movieList) {
+                    if (popularMovies.size() >= limit) break;
+                    String movieCd = movie.get("movieCd").asText();
+                    if (!addedMovieCds.contains(movieCd)) {
+                        MovieListDto movieDto = convertMovieListToDto(movie);
+                        if (movieDto != null) {
+                            // 청소년관람불가 영화는 건너뜀
+                            if ("청소년관람불가".equals(movieDto.getWatchGradeNm())) continue;
+                            popularMovies.add(movieDto);
+                            addedMovieCds.add(movieCd);
+                            pageMovieCount++;
+                            if (!movieListRepository.existsByMovieCd(movieCd)) {
+                                MovieList entity = movieListMapper.toEntity(movieDto);
+                                movieListRepository.save(entity);
+                                log.debug("{}년 인기 영화 저장: {} ({}) - 매출액순", year, movieDto.getMovieNm(), movieCd);
+                            }
+                        }
+                    }
+                }
+                log.info("{}년, 페이지 {}에서 {}개 영화 추가 (총 {}개)", year, page, pageMovieCount, popularMovies.size());
+                if (movieList.size() < 100) {
+                    log.info("{}년 마지막 페이지 도달 ({}개 영화)", year, movieList.size());
+                    break;
+                }
+                page++;
+                Thread.sleep(200); // API 호출 제한
+            }
+            log.info("KOBIS 영화목록 API에서 {}년 매출액순 인기 영화 {}개 가져오기 완료", year, popularMovies.size());
+            return popularMovies;
+        } catch (Exception e) {
+            log.error("KOBIS 영화목록 API에서 {}년 매출액순 인기 영화 가져오기 실패", year, e);
             return new ArrayList<>();
         }
     }
@@ -1045,20 +1132,24 @@ public class KobisPopularMovieService {
                 int pageMovieCount = 0;
                 for (JsonNode movie : movieList) {
                     if (recentMovies.size() >= limit) break;
-                    
                     String movieCd = movie.get("movieCd").asText();
                     if (!addedMovieCds.contains(movieCd)) {
                         MovieListDto movieDto = convertMovieListToDto(movie);
                         if (movieDto != null) {
+                            // 청소년관람불가 영화는 건너뜀
+                            if ("청소년관람불가".equals(movieDto.getWatchGradeNm())) continue;
                             recentMovies.add(movieDto);
                             addedMovieCds.add(movieCd);
                             pageMovieCount++;
-                            
                             // MovieList에 저장
                             if (!movieListRepository.existsByMovieCd(movieCd)) {
                                 MovieList entity = movieListMapper.toEntity(movieDto);
                                 movieListRepository.save(entity);
                                 log.debug("최신 영화 저장: {} ({}) - 개봉일순", movieDto.getMovieNm(), movieCd);
+                            }
+                            // 영화 저장 루프 내에 아래 코드 추가
+                            if (!movieRepository.existsByMovieCd(movieCd)) {
+                                kobisApiService.fetchAndSaveMovieDetail(movieCd);
                             }
                         }
                     }

@@ -15,6 +15,7 @@ import com.movie.movie_backend.repository.CastRepository;
 import com.movie.movie_backend.dto.MovieListDto;
 import com.movie.movie_backend.constant.MovieStatus;
 import com.movie.movie_backend.constant.RoleType;
+import com.movie.movie_backend.util.MovieTitleUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -231,7 +232,7 @@ public class KobisApiService {
                 .companyNm("")
                 .totalAudience(0)
                 .reservationRate(0.0)
-                .averageRating(0.0)
+                .averageRating(0.0) // TMDB 평점 저장 제거, 0.0으로 초기화
 //                .status(movieList.getStatus())
                 .build();
             
@@ -289,7 +290,41 @@ public class KobisApiService {
      */
     private String fetchDirectorImageUrlFromTmdb(String directorName) {
         try {
-            String encodedName = java.net.URLEncoder.encode(directorName, java.nio.charset.StandardCharsets.UTF_8);
+            // 1차 시도: 원본 이름으로 검색
+            String photoUrl = searchDirectorImageFromTmdb(directorName);
+            if (photoUrl != null && !photoUrl.isEmpty()) {
+                log.debug("TMDB 감독 이미지 1차 시도 성공 (원본): {} -> {}", directorName, photoUrl);
+                return photoUrl;
+            }
+            
+            // 2차 시도: 영문 이름으로 검색 (영문 이름이 있는 경우)
+            if (directorName != null && !directorName.isEmpty()) {
+                // 영문 이름 추출 시도 (괄호 안 영문 이름)
+                String englishName = MovieTitleUtil.extractEnglishTitle(directorName);
+                if (englishName != null && !englishName.isEmpty()) {
+                    photoUrl = searchDirectorImageFromTmdb(englishName);
+                    if (photoUrl != null && !photoUrl.isEmpty()) {
+                        log.debug("TMDB 감독 이미지 2차 시도 성공 (영문): {} -> {} (원본: {})", englishName, photoUrl, directorName);
+                        return photoUrl;
+                    }
+                }
+            }
+            
+            log.debug("TMDB 감독 이미지 검색 실패: {} (원본/영문 모두 시도)", directorName);
+            
+        } catch (Exception e) {
+            log.warn("TMDB 감독 이미지 URL 조회 실패: {} - {}", directorName, e.getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * TMDB에서 감독 이미지 검색 (공통 로직)
+     */
+    private String searchDirectorImageFromTmdb(String name) {
+        try {
+            String encodedName = java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8);
             String url = String.format("https://api.themoviedb.org/3/search/person?api_key=%s&query=%s&language=ko-KR", 
                 tmdbApiKey, encodedName);
             
@@ -307,7 +342,7 @@ public class KobisApiService {
                 }
             }
         } catch (Exception e) {
-            log.warn("TMDB 감독 이미지 URL 조회 실패: {} - {}", directorName, e.getMessage());
+            log.debug("TMDB 감독 이미지 검색 실패: {} - {}", name, e.getMessage());
         }
         
         return null;
@@ -365,7 +400,7 @@ public class KobisApiService {
             if (movieInfo == null) {
                 log.warn("KOBIS API 응답에 movieInfo가 없음: movieCd={}, movieInfoResult={}", movieCd, movieInfoResult.toString());
                 
-                // KOBIS에서 실패하면 영화명으로 재검색 시도
+                // KOBIS에서 실패했으므로 영화명으로 재검색 시도
                 log.info("movieCd로 실패했으므로 영화명으로 재검색 시도: {}", movieList.getMovieNm());
                 MovieDetail fallbackResult = searchMovieByTitleFromKobis(movieList);
                 if (fallbackResult != null) {
@@ -437,6 +472,11 @@ public class KobisApiService {
                         watchGradeNm = kobisGrade;
                     }
                 }
+            }
+            // 청소년관람불가 영화는 저장하지 않음 (공식 KOBIS 문서 기준)
+            if ("청소년관람불가".equals(watchGradeNm)) {
+                log.info("청소년관람불가 영화 필터링: {} {}", movieCd, movieList.getMovieNm());
+                return null;
             }
             
             // 감독 정보
@@ -552,7 +592,41 @@ public class KobisApiService {
      */
     private String getTmdbMovieInfo(String movieNm, LocalDate openDt) {
         try {
-            String query = java.net.URLEncoder.encode(movieNm, java.nio.charset.StandardCharsets.UTF_8);
+            // 1차 시도: 한글 제목으로 검색
+            String movieInfo = searchMovieInfoFromTmdb(movieNm, openDt);
+            if (movieInfo != null && !movieInfo.isEmpty()) {
+                log.debug("TMDB 영화 정보 1차 시도 성공 (한글): {} -> {}", movieNm, movieInfo);
+                return movieInfo;
+            }
+            
+            // 2차 시도: 영문 제목으로 검색 (영문 제목이 있는 경우)
+            if (movieNm != null && !movieNm.isEmpty()) {
+                // 영문 제목 추출 시도 (괄호 안 영문 제목)
+                String englishTitle = MovieTitleUtil.extractEnglishTitle(movieNm);
+                if (englishTitle != null && !englishTitle.isEmpty()) {
+                    movieInfo = searchMovieInfoFromTmdb(englishTitle, openDt);
+                    if (movieInfo != null && !movieInfo.isEmpty()) {
+                        log.debug("TMDB 영화 정보 2차 시도 성공 (영문): {} -> {} (원본: {})", englishTitle, movieInfo, movieNm);
+                        return movieInfo;
+                    }
+                }
+            }
+            
+            log.debug("TMDB 영화 정보 검색 실패: {} (한글/영문 모두 시도)", movieNm);
+            
+        } catch (Exception e) {
+            log.warn("TMDB 영화 정보 조회 실패: {} - {}", movieNm, e.getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * TMDB에서 영화 정보 검색 (공통 로직)
+     */
+    private String searchMovieInfoFromTmdb(String title, LocalDate openDt) {
+        try {
+            String query = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
             String year = (openDt != null) ? String.valueOf(openDt.getYear()) : null;
             
             String url = String.format("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s&language=ko-KR%s", 
@@ -584,7 +658,7 @@ public class KobisApiService {
                 }
             }
         } catch (Exception e) {
-            log.warn("TMDB 영화 정보 조회 실패: {} - {}", movieNm, e.getMessage());
+            log.debug("TMDB 영화 정보 검색 실패: {} - {}", title, e.getMessage());
         }
         
         return null;
@@ -1070,6 +1144,11 @@ public class KobisApiService {
                     }
                 }
             }
+            // 청소년관람불가 영화는 저장하지 않음 (공식 KOBIS 문서 기준)
+            if ("청소년관람불가".equals(watchGradeNm)) {
+                log.info("청소년관람불가 영화 필터링: {} {}", movieCd, movieList.getMovieNm());
+                return null;
+            }
             
             // 감독 정보
             Director director = null;
@@ -1222,7 +1301,41 @@ public class KobisApiService {
 
     private String fetchActorImageUrlFromTmdb(String actorName) {
         try {
-            String encodedName = java.net.URLEncoder.encode(actorName, java.nio.charset.StandardCharsets.UTF_8);
+            // 1차 시도: 원본 이름으로 검색
+            String photoUrl = searchActorImageFromTmdb(actorName);
+            if (photoUrl != null && !photoUrl.isEmpty()) {
+                log.debug("TMDB 배우 이미지 1차 시도 성공 (원본): {} -> {}", actorName, photoUrl);
+                return photoUrl;
+            }
+            
+            // 2차 시도: 영문 이름으로 검색 (영문 이름이 있는 경우)
+            if (actorName != null && !actorName.isEmpty()) {
+                // 영문 이름 추출 시도 (괄호 안 영문 이름)
+                String englishName = MovieTitleUtil.extractEnglishTitle(actorName);
+                if (englishName != null && !englishName.isEmpty()) {
+                    photoUrl = searchActorImageFromTmdb(englishName);
+                    if (photoUrl != null && !photoUrl.isEmpty()) {
+                        log.debug("TMDB 배우 이미지 2차 시도 성공 (영문): {} -> {} (원본: {})", englishName, photoUrl, actorName);
+                        return photoUrl;
+                    }
+                }
+            }
+            
+            log.debug("TMDB 배우 이미지 검색 실패: {} (원본/영문 모두 시도)", actorName);
+            
+        } catch (Exception e) {
+            log.warn("TMDB 배우 이미지 URL 조회 실패: {} - {}", actorName, e.getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * TMDB에서 배우 이미지 검색 (공통 로직)
+     */
+    private String searchActorImageFromTmdb(String name) {
+        try {
+            String encodedName = java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8);
             String url = String.format("https://api.themoviedb.org/3/search/person?api_key=%s&query=%s&language=ko-KR", 
                 tmdbApiKey, encodedName);
             
@@ -1240,7 +1353,7 @@ public class KobisApiService {
                 }
             }
         } catch (Exception e) {
-            log.warn("TMDB 배우 이미지 URL 조회 실패: {} - {}", actorName, e.getMessage());
+            log.debug("TMDB 배우 이미지 검색 실패: {} - {}", name, e.getMessage());
         }
         
         return null;
@@ -1251,7 +1364,41 @@ public class KobisApiService {
      */
     private String getTmdbOverview(String movieNm, LocalDate openDt) {
         try {
-            String query = java.net.URLEncoder.encode(movieNm, java.nio.charset.StandardCharsets.UTF_8);
+            // 1차 시도: 한글 제목으로 검색
+            String overview = searchOverviewFromTmdb(movieNm, openDt);
+            if (overview != null && !overview.isEmpty()) {
+                log.info("TMDB에서 overview 발견 (한글): 영화={}, overview 길이={}", movieNm, overview.length());
+                return overview;
+            }
+            
+            // 2차 시도: 영문 제목으로 검색 (영문 제목이 있는 경우)
+            if (movieNm != null && !movieNm.isEmpty()) {
+                // 영문 제목 추출 시도 (괄호 안 영문 제목)
+                String englishTitle = MovieTitleUtil.extractEnglishTitle(movieNm);
+                if (englishTitle != null && !englishTitle.isEmpty()) {
+                    overview = searchOverviewFromTmdb(englishTitle, openDt);
+                    if (overview != null && !overview.isEmpty()) {
+                        log.info("TMDB에서 overview 발견 (영문): 영화={}, overview 길이={} (원본: {})", englishTitle, overview.length(), movieNm);
+                        return overview;
+                    }
+                }
+            }
+            
+            log.warn("TMDB에서 overview를 찾을 수 없음: 영화={} (한글/영문 모두 시도)", movieNm);
+            
+        } catch (Exception e) {
+            log.warn("TMDB overview 조회 실패: {} - {}", movieNm, e.getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * TMDB에서 overview 검색 (공통 로직)
+     */
+    private String searchOverviewFromTmdb(String title, LocalDate openDt) {
+        try {
+            String query = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
             String year = (openDt != null) ? String.valueOf(openDt.getYear()) : null;
             
             String url = String.format("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s&language=ko-KR%s", 
@@ -1267,21 +1414,18 @@ public class KobisApiService {
                     String overview = movie.has("overview") ? movie.get("overview").asText() : "";
                     
                     if (!overview.isEmpty()) {
-                        log.info("TMDB에서 overview 발견: 영화={}, overview 길이={}", movieNm, overview.length());
                         return overview;
-                    } else {
-                        log.warn("TMDB에서 overview가 비어있음: 영화={}", movieNm);
                     }
-                } else {
-                    log.warn("TMDB에서 영화를 찾을 수 없음: 영화={}", movieNm);
                 }
             }
         } catch (Exception e) {
-            log.warn("TMDB overview 조회 실패: {} - {}", movieNm, e.getMessage());
+            log.debug("TMDB overview 검색 실패: {} - {}", title, e.getMessage());
         }
         
         return null;
     }
+
+    // extractEnglishTitle 메서드는 MovieTitleUtil로 이동됨
 
     // 제작국가명/관람등급명만 빠르게 가져오는 용도
     public static class NationAndGrade {

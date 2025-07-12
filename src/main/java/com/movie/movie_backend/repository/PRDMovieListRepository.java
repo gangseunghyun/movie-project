@@ -2,9 +2,11 @@ package com.movie.movie_backend.repository;
 
 import com.movie.movie_backend.entity.MovieList;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,6 +66,12 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
     List<MovieList> findByStatusOrderByOpenDtDesc(String status);
     
     /**
+     * 상태가 null이거나 빈 문자열인 영화 목록 조회
+     */
+    @Query("SELECT m FROM MovieList m WHERE m.status IS NULL OR m.status = ''")
+    List<MovieList> findByStatusIsNullOrStatusEmpty();
+    
+    /**
      * 장르별 조회
      */
     List<MovieList> findByGenreNmContaining(String genreNm);
@@ -94,4 +102,6 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
      * kmdbId가 있는 영화 목록 조회
      */
     List<MovieList> findByKmdbIdIsNotNull();
+    
+
 } 

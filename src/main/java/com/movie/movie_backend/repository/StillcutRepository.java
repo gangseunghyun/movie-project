@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface StillcutRepository extends JpaRepository<Stillcut, Long> {
     // 기본 CRUD 메서드만 사용
+    long countByMovieDetailId(Long movieDetailId);
 } 
