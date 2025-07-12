@@ -174,7 +174,6 @@ public class KobisApiService {
             String overview = detailNode.has("overview") ? detailNode.get("overview").asText() : "";
             String releaseDateStr = detailNode.has("release_date") ? detailNode.get("release_date").asText() : "";
             int runtime = detailNode.has("runtime") ? detailNode.get("runtime").asInt() : 0;
-            double voteAverage = detailNode.has("vote_average") ? detailNode.get("vote_average").asDouble() : 0.0;
             
             // TMDB overview 필드 로깅 추가
             if (!overview.isEmpty()) {
@@ -232,7 +231,7 @@ public class KobisApiService {
                 .companyNm("")
                 .totalAudience(0)
                 .reservationRate(0.0)
-                .averageRating(voteAverage)
+                .averageRating(0.0)
 //                .status(movieList.getStatus())
                 .build();
             
