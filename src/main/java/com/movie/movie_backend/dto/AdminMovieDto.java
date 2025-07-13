@@ -29,6 +29,12 @@ public class AdminMovieDto {
     private String description;
     private MovieStatus status;
     
+    // 감독 정보
+    private String directorName;
+    
+    // 배우 정보
+    private String actorNames;
+    
     // 태그 정보
     private List<String> tagNames;
     

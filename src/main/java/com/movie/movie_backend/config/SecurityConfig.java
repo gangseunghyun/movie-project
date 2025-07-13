@@ -179,7 +179,8 @@ public class SecurityConfig {
                     "/api/users/*/liked-directors",
                     "/api/forbidden-words/filter",
                     "/api/forbidden-words/check",
-                    "/api/profile/images/**"
+                    "/api/profile/images/**",
+                    "/uploads/**"
                 ).permitAll()
                 .requestMatchers("/api/mcp/tools/**").permitAll()
                 .requestMatchers("/api/user-login").permitAll()

@@ -2,11 +2,18 @@ package com.movie.movie_backend.service;
 
 import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.entity.Tag;
+import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.entity.Actor;
+import com.movie.movie_backend.entity.Cast;
 import com.movie.movie_backend.constant.MovieStatus;
+import com.movie.movie_backend.constant.RoleType;
 import com.movie.movie_backend.dto.AdminMovieDto;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import com.movie.movie_backend.repository.PRDTagRepository;
 import com.movie.movie_backend.repository.PRDMovieListRepository;
+import com.movie.movie_backend.repository.PRDDirectorRepository;
+import com.movie.movie_backend.repository.PRDActorRepository;
+import com.movie.movie_backend.repository.CastRepository;
 import com.movie.movie_backend.entity.MovieList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +45,9 @@ public class AdminMovieService {
 
     private final PRDMovieRepository movieRepository;
     private final PRDTagRepository tagRepository;
+    private final PRDDirectorRepository directorRepository;
+    private final PRDActorRepository actorRepository;
+    private final CastRepository castRepository;
     private final TmdbPosterService tmdbPosterService;
     private final DataMigrationService dataMigrationService;
     private final TagDataService tagDataService;
@@ -55,21 +65,75 @@ public class AdminMovieService {
     public AdminMovieDto registerMovie(AdminMovieDto movieDto) {
         log.info("영화 등록 시작: {}", movieDto.getMovieNm());
         
-        // DTO를 Entity로 변환
-        MovieDetail movieDetail = convertToEntity(movieDto);
+        // movieCd가 없으면 자동 생성
+        if (movieDto.getMovieCd() == null || movieDto.getMovieCd().trim().isEmpty()) {
+            String movieCd = "M" + System.currentTimeMillis();
+            movieDto.setMovieCd(movieCd);
+            log.info("자동 생성된 movieCd: {}", movieCd);
+        }
         
         // 영화 코드 중복 체크
-        if (movieRepository.existsByMovieCd(movieDetail.getMovieCd())) {
-            throw new RuntimeException("이미 존재하는 영화입니다: " + movieDetail.getMovieCd());
+        if (movieRepository.existsByMovieCd(movieDto.getMovieCd())) {
+            throw new RuntimeException("이미 존재하는 영화입니다: " + movieDto.getMovieCd());
         }
+        
+        // MovieList 먼저 저장 (외래키 제약조건 때문에)
+        MovieList movieList = MovieList.builder()
+                .movieCd(movieDto.getMovieCd())
+                .movieNm(movieDto.getMovieNm())
+                .movieNmEn(movieDto.getMovieNmEn())
+                .openDt(movieDto.getOpenDt())
+                .genreNm(movieDto.getGenreNm())
+                .nationNm(movieDto.getNationNm())
+                .watchGradeNm(movieDto.getWatchGradeNm())
+                .status(MovieStatus.COMING_SOON)
+                .build();
+        
+        movieList = movieListRepository.save(movieList);
+        log.info("MovieList 저장 완료: {}", movieList.getMovieCd());
+        
+        // DTO를 Entity로 변환
+        MovieDetail movieDetail = convertToEntity(movieDto);
         
         // 기본값 설정
 //        if (movieDetail.getStatus() == null) {
 //            movieDetail.setStatus(MovieStatus.COMING_SOON); // 상영예정
 //        }
         
+        // 감독 정보 저장
+        if (movieDto.getDirectorName() != null && !movieDto.getDirectorName().trim().isEmpty()) {
+            Director director = saveDirectorByName(movieDto.getDirectorName());
+            movieDetail.setDirector(director);
+            log.info("감독 정보 저장: {}", director.getName());
+        }
+        
+        // 영화 저장
         MovieDetail savedMovie = movieRepository.save(movieDetail);
         log.info("영화 등록 완료: {} ({})", savedMovie.getMovieNm(), savedMovie.getMovieCd());
+        
+        // 배우 정보 저장
+        if (movieDto.getActorNames() != null && !movieDto.getActorNames().trim().isEmpty()) {
+            String[] actorNames = movieDto.getActorNames().split(",");
+            for (int i = 0; i < actorNames.length; i++) {
+                String actorName = actorNames[i].trim();
+                if (!actorName.isEmpty()) {
+                    Actor actor = saveActorByName(actorName);
+                    
+                    // Cast 정보 저장
+                    Cast cast = Cast.builder()
+                            .movieDetail(savedMovie)
+                            .actor(actor)
+                            .characterName(actorName)
+                            .orderInCredits(i + 1)
+                            .roleType(i < 3 ? RoleType.LEAD : RoleType.SUPPORTING)
+                            .build();
+                    
+                    castRepository.save(cast);
+                    log.info("배우 정보 저장: {} (순서: {}, 역할: {})", 
+                        actor.getName(), i + 1, i < 3 ? "주연" : "조연");
+                }
+            }
+        }
         
         return convertToDto(savedMovie);
     }
@@ -584,15 +648,7 @@ public class AdminMovieService {
     /**
      * 기존 영화 데이터 정리 후 인기 영화 100개로 교체
      */
-    @Transactional
-    public void replaceWithPopularMovies() {
-        log.info("기존 영화 데이터 정리 및 인기 영화 교체 시작");
-        
-        // DataMigrationService의 replaceWithPopularMovies 메서드 사용
-        dataMigrationService.replaceWithPopularMovies();
-        
-        log.info("인기 영화 교체 완료");
-    }
+    // (이 부분 전체 삭제)
 
     /**
      * movie_detail의 genre_nm에서 장르 태그 생성
@@ -895,5 +951,48 @@ public class AdminMovieService {
         result.put("updatedCount", updatedCount);
         result.put("failedCount", failedCount);
         return result;
+    }
+    
+    /**
+     * 감독 이름으로 저장 또는 조회
+     */
+    private Director saveDirectorByName(String directorName) {
+        // 기존 감독이 있는지 확인
+        Optional<Director> existingDirector = directorRepository.findByName(directorName);
+        
+        if (existingDirector.isPresent()) {
+            return existingDirector.get();
+        }
+        
+        // 새 감독 생성
+        Director director = new Director();
+        director.setName(directorName);
+        return directorRepository.save(director);
+    }
+    
+    /**
+     * 배우 이름으로 저장 또는 조회
+     */
+    private Actor saveActorByName(String actorName) {
+        try {
+            // 기존 배우가 있는지 확인
+            Optional<Actor> existingActor = actorRepository.findByName(actorName);
+            
+            if (existingActor.isPresent()) {
+                return existingActor.get();
+            }
+        } catch (Exception e) {
+            // 중복된 이름이 있을 경우 첫 번째 것을 찾아서 반환
+            log.warn("배우 이름 중복 발견: {}, 첫 번째 배우 사용", actorName);
+            List<Actor> actors = actorRepository.findByNameContainingIgnoreCase(actorName);
+            if (!actors.isEmpty()) {
+                return actors.get(0);
+            }
+        }
+        
+        // 새 배우 생성
+        Actor actor = new Actor();
+        actor.setName(actorName);
+        return actorRepository.save(actor);
     }
 } 
