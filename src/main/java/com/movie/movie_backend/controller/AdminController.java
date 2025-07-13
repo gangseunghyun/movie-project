@@ -21,6 +21,18 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.HashMap;
+import java.util.ArrayList;
+import com.movie.movie_backend.entity.Director;
+import com.movie.movie_backend.entity.Cast;
+import com.movie.movie_backend.entity.Actor;
+import com.movie.movie_backend.repository.MovieDetailRepository;
+import com.movie.movie_backend.repository.PRDDirectorRepository;
+import com.movie.movie_backend.repository.CastRepository;
+import com.movie.movie_backend.repository.PRDActorRepository;
+import com.movie.movie_backend.service.FileUploadService;
+
 
 @Slf4j
 @RestController
@@ -35,6 +47,11 @@ public class AdminController {
     private final DataMigrationService dataMigrationService;
     private final TmdbPosterBatchService tmdbPosterBatchService;
     private final NaverMovieBatchService naverMovieBatchService;
+    private final MovieDetailRepository movieDetailRepository;
+    private final PRDDirectorRepository directorRepository;
+    private final CastRepository castRepository;
+    private final PRDActorRepository actorRepository;
+    private final FileUploadService fileUploadService;
 
     // ===== 영화 관리 =====
 
@@ -408,29 +425,6 @@ public class AdminController {
     }
 
     /**
-     * 기존 영화 데이터 정리 후 인기 영화 100개로 교체
-     */
-    @PostMapping("/movies/replace-with-popular")
-    public ResponseEntity<Map<String, Object>> replaceWithPopularMovies() {
-        try {
-            log.info("기존 영화 데이터 정리 및 인기 영화 교체 시작");
-            
-            adminMovieService.replaceWithPopularMovies();
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "기존 영화 데이터를 정리하고 인기 영화 100개로 교체했습니다."
-            ));
-        } catch (Exception e) {
-            log.error("인기 영화 교체 실패: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "인기 영화 교체에 실패했습니다: " + e.getMessage()
-            ));
-        }
-    }
-
-    /**
      * 기존 영화들의 캐릭터명을 한국어로 업데이트
      */
     @PostMapping("/movies/update-character-names")
@@ -449,6 +443,143 @@ public class AdminController {
                 "success", false,
                 "message", "캐릭터명 업데이트에 실패했습니다: " + e.getMessage()
             ));
+        }
+    }
+
+    // ===== 이미지 업로드 관리 =====
+
+    /**
+     * 감독 이미지 업로드
+     */
+    @PostMapping("/movies/{movieCd}/director-image")
+    public ResponseEntity<Map<String, Object>> uploadDirectorImage(
+            @PathVariable String movieCd,
+            @RequestParam("image") MultipartFile file) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            log.info("감독 이미지 업로드 요청: movieCd={}, filename={}", movieCd, file.getOriginalFilename());
+            
+            // 영화 상세정보 조회
+            MovieDetail movieDetail = movieDetailRepository.findByMovieCd(movieCd);
+            if (movieDetail == null) {
+                response.put("success", false);
+                response.put("message", "영화를 찾을 수 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 감독 정보 확인
+            Director director = movieDetail.getDirector();
+            if (director == null) {
+                response.put("success", false);
+                response.put("message", "감독 정보가 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 기존 이미지 삭제
+            if (director.getPhotoUrl() != null) {
+                fileUploadService.deleteImage(director.getPhotoUrl(), "directors");
+            }
+            
+            // 새 이미지 업로드
+            String imageUrl = fileUploadService.uploadImage(file, director.getId().toString(), "directors");
+            
+            // 감독 정보 업데이트
+            director.setPhotoUrl(imageUrl);
+            directorRepository.save(director);
+            
+            response.put("success", true);
+            response.put("imageUrl", imageUrl);
+            response.put("message", "감독 이미지가 업로드되었습니다.");
+            
+            log.info("감독 이미지 업로드 완료: directorId={}, imageUrl={}", director.getId(), imageUrl);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("감독 이미지 업로드 실패: movieCd={}, error={}", movieCd, e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "감독 이미지 업로드에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * 배우 이미지 업로드 (여러 명)
+     */
+    @PostMapping("/movies/{movieCd}/actor-images")
+    public ResponseEntity<Map<String, Object>> uploadActorImages(
+            @PathVariable String movieCd,
+            @RequestParam("images") List<MultipartFile> files) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            log.info("배우 이미지 업로드 요청: movieCd={}, files={}개", movieCd, files.size());
+            
+            // 영화 상세정보 조회
+            MovieDetail movieDetail = movieDetailRepository.findByMovieCd(movieCd);
+            if (movieDetail == null) {
+                response.put("success", false);
+                response.put("message", "영화를 찾을 수 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 배우 목록 조회 (Cast를 통해)
+            List<Cast> casts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movieCd);
+            if (casts.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "배우 정보가 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            List<String> imageUrls = new ArrayList<>();
+            int successCount = 0;
+            
+            // 파일 개수와 배우 개수 중 작은 값만큼 처리
+            int maxCount = Math.min(files.size(), casts.size());
+            
+            for (int i = 0; i < maxCount; i++) {
+                try {
+                    MultipartFile file = files.get(i);
+                    Cast cast = casts.get(i);
+                    Actor actor = cast.getActor();
+                    
+                    // 기존 이미지 삭제
+                    if (actor.getPhotoUrl() != null) {
+                        fileUploadService.deleteImage(actor.getPhotoUrl(), "actors");
+                    }
+                    
+                    // 새 이미지 업로드
+                    String imageUrl = fileUploadService.uploadImage(file, actor.getId().toString(), "actors");
+                    
+                    // 배우 정보 업데이트
+                    actor.setPhotoUrl(imageUrl);
+                    actorRepository.save(actor);
+                    
+                    imageUrls.add(imageUrl);
+                    successCount++;
+                    
+                    log.info("배우 이미지 업로드 성공: actorId={}, name={}, imageUrl={}", 
+                        actor.getId(), actor.getName(), imageUrl);
+                    
+                } catch (Exception e) {
+                    log.error("배우 이미지 업로드 실패: index={}, error={}", i, e.getMessage());
+                }
+            }
+            
+            response.put("success", true);
+            response.put("imageUrls", imageUrls);
+            response.put("message", String.format("배우 이미지 %d개가 업로드되었습니다.", successCount));
+            
+            log.info("배우 이미지 업로드 완료: movieCd={}, success={}개", movieCd, successCount);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("배우 이미지 업로드 실패: movieCd={}, error={}", movieCd, e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "배우 이미지 업로드에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 

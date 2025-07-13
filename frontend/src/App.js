@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Login from './Login';
 import Signup from './Signup';
@@ -29,6 +29,13 @@ axios.defaults.withCredentials = true;
 
 // API 기본 URL
 const API_BASE_URL = 'http://localhost:80/api';
+
+const baseUrl = process.env.REACT_APP_API_BASE_URL || "http://localhost:80";
+const getImageSrc = (url) => {
+  if (!url) return "/placeholder-actor.png"; // 값이 없으면 기본 이미지
+  if (url.startsWith("http")) return url; // 절대경로면 그대로
+  return `${baseUrl}${url}`; // 상대경로면 baseUrl 붙이기
+};
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -62,11 +69,14 @@ function App() {
     watchGradeNm: '',
     companyNm: '',
     posterUrl: '',
-    stillcutUrls: '',
+    stillcutUrls: [],
     tags: '',
     prdtYear: '',
     prdtStatNm: '',
-    typeNm: ''
+    typeNm: '',
+    totalAudience: '',
+    reservationRate: '',
+    averageRating: ''
   });
   const [stats, setStats] = useState({
     totalMovies: 0,
@@ -135,6 +145,25 @@ function App() {
 
   // 챗봇 모달 상태
   const [showChatbotModal, setShowChatbotModal] = useState(false);
+
+  // 새로운 상태 추가
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterPreview, setPosterPreview] = useState('');
+  const [posterUrl, setPosterUrl] = useState('');
+  const [stillcutFiles, setStillcutFiles] = useState([]);
+  const [stillcutUrls, setStillcutUrls] = useState([]);
+
+  // 감독/배우 이미지 업로드 상태 추가
+  const [directorImageFile, setDirectorImageFile] = useState(null);
+  const [directorImagePreview, setDirectorImagePreview] = useState('');
+  const [directorImageUrl, setDirectorImageUrl] = useState('');
+  const [actorImageFiles, setActorImageFiles] = useState([]); // 여러 명
+  const [actorImagePreviews, setActorImagePreviews] = useState([]);
+  const [actorImageUrls, setActorImageUrls] = useState([]);
+
+  // 영화 등록 단계 관리
+  const [movieFormStep, setMovieFormStep] = useState(1); // 1: 기본정보, 2: 이미지업로드
+  const [savedMovieCd, setSavedMovieCd] = useState(null); // 저장된 영화 코드
 
   // 소셜 추천 fetch 함수 최상단에 선언
   const fetchSocialRecommendation = async () => {
@@ -904,6 +933,8 @@ function App() {
       prdtStatNm: '',
       typeNm: ''
     });
+    setMovieFormStep(1);
+    setSavedMovieCd(null);
     setShowMovieForm(true);
     setShowMovieDetail(false);
   };
@@ -942,13 +973,10 @@ function App() {
 
   const handleSaveMovie = async () => {
     console.log("=== handleSaveMovie 함수 호출됨 ===");
-    console.log("API_BASE_URL:", API_BASE_URL);
+    console.log("현재 단계:", movieFormStep);
     console.log("현재 movieForm 데이터:", movieForm);
-    console.log("로그인 상태:", isLoggedIn);
-    console.log("현재 사용자:", currentUser);
-    console.log("관리자 여부:", currentUser?.isAdmin);
     
-    // 프론트엔드에서 로그인 상태 확인 (백엔드 재확인 제거)
+    // 프론트엔드에서 로그인 상태 확인
     if (!isLoggedIn || !currentUser) {
       alert('로그인이 필요합니다. 다시 로그인해주세요.');
       setShowAuth(true);
@@ -960,115 +988,93 @@ function App() {
       return;
     }
     
-    console.log("인증 확인 완료 - 관리자:", currentUser.loginId);
-    
     try {
-      // 데이터 검증
-      if (!movieForm.movieNm || !movieForm.movieNm.trim()) {
-        alert('영화 제목을 입력해주세요.');
-        return;
-      }
-      
-      console.log("검증 통과, API 호출 시작...");
-      
-      // 데이터 변환
-      let actorNamesStr = movieForm.actorNames;
-      if (Array.isArray(actorNamesStr)) {
-        actorNamesStr = actorNamesStr.join(',');
-      }
-      const movieData = {
-        movieNm: movieForm.movieNm,
-        movieNmEn: movieForm.movieNmEn,
-        description: movieForm.description,
-        companyNm: movieForm.companyNm,
-        openDt: movieForm.openDt,
-        showTm: parseInt(movieForm.showTm) || 0,
-        genreNm: movieForm.genreNm,
-        nationNm: movieForm.nationNm,
-        watchGradeNm: movieForm.watchGradeNm,
-        prdtYear: movieForm.prdtYear,
-        prdtStatNm: movieForm.prdtStatNm,
-        typeNm: movieForm.typeNm,
-        totalAudience: parseInt(movieForm.totalAudience) || 0,
-        reservationRate: parseFloat(movieForm.reservationRate) || 0.0,
-        averageRating: parseFloat(movieForm.averageRating) || 0.0,
-        directors: movieForm.directorName ? [{
-          peopleNm: movieForm.directorName
-        }] : [],
-        actors: actorNamesStr ? actorNamesStr.split(',').map(actor => ({
-          peopleNm: actor.trim(),
-          cast: actor.trim()
-        })) : []
-      };
-      
-      console.log("변환된 movieData:", movieData);
-      
-      if (editingMovie) {
-        const response = await axios.put(`http://localhost:80/api/movies/${editingMovie.movieCd}`, movieData, {
-          withCredentials: true,
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+      // 1단계: 기본 정보 저장
+      if (movieFormStep === 1) {
+        // 데이터 검증
+        if (!movieForm.movieNm || !movieForm.movieNm.trim()) {
+          alert('영화 제목을 입력해주세요.');
+          return;
+        }
+        
+        console.log("1단계: 기본 정보 저장 시작...");
+        
+        // 데이터 변환 - AdminMovieDto 형식으로
+        const movieData = {
+          movieNm: movieForm.movieNm,
+          movieNmEn: movieForm.movieNmEn,
+          description: movieForm.description,
+          companyNm: movieForm.companyNm,
+          openDt: movieForm.openDt,
+          showTm: parseInt(movieForm.showTm) || 0,
+          genreNm: movieForm.genreNm,
+          nationNm: movieForm.nationNm,
+          watchGradeNm: movieForm.watchGradeNm,
+          prdtYear: movieForm.prdtYear,
+          prdtStatNm: movieForm.prdtStatNm,
+          typeNm: movieForm.typeNm,
+          directorName: movieForm.directorName,
+          actorNames: movieForm.actorNames
+        };
+        
+        console.log("변환된 movieData:", movieData);
+        
+        if (editingMovie) {
+          // 영화 수정
+          const response = await axios.put(`${API_BASE_URL}/admin/movies/${editingMovie.movieCd}`, movieData, {
+            withCredentials: true,
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
+          
+          if (response.data) {
+            setSavedMovieCd(editingMovie.movieCd);
+            setMovieFormStep(2);
+            alert('기본 정보가 저장되었습니다. 이제 이미지를 업로드해주세요.');
+          } else {
+            alert('영화 수정에 실패했습니다.');
+            return;
           }
-        });
-        console.log("영화 수정 응답:", response.data);
-        
-        // 응답이 HTML인지 확인
-        if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-          alert('API 서버 연결에 문제가 있습니다. HTML이 반환되었습니다.');
-          return;
-        }
-        
-        // 응답이 성공인지 확인
-        if (response.data && response.data.success) {
-          alert('영화가 수정되었습니다.');
         } else {
-          alert('영화 수정에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
-          return;
-        }
-      } else {
-        console.log("=== 영화 등록 요청 시작 ===");
-        const requestUrl = 'http://localhost:80/api/movies';
-        console.log("요청 URL:", requestUrl);
-        console.log("요청 데이터:", movieData);
-        
-        const response = await axios.post(requestUrl, movieData, {
-          withCredentials: true,
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+          // 새 영화 등록
+          const response = await axios.post(`${API_BASE_URL}/admin/movies`, movieData, {
+            withCredentials: true,
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+          
+          if (response.data) {
+            // 응답에서 movieCd 추출
+            const movieCd = response.data.movieCd;
+            setSavedMovieCd(movieCd);
+            setMovieForm({ ...movieForm, movieCd: movieCd });
+            setMovieFormStep(2);
+            alert('기본 정보가 저장되었습니다. 이제 이미지를 업로드해주세요.');
+          } else {
+            alert('영화 등록에 실패했습니다.');
+            return;
           }
-        });
-        
-        console.log("=== 영화 등록 응답 ===");
-        console.log("응답 상태:", response.status);
-        console.log("응답 헤더:", response.headers);
-        console.log("응답 데이터:", response.data);
-        console.log("응답 타입:", typeof response.data);
-        
-        // 응답이 HTML인지 확인
-        if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-          alert('API 서버 연결에 문제가 있습니다. HTML이 반환되었습니다.');
-          return;
-        }
-        
-        // 응답이 성공인지 확인
-        if (response.data && response.data.success) {
-          alert('영화가 등록되었습니다.');
-        } else {
-          alert('영화 등록에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
-          return;
         }
       }
-      setShowMovieForm(false);
-      handleRefresh();
+      // 2단계: 이미지 업로드 완료 후 최종 저장
+      else if (movieFormStep === 2) {
+        console.log("2단계: 이미지 업로드 완료, 최종 저장");
+        setShowMovieForm(false);
+        setMovieFormStep(1);
+        setSavedMovieCd(null);
+        handleRefresh();
+        alert('영화 등록이 완료되었습니다!');
+      }
     } catch (error) {
       console.error('영화 저장 실패:', error);
       console.error('에러 응답:', error.response?.data);
-      console.error('요청 URL:', error.config?.url);
       
       // 401 오류 시 로그인 페이지로 이동
       if (error.response?.status === 401) {
@@ -1329,7 +1335,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '150px' }}>
                 <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', marginBottom: '10px', backgroundColor: '#ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {actorRecommendation.actor.photoUrl ? (
-                    <img src={actorRecommendation.actor.photoUrl} alt={actorRecommendation.actor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={getImageSrc(actorRecommendation.actor.photoUrl)} alt={actorRecommendation.actor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <span style={{ fontSize: '40px' }}>🎭</span>
                   )}
@@ -1346,7 +1352,7 @@ function App() {
                     <div key={movie.movieCd} style={{ width: '120px', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} onClick={() => handleMovieClick(movie)}>
                       <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {movie.posterUrl ? (
-                          <img src={movie.posterUrl} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={getImageSrc(movie.posterUrl)} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <span style={{ fontSize: '24px' }}>🎬</span>
                         )}
@@ -1371,7 +1377,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '150px' }}>
                 <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', marginBottom: '10px', backgroundColor: '#ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {directorRecommendation.director.photoUrl ? (
-                    <img src={directorRecommendation.director.photoUrl} alt={directorRecommendation.director.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={getImageSrc(directorRecommendation.director.photoUrl)} alt={directorRecommendation.director.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <span style={{ fontSize: '40px' }}>🎬</span>
                   )}
@@ -1388,7 +1394,7 @@ function App() {
                     <div key={movie.movieCd} style={{ width: '120px', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} onClick={() => handleMovieClick(movie)}>
                       <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {movie.posterUrl ? (
-                          <img src={movie.posterUrl} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={getImageSrc(movie.posterUrl)} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <span style={{ fontSize: '24px' }}>🎬</span>
                         )}
@@ -1413,7 +1419,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '150px' }}>
                 <div style={{ width: '100px', height: '100px', borderRadius: '50%', overflow: 'hidden', marginBottom: '10px', backgroundColor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {socialRecommendation.recommender.profileImageUrl ? (
-                    <img src={socialRecommendation.recommender.profileImageUrl} alt={socialRecommendation.recommender.nickname} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={getImageSrc(socialRecommendation.recommender.profileImageUrl)} alt={socialRecommendation.recommender.nickname} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <span style={{ fontSize: '36px' }}>👤</span>
                   )}
@@ -1429,7 +1435,7 @@ function App() {
                     <div key={movie.movieCd || movie.id || index} style={{ width: '120px', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} onClick={() => handleMovieClick(movie)}>
                       <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {movie.posterUrl ? (
-                          <img src={movie.posterUrl} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={getImageSrc(movie.posterUrl)} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <span style={{ fontSize: '24px' }}>🎬</span>
                         )}
@@ -1476,7 +1482,7 @@ function App() {
                   <div key={movie.movieCd || index} style={{ width: '120px', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} onClick={() => handleMovieClick(movie)}>
                     <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {movie.posterUrl ? (
-                        <img src={movie.posterUrl} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={getImageSrc(movie.posterUrl)} alt={movie.movieNm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <span style={{ fontSize: '24px' }}>🎬</span>
                       )}
@@ -1718,7 +1724,7 @@ function App() {
             <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                  <img src={getImageSrc(item.posterUrl)} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -1779,7 +1785,7 @@ function App() {
             <div key={index} className="movie-card" style={{cursor: 'pointer'}} onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                  <img src={getImageSrc(item.posterUrl)} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -1961,7 +1967,7 @@ function App() {
             <div key={index} className="movie-card" onClick={() => handleMovieClick(item)}>
               <div className="movie-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                  <img src={getImageSrc(item.posterUrl)} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -2089,7 +2095,7 @@ function App() {
             <div className="movie-detail-grid">
               <div className="movie-detail-poster">
                 {selectedMovie.posterUrl ? (
-                  <img src={selectedMovie.posterUrl} alt={selectedMovie.movieNm} />
+                  <img src={getImageSrc(selectedMovie.posterUrl)} alt={selectedMovie.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -2235,7 +2241,7 @@ function App() {
                           console.error('감독 ID가 없습니다:', selectedMovie.directors[0]);
                         }
                       }}>
-                        <img src={selectedMovie.directors[0].photoUrl || '/placeholder-actor.png'} alt={selectedMovie.directors[0].peopleNm} />
+                        <img src={getImageSrc(selectedMovie.directors[0].photoUrl)} alt={selectedMovie.directors[0].peopleNm} />
                         <div>{selectedMovie.directors[0].peopleNm}</div>
                         <div className="credit-role">감독</div>
                       </div>
@@ -2251,7 +2257,7 @@ function App() {
                           console.error('배우 ID가 없습니다:', actor);
                         }
                       }}>
-                        <img src={actor.photoUrl || '/placeholder-actor.png'} alt={actor.peopleNm} />
+                        <img src={getImageSrc(actor.photoUrl)} alt={actor.peopleNm} />
                         <div>{actor.peopleNm}</div>
                         <div className="credit-role">주연</div>
                       </div>
@@ -2267,7 +2273,7 @@ function App() {
                           console.error('배우 ID가 없습니다:', actor);
                         }
                       }}>
-                        <img src={actor.photoUrl || '/placeholder-actor.png'} alt={actor.peopleNm} />
+                        <img src={getImageSrc(actor.photoUrl)} alt={actor.peopleNm} />
                         <div>{actor.peopleNm}</div>
                         <div className="credit-role">조연</div>
                       </div>
@@ -2329,9 +2335,9 @@ function App() {
                       {selectedMovie.stillcuts.map((stillcut, index) => (
                         <div key={stillcut.id || index} className="stillcut-item">
                           <img 
-                            src={stillcut.imageUrl} 
+                            src={getImageSrc(stillcut.imageUrl)} 
                             alt={`${selectedMovie.movieNm} 스틸컷 ${index + 1}`}
-                            onClick={() => window.open(stillcut.imageUrl, '_blank')}
+                            onClick={() => window.open(`http://localhost:80${stillcut.imageUrl}`, '_blank')}
                           />
                         </div>
                       ))}
@@ -2444,7 +2450,7 @@ function App() {
                                   <div style={{ height: '200px', overflow: 'hidden' }}>
                                     {movie.posterUrl ? (
                                       <img 
-                                        src={movie.posterUrl} 
+                                        src={getImageSrc(movie.posterUrl)} 
                                         alt={movie.movieNm}
                                         style={{
                                           width: '100%',
@@ -2523,145 +2529,210 @@ function App() {
       <div className="modal-overlay" onClick={() => setShowMovieForm(false)}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
-            <h2>{editingMovie ? '영화 수정' : '영화 등록'}</h2>
+            <h2>{editingMovie ? '영화 수정' : '영화 등록'} - {movieFormStep === 1 ? '1단계: 기본정보' : '2단계: 이미지업로드'}</h2>
             <button 
               className="modal-close"
-              onClick={() => setShowMovieForm(false)}
+              onClick={() => {
+                setShowMovieForm(false);
+                setMovieFormStep(1);
+                setSavedMovieCd(null);
+              }}
             >
               ✕
             </button>
           </div>
           <div className="modal-body">
             <form onSubmit={(e) => {e.preventDefault(); handleSaveMovie();}}>
-              <div className="form-group">
-                <label>영화 제목 (한글)</label>
-                <input
-                  type="text"
-                  value={movieForm.movieNm}
-                  onChange={(e) => setMovieForm({...movieForm, movieNm: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>영화 제목 (영문)</label>
-                <input
-                  type="text"
-                  value={movieForm.movieNmEn}
-                  onChange={(e) => setMovieForm({...movieForm, movieNmEn: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>줄거리</label>
-                <textarea
-                  value={movieForm.description}
-                  onChange={(e) => setMovieForm({...movieForm, description: e.target.value})}
-                  rows="4"
-                />
-              </div>
-              <div className="form-group">
-                <label>감독</label>
-                <input
-                  type="text"
-                  value={movieForm.directorName}
-                  onChange={(e) => setMovieForm({...movieForm, directorName: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>배우 (쉼표로 구분)</label>
-                <input
-                  type="text"
-                  value={movieForm.actorNames}
-                  onChange={(e) => setMovieForm({...movieForm, actorNames: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>태그 (쉼표로 구분)</label>
-                <input
-                  type="text"
-                  value={movieForm.tags}
-                  onChange={(e) => setMovieForm({...movieForm, tags: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>배급사</label>
-                <input
-                  type="text"
-                  value={movieForm.companyNm}
-                  onChange={(e) => setMovieForm({...movieForm, companyNm: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>개봉일</label>
-                <input
-                  type="date"
-                  value={movieForm.openDt}
-                  onChange={(e) => setMovieForm({...movieForm, openDt: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>상영시간 (분)</label>
-                <input
-                  type="number"
-                  value={movieForm.showTm}
-                  onChange={(e) => setMovieForm({...movieForm, showTm: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>장르</label>
-                <input
-                  type="text"
-                  value={movieForm.genreNm}
-                  onChange={(e) => setMovieForm({...movieForm, genreNm: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>제작국가</label>
-                <input
-                  type="text"
-                  value={movieForm.nationNm}
-                  onChange={(e) => setMovieForm({...movieForm, nationNm: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>관람등급</label>
-                <input
-                  type="text"
-                  value={movieForm.watchGradeNm}
-                  onChange={(e) => setMovieForm({...movieForm, watchGradeNm: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>제작연도</label>
-                <input
-                  type="text"
-                  value={movieForm.prdtYear}
-                  onChange={(e) => setMovieForm({...movieForm, prdtYear: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>제작상태</label>
-                <input
-                  type="text"
-                  value={movieForm.prdtStatNm}
-                  onChange={(e) => setMovieForm({...movieForm, prdtStatNm: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>영화유형</label>
-                <input
-                  type="text"
-                  value={movieForm.typeNm}
-                  onChange={(e) => setMovieForm({...movieForm, typeNm: e.target.value})}
-                />
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="btn-primary">
-                  {editingMovie ? '수정' : '등록'}
-                </button>
-                <button type="button" onClick={() => setShowMovieForm(false)} className="btn-secondary">
-                  취소
-                </button>
-              </div>
+              {movieFormStep === 1 ? (
+                // 1단계: 기본 정보 입력
+                <>
+                  <div className="form-group">
+                    <label>영화 제목 (한글)</label>
+                    <input
+                      type="text"
+                      value={movieForm.movieNm}
+                      onChange={(e) => setMovieForm({...movieForm, movieNm: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>영화 제목 (영문)</label>
+                    <input
+                      type="text"
+                      value={movieForm.movieNmEn}
+                      onChange={(e) => setMovieForm({...movieForm, movieNmEn: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>줄거리</label>
+                    <textarea
+                      value={movieForm.description}
+                      onChange={(e) => setMovieForm({...movieForm, description: e.target.value})}
+                      rows="4"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>감독</label>
+                    <input
+                      type="text"
+                      value={movieForm.directorName}
+                      onChange={(e) => setMovieForm({...movieForm, directorName: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>배우 (쉼표로 구분)</label>
+                    <input
+                      type="text"
+                      value={movieForm.actorNames}
+                      onChange={(e) => setMovieForm({...movieForm, actorNames: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>태그 (쉼표로 구분)</label>
+                    <input
+                      type="text"
+                      value={movieForm.tags}
+                      onChange={(e) => setMovieForm({...movieForm, tags: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>배급사</label>
+                    <input
+                      type="text"
+                      value={movieForm.companyNm}
+                      onChange={(e) => setMovieForm({...movieForm, companyNm: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>개봉일</label>
+                    <input
+                      type="date"
+                      value={movieForm.openDt}
+                      onChange={(e) => setMovieForm({...movieForm, openDt: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>상영시간 (분)</label>
+                    <input
+                      type="number"
+                      value={movieForm.showTm}
+                      onChange={(e) => setMovieForm({...movieForm, showTm: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>장르</label>
+                    <input
+                      type="text"
+                      value={movieForm.genreNm}
+                      onChange={(e) => setMovieForm({...movieForm, genreNm: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>제작국가</label>
+                    <input
+                      type="text"
+                      value={movieForm.nationNm}
+                      onChange={(e) => setMovieForm({...movieForm, nationNm: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>관람등급</label>
+                    <input
+                      type="text"
+                      value={movieForm.watchGradeNm}
+                      onChange={(e) => setMovieForm({...movieForm, watchGradeNm: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>제작연도</label>
+                    <input
+                      type="text"
+                      value={movieForm.prdtYear}
+                      onChange={(e) => setMovieForm({...movieForm, prdtYear: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>제작상태</label>
+                    <input
+                      type="text"
+                      value={movieForm.prdtStatNm}
+                      onChange={(e) => setMovieForm({...movieForm, prdtStatNm: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>영화유형</label>
+                    <input
+                      type="text"
+                      value={movieForm.typeNm}
+                      onChange={(e) => setMovieForm({...movieForm, typeNm: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button type="submit" className="btn-primary">
+                      기본 정보 저장
+                    </button>
+                    <button type="button" onClick={() => setShowMovieForm(false)} className="btn-secondary">
+                      취소
+                    </button>
+                  </div>
+                </>
+              ) : (
+                // 2단계: 이미지 업로드
+                <>
+                  <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f0f8ff', borderRadius: '8px' }}>
+                    <h3>영화: {movieForm.movieNm}</h3>
+                    <p>기본 정보가 저장되었습니다. 이제 이미지를 업로드해주세요.</p>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>포스터 업로드</label>
+                    <input type="file" accept="image/*" onChange={handlePosterChange} />
+                    {posterPreview && <img src={posterPreview} alt="포스터 미리보기" style={{ width: 120, height: 180 }} />}
+                    <button type="button" onClick={handlePosterUpload} disabled={!posterFile}>포스터 업로드</button>
+                    {posterUrl && <div style={{ color: 'green', marginTop: '5px' }}>✓ 포스터 업로드 완료!</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>스틸컷 업로드 (여러 장)</label>
+                    <input type="file" accept="image/*" multiple onChange={handleStillcutChange} />
+                    <button type="button" onClick={handleStillcutUpload} disabled={!stillcutFiles.length}>스틸컷 업로드</button>
+                    <div style={{ display: 'flex', gap: 8, marginTop: '10px' }}>
+                      {stillcutUrls.map((url, idx) => (
+                        <img key={idx} src={url} alt="스틸컷" style={{ width: 80, height: 60 }} />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>감독 이미지 업로드</label>
+                    <input type="file" accept="image/*" onChange={handleDirectorImageChange} />
+                    {directorImagePreview && <img src={directorImagePreview} alt="감독 미리보기" style={{ width: 80, height: 80, borderRadius: 8 }} />}
+                    <button type="button" onClick={handleDirectorImageUpload} disabled={!directorImageFile}>감독 이미지 업로드</button>
+                    {directorImageUrl && <div style={{ color: 'green', marginTop: '5px' }}>✓ 감독 이미지 업로드 완료!</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>배우 이미지 업로드 (여러 명, 순서대로)</label>
+                    <input type="file" accept="image/*" multiple onChange={handleActorImageChange} />
+                    <button type="button" onClick={handleActorImageUpload} disabled={!actorImageFiles.length}>배우 이미지 업로드</button>
+                    <div style={{ display: 'flex', gap: 8, marginTop: '10px' }}>
+                      {actorImagePreviews.map((url, idx) => (
+                        <img key={idx} src={url} alt={`배우${idx+1} 미리보기`} style={{ width: 60, height: 60, borderRadius: 8 }} />
+                      ))}
+                    </div>
+                    {actorImageUrls.length > 0 && <div style={{ color: 'green', marginTop: '5px' }}>✓ 배우 이미지 업로드 완료!</div>}
+                  </div>
+                  
+                  <div className="form-actions">
+                    <button type="submit" className="btn-primary">
+                      영화 등록 완료
+                    </button>
+                    <button type="button" onClick={() => setMovieFormStep(1)} className="btn-secondary">
+                      이전 단계
+                    </button>
+                  </div>
+                </>
+              )}
             </form>
           </div>
         </div>
@@ -2691,7 +2762,7 @@ function App() {
                 <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
                   <div className="movie-poster">
                     {movie.posterUrl ? (
-                      <img src={movie.posterUrl} alt={movie.movieNm} />
+                      <img src={getImageSrc(movie.posterUrl)} alt={movie.movieNm} />
                     ) : (
                       <div className="no-poster">No Poster</div>
                     )}
@@ -2725,7 +2796,7 @@ function App() {
                       <div key={actor.id} className="person-card" onClick={() => handleActorClick(actor.id)}>
                         <div className="person-photo">
                           {actor.photoUrl ? (
-                            <img src={actor.photoUrl} alt={actor.name} />
+                            <img src={getImageSrc(actor.photoUrl)} alt={actor.name} />
                           ) : (
                             <div className="no-photo">No Photo</div>
                           )}
@@ -2746,7 +2817,7 @@ function App() {
                       <div key={director.id} className="person-card" onClick={() => handleDirectorClick(director.id)}>
                         <div className="person-photo">
                           {director.photoUrl ? (
-                            <img src={director.photoUrl} alt={director.name} />
+                            <img src={getImageSrc(director.photoUrl)} alt={director.name} />
                           ) : (
                             <div className="no-photo">No Photo</div>
                           )}
@@ -2807,7 +2878,7 @@ function App() {
                   }}>
                     {user.profileImageUrl ? (
                       <img 
-                        src={user.profileImageUrl} 
+                        src={getImageSrc(user.profileImageUrl)} 
                         alt={user.nickname} 
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={e => {
@@ -2896,7 +2967,7 @@ function App() {
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                  <img src={getImageSrc(item.posterUrl)} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -2956,7 +3027,7 @@ function App() {
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                  <img src={getImageSrc(item.posterUrl)} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -3016,7 +3087,7 @@ function App() {
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                  <img src={getImageSrc(item.posterUrl)} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -3075,7 +3146,7 @@ function App() {
             <div key={index} className="movie-card">
               <div className="movie-poster">
                 {item.posterUrl ? (
-                  <img src={item.posterUrl} alt={item.movieNm} />
+                  <img src={getImageSrc(item.posterUrl)} alt={item.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
               )}
@@ -3208,7 +3279,7 @@ function App() {
               <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
                 <div className="movie-poster">
                   {movie.posterUrl ? (
-                    <img src={movie.posterUrl} alt={movie.movieNm} />
+                    <img src={getImageSrc(movie.posterUrl)} alt={movie.movieNm} />
                   ) : (
                     <div className="no-poster">No Poster</div>
                   )}
@@ -3247,7 +3318,7 @@ function App() {
             <div key={movie.movieCd} className="movie-card" onClick={() => handleMovieClick(movie)}>
               <div className="movie-poster">
                 {movie.posterUrl ? (
-                  <img src={movie.posterUrl} alt={movie.movieNm} />
+                  <img src={getImageSrc(movie.posterUrl)} alt={movie.movieNm} />
                 ) : (
                   <div className="no-poster">No Poster</div>
                 )}
@@ -3516,7 +3587,7 @@ function App() {
             }}>
               {recommender.profileImageUrl ? (
                 <img 
-                  src={recommender.profileImageUrl} 
+                  src={getImageSrc(recommender.profileImageUrl)} 
                   alt={recommender.nickname}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
@@ -3560,7 +3631,7 @@ function App() {
                   }}>
                     {movie.posterUrl ? (
                       <img 
-                        src={movie.posterUrl} 
+                        src={getImageSrc(movie.posterUrl)} 
                         alt={movie.movieNm}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -3590,6 +3661,158 @@ function App() {
         </div>
       </div>
     );
+  };
+
+  // 포스터 파일 선택
+  const handlePosterChange = (e) => {
+    const file = e.target.files[0];
+    setPosterFile(file);
+    setPosterPreview(file ? URL.createObjectURL(file) : '');
+  };
+  // 포스터 업로드
+  const handlePosterUpload = async () => {
+    if (!posterFile) return;
+    
+    // 저장된 영화 코드 사용
+    const movieCd = savedMovieCd || movieForm.movieCd;
+    if (!movieCd || movieCd === 'temp') {
+      alert('먼저 영화를 저장한 후 이미지를 업로드해주세요.');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('image', posterFile);
+    
+    try {
+      const res = await axios.post(`${API_BASE_URL}/admin/movies/${movieCd}/poster`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setPosterUrl(res.data.imageUrl);
+        setMovieForm({ ...movieForm, posterUrl: res.data.imageUrl });
+        alert('포스터 업로드 성공!');
+      }
+    } catch (error) {
+      console.error('포스터 업로드 실패:', error);
+      if (error.response?.data?.message) {
+        alert('포스터 업로드 실패: ' + error.response.data.message);
+      } else {
+        alert('포스터 업로드에 실패했습니다.');
+      }
+    }
+  };
+  // 스틸컷 파일 선택
+  const handleStillcutChange = (e) => {
+    setStillcutFiles([...e.target.files]);
+  };
+  // 스틸컷 업로드
+  const handleStillcutUpload = async () => {
+    if (!stillcutFiles.length) return;
+    
+    // 저장된 영화 코드 사용
+    const movieCd = savedMovieCd || movieForm.movieCd;
+    if (!movieCd || movieCd === 'temp') {
+      alert('먼저 영화를 저장한 후 이미지를 업로드해주세요.');
+      return;
+    }
+    
+    const formData = new FormData();
+    stillcutFiles.forEach(f => formData.append('images', f));
+    
+    try {
+      const res = await axios.post(`${API_BASE_URL}/admin/movies/${movieCd}/stillcuts`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setStillcutUrls([...stillcutUrls, ...res.data.imageUrls]);
+        setMovieForm({ ...movieForm, stillcutUrls: [...(movieForm.stillcutUrls || []), ...res.data.imageUrls] });
+        alert('스틸컷 업로드 성공!');
+      }
+    } catch (error) {
+      console.error('스틸컷 업로드 실패:', error);
+      if (error.response?.data?.message) {
+        alert('스틸컷 업로드 실패: ' + error.response.data.message);
+      } else {
+        alert('스틸컷 업로드에 실패했습니다.');
+      }
+    }
+  };
+
+  // 감독 이미지 파일 선택
+  const handleDirectorImageChange = (e) => {
+    const file = e.target.files[0];
+    setDirectorImageFile(file);
+    setDirectorImagePreview(file ? URL.createObjectURL(file) : '');
+  };
+  // 감독 이미지 업로드
+  const handleDirectorImageUpload = async () => {
+    if (!directorImageFile) return;
+    
+    // 저장된 영화 코드 사용
+    const movieCd = savedMovieCd || movieForm.movieCd;
+    if (!movieCd || movieCd === 'temp') {
+      alert('먼저 영화를 저장한 후 이미지를 업로드해주세요.');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('image', directorImageFile);
+    
+    try {
+      const res = await axios.post(`${API_BASE_URL}/admin/movies/${movieCd}/director-image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setDirectorImageUrl(res.data.imageUrl);
+        setMovieForm({ ...movieForm, directorImageUrl: res.data.imageUrl });
+        alert('감독 이미지 업로드 성공!');
+      }
+    } catch (error) {
+      console.error('감독 이미지 업로드 실패:', error);
+      if (error.response?.data?.message) {
+        alert('감독 이미지 업로드 실패: ' + error.response.data.message);
+      } else {
+        alert('감독 이미지 업로드에 실패했습니다.');
+      }
+    }
+  };
+  // 배우 이미지 파일 선택 (여러 명)
+  const handleActorImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setActorImageFiles(files);
+    setActorImagePreviews(files.map(f => URL.createObjectURL(f)));
+  };
+  // 배우 이미지 업로드 (여러 명)
+  const handleActorImageUpload = async () => {
+    if (!actorImageFiles.length) return;
+    
+    // 저장된 영화 코드 사용
+    const movieCd = savedMovieCd || movieForm.movieCd;
+    if (!movieCd || movieCd === 'temp') {
+      alert('먼저 영화를 저장한 후 이미지를 업로드해주세요.');
+      return;
+    }
+    
+    const formData = new FormData();
+    actorImageFiles.forEach(f => formData.append('images', f));
+    
+    try {
+      const res = await axios.post(`${API_BASE_URL}/admin/movies/${movieCd}/actor-images`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setActorImageUrls(res.data.imageUrls);
+        setMovieForm({ ...movieForm, actorImageUrls: res.data.imageUrls });
+        alert('배우 이미지 업로드 성공!');
+      }
+    } catch (error) {
+      console.error('배우 이미지 업로드 실패:', error);
+      if (error.response?.data?.message) {
+        alert('배우 이미지 업로드 실패: ' + error.response.data.message);
+      } else {
+        alert('배우 이미지 업로드에 실패했습니다.');
+      }
+    }
   };
 
   return (

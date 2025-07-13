@@ -29,6 +29,7 @@ public class MovieManagementService {
     private final REVRatingRepository ratingRepository;
     private final MovieDetailMapper movieDetailMapper;
     private final USRUserRepository userRepository;
+    private final FileUploadService fileUploadService;
 
     /**
      * 영화 등록
@@ -178,6 +179,12 @@ public class MovieManagementService {
     @Transactional
     public void deleteMovie(String movieCd) {
         log.info("영화 삭제 시작: {}", movieCd);
+        
+        // 포스터 파일도 함께 삭제
+        MovieList movieList = movieListRepository.findById(movieCd).orElse(null);
+        if (movieList != null && movieList.getPosterUrl() != null) {
+            fileUploadService.deleteImage(movieList.getPosterUrl(), "posters");
+        }
         
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));

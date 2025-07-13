@@ -55,6 +55,48 @@ public class FileUploadService {
     }
     
     /**
+     * 공통 이미지 업로드 (영화 포스터, 배우, 감독 등)
+     * @param file 업로드할 이미지 파일
+     * @param id 식별자(영화코드, 배우ID 등)
+     * @param type 폴더명(posters, actors, directors)
+     * @return 저장된 파일의 URL 경로
+     */
+    public String uploadImage(MultipartFile file, String id, String type) throws IOException {
+        validateImageFile(file);
+        String uploadDir = uploadPath + "/" + type;
+        Path dirPath = Paths.get(uploadDir);
+        if (!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath);
+        }
+        String ext = getFileExtension(file.getOriginalFilename());
+        // id에 포함된 공백을 언더스코어로 치환
+        String safeId = id.replaceAll("\\s+", "_");
+        String filename = type + "_" + safeId + "_" + UUID.randomUUID() + ext;
+        Path filePath = dirPath.resolve(filename);
+        Files.copy(file.getInputStream(), filePath);
+        return "/uploads/" + type + "/" + filename;
+    }
+
+    /**
+     * 공통 이미지 파일 삭제
+     * @param imageUrl 저장된 URL 경로
+     * @param type 폴더명(posters, actors, directors)
+     */
+    public void deleteImage(String imageUrl, String type) {
+        if (imageUrl == null || imageUrl.isEmpty()) return;
+        try {
+            String filename = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+            Path filePath = Paths.get(uploadPath + "/" + type, filename);
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+                log.info("이미지 삭제 완료: {}", filename);
+            }
+        } catch (IOException e) {
+            log.error("이미지 삭제 실패: {}", imageUrl, e);
+        }
+    }
+    
+    /**
      * 이미지 파일 유효성 검사
      */
     private void validateImageFile(MultipartFile file) {

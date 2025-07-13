@@ -300,84 +300,9 @@ public class DataMigrationService {
 
     /**
      * 기존 영화 데이터에 인기 영화 50개 추가 (안전한 방식)
+     * TMDB 인기 영화 기능 제거됨 - KOBIS 데이터만 사용
      */
-    @Transactional
-    public void replaceWithPopularMovies() {
-        try {
-            log.info("인기 영화 50개 추가 시작 (기존 데이터 보존)");
-            
-            // 1. TMDB에서 인기 영화 50개 가져오기 (이미 KOBIS 매칭 시도됨)
-            List<MovieDetailDto> popularMovies = tmdbPopularMovieService.getPopularMovies(50);
-            log.info("TMDB에서 인기 영화 {}개 가져오기 완료", popularMovies.size());
-            
-            // 2. MovieList와 MovieDetail에 저장 (기존 데이터는 건너뛰기)
-            int successCount = 0;
-            int skippedCount = 0;
-            
-            for (MovieDetailDto movieDto : popularMovies) {
-                try {
-                    // 기존 데이터가 있으면 건너뛰기
-                    if (movieListRepository.findById(movieDto.getMovieCd()).isPresent()) {
-                        skippedCount++;
-                        log.info("기존 데이터 존재하여 건너뛰기: {} ({})", movieDto.getMovieNm(), movieDto.getMovieCd());
-                        continue;
-                    }
-                    
-                    // MovieList 엔티티로 변환하여 저장 (기본 정보)
-                    MovieList movieList = MovieList.builder()
-                            .movieCd(movieDto.getMovieCd())
-                            .movieNm(movieDto.getMovieNm())
-                            .movieNmEn(movieDto.getMovieNmEn())
-                            .openDt(movieDto.getOpenDt())
-                            .genreNm(movieDto.getGenreNm())
-                            .nationNm(movieDto.getNationNm())
-                            .status(MovieStatus.NOW_PLAYING)
-                            .build();
-                    
-                    movieListRepository.save(movieList);
-                    
-                    // MovieDetail 엔티티로 변환하여 저장
-                    MovieDetail movieDetail = MovieDetail.builder()
-                            .movieCd(movieDto.getMovieCd())
-                            .movieNm(movieDto.getMovieNm())
-                            .movieNmEn(movieDto.getMovieNmEn())
-                            .description(movieDto.getDescription())
-                            .openDt(movieDto.getOpenDt())
-                            .showTm(movieDto.getShowTm())
-                            .genreNm(movieDto.getGenreNm())
-                            .nationNm(movieDto.getNationNm())
-                            .watchGradeNm(movieDto.getWatchGradeNm())
-                            .companyNm(movieDto.getCompanyNm())
-                            .totalAudience(movieDto.getTotalAudience())
-                            .reservationRate(movieDto.getReservationRate())
-                            .averageRating(movieDto.getAverageRating())
-//                            .status(MovieStatus.NOW_PLAYING)
-                            .build();
-                    
-                    // 감독 정보가 있으면 저장
-                    if (movieDto.getDirectorName() != null && !movieDto.getDirectorName().isEmpty()) {
-                        Director director = saveDirector(movieDto.getDirectorName());
-                        movieDetail.setDirector(director);
-                    }
-                    
-                    movieRepository.save(movieDetail);
-                    
-                    successCount++;
-                    log.info("영화 저장 완료: {} ({}) - MovieList, MovieDetail 모두 저장", 
-                            movieList.getMovieNm(), movieList.getMovieCd());
-                    
-                } catch (Exception e) {
-                    log.warn("영화 저장 실패: {} - {}", movieDto.getMovieNm(), e.getMessage());
-                }
-            }
-            
-            log.info("인기 영화 추가 완료: 새로 저장={}개, 건너뛴={}개 (기존 데이터)", successCount, skippedCount);
-            
-        } catch (Exception e) {
-            log.error("인기 영화 추가 실패", e);
-            throw new RuntimeException("인기 영화 추가 실패", e);
-        }
-    }
+    // (이 부분 전체 삭제)
 
     /**
      * 감독 정보 저장
