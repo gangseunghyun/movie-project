@@ -104,3 +104,6 @@ yarn-error.log*
 ollama*.zip
 ollama*.exe
 ollama-latest.zip
+
+# 루트 디렉토리의 .sql 파일만 무시
+/*.sql
