@@ -2346,9 +2346,8 @@ function App() {
                 )}
 
                 {/* 추천 영화 섹션 */}
-                {currentUser && (
-                  <div className="movie-detail-section">
-                    <h4>🎬 당신을 위한 영화 추천</h4>
+                <div className="movie-detail-section">
+                  <h4>🎬 이 영화와 비슷한 영화</h4>
                     <div style={{ 
                       background: '#f8f9fa', 
                       borderRadius: '12px', 
@@ -2512,7 +2511,6 @@ function App() {
                       })()}
                     </div>
                   </div>
-                )}
               </div>
             </div>
           </div>
