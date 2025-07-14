@@ -1348,7 +1348,7 @@ function App() {
               <div style={{ flex: 1 }}>
                 <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>대표 작품</h5>
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                  {actorRecommendation.topMovies.map((movie, index) => (
+                  {(actorRecommendation.allMovies || []).map((movie, index) => (
                     <div key={movie.movieCd} style={{ width: '120px', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} onClick={() => handleMovieClick(movie)}>
                       <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {movie.posterUrl ? (
@@ -1390,7 +1390,7 @@ function App() {
               <div style={{ flex: 1 }}>
                 <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>대표 작품</h5>
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                  {directorRecommendation.topMovies.map((movie, index) => (
+                  {(directorRecommendation.allMovies || []).map((movie, index) => (
                     <div key={movie.movieCd} style={{ width: '120px', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} onClick={() => handleMovieClick(movie)}>
                       <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {movie.posterUrl ? (

@@ -171,8 +171,8 @@ public class PersonController {
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000) // 5분 = 300초
     public void selectRandomActor() {
         try {
-            // 19금이 아닌 영화 2개 이상 출연한 배우들 조회
-            List<Actor> eligibleActors = getActorsWithMinNonAdultMovies(2);
+            // 19금이 아닌 영화 6개 이상 출연한 배우들 조회
+            List<Actor> eligibleActors = getActorsWithMinNonAdultMovies(6);
             if (eligibleActors.isEmpty()) {
                 return;
             }
@@ -185,7 +185,7 @@ public class PersonController {
     }
 
     /**
-     * 19금이 아닌 영화 2개 이상 출연한 배우들 조회
+     * 19금이 아닌 영화 6개 이상 출연한 배우들 조회
      */
     private List<Actor> getActorsWithMinNonAdultMovies(int minMovieCount) {
         List<Actor> allActors = actorRepository.findAll();
@@ -224,7 +224,7 @@ public class PersonController {
     }
 
     /**
-     * 배우 정보와 대표 작품 3개 조회
+     * 배우 정보와 모든 작품 조회
      */
     private Map<String, Object> getActorRecommendationInfo() {
         List<MovieDetail> allMovies = castRepository.findByActorIdOrderByMovieDetailOpenDtDesc(currentRecommendedActor.getId())
@@ -233,14 +233,14 @@ public class PersonController {
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
             .distinct() // 중복 제거
             .collect(Collectors.toList());
-        // 별점순으로 상위 3개 작품
-        List<MovieDetail> topMovies = allMovies.stream()
+        // 개봉일순으로 정렬 (최신순)
+        List<MovieDetail> sortedMovies = allMovies.stream()
             .sorted((m1, m2) -> {
-                double rating1 = m1.getAverageRating() != null ? m1.getAverageRating() : 0.0;
-                double rating2 = m2.getAverageRating() != null ? m2.getAverageRating() : 0.0;
-                return Double.compare(rating2, rating1);
+                if (m1.getOpenDt() == null && m2.getOpenDt() == null) return 0;
+                if (m1.getOpenDt() == null) return 1;
+                if (m2.getOpenDt() == null) return -1;
+                return m2.getOpenDt().compareTo(m1.getOpenDt()); // 최신순
             })
-            .limit(3)
             .collect(Collectors.toList());
         Map<String, Object> actorDto = new HashMap<>();
         actorDto.put("id", currentRecommendedActor.getId());
@@ -253,7 +253,7 @@ public class PersonController {
         result.put("actor", actorDto);
         result.put("movieCount", allMovies.size());
         result.put("averageRating", getAverageRatingByActor(currentRecommendedActor.getId()));
-        result.put("topMovies", topMovies.stream()
+        result.put("allMovies", sortedMovies.stream()
             .map(movie -> movieDetailMapper.toDto(movie, 0, false))
             .collect(Collectors.toList()));
         return result;
@@ -311,13 +311,13 @@ public class PersonController {
     }
 
     /**
-     * 5분마다 영화 2개 이상 감독한 감독 중에서 무작위로 선정
+     * 5분마다 영화 6개 이상 감독한 감독 중에서 무작위로 선정
      */
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000) // 5분 = 300초
     public void selectRandomDirector() {
         try {
-            // 19금이 아닌 영화 2개 이상 감독한 감독들 조회
-            List<Director> eligibleDirectors = getDirectorsWithMinNonAdultMovies(2);
+            // 19금이 아닌 영화 6개 이상 감독한 감독들 조회
+            List<Director> eligibleDirectors = getDirectorsWithMinNonAdultMovies(6);
             if (eligibleDirectors.isEmpty()) {
                 return;
             }
@@ -330,7 +330,7 @@ public class PersonController {
     }
 
     /**
-     * 19금이 아닌 영화 2개 이상 감독한 감독들 조회
+     * 19금이 아닌 영화 6개 이상 감독한 감독들 조회
      */
     private List<Director> getDirectorsWithMinNonAdultMovies(int minMovieCount) {
         List<Director> allDirectors = directorRepository.findAll();
@@ -369,7 +369,7 @@ public class PersonController {
     }
 
     /**
-     * 감독 정보와 대표 작품 3개 조회
+     * 감독 정보와 모든 작품 조회
      */
     private Map<String, Object> getDirectorRecommendationInfo() {
         List<MovieDetail> allMovies = movieRepository.findAll().stream()
@@ -377,14 +377,14 @@ public class PersonController {
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
             .distinct() // 중복 제거
             .collect(Collectors.toList());
-        // 별점순으로 상위 3개 작품
-        List<MovieDetail> topMovies = allMovies.stream()
+        // 개봉일순으로 정렬 (최신순)
+        List<MovieDetail> sortedMovies = allMovies.stream()
             .sorted((m1, m2) -> {
-                double rating1 = m1.getAverageRating() != null ? m1.getAverageRating() : 0.0;
-                double rating2 = m2.getAverageRating() != null ? m2.getAverageRating() : 0.0;
-                return Double.compare(rating2, rating1);
+                if (m1.getOpenDt() == null && m2.getOpenDt() == null) return 0;
+                if (m1.getOpenDt() == null) return 1;
+                if (m2.getOpenDt() == null) return -1;
+                return m2.getOpenDt().compareTo(m1.getOpenDt()); // 최신순
             })
-            .limit(3)
             .collect(Collectors.toList());
         Map<String, Object> directorDto = new HashMap<>();
         directorDto.put("id", currentRecommendedDirector.getId());
@@ -397,7 +397,7 @@ public class PersonController {
         result.put("director", directorDto);
         result.put("movieCount", allMovies.size());
         result.put("averageRating", getAverageRatingByDirector(currentRecommendedDirector.getId()));
-        result.put("topMovies", topMovies.stream()
+        result.put("allMovies", sortedMovies.stream()
             .map(movie -> movieDetailMapper.toDto(movie, 0, false))
             .collect(Collectors.toList()));
         return result;
