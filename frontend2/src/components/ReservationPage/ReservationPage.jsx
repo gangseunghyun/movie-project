@@ -6,6 +6,7 @@ import ReservationCard from './ReservationCard';
 import ReservationDetailModal from './ReservationDetailModal';
 import ReservationFilter from './ReservationFilter';
 import { useUser } from '../../contexts/UserContext';
+import previousIcon from '../../assets/previous_icon.png';
 
 const ReservationPage = () => {
   const { user } = useUser();
@@ -34,6 +35,7 @@ const ReservationPage = () => {
         withCredentials: true
       });
       setReservations(response.data);
+      console.log(response.data);
     } catch (error) {
       console.error('예매 내역 조회 실패:', error);
     } finally {
@@ -138,7 +140,7 @@ const ReservationPage = () => {
             className={styles.backButton}
             onClick={() => navigate(-1)}
           >
-            ← 뒤로가기
+            <img src={previousIcon} alt="뒤로가기" className={styles.backIcon} />
           </button>
           <h1 className={styles.title}>예매 내역</h1>
           <div className={styles.reservationCount}>

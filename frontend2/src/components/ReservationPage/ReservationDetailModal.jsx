@@ -46,6 +46,7 @@ const ReservationDetailModal = ({ reservation, onClose, onCancelPayment }) => {
             ✕
           </button>
         </div>
+        <hr className={styles.modalHeaderLine} />
 
         <div className={styles.modalContent}>
           {/* 영화 정보 */}
@@ -63,39 +64,39 @@ const ReservationDetailModal = ({ reservation, onClose, onCancelPayment }) => {
               <div className={styles.movieInfo}>
                 <h3 className={styles.movieTitle}>{screening?.movieNm || '영화 제목'}</h3>
                 <div className={styles.movieMeta}>
-                  <span>{screening?.showTm || 0}분</span>
-                  {screening?.watchGradeNm && <span> • {screening.watchGradeNm}</span>}
+                  {/* <span>{screening?.showTm || 0}분</span>
+                  {screening?.watchGradeNm && <span> • {screening.watchGradeNm}</span>} */}  
                 </div>
               </div>
             </div>
           </div>
-
+          <hr className={styles.modalHeaderLine2} />
           {/* 예매 정보 */}
           <div className={styles.infoSection}>
             <h4 className={styles.sectionTitle}>📋 예매 정보</h4>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>🏢 영화관</span>
+                <span className={styles.infoLabel2}>🏢 영화관</span>
                 <span className={styles.infoValue}>{cinema?.name || '영화관'}</span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>🏟️ 상영관</span>
+                <span className={styles.infoLabel2}>🏟️ 상영관</span>
                 <span className={styles.infoValue}>{theater?.name || '상영관'}</span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>🕒 상영일시</span>
+                <span className={styles.infoLabel2}>🕒 상영일시</span>
                 <span className={styles.infoValue}>
                   {formatDate(screening?.startTime)}
                 </span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>💺 좌석</span>
+                <span className={styles.infoLabel2}>💺 좌석</span>
                 <span className={styles.infoValue}>
                   {seats?.map(seat => seat.seatNumber).join(', ') || '좌석 정보 없음'}
                 </span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>📅 예매일시</span>
+                <span className={styles.infoLabel2}>📅 예매일시</span>
                 <span className={styles.infoValue}>
                   {formatDate(reservedAt)}
                 </span>
