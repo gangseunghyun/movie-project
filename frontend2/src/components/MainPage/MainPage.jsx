@@ -206,7 +206,7 @@ export default function MainPage() {
           return res.json();
         })
         .then(data => {
-          console.log("새로운 장르 추천 API 응답:", data);
+          //console.log("새로운 장르 추천 API 응답:", data);
           setNewGenreRecommendations(Array.isArray(data.genres) ? data.genres : []);
         })
         .catch(error => {

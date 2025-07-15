@@ -393,9 +393,6 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
           <div className={styles.rightSection}>
             {isOwnPage && (
               <div className={styles.actionSection}>
-                <button className={styles.settingBtn}>
-                  <span className={styles.settingIcon} />회원정보 수정
-                </button>
                 <button className={styles.logoutBtn} onClick={handleLogout}>
                   <span className={styles.logoutIcon} />로그아웃
                 </button>

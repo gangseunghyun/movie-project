@@ -380,12 +380,87 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
         saveRating(score);
     };
 
+    // 영화 수정 핸들러
+    const handleEditMovie = () => {
+        if (!user || user.role !== 'ADMIN') {
+            alert('관리자만 수정할 수 있습니다.');
+            return;
+        }
+        
+        // 영화 수정 페이지로 이동 (현재 영화 정보 전달)
+        navigate(`/admin/movie/edit/${movieDetail.movieCd}`, { 
+            state: { 
+                movieDetail: {
+                    movieCd: movieDetail.movieCd,
+                    movieNm: movieDetail.movieNm,
+                    movieNmEn: movieDetail.movieNmEn || '',
+                    showTm: movieDetail.showTm || '',
+                    openDt: movieDetail.openDt || '',
+                    genreNm: movieDetail.genreNm || '',
+                    watchGradeNm: movieDetail.watchGradeNm || '',
+                    companyNm: movieDetail.companyNm || '',
+                    description: movieDetail.description || '',
+                    posterUrl: movieDetail.posterUrl || ''
+                },
+                isEdit: true 
+            } 
+        });
+    };
+
+    // 영화 삭제 핸들러
+    const handleDeleteMovie = () => {
+        if (!user || user.role !== 'ADMIN') {
+            alert('관리자만 삭제할 수 있습니다.');
+            return;
+        }
+
+        const confirmDelete = window.confirm('정말로 이 영화를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.');
+        
+        if (confirmDelete) {
+            console.log('영화 삭제 시작:', movieDetail.movieCd);
+            
+            // 영화 삭제 API 호출 (MovieManagementController 사용)
+            fetch(`http://localhost:80/api/movies/${movieDetail.movieCd}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            })
+            .then(response => {
+                console.log('삭제 API 응답 상태:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('삭제 API 응답 데이터:', data);
+                
+                if (data.success) {
+                    alert('영화가 성공적으로 삭제되었습니다.');
+                    navigate('/'); // 메인 페이지로 이동
+                } else {
+                    alert(data.message || '영화 삭제에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('영화 삭제 오류:', error);
+                alert('영화 삭제 중 오류가 발생했습니다.');
+            });
+        }
+    };
+
     return (
         <>
             <div className={styles.headerWrap}>
                 <div className={styles.headerLeft}>
                     <h1 className={styles.title}>
                         {movieDetail.movieNm} <span className={styles.rating}>★ {movieDetail.averageRating && !isNaN(Number(movieDetail.averageRating)) ? Number(movieDetail.averageRating).toFixed(1) : '-'}</span>
+                        {user && user.role === 'ADMIN' && (
+                            <div className={styles.adminActions}>
+                                <button className={styles.editBtn} onClick={() => handleEditMovie()}>
+                                    수정
+                                </button>
+                                <button className={styles.deleteBtn} onClick={() => handleDeleteMovie()}>
+                                    삭제
+                                </button>
+                            </div>
+                        )}
                     </h1>
                     <div className={styles.info}>
                         <span>{movieDetail.openDt}</span> · <span>{movieDetail.genreNm}</span>

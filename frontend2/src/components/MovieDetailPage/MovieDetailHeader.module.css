@@ -82,6 +82,40 @@
     gap: 8px;
 }
 
+.adminActions {
+    display: flex;
+    gap: 8px;
+    margin-left: 12px;
+}
+
+.editBtn, .deleteBtn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.editBtn {
+    background: #4a90e2;
+    color: white;
+}
+
+.editBtn:hover {
+    background: #357abd;
+}
+
+.deleteBtn {
+    background: #e74c3c;
+    color: white;
+}
+
+.deleteBtn:hover {
+    background: #c0392b;
+}
+
 .rating {
     color: #ffc107;
     font-size: 2rem;

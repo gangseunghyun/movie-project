@@ -239,3 +239,146 @@
   border-radius: 50%;
   object-fit: cover;
 }
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .commentSectionTitle {
+    font-size: 1.8rem;
+    margin: 16px 0 12px 50px;
+  }
+  
+  .commentSectionHeader {
+    margin: 24px 50px 8px 0px;
+  }
+  
+  .commentGrid {
+    margin-left: 50px;
+  }
+  
+  .commentCard {
+    width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .commentSectionTitle {
+    font-size: 1.5rem;
+    margin: 16px 0 12px 30px;
+  }
+  
+  .commentSectionHeader {
+    margin: 24px 30px 8px 0px;
+  }
+  
+  .commentGrid {
+    margin-left: 30px;
+    gap: 15px;
+  }
+  
+  .commentCard {
+    width: 300px;
+    padding: 15px 15px 10px 15px;
+  }
+  
+  .commentUser,
+  .commentRating {
+    font-size: 1rem;
+  }
+  
+  .commentContent {
+    font-size: 1rem;
+  }
+  
+  .commentFooter {
+    font-size: 0.9rem;
+  }
+  
+  .commentIcon {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .commentMovieInfo {
+    width: 33.33%;
+  }
+  
+  .commentMoviePoster {
+    width: 80px;
+    height: 110px;
+  }
+  
+  .commentMovieTitle {
+    font-size: 0.75rem;
+    max-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .commentSectionTitle {
+    font-size: 1.3rem;
+    margin: 16px 0 12px 20px;
+  }
+  
+  .commentSectionHeader {
+    margin: 24px 20px 8px 0px;
+  }
+  
+  .commentGrid {
+    margin-left: 20px;
+    gap: 12px;
+  }
+  
+  .commentCard {
+    width: 280px;
+    padding: 12px 12px 8px 12px;
+  }
+  
+  .commentUser,
+  .commentRating {
+    font-size: 0.9rem;
+  }
+  
+  .commentContent {
+    font-size: 0.9rem;
+    min-height: 50px;
+  }
+  
+  .commentFooter {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+  
+  .commentIcon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .commentIconRow {
+    gap: 10px;
+  }
+  
+  .commentMovieInfo {
+    width: 50%;
+  }
+  
+  .commentMoviePoster {
+    width: 70px;
+    height: 100px;
+  }
+  
+  .commentMovieTitle {
+    font-size: 0.7rem;
+    max-width: 70px;
+  }
+  
+  .replyEditBtn,
+  .replyDeleteBtn {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+  }
+  
+  .profileImage {
+    width: 20px;
+    height: 20px;
+  }
+}
