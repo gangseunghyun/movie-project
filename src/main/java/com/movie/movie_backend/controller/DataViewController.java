@@ -54,6 +54,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import com.movie.movie_backend.repository.PRDActorRepository;
 import com.movie.movie_backend.repository.PRDDirectorRepository;
+import com.movie.movie_backend.repository.MovieDetailRepository;
+import java.util.HashSet;
 
 @Slf4j
 @Controller
@@ -81,6 +83,7 @@ public class DataViewController {
     private final USRUserRepository userRepository;
     private final PRDActorRepository actorRepository;
     private final PRDDirectorRepository directorRepository;
+    private final MovieDetailRepository movieDetailRepository;
 
     /**
      * 데이터 조회 메인 페이지
@@ -1011,6 +1014,110 @@ public class DataViewController {
             ));
         } catch (Exception e) {
             log.error("테스트 응답 실패", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 비슷한 장르 영화 조회 API
+     * 
+     * React에서 사용법:
+     * - 특정 영화와 비슷한 장르의 영화들을 조회할 때 사용
+     * - 해당 영화의 장르와 동일한 장르를 가진 다른 영화들을 반환
+     * - 기본값: page=0, size=20
+     * 
+     * 예시:
+     * fetch('/data/api/similar-genre-movies?movieCd=20201234&page=0&size=10')
+     *   .then(res => res.json())
+     *   .then(data => console.log(data.data)); // 비슷한 장르 영화 목록
+     */
+    @GetMapping("/api/similar-genre-movies")
+    @ResponseBody
+    @Operation(summary = "비슷한 장르 영화 조회 API", 
+               description = "특정 영화와 비슷한 장르의 영화들을 조회합니다. React에서 사용할 때: fetch('/data/api/similar-genre-movies?movieCd=20201234&page=0&size=10')")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "비슷한 장르 영화 조회 성공"),
+        @ApiResponse(responseCode = "400", description = "비슷한 장르 영화 조회 실패")
+    })
+    public ResponseEntity<Map<String, Object>> getSimilarGenreMovies(
+            @RequestParam String movieCd,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            HttpServletRequest request) {
+        try {
+            log.info("비슷한 장르 영화 조회 요청: movieCd={}, page={}, size={}", movieCd, page, size);
+            
+            // 1. 해당 영화의 장르 정보 가져오기
+            MovieDetail targetMovie = movieDetailRepository.findByMovieCd(movieCd);
+            if (targetMovie == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "영화를 찾을 수 없습니다: " + movieCd));
+            }
+            
+            String targetGenre = targetMovie.getGenreNm();
+            if (targetGenre == null || targetGenre.trim().isEmpty()) {
+                return ResponseEntity.ok(Map.of(
+                    "data", new ArrayList<>(),
+                    "total", 0,
+                    "page", page,
+                    "size", size,
+                    "totalPages", 0,
+                    "message", "해당 영화의 장르 정보가 없습니다."
+                ));
+            }
+            
+            // 2. 장르별로 영화 조회 (콤마로 구분된 장르 처리)
+            String[] genres = targetGenre.split(",");
+            Set<MovieDetail> similarMovies = new HashSet<>();
+            
+            for (String genre : genres) {
+                String trimmedGenre = genre.trim();
+                if (!trimmedGenre.isEmpty()) {
+                    List<MovieDetail> genreMovies = movieDetailRepository.findByGenreNmContaining(trimmedGenre);
+                    // 자기 자신은 제외
+                    genreMovies = genreMovies.stream()
+                        .filter(movie -> !movie.getMovieCd().equals(movieCd))
+                        .collect(Collectors.toList());
+                    similarMovies.addAll(genreMovies);
+                }
+            }
+            
+            // 3. 평점순으로 정렬 (높은 평점 순)
+            List<MovieDetail> sortedMovies = similarMovies.stream()
+                .sorted((a, b) -> {
+                    Double ratingA = a.getAverageRating() != null ? a.getAverageRating() : 0.0;
+                    Double ratingB = b.getAverageRating() != null ? b.getAverageRating() : 0.0;
+                    return Double.compare(ratingB, ratingA); // 내림차순
+                })
+                .collect(Collectors.toList());
+            
+            // 4. 페이지네이션 적용
+            int total = sortedMovies.size();
+            int start = page * size;
+            int end = Math.min(start + size, total);
+            
+            List<MovieDetail> pagedList = start < total ? sortedMovies.subList(start, end) : new ArrayList<>();
+            
+            // 5. DTO 변환
+            User currentUser = getCurrentUser(request);
+            List<MovieDetailDto> dtoList = pagedList.stream()
+                .map(md -> movieDetailMapper.toDto(
+                    md,
+                    likeRepository.countByMovieDetail(md),
+                    currentUser != null && likeRepository.existsByMovieDetailAndUser(md, currentUser)
+                ))
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(Map.of(
+                "data", dtoList,
+                "total", total,
+                "page", page,
+                "size", size,
+                "totalPages", (int) Math.ceil((double) total / size),
+                "targetGenre", targetGenre
+            ));
+            
+        } catch (Exception e) {
+            log.error("비슷한 장르 영화 조회 실패: movieCd={}", movieCd, e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
