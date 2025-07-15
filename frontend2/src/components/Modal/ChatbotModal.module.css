@@ -1,0 +1,282 @@
+/* 챗봇 모달 오버레이 */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 챗봇 모달 컨테이너 */
+.modalContainer {
+  width: 450px;
+  max-width: 95vw;
+  height: 650px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 챗봇 모달 헤더 */
+.modalHeader {
+  padding: 18px 20px;
+  border-bottom: 1px solid #eee;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.headerSubtitle {
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
+.closeButton {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* 챗봇 메시지 영역 */
+.messagesContainer {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: #f7f8fa;
+}
+
+/* 메시지 래퍼 */
+.messageWrapper {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 16px;
+}
+
+.messageWrapper.user {
+  flex-direction: row-reverse;
+}
+
+/* 메시지 버블 */
+.messageBubble {
+  border-radius: 16px;
+  padding: 12px 16px;
+  max-width: 320px;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: all 0.2s;
+}
+
+.messageBubble.user {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.messageBubble.bot {
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.messageBubble.system {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.messageBubble.error {
+  border: 1px solid #ffcdd2;
+}
+
+/* 메시지 라벨 */
+.messageLabel {
+  margin-bottom: 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* 영화 카드 */
+.movieCard {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 1px solid #e0e0e0;
+}
+
+.movieCard:hover {
+  transform: translateY(-2px);
+}
+
+.movieCardContent {
+  display: flex;
+  gap: 12px;
+}
+
+.moviePoster {
+  width: 60px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.moviePoster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.moviePosterPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+}
+
+.movieInfo {
+  flex: 1;
+}
+
+.movieTitle {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.movieGenre {
+  margin: 0 0 2px 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.movieRating {
+  margin: 0;
+  font-size: 12px;
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.movieDate {
+  margin: 2px 0 0 0;
+  font-size: 11px;
+  color: #999;
+}
+
+/* 로딩 애니메이션 */
+.loadingWrapper {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 16px;
+}
+
+.loadingBubble {
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.loadingContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loadingDots {
+  display: flex;
+  gap: 4px;
+}
+
+.loadingDot {
+  width: 8px;
+  height: 8px;
+  background: #667eea;
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.loadingDot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loadingDot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* 입력 영역 */
+.inputContainer {
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+
+.inputWrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: #667eea;
+}
+
+.sendButton {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sendButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* 애니메이션 */
+@keyframes typing {
+  0%, 60%, 100% { 
+    transform: translateY(0); 
+  }
+  30% { 
+    transform: translateY(-10px); 
+  }
+} 

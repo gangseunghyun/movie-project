@@ -139,8 +139,7 @@ export default function FilmerExtraInfoPage() {
 
   return (
     <div className={styles.outer}>
-      <h2 className={styles.title}>추가 정보 입력</h2>
-
+      <h3 className={styles.title}>추가 정보 입력</h3>
       <div className={styles.inputGroup}>
         <div className={styles.inputGroupRow}>
           <input

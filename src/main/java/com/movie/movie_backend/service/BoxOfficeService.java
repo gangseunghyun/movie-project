@@ -19,6 +19,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -299,6 +301,49 @@ public class BoxOfficeService {
         }
         
         log.info("BoxOffice movie_detail_id 업데이트 완료: {}개 업데이트", updatedCount);
+    }
+
+    /**
+     * 박스오피스 데이터 정리 및 순위 재정렬
+     */
+    @Transactional
+    public void cleanupAndReorderBoxOffice() {
+        log.info("박스오피스 데이터 정리 및 순위 재정렬 시작");
+        
+        // 1. 모든 박스오피스 데이터 조회
+        List<BoxOffice> allBoxOffices = boxOfficeRepository.findAll();
+        log.info("전체 박스오피스 데이터: {}개", allBoxOffices.size());
+        
+        // 2. 날짜별로 그룹화
+        Map<LocalDate, List<BoxOffice>> dateGroups = allBoxOffices.stream()
+            .collect(Collectors.groupingBy(BoxOffice::getTargetDate));
+        
+        // 3. 각 날짜별로 순위 재정렬
+        for (Map.Entry<LocalDate, List<BoxOffice>> entry : dateGroups.entrySet()) {
+            LocalDate targetDate = entry.getKey();
+            List<BoxOffice> boxOffices = entry.getValue();
+            
+            log.info("날짜 {} 처리 중: {}개 영화", targetDate, boxOffices.size());
+            
+            // 일일 관객수(audiCnt) 기준으로 내림차순 정렬
+            boxOffices.sort((a, b) -> Long.compare(b.getAudiCnt(), a.getAudiCnt()));
+            
+            // 순위 재할당
+            for (int i = 0; i < boxOffices.size(); i++) {
+                BoxOffice boxOffice = boxOffices.get(i);
+                int newRank = i + 1;
+                
+                if (boxOffice.getRank() != newRank) {
+                    log.info("순위 변경: {} ({}) {}위 -> {}위", 
+                        boxOffice.getMovieNm(), boxOffice.getMovieCd(), 
+                        boxOffice.getRank(), newRank);
+                    boxOffice.setRank(newRank);
+                    boxOfficeRepository.save(boxOffice);
+                }
+            }
+        }
+        
+        log.info("박스오피스 데이터 정리 및 순위 재정렬 완료");
     }
 
     /**

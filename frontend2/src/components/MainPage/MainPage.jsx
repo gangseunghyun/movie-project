@@ -24,6 +24,7 @@ export default function MainPage() {
   const [mainSocialRecommendedMovies, setMainSocialRecommendedMovies] = useState([]); // 추가
   const [mainSocialRecommender, setMainSocialRecommender] = useState(null); // 추가
   const [newGenreRecommendations, setNewGenreRecommendations] = useState([]); // 추가
+  const [personalizedMovies, setPersonalizedMovies] = useState([]); // 개인 추천 영화 추가
 
   // 페이지 로드 시 맨 위로 스크롤
   useEffect(() => {
@@ -143,7 +144,7 @@ export default function MainPage() {
             companyNm: movie.companyNm || '',
             directorName: movie.directorName || ''
           }));
-          console.log('감독 추천 영화:', enrichedMovies);
+          //console.log('감독 추천 영화:', enrichedMovies);
           setDirectorMovies(enrichedMovies);
         }
       })
@@ -213,12 +214,31 @@ export default function MainPage() {
           console.error('새로운 장르 추천 로드 실패:', error);
           setNewGenreRecommendations([]);
         });
+      // 개인 영화추천 fetch
+      fetch('http://localhost:80/api/recommendations/personalized/liked-people', {
+        credentials: 'include'
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          //console.log("개인 영화추천 API 응답:", data);
+          setPersonalizedMovies(Array.isArray(data) ? data : []);
+        })
+        .catch(error => {
+          console.error('개인 영화추천 로드 실패:', error);
+          setPersonalizedMovies([]);
+        });
     } else {
       setRecommendedMovies({});
       setSocialRecommendedMovies([]);
       setMainSocialRecommendedMovies([]);
       setMainSocialRecommender(null);
       setNewGenreRecommendations([]);
+      setPersonalizedMovies([]);
     }
   }, [user]);
 
@@ -251,6 +271,15 @@ export default function MainPage() {
     // { title: '인기 영화', key: 'popular', data: popularMovies },
     { title: '박스오피스 순위', key: 'boxoffice', data: boxOfficeData, ratings },
     { title: '개봉 예정작', key: 'upcoming', data: comingSoonMovies },
+    // 개인 영화추천 섹션 추가
+    ...(user && personalizedMovies.length > 0
+      ? [{
+          title: `${nickname}님을 위한 추천 영화`,
+          key: 'personalized',
+          data: personalizedMovies,
+        }]
+      : []
+    ),
     // 선호 태그별 추천 영화 섹션 추가
     ...(user && Object.keys(recommendedMovies).length > 0
       ? Object.entries(recommendedMovies).map(([tag, movies]) => ({

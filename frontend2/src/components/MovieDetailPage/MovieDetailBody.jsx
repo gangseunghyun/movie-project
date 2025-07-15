@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './MovieDetailBody.module.css';
 // assets 이미지 import
 import banner1 from '../../assets/banner1.jpg';
@@ -20,6 +20,7 @@ import CommentDetailModal from '../Modal/CommentDetailModal';
 import { useUser } from '../../contexts/UserContext';
 import CommentModal from '../Modal/CommentModal';
 import AllCommentsModal from '../Modal/AllCommentsModal';
+import StillcutGalleryModal from '../Modal/StillcutGalleryModal';
 
 
 const dummySimilar = [
@@ -35,8 +36,16 @@ const dummySimilar = [
 ];
 
 function SimilarMovieCard({ movie }) {
+  const navigate = useNavigate();
+  
+  const handleClick = () => {
+    if (movie.movieCd) {
+      navigate(`/movie-detail/${movie.movieCd}`);
+    }
+  };
+
   return (
-    <div className={styles.similarMovieCard}>
+    <div className={styles.similarMovieCard} onClick={handleClick}>
       <img 
         src={movie.posterUrl || movie.posterImageUrl || banner1} 
         alt={movie.title || movie.movieNm} 
@@ -71,6 +80,9 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const [allCommentsModalOpen, setAllCommentsModalOpen] = useState(false);
   // 코멘트별 별점 상태
   const [commentRatings, setCommentRatings] = useState({});
+  // 스틸컷 갤러리 모달 상태
+  const [stillcutGalleryOpen, setStillcutGalleryOpen] = useState(false);
+  const [selectedStillcutIndex, setSelectedStillcutIndex] = useState(0);
   
   // 비슷한 장르 영화 상태 추가
   const [similarMovies, setSimilarMovies] = useState([]);
@@ -188,16 +200,45 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     id: d.id,
     peopleNm: d.peopleNm,
     photoUrl: d.photoUrl && d.photoUrl.trim() !== '' ? d.photoUrl : userIcon,
-    cast: '감독',
-    type: 'director', // 반드시 추가!
+    cast: d.roleType || '감독',
+    type: 'director',
   }));
-  const actorList = (actors || []).map(a => ({
-    id: a.id,
-    peopleNm: a.peopleNm,
-    photoUrl: a.photoUrl && a.photoUrl.trim() !== '' ? a.photoUrl : userIcon,
-    cast: '출연',
-    type: 'actor', // 반드시 추가!
-  }));
+  const actorList = (actors || []).map((a, index) => {
+    // 역할 타입을 한글로 변환
+    let roleDisplay = '출연';
+    if (a.roleType) {
+      switch (a.roleType.toUpperCase()) {
+        case 'LEAD':
+          roleDisplay = '주연';
+          break;
+        case 'SUPPORTING':
+          roleDisplay = '조연';
+          break;
+        case 'EXTRA':
+          roleDisplay = '단역';
+          break;
+        case 'GUEST':
+          roleDisplay = '특별출연';
+          break;
+        default:
+          roleDisplay = a.roleType;
+      }
+    } else {
+      // roleType이 없으면 인덱스 기반으로 추정 (상위 3명은 주연, 나머지는 조연)
+      roleDisplay = index < 3 ? '주연' : '조연';
+    }
+    
+    // 배역명이 있으면 "주연 (배역명)" 형태로 표시
+    const displayText = a.cast && a.cast.trim() !== '' ? `${roleDisplay} (${a.cast})` : roleDisplay;
+    
+    return {
+      id: a.id,
+      peopleNm: a.peopleNm,
+      photoUrl: a.photoUrl && a.photoUrl.trim() !== '' ? a.photoUrl : userIcon,
+      cast: displayText,
+      type: 'actor',
+    };
+  });
   const castList = [...directorList, ...actorList];
 
   // 슬라이더 세팅
@@ -216,6 +257,12 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
 
   const handlePrev = () => setStillStart(Math.max(0, stillStart - 1));
   const handleNext = () => setStillStart(Math.min(stillcutsData.length - stillVisible, stillStart + 1));
+
+  // 스틸컷 갤러리 모달 핸들러
+  const handleStillcutClick = (index) => {
+    setSelectedStillcutIndex(index);
+    setStillcutGalleryOpen(true);
+  };
 
   // 댓글 상세 모달 핸들러
   const handleCommentCardClick = (reviewId) => {
@@ -343,6 +390,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     setEditModalOpen(false);
     setReplyModalOpen(false);
     setAllCommentsModalOpen(false);
+    setStillcutGalleryOpen(false);
   };
 
   return (
@@ -507,6 +555,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                   flex: `0 0 ${stillCardWidth}px`,
                   marginRight: idx !== stillcutsData.length - 1 ? `${stillCardGap}px` : 0
                 }}
+                onClick={() => handleStillcutClick(idx)}
               >
                 <img src={still.imageUrl} alt="스틸컷" className={styles.stillcutImg} />
               </div>
@@ -559,6 +608,13 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
         onClose={() => setAllCommentsModalOpen(false)}
         movieId={movieCd} // 또는 실제 id 변수명
         onCommentClick={handleAllCommentsCommentClick}
+      />
+      {/* 스틸컷 갤러리 모달 */}
+      <StillcutGalleryModal
+        open={stillcutGalleryOpen}
+        onClose={() => setStillcutGalleryOpen(false)}
+        stillcuts={stillcutsData}
+        initialIndex={selectedStillcutIndex}
       />
     </div>
   );

@@ -33,8 +33,39 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      handleClose();
     }
+  };
+
+  // 모달 닫기 시 좌석 잠금 해제
+  const handleClose = async () => {
+    try {
+      // 좌석 잠금 해제
+      const selectedSeatIds = bookingInfo.selectedSeats
+        .map(seatNumber => {
+          const seat = bookingInfo.seatInfo?.find(s => s.seatNumber === seatNumber);
+          return seat?.seatId;
+        })
+        .filter(id => id);
+      
+      if (selectedSeatIds.length > 0) {
+        await fetch('http://localhost:80/api/bookings/unlock-seats', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            screeningId: bookingInfo.screeningId,
+            seatIds: selectedSeatIds
+          })
+        });
+        console.log('좌석 잠금이 해제되었습니다.');
+      }
+    } catch (unlockError) {
+      console.error('좌석 잠금 해제 실패:', unlockError);
+    }
+    onClose();
   };
 
   // 실제 결제 처리 함수
@@ -47,48 +78,80 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
     setIsProcessing(true);
 
     try {
-      // 결제 데이터 준비
-      const paymentData = {
-        merchantUid: `merchant_${Date.now()}`,
+      // 아임포트 설정 가져오기 (임시로 하드코딩)
+      const { IMP } = window;
+      IMP.init('imp45866522'); // 임시 하드코딩
+
+      // 결제 요청
+      IMP.request_pay({
+        pg: getPaymentPG(selectedMethod),
+        pay_method: 'card',
+        merchant_uid: `order_${Date.now()}`,
+        name: `${bookingInfo.movieInfo?.title || '영화'} 예매`,
         amount: bookingInfo.totalPrice,
-        itemName: `${bookingInfo.movieInfo?.title || '영화'} 예매`,
-        quantity: bookingInfo.selectedSeats?.length || 1,
-        userId: localStorage.getItem('userId') || 'guest',
-        customerName: localStorage.getItem('userName') || '고객',
-        customerEmail: localStorage.getItem('userEmail') || '',
-        bookingInfo: {
-          movieInfo: bookingInfo.movieInfo,
-          selectedCinema: bookingInfo.selectedCinema,
-          selectedTheater: bookingInfo.selectedTheater,
-          selectedTime: bookingInfo.selectedTime,
-          selectedSeats: bookingInfo.selectedSeats,
-          totalPrice: bookingInfo.totalPrice
+        buyer_email: localStorage.getItem('userEmail') || 'test@example.com',
+        buyer_name: localStorage.getItem('userName') || '홍길동',
+        buyer_tel: '010-1234-5678',
+        buyer_addr: '서울특별시',
+        buyer_postcode: '123-456'
+      }, async function (rsp) {
+        if (rsp.success) {
+          // 결제 성공 시 예매 확정
+          onPay({
+            imp_uid: rsp.imp_uid,
+            merchant_uid: rsp.merchant_uid,
+            success: true
+          });
+          onClose();
+        } else {
+          // 결제 실패 시 좌석 잠금 해제
+          try {
+            const selectedSeatIds = bookingInfo.selectedSeats
+              .map(seatNumber => {
+                const seat = bookingInfo.seatInfo?.find(s => s.seatNumber === seatNumber);
+                return seat?.seatId;
+              })
+              .filter(id => id);
+            
+            await fetch('http://localhost:80/api/bookings/unlock-seats', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                screeningId: bookingInfo.screeningId,
+                seatIds: selectedSeatIds
+              })
+            });
+          } catch (unlockError) {
+            console.error('좌석 잠금 해제 실패:', unlockError);
+          }
+          alert('결제 실패: ' + rsp.error_msg);
         }
-      };
-
-      // 선택된 결제 수단으로 결제 처리
-      const paymentResult = await PaymentService.processPayment(selectedMethod, paymentData);
-
-      if (paymentResult.success) {
-        // 결제 성공 시 예매 정보 저장
-        await PaymentService.createPayment({
-          ...paymentData,
-          paymentId: paymentResult.paymentId,
-          paymentMethod: selectedMethod,
-          status: 'completed'
-        });
-
-        alert('결제가 완료되었습니다!');
-        onPay(paymentResult);
-        onClose();
-      } else {
-        alert('결제에 실패했습니다: ' + paymentResult.message);
-      }
+        setIsProcessing(false);
+      });
+      
     } catch (error) {
       console.error('결제 오류:', error);
       alert('결제 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // 결제 수단별 PG 설정
+  const getPaymentPG = (method) => {
+    switch (method) {
+      case 'kakaopay':
+        return 'kakaopay';
+      case 'tosspay':
+        return 'uplus'; // 토스페이먼츠
+      case 'naverpay':
+        return 'nice'; // 나이스페이먼츠
+      case 'card':
+        return 'nice'; // 신용카드
+      default:
+        return 'nice';
     }
   };
 
@@ -220,7 +283,7 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
 
         {/* 하단 버튼 */}
         <div className={styles.paymentButtonContainer}>
-          <button className={styles.cancelButton} onClick={onClose} disabled={isProcessing}>
+          <button className={styles.cancelButton} onClick={handleClose} disabled={isProcessing}>
             이전
           </button>
           <button

@@ -30,9 +30,11 @@ export default function MovieDetailPage() {
       
       const result = await response.json();
       
-      if (result.data && result.data.length > 0) {
-        const movieData = result.data[0];
-        //console.log('API에서 받은 영화 데이터:', movieData);
+              if (result.data && result.data.length > 0) {
+          const movieData = result.data[0];
+          console.log('API에서 받은 영화 데이터:', movieData);
+          console.log('배우 데이터:', movieData.actors);
+          console.log('첫 번째 배우 상세:', movieData.actors?.[0]);
         
         // API 데이터를 기존 형식에 맞게 변환
         const transformedData = {

@@ -56,7 +56,7 @@ const ProfileImageUploadModal = ({ currentImageUrl, onImageUpdate, onClose }) =>
         onImageUpdate(response.data.imageUrl);
         //setPreviewUrl(null);
         fileInputRef.current.value = '';
-        alert('프로필 이미지가 업로드되었습니다.');
+        //alert('프로필 이미지가 업로드되었습니다.');
         onClose && onClose();
       } else {
         setError(response.data.message || '업로드에 실패했습니다.');
@@ -82,7 +82,7 @@ const ProfileImageUploadModal = ({ currentImageUrl, onImageUpdate, onClose }) =>
       });
       if (response.data.success) {
         onImageUpdate(null);
-        alert('프로필 이미지가 삭제되었습니다.');
+        //alert('프로필 이미지가 삭제되었습니다.');
         onClose && onClose();
       } else {
         setError(response.data.message || '삭제에 실패했습니다.');

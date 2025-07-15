@@ -244,7 +244,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
     };
     const handleCommentSave = (comment) => {
         // TODO: 저장 로직 구현
-        alert('코멘트가 저장되었습니다!\n' + comment);
+        //alert('코멘트가 저장되었습니다!\n' + comment);
         setCommentModalOpen(false);
         if (onCommentSaved) onCommentSaved();
     };
@@ -283,7 +283,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
 
             if (response.ok && data.success) {
                 // 성공 시 상태 유지
-                alert(data.message || (prevIsLiked ? '찜이 취소되었습니다.' : '찜이 추가되었습니다.'));
+               // alert(data.message || (prevIsLiked ? '찜이 취소되었습니다.' : '찜이 추가되었습니다.'));
             } else {
                 // 실패 시 원래 상태로 되돌리기
                 setIsLiked(prevIsLiked);
@@ -344,7 +344,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
                     setUserRating(score);
                 }
 
-                alert(data.message || '별점이 저장되었습니다.');
+               // alert(data.message || '별점이 저장되었습니다.');
                 // 부모 컴포넌트에 별점 저장 완료 알림
                 if (onCommentSaved) onCommentSaved();
                 // 영화 상세 정보 새로고침 (평균 별점 업데이트를 위해)
