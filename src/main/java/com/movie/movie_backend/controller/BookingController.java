@@ -192,4 +192,33 @@ public class BookingController {
             return ResponseEntity.ok(Map.of("success", false, "message", "결제취소(환불) 실패"));
         }
     }
+
+    // 아임포트 설정 조회 API
+    @GetMapping("/data/iamport-config")
+    public ResponseEntity<Map<String, String>> getIamportConfig() {
+        try {
+            String impCode = bookingService.getIamportImpCode();
+            return ResponseEntity.ok(Map.of("impCode", impCode));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // 오래된 LOCKED 좌석 정리 API (관리자용)
+    @PostMapping("/bookings/cleanup-locked-seats")
+    public ResponseEntity<Map<String, Object>> cleanupLockedSeats() {
+        try {
+            int cleanedCount = bookingService.cleanupOldLockedSeats();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", cleanedCount + "개의 LOCKED 좌석을 정리했습니다.",
+                "cleanedCount", cleanedCount
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                "success", false,
+                "message", "좌석 정리 중 오류가 발생했습니다: " + e.getMessage()
+            ));
+        }
+    }
 } 

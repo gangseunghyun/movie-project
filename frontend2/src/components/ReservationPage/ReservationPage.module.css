@@ -1,0 +1,722 @@
+/* 메인 페이지 */
+.reservationPage {
+  min-height: 100vh;
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 20px 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 로딩 */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading {
+  font-size: 18px;
+  color: #888;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  padding: 20px 0;
+  border-bottom: 1px solid #333;
+  min-height: 60px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #5c6bc0;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.backButton:hover {
+  background-color: rgba(92, 107, 192, 0.1);
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.reservationCount {
+  color: #888;
+  font-size: 14px;
+}
+
+/* 필터 */
+.filterContainer {
+  background: #2a2a2a;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.searchSection {
+  margin-bottom: 20px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.searchInput::placeholder {
+  color: #666;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #5c6bc0;
+}
+
+.filterOptions {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterLabel {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #5c6bc0;
+}
+
+/* 빈 상태 */
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.emptyState h3 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.emptyState p {
+  color: #888;
+  margin-bottom: 30px;
+}
+
+.browseButton {
+  background: #5c6bc0;
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.browseButton:hover {
+  background: #4a59b1;
+}
+
+/* 예매 카드 그리드 */
+.reservationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* 예매 카드 */
+.reservationCard {
+  background: #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.reservationCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.posterContainer {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.poster {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #1a1a1a;
+}
+
+.statusBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.completed {
+  background: #4caf50;
+  color: #ffffff;
+}
+
+.cancelled {
+  background: #f44336;
+  color: #ffffff;
+}
+
+.pending {
+  background: #ff9800;
+  color: #ffffff;
+}
+
+.cardContent {
+  padding: 20px;
+}
+
+.movieTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: #ffffff;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.infoLabel {
+  width: 24px;
+  margin-right: 12px;
+  font-size: 14px;
+}
+
+.infoValue {
+  flex: 1;
+  font-size: 14px;
+  color: #cccccc;
+}
+
+.cardActions {
+  padding: 0 20px 20px;
+  display: flex;
+  gap: 12px;
+}
+
+.detailButton {
+  flex: 1;
+  background: #5c6bc0;
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.detailButton:hover {
+  background: #4a59b1;
+}
+
+.cancelButton {
+  flex: 1;
+  background: #f44336;
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background: #d32f2f;
+}
+
+/* 모달 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.detailModal {
+  background: #2a2a2a;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #ffffff;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+  border-bottom: 1px solid #444;
+  margin-bottom: 24px;
+}
+
+.modalTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #ffffff;
+}
+
+.modalContent {
+  padding: 0 24px;
+}
+
+.movieSection {
+  margin-bottom: 24px;
+}
+
+.movieHeader {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.moviePoster {
+  width: 80px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.movieInfo h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.movieMeta {
+  color: #888;
+  font-size: 14px;
+}
+
+.infoSection,
+.paymentSection {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #ffffff;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoLabel {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.infoValue {
+  font-size: 14px;
+  color: #cccccc;
+}
+
+.amount {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.status {
+  font-weight: 600;
+}
+
+.code {
+  font-family: 'Courier New', monospace;
+  background: #1a1a1a;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.receiptSection {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.receiptLink {
+  color: #5c6bc0;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 12px 24px;
+  border: 1px solid #5c6bc0;
+  border-radius: 8px;
+  display: inline-block;
+  transition: background-color 0.2s;
+}
+
+.receiptLink:hover {
+  background: rgba(92, 107, 192, 0.1);
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid #444;
+  margin-top: 24px;
+}
+
+.closeModalButton {
+  flex: 1;
+  background: #444;
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.closeModalButton:hover {
+  background: #555;
+}
+
+.cancelPaymentButton {
+  flex: 1;
+  background: #f44336;
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancelPaymentButton:hover {
+  background: #d32f2f;
+}
+
+/* 예매 완료 페이지 스타일 */
+.completionMessage {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  border-radius: 12px;
+  color: #ffffff;
+}
+
+.completionMessage h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.detailCard {
+  background: #2a2a2a;
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.actionButtons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.printButton {
+  flex: 1;
+  background: #f44336;
+  color: #ffffff;
+  border: none;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.printButton:hover {
+  background: #d32f2f;
+}
+
+.noticeSection {
+  background: #2a2a2a;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 30px;
+}
+
+.noticeList {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0 0;
+}
+
+.noticeList li {
+  color: #cccccc;
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.noticeList li:before {
+  content: "•";
+  color: #5c6bc0;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.confirmModal {
+  background: #2a2a2a;
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  color: #ffffff;
+}
+
+.confirmModal h3 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.confirmModal p {
+  margin: 0 0 12px 0;
+  color: #cccccc;
+  line-height: 1.5;
+}
+
+/* 예매정보 출력 모달 */
+.printModal {
+  background: #2a2a2a;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #ffffff;
+}
+
+.printContent {
+  padding: 0 24px;
+}
+
+.printMovieSection {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #444;
+}
+
+.printPoster {
+  width: 60px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.printMovieInfo h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.printMovieInfo p {
+  margin: 0;
+  color: #888;
+  font-size: 14px;
+}
+
+.printInfoSection,
+.printPaymentSection {
+  margin-bottom: 20px;
+}
+
+.printPaymentSection h5 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #5c6bc0;
+}
+
+.printInfoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+}
+
+.printInfoRow:last-child {
+  border-bottom: none;
+}
+
+.printLabel {
+  font-size: 14px;
+  color: #888;
+  font-weight: 500;
+}
+
+.printValue {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: right;
+}
+
+.printActionButton {
+  background: #4caf50;
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.printActionButton:hover {
+  background: #45a049;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    min-height: auto;
+    padding: 16px 0;
+  }
+  
+  .filterOptions {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .reservationGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+  }
+} 

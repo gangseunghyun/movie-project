@@ -43,6 +43,7 @@ public class Payment {
 
     private String cancelReason; // 취소 사유
 
+    @Column(nullable = true)
     private LocalDateTime cancelledAt; // 취소 시간
 
     @ManyToOne

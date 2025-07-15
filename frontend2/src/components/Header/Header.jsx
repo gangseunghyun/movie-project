@@ -134,7 +134,7 @@ export default function Header() {
                     </div>
                     <div className={styles.menuDivider} />
                     <div className={styles.menuItem} onClick={() => navigate(`/mypage/${user.id}`)}>MY</div>
-                    <div className={styles.menuItem}>예매정보</div>
+                    <div className={styles.menuItem} onClick={() => navigate('/reservations')}>예매정보</div>
                     <div className={styles.menuItem}>고객센터</div>
                     <div className={styles.menuItem} onClick={handleLogout}>로그아웃</div>
                   </div>

@@ -196,33 +196,81 @@ const BookingPage = () => {
     // 결제 금액 계산 (좌석당 10,000원)
     const totalPrice = selectedSeats.length * 10000;
     
-    const bookingData = {
-      movieId,
-      screeningId: selectedScreeningId,
-      seatIds: selectedSeatIds,
-      totalPrice: totalPrice
-    };
-
     try {
-      const response = await axios.post('http://localhost:80/api/bookings', bookingData, { withCredentials: true });
-      if (response.data.success) {
-        alert(response.data.message || '예매가 완료되었습니다.');
-        setIsPaymentModalOpen(true);
-        // setSelectedSeats([]);  // 결제 완료 후로 이동
-      } else {
-        alert(response.data.message || '예매 처리 중 오류가 발생했습니다.');
+      setLoading(true);
+      // 1. LOCKED API 먼저 호출 (좌석 홀드)
+      const lockRes = await axios.post('http://localhost:80/api/bookings/lock-seats', {
+        screeningId: selectedScreeningId,
+        seatIds: selectedSeatIds
+      }, { withCredentials: true });
+      
+      if (!lockRes.data.success) {
+        alert('좌석 임시 홀드에 실패했습니다. 이미 예매 중이거나 사용할 수 없는 좌석이 있습니다.');
+        setLoading(false);
+        return;
       }
+      
+      // 2. 좌석 홀드 성공 시 결제 모달 열기
+      setIsPaymentModalOpen(true);
+      
     } catch (error) {
-      alert('예매 처리 중 오류가 발생했습니다.');
+      alert('좌석 홀드 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
   // 결제 처리
-  const handlePayment = () => {
-    console.log('결제 처리 중...');
-    // 실제 결제 로직 구현
-    alert('결제가 완료되었습니다!');
-    setSelectedSeats([]); // 결제 완료 후에만 초기화
+  const handlePayment = async (paymentResult) => {
+    try {
+      // 선택된 좌석의 DB id만 추출
+      const selectedSeatIds = seatInfo
+        .filter(seat => selectedSeats.includes(seat.seatNumber))
+        .map(seat => seat.seatId);
+      
+      const totalPrice = selectedSeats.length * 10000;
+      
+      const bookingData = {
+        movieId,
+        screeningId: selectedScreeningId,
+        seatIds: selectedSeatIds,
+        totalPrice: totalPrice
+      };
+
+      // 3. 예매 확정 API 호출
+      const response = await axios.post('http://localhost:80/api/bookings', bookingData, { withCredentials: true });
+      
+      if (response.data.success) {
+        // 4. 결제정보 저장 API 호출
+        await axios.post('http://localhost:80/api/payments/complete', {
+          imp_uid: paymentResult.imp_uid,
+          merchant_uid: paymentResult.merchant_uid,
+          userId: 1, // TODO: 실제 로그인 정보로 대체
+          reservationId: response.data.reservationId
+        }, { withCredentials: true });
+        
+        alert('예매가 완료되었습니다.');
+        setSelectedSeats([]); // 결제 완료 후에만 초기화
+        navigate(`/reservations/${response.data.reservationId}`); // 예매 상세 페이지로 이동
+      } else {
+        alert(response.data.message || '예매 처리 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      // 예매 실패 시 좌석 잠금 해제
+      try {
+        const selectedSeatIds = seatInfo
+          .filter(seat => selectedSeats.includes(seat.seatNumber))
+          .map(seat => seat.seatId);
+        
+        await axios.post('http://localhost:80/api/bookings/unlock-seats', {
+          screeningId: selectedScreeningId,
+          seatIds: selectedSeatIds
+        }, { withCredentials: true });
+      } catch (unlockError) {
+        console.error('좌석 잠금 해제 실패:', unlockError);
+      }
+      alert('예매 처리 중 오류가 발생했습니다.');
+    }
   };
 
   if (loading) {
@@ -415,7 +463,9 @@ const BookingPage = () => {
           selectedTheater: theaterList.find(t => String(t.id) === selectedTheater)?.name || '',
           selectedTime: selectedTime || '',
           selectedSeats: selectedSeats || [],
-          totalPrice: selectedSeats.length * 10000
+          totalPrice: selectedSeats.length * 10000,
+          screeningId: selectedScreeningId,
+          seatInfo: seatInfo
         }}
         onPay={handlePayment}
       />

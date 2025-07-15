@@ -40,7 +40,7 @@ export default function MainPage() {
       })
       .then(data => {
         const movies = data.data || [];
-        //console.log('박스오피스 데이터:', movies);
+        console.log('박스오피스 데이터:', movies);
         setBoxOfficeData(movies);
       })
       .catch(error => {

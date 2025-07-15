@@ -77,6 +77,8 @@ public class BookingService {
     private String iamportApiKey;
     @Value("${iamport.api.secret:YOUR_API_SECRET}")
     private String iamportApiSecret;
+    @Value("${iamport.imp.code:imp45866522}")
+    private String iamportImpCode;
 
     // 모든 영화관 조회
     public List<CinemaDto> getAllCinemas() {
@@ -261,6 +263,32 @@ public class BookingService {
         }
     }
 
+    // 아임포트 설정 코드 조회
+    public String getIamportImpCode() {
+        return iamportImpCode;
+    }
+
+    // 오래된 LOCKED 좌석 정리 (모든 LOCKED 상태인 좌석을 AVAILABLE로 변경)
+    @Transactional
+    public int cleanupOldLockedSeats() {
+        try {
+            List<ScreeningSeat> lockedSeats = screeningSeatRepository.findByStatus(ScreeningSeatStatus.LOCKED);
+            
+            int cleanedCount = 0;
+            for (ScreeningSeat seat : lockedSeats) {
+                seat.setStatus(ScreeningSeatStatus.AVAILABLE);
+                screeningSeatRepository.save(seat);
+                cleanedCount++;
+            }
+            
+            log.info("Cleaned up {} LOCKED seats", cleanedCount);
+            return cleanedCount;
+        } catch (Exception e) {
+            log.error("Failed to cleanup LOCKED seats", e);
+            return 0;
+        }
+    }
+
     // 아임포트 인증 토큰 발급
     public String getIamportAccessToken() {
         RestTemplate restTemplate = new RestTemplate();
@@ -296,14 +324,18 @@ public class BookingService {
                 .impUid(impUid)
                 .merchantUid(merchantUid)
                 .amount(info.get("amount").decimalValue())
-                .paidAt(info.has("paid_at") ? java.time.Instant.ofEpochSecond(info.get("paid_at").asLong()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null)
+                .paidAt(info.has("paid_at") && !info.get("paid_at").isNull() ? 
+                    java.time.Instant.ofEpochSecond(info.get("paid_at").asLong()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : 
+                    java.time.LocalDateTime.now())
                 .method(com.movie.movie_backend.constant.PaymentMethod.valueOf(info.get("pay_method").asText().toUpperCase()))
                 .status(com.movie.movie_backend.constant.PaymentStatus.valueOf(info.get("status").asText().toUpperCase()))
                 .receiptNumber(info.has("receipt_url") ? info.get("receipt_url").asText() : null)
                 .receiptUrl(info.has("receipt_url") ? info.get("receipt_url").asText() : null)
                 .isCancelled("cancelled".equalsIgnoreCase(info.get("status").asText()))
                 .cancelReason(info.has("cancel_reason") ? info.get("cancel_reason").asText() : null)
-                .cancelledAt(info.has("cancelled_at") && !info.get("cancelled_at").isNull() ? java.time.Instant.ofEpochSecond(info.get("cancelled_at").asLong()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null)
+                .cancelledAt(info.has("cancelled_at") && !info.get("cancelled_at").isNull() && info.get("cancelled_at").asLong() > 0 ? 
+                    java.time.Instant.ofEpochSecond(info.get("cancelled_at").asLong()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : 
+                    null)
                 .pgResponseCode(info.has("code") ? info.get("code").asText() : null)
                 .pgResponseMessage(info.has("message") ? info.get("message").asText() : null)
                 .cardName(info.has("card_name") ? info.get("card_name").asText() : null)
@@ -399,6 +431,14 @@ public class BookingService {
                 payment.setReceiptUrl(cancelInfo.get("receipt_url").asText());
             }
             paymentRepository.save(payment);
+
+            // 5. 예매 상태를 CANCELLED로 변경
+            if (payment.getReservation() != null) {
+                Reservation reservation = payment.getReservation();
+                reservation.setStatus(ReservationStatus.CANCELLED);
+                reservationRepository.save(reservation);
+                log.info("[검증] Reservation status updated to CANCELLED: reservationId={}", reservation.getId());
+            }
 
             // === 추가: 해당 예약의 좌석을 모두 AVAILABLE로 변경 ===
             log.info("[검증] Checking reservation for payment: impUid={}, reservationObj={}, reservationId={}", impUid, payment.getReservation(), payment.getReservation() != null ? payment.getReservation().getId() : "null");
