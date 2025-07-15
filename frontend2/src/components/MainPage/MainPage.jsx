@@ -101,7 +101,7 @@ export default function MainPage() {
       .then(data => {
         if (data.success && data.data) {
           setActorInfo(data.data.actor); // 배우 정보
-          const movies = data.data.topMovies || [];
+          const movies = data.data.allMovies || [];
 
           // 배우 추천 영화에 필요한 정보 추가
           const enrichedMovies = movies.map(movie => ({
@@ -132,7 +132,7 @@ export default function MainPage() {
       .then(data => {
         if (data.success && data.data) {
           setDirectorInfo(data.data.director); // 감독 정보
-          const movies = data.data.topMovies || [];
+          const movies = data.data.allMovies || [];
 
           // 감독 추천 영화에 필요한 정보 추가
           const enrichedMovies = movies.map(movie => ({
