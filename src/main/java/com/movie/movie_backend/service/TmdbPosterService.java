@@ -37,25 +37,14 @@ public class TmdbPosterService {
     /**
      * 평균 별점이 높은 영화 TOP-N 조회 (사용자 평점만 사용)
      */
+    @org.springframework.cache.annotation.Cacheable(value = "topRatedMovies", key = "#limit")
     public List<MovieDetail> getTopRatedMovies(int limit) {
-        List<MovieDetail> allMovies = movieRepository.findAll();
+        // 데이터베이스 레벨에서 직접 평점 높은 영화 조회 (매우 빠름)
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(0, limit * 2);
+        List<MovieDetail> topRatedMovies = movieRepository.findTopRatedMoviesWithMovieList(4.0, pageRequest);
         
-        List<MovieDetail> topRatedMovies = allMovies.stream()
-                .filter(movie -> {
-                    // MovieList에도 있는 영화만 필터링
-                    boolean hasMovieList = movieListRepository.findById(movie.getMovieCd()).isPresent();
-                    // 사용자 평점이 있는 영화만 필터링
-                    Double averageRating = ratingService.getAverageRating(movie.getMovieCd());
-                    boolean hasRating = averageRating != null;
-                    // 평점 4점 이상인 영화만 필터링
-                    boolean hasHighRating = averageRating != null && averageRating >= 4.0;
-                    return hasMovieList && hasRating && hasHighRating;
-                })
-                .sorted((m1, m2) -> {
-                    Double rating1 = ratingService.getAverageRating(m1.getMovieCd());
-                    Double rating2 = ratingService.getAverageRating(m2.getMovieCd());
-                    return rating2.compareTo(rating1); // 내림차순 정렬
-                })
+        // MovieList가 있는 영화만 필터링 (이미 JOIN으로 처리됨)
+        topRatedMovies = topRatedMovies.stream()
                 .limit(limit)
                 .toList();
         

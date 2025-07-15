@@ -32,7 +32,7 @@ public class REVRatingService {
     /**
      * 사용자가 영화에 별점 등록/수정
      */
-    @CacheEvict(value = "averageRatings", key = "#movieCd")
+    @CacheEvict(value = {"averageRatings", "topRatedMovies"}, allEntries = true)
     public RatingDto saveRating(String userEmail, String movieCd, Double score) {
         log.info("별점 저장 요청: user={}, movie={}, score={}", userEmail, movieCd, score);
         
@@ -81,7 +81,7 @@ public class REVRatingService {
     /**
      * 사용자의 별점 삭제
      */
-    @CacheEvict(value = "averageRatings", key = "#movieCd")
+    @CacheEvict(value = {"averageRatings", "topRatedMovies"}, allEntries = true)
     public void deleteRating(String userEmail, String movieCd) {
         log.info("별점 삭제 요청: user={}, movie={}", userEmail, movieCd);
         

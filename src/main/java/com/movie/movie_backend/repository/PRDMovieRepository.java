@@ -61,4 +61,12 @@ public interface PRDMovieRepository extends JpaRepository<MovieDetail, Long> {
     // 추천 영화 리스트를 fetch join으로 tags까지 한 번에 가져오기
     @Query("SELECT DISTINCT m FROM MovieDetail m LEFT JOIN FETCH m.tags WHERE m IN :movies")
     List<MovieDetail> fetchMoviesWithTags(@Param("movies") List<MovieDetail> movies);
+    
+    // 평점 높은 영화 TOP-N 조회 (데이터베이스 레벨에서 필터링)
+    @Query("SELECT m FROM MovieDetail m WHERE m.averageRating IS NOT NULL AND m.averageRating >= :minRating ORDER BY m.averageRating DESC")
+    List<MovieDetail> findTopRatedMovies(@Param("minRating") Double minRating, org.springframework.data.domain.Pageable pageable);
+    
+    // 평점 높은 영화 TOP-N 조회 (MovieList와 JOIN)
+    @Query("SELECT m FROM MovieDetail m JOIN MovieList ml ON m.movieCd = ml.movieCd WHERE m.averageRating IS NOT NULL AND m.averageRating >= :minRating ORDER BY m.averageRating DESC")
+    List<MovieDetail> findTopRatedMoviesWithMovieList(@Param("minRating") Double minRating, org.springframework.data.domain.Pageable pageable);
 } 
