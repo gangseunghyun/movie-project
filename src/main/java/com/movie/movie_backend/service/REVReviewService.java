@@ -395,6 +395,13 @@ public class REVReviewService {
     private ReviewResponseDto toResponseDto(Review review, boolean likedByMe) {
         int likeCount = reviewLikeRepository.countByReviewId(review.getId());
         int commentCount = commentRepository.getTopLevelCommentCountByReviewId(review.getId()).intValue();
+        
+        // MovieList에서 포스터 URL 가져오기
+        String posterUrl = null;
+        if (review.getMovieDetail() != null && review.getMovieDetail().getMovieList() != null) {
+            posterUrl = review.getMovieDetail().getMovieList().getPosterUrl();
+        }
+        
         return ReviewResponseDto.builder()
                 .id(review.getId())
                 .content(review.getContent())
@@ -405,6 +412,9 @@ public class REVReviewService {
                 .userId(review.getUser().getId())
                 .userProfileImageUrl(review.getUser().getProfileImageUrl())
                 .movieDetailId(review.getMovieDetail().getId())
+                .movieCd(review.getMovieDetail().getMovieCd())
+                .movieNm(review.getMovieDetail().getMovieNm())
+                .posterUrl(posterUrl) // 포스터 URL 설정
                 .likeCount(likeCount)
                 .likedByMe(likedByMe)
                 .commentCount(commentCount)

@@ -18,6 +18,7 @@ public class ReviewDto {
     private String userProfileImageUrl;
     private String movieCd;
     private String movieNm;
+    private String posterUrl; // 포스터 URL 추가
     private int likeCount;
     private boolean likedByMe;
     private int commentCount;
@@ -34,6 +35,12 @@ public class ReviewDto {
     }
 
     public static ReviewDto fromEntity(com.movie.movie_backend.entity.Review review) {
+        // MovieList에서 포스터 URL 가져오기
+        String posterUrl = null;
+        if (review.getMovieDetail() != null && review.getMovieDetail().getMovieList() != null) {
+            posterUrl = review.getMovieDetail().getMovieList().getPosterUrl();
+        }
+        
         return ReviewDto.builder()
             .id(review.getId())
             .content(review.getContent())
@@ -46,6 +53,7 @@ public class ReviewDto {
             .userProfileImageUrl(review.getUser() != null ? review.getUser().getProfileImageUrl() : null)
             .movieCd(review.getMovieDetail() != null ? review.getMovieDetail().getMovieCd() : null)
             .movieNm(review.getMovieDetail() != null ? review.getMovieDetail().getMovieNm() : null)
+            .posterUrl(posterUrl) // 포스터 URL 설정
             .movieDetailId(review.getMovieDetail() != null ? review.getMovieDetail().getId() : null)
             .blockedByCleanbot(review.isBlockedByCleanbot())
             .likeCount(0)

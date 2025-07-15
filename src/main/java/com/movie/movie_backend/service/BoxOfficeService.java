@@ -75,15 +75,24 @@ public class BoxOfficeService {
                 // 그 다음 BoxOffice 저장 (상위 10개만, 중복 체크 포함)
                 int count = 0;
                 int skipped = 0;
+                int oldMovieSkipped = 0;
                 for (JsonNode movie : dailyBoxOfficeList) {
                     if (count >= 10) break; // 상위 10개만 저장
                     
                     String movieCd = movie.get("movieCd").asText();
+                    String movieNm = movie.get("movieNm").asText();
                     
                     // 중복 체크
                     if (boxOfficeRepository.existsByMovieCdAndTargetDateAndRankType(movieCd, yesterday, "DAILY")) {
                         log.info("이미 존재하는 일일 박스오피스 데이터 스킵: {} ({}위)", movieCd, movie.get("rank").asInt());
                         skipped++;
+                        continue;
+                    }
+                    
+                    // 최근 영화인지 확인 (5년 이내 개봉)
+                    if (!isRecentMovie(movie)) {
+                        log.info("오래된 영화 제외: {} ({}위) - 개봉일이 5년 이상됨", movieNm, movie.get("rank").asInt());
+                        oldMovieSkipped++;
                         continue;
                     }
                     
@@ -97,7 +106,7 @@ public class BoxOfficeService {
                                 count);
                     }
                 }
-                log.info("일일 박스오피스 데이터 처리 완료: 저장 {}개, 스킵 {}개 (상위 10개)", count, skipped);
+                log.info("일일 박스오피스 데이터 처리 완료: 저장 {}개, 스킵 {}개, 오래된 영화 제외 {}개 (상위 10개)", count, skipped, oldMovieSkipped);
             }
         } catch (Exception e) {
             log.error("일일 박스오피스 데이터 가져오기 실패", e);
@@ -136,15 +145,24 @@ public class BoxOfficeService {
                 // 그 다음 BoxOffice 저장 (상위 10개만, 중복 체크 포함)
                 int count = 0;
                 int skipped = 0;
+                int oldMovieSkipped = 0;
                 for (JsonNode movie : weeklyBoxOfficeList) {
                     if (count >= 10) break; // 상위 10개만 저장
                     
                     String movieCd = movie.get("movieCd").asText();
+                    String movieNm = movie.get("movieNm").asText();
                     
                     // 중복 체크
                     if (boxOfficeRepository.existsByMovieCdAndTargetDateAndRankType(movieCd, lastWeek, "WEEKLY")) {
                         log.info("이미 존재하는 주간 박스오피스 데이터 스킵: {} ({}위)", movieCd, movie.get("rank").asInt());
                         skipped++;
+                        continue;
+                    }
+                    
+                    // 최근 영화인지 확인 (5년 이내 개봉)
+                    if (!isRecentMovie(movie)) {
+                        log.info("오래된 영화 제외: {} ({}위) - 개봉일이 5년 이상됨", movieNm, movie.get("rank").asInt());
+                        oldMovieSkipped++;
                         continue;
                     }
                     
@@ -158,7 +176,7 @@ public class BoxOfficeService {
                                 count);
                     }
                 }
-                log.info("주간 박스오피스 데이터 처리 완료: 저장 {}개, 스킵 {}개 (상위 10개)", count, skipped);
+                log.info("주간 박스오피스 데이터 처리 완료: 저장 {}개, 스킵 {}개, 오래된 영화 제외 {}개 (상위 10개)", count, skipped, oldMovieSkipped);
             }
         } catch (Exception e) {
             log.error("주간 박스오피스 데이터 가져오기 실패", e);
@@ -216,6 +234,40 @@ public class BoxOfficeService {
         } catch (Exception e) {
             log.warn("박스오피스 데이터 파싱 실패: {}", movie, e);
             return null;
+        }
+    }
+
+    /**
+     * 최근 영화인지 확인 (5년 이내 개봉)
+     */
+    private boolean isRecentMovie(JsonNode movie) {
+        try {
+            String openDt = movie.has("openDt") ? movie.get("openDt").asText() : "";
+            if (openDt.isEmpty()) {
+                // 개봉일이 없으면 포함 (나중에 상세정보에서 확인)
+                return true;
+            }
+            
+            LocalDate openDate = null;
+            try {
+                // yyyy-MM-dd 형식으로 파싱 시도
+                openDate = LocalDate.parse(openDt, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            } catch (Exception e1) {
+                try {
+                    // yyyyMMdd 형식으로 파싱 시도
+                    openDate = LocalDate.parse(openDt, DateTimeFormatter.ofPattern("yyyyMMdd"));
+                } catch (Exception e2) {
+                    log.warn("날짜 파싱 실패: {} - yyyy-MM-dd와 yyyyMMdd 모두 실패", openDt);
+                    return true; // 파싱 실패 시 포함
+                }
+            }
+            
+            LocalDate fiveYearsAgo = LocalDate.now().minusYears(5);
+            return !openDate.isBefore(fiveYearsAgo);
+            
+        } catch (Exception e) {
+            log.warn("영화 개봉일 확인 실패: {}", movie.get("movieNm"), e);
+            return true; // 에러 시 포함
         }
     }
 

@@ -10,6 +10,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import com.movie.movie_backend.entity.MovieList;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -19,6 +23,7 @@ public class MovieAutoSyncScheduler {
     private final KobisApiService kobisApiService;
     private final TmdbPosterBatchService tmdbPosterBatchService;
     private final TmdbStillcutService tmdbStillcutService;
+    private final PRDMovieListRepository prdMovieListRepository;
 
     @Value("${kobis.api.key:}")
     private String kobisApiKey;
@@ -89,5 +94,74 @@ public class MovieAutoSyncScheduler {
         log.info("KOBIS API 키 설정 여부: {}", kobisApiKey != null && !kobisApiKey.isEmpty());
         log.info("TMDB API 키 설정 여부: {}", tmdbApiKey != null && !tmdbApiKey.isEmpty());
         log.info("=== 스케줄러 테스트 완료 ===");
+    }
+
+    // 4. KMDb 관람등급 자동 보완 (매일 오후 1시)
+    @Scheduled(cron = "0 0 13 * * *")
+    public void syncKmdbWatchGrade() {
+        log.info("=== KMDb 관람등급 자동 보완 시작 ===");
+        
+        // API 키 확인
+        if (kobisApiKey == null || kobisApiKey.isEmpty()) {
+            log.error("KOBIS API 키가 설정되지 않았습니다. application.yml을 확인해주세요.");
+            return;
+        }
+        
+        try {
+            log.info("1. 관람등급이 누락된 영화 검색 시작...");
+            
+            // 모든 영화를 가져와서 관람등급이 null이거나 빈 문자열인 영화들 필터링
+            List<MovieList> allMovies = prdMovieListRepository.findAll();
+            List<MovieList> moviesWithoutGrade = allMovies.stream()
+                .filter(movie -> movie.getWatchGradeNm() == null || movie.getWatchGradeNm().isEmpty())
+                .collect(java.util.stream.Collectors.toList());
+            
+            if (moviesWithoutGrade.isEmpty()) {
+                log.info("관람등급이 누락된 영화가 없습니다.");
+                return;
+            }
+            
+            log.info("관람등급이 누락된 영화 {}개 발견", moviesWithoutGrade.size());
+            
+            int successCount = 0;
+            int failCount = 0;
+            int skipCount = 0;
+            
+            for (MovieList movie : moviesWithoutGrade) {
+                try {
+                    log.info("관람등급 보완 시도: {} ({})", movie.getMovieNm(), movie.getMovieCd());
+                    
+                    // KOBIS API에서 관람등급 정보 가져오기
+                    KobisApiService.NationAndGrade nationAndGrade = kobisApiService.fetchNationAndGrade(movie.getMovieCd());
+                    
+                    if (nationAndGrade != null && nationAndGrade.watchGradeNm != null && !nationAndGrade.watchGradeNm.isEmpty()) {
+                        // 관람등급 업데이트
+                        movie.setWatchGradeNm(nationAndGrade.watchGradeNm);
+                        prdMovieListRepository.save(movie);
+                        
+                        successCount++;
+                        log.info("관람등급 보완 성공: {} ({}) -> {}", 
+                            movie.getMovieNm(), movie.getMovieCd(), nationAndGrade.watchGradeNm);
+                    } else {
+                        skipCount++;
+                        log.warn("관람등급 정보 없음: {} ({})", movie.getMovieNm(), movie.getMovieCd());
+                    }
+                    
+                    // API 호출 제한을 위한 딜레이
+                    Thread.sleep(100);
+                    
+                } catch (Exception e) {
+                    failCount++;
+                    log.error("관람등급 보완 실패: {} ({}) - {}", 
+                        movie.getMovieNm(), movie.getMovieCd(), e.getMessage());
+                }
+            }
+            
+            log.info("=== KMDb 관람등급 자동 보완 완료 ===");
+            log.info("처리 결과: 성공 {}개, 실패 {}개, 스킵 {}개", successCount, failCount, skipCount);
+            
+        } catch (Exception e) {
+            log.error("KMDb 관람등급 자동 보완 실패", e);
+        }
     }
 } 

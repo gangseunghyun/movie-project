@@ -1,187 +1,104 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './CommentModal.module.css';
-import starFull from '../../assets/star_full.svg';
-import starHalf from '../../assets/star_half.svg';
-import starEmpty from '../../assets/star_empty.svg';
 
 const CommentModal = ({
   open,
   onClose,
-  movieTitle,
-  movieCd,
-  userRating,
+  reviewId,
   onSave,
-  // 수정 모드 관련 props
-  editMode = false,
-  initialContent = '',
-  initialRating = 0,
-  onEditSave,
-  reviewId
+  userId
 }) => {
-  const [comment, setComment] = useState(initialContent);
-  const [rating, setRating] = useState(editMode ? initialRating : userRating);
-  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
-  const [ratingLoading, setRatingLoading] = useState(false);
-  const maxLength = 10000;
+  const maxLength = 1000;
 
-  useEffect(() => {
-    if (editMode) {
-      setComment(initialContent);
-      setRating(initialRating);
-    } else {
-      setComment('');
-      // 코멘트 작성 시에는 MovieDetailHeader에서 설정한 별점 사용
-      setRating(userRating);
-    }
-  }, [open, editMode, initialContent, initialRating, userRating]);
+  // 욕설 필터링 (ReviewModal과 동일한 리스트 사용)
+  const forbiddenWords = [
+    "씨발","시발", "병신", "개새끼", "미친", "바보", "멍청이", "돌아이", "등신", "호구", "찌질이",
+    "fuck", "shit", "bitch", "asshole", "damn", "hell", "bastard", "dick", "pussy", "cock",
+    "씨발놈", "씨발년", "씨팔", "씨빨", "씨바", "ㅆㅂ",
+    "좆", "좃", "존나", "개년", "개같", "미친놈", "미친년",
+    "ㅈㄴ", "ㅈ같", "븅신", "병쉰", "ㅂㅅ",
+    "씹", "씹새끼", "씹년", "씹할", "쌍놈", "쌍년", "죽어버려",
+    "꺼져", "좇같", "좇같이", "좇같은", "개씨발", "애미", "애비",
+    "좆같", "좃같", "좆빠", "좃빠", "좃빨", "좆빨",
+    "빨아", "걸레", "보지", "보짓", "보져", "보전",
+    "애미뒤진", "애비뒤진", "엿같", "엿머",
+    "닥쳐", "지랄", "지럴", "ㅈㄹ", "몰라씨발",
+    "헐좃", "지같", "후장", "뒈져", "뒤져",
+    "니미", "니미럴", "니애미", "니애비",
+    "개노답", "좆노답", "썅", "ㅅㅂ", "ㅄ",
+    "꺼지라", "개지랄", "대가리깨져", "꺼지라고", "개빡쳐",
+    "씨댕", "시댕", "씨댕이", "시댕이",
+    "똥같", "지랄맞", "개도살", "개패듯", "졸라",
+    "지옥가라", "개후려", "후려패", "싸가지", "개망나니",
+    "지랄발광", "미친개", "개지옥", "좇밥", "좃밥",
+    "개털려", "개처맞", "처맞는다", "처발린다",
+    "개쳐맞", "쳐죽일", "좆빨아", "좇빨아", "개한심", "극혐"
+  ];
 
-  // 별점 저장 API 호출 함수
-  const saveRating = async (score) => {
-    if (!movieCd) {
-      alert('영화 정보가 없습니다.');
-      return score;
-    }
-
-    setRatingLoading(true);
-    try {
-      const response = await fetch('http://localhost:80/api/ratings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          movieCd: movieCd,
-          score: score
-        })
-      });
-
-      const data = await response.json();
-
-      // 별점 저장 성공/실패와 관계없이 항상 최신 별점 재조회
-      try {
-        const ratingResponse = await fetch(`http://localhost:80/api/ratings/${movieCd}`, {
-          credentials: 'include',
-        });
-        if (ratingResponse.ok) {
-          const ratingData = await ratingResponse.json();
-          if (ratingData.success && ratingData.data) {
-            setRating(ratingData.data.score);
-            return ratingData.data.score;
-          } else {
-            setRating(score);
-            return score;
-          }
-        } else {
-          setRating(score);
-          return score;
-        }
-      } catch (error) {
-        setRating(score);
-        return score;
-      }
-
-      if (data.success) {
-        alert(data.message || '별점이 저장되었습니다.');
-      } else {
-        alert(data.message || '별점 저장에 실패했습니다.');
-      }
-    } catch (error) {
-      setRating(score);
-      alert('별점 저장 중 오류가 발생했습니다.');
-      return score;
-    } finally {
-      setRatingLoading(false);
-    }
+  const containsForbiddenWords = (text) => {
+    if (!text) return false;
+    return forbiddenWords.some(word => text.includes(word));
   };
-
-  // 별점 클릭 핸들러
-  const handleStarClick = async (e, value) => {
-    if (!editMode || ratingLoading) return; // 수정 모드 & 저장 중 아닐 때만 가능
-
-    const rect = e.target.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const score = x < rect.width / 2 ? value - 0.5 : value;
-    
-    setRating(Number(score));
-    await saveRating(score); // 별점 저장 및 최신화 (항상 서버에서 받아옴)
-  };
-
-  if (!open) return null;
 
   const handleSave = async () => {
-    // 코멘트 작성 시 별점이 0이면 경고
-    if (!editMode && userRating === 0) {
-      alert('별점을 먼저 입력해주세요.');
+    if (!comment.trim()) {
+      alert('댓글 내용을 입력해주세요.');
       return;
+    }
+
+    // 욕설 필터링
+    if (containsForbiddenWords(comment)) {
+      const proceed = window.confirm('클린봇에 의해 게시가 제한될 수 있습니다. 그래도 작성하시겠습니까?');
+      if (!proceed) return;
     }
 
     setLoading(true);
     try {
-      if (editMode) {
-        // 별점이 바뀌었으면 별점 저장 API 호출
-        let latestRating = rating;
-        if (rating !== initialRating) {
-          latestRating = await saveRating(rating); // 별점 저장 및 최신화
-        }
-        // 리뷰 수정 요청 (별점도 같이 넘김)
-        const response = await fetch(`/api/reviews/${reviewId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            content: comment,
-            rating: Number(latestRating), // 숫자로 변환 (소수점 허용)
-          }),
-        });
-        const data = await response.json();
-        if (data.success) {
-          alert('리뷰가 수정되었습니다!');
-          if (onEditSave) onEditSave(comment, latestRating);
-          onClose();
-        } else {
-          alert(data.message || '리뷰 수정에 실패했습니다.');
-        }
+      const response = await fetch('http://localhost:80/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reviewId: reviewId,
+          userId: userId,
+          content: comment.trim(),
+        }),
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('댓글이 작성되었습니다!');
+        if (onSave) onSave(comment);
+        onClose();
       } else {
-        // POST 요청 (작성) - MovieDetailHeader에서 설정한 별점 사용
-        const response = await fetch('http://localhost:80/api/reviews', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            movieCd,
-            content: comment,
-            rating: Number(userRating), // 숫자로 변환
-          }),
-          credentials: 'include',
-        });
-        const data = await response.json();
-        if (data.success) {
-          alert('리뷰가 작성되었습니다!');
-          if (onSave) onSave(comment, userRating);
-          onClose();
-        } else {
-          alert(data.message || '리뷰 작성에 실패했습니다.');
-        }
+        alert(data.message || '댓글 작성에 실패했습니다.');
       }
-    } catch (e) {
-      alert('리뷰 저장 중 오류가 발생했습니다.');
+    } catch (error) {
+      console.error('댓글 작성 오류:', error);
+      alert('댓글 작성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    setComment('');
+    onClose();
+  };
+
+  if (!open) return null;
+
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContainer}>
         <div className={styles.header}>
-          <span className={styles.title}>
-            {movieTitle}
-            <span className={styles.star}>★ {editMode ? rating : userRating}</span>
-          </span>
-          <button className={styles.closeBtn} onClick={onClose}>×</button>
+          <span className={styles.title}>댓글</span>
+          <button className={styles.closeBtn} onClick={handleClose}>×</button>
         </div>
         <hr className={styles.divider} />
         <textarea
@@ -192,56 +109,14 @@ const CommentModal = ({
           maxLength={maxLength}
           disabled={loading}
         />
-
-        <hr className={styles.divider} />
         <div className={styles.footer}>
-          {editMode && (
-            <div className={styles.starInputRow}>
-              <label className={styles.starInputLabel}>평가하기 </label>
-              <div className={styles.starInputIcons}>
-                {[...Array(5)].map((_, i) => {
-                  const value = i + 1;
-                  let starImg = starEmpty;
-                  if ((hoverRating ? hoverRating : rating) >= value) {
-                    starImg = starFull;
-                  } else if ((hoverRating ? hoverRating : rating) >= value - 0.5) {
-                    starImg = starHalf;
-                  }
-                  return (
-                    <img
-                      key={i}
-                      src={starImg}
-                      alt={`${value}점`}
-                      onClick={e => handleStarClick(e, value)}
-                      onMouseMove={e => {
-                        const rect = e.target.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        if (x < rect.width / 2) {
-                          setHoverRating(value - 0.5);
-                        } else {
-                          setHoverRating(value);
-                        }
-                      }}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className={`${styles.starIcon}${(loading || ratingLoading) ? ' ' + styles.disabled : ''}`}
-                      role="button"
-                      aria-label={`${value}점 주기`}
-                      style={{ cursor: (loading || ratingLoading) ? 'not-allowed' : 'pointer' }}
-                      disabled={loading || ratingLoading}
-                    />
-                  );
-                })}
-              </div>
-              {ratingLoading && <span className={styles.loadingText}>별점 저장 중...</span>}
-            </div>
-          )}
           <span className={styles.length}>{comment.length}/{maxLength}</span>
           <button
             className={styles.saveBtn}
             onClick={handleSave}
-            disabled={comment.length === 0 || loading || ratingLoading}
+            disabled={comment.length === 0 || loading}
           >
-            {loading ? (editMode ? '수정 중...' : '저장 중...') : (editMode ? '수정' : '저장')}
+            {loading ? '작성 중...' : '저장'}
           </button>
         </div>
       </div>

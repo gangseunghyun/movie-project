@@ -14,6 +14,9 @@ public class ReviewResponseDto {
     private Long userId;
     private String userProfileImageUrl;
     private Long movieDetailId;
+    private String movieCd;
+    private String movieNm;
+    private String posterUrl; // 포스터 URL 추가
     private int likeCount;
     private boolean likedByMe;
     private int commentCount;
