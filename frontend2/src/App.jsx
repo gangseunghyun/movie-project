@@ -24,6 +24,8 @@ import ReservationPage from './components/ReservationPage/ReservationPage';
 import ReservationDetailPage from './components/ReservationPage/ReservationDetailPage';
 import MovieEditPage from './components/Admin/MovieEditPage';
 import MovieRegisterPage from './components/Admin/MovieRegisterPage';
+import ChatbotIcon from './components/ChatbotIcon';
+import ScrollToTopButton from './components/ScrollToTopButton';
 
 export default function App() {
   return (
@@ -54,6 +56,10 @@ export default function App() {
             <Route path="/profile-edit" element={<ProfileEditPage />} />
           </Routes>
         </DefaultLayout>
+        {/* 스크롤 탑 버튼 - 모든 페이지에서 보임 */}
+        <ScrollToTopButton />
+        {/* 챗봇 아이콘 - 모든 페이지에서 보임 */}
+        <ChatbotIcon />
       </BrowserRouter>
     </UserProvider>
   );

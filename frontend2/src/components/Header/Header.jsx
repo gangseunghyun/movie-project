@@ -104,12 +104,12 @@ export default function Header() {
           <nav className={styles.nav}>
             {user && user.role === 'ADMIN' && (
               <div className={styles.adminSection}>
-                <div className={styles.adminNotice}>
-                  관리자 계정으로 로그인 중입니다
-                </div>
                 <button className={styles.adminRegisterBtn} onClick={handleMovieRegister}>
                   영화 등록
                 </button>
+                <div className={styles.adminNotice}>
+                  관리자 계정으로 로그인 중입니다
+                </div>
               </div>
             )}
             {(!location.pathname.startsWith('/search')) && (

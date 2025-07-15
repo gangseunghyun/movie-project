@@ -82,7 +82,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
   }
   // 배우 출연 영화 섹션이면 배우 정보와 대표작 표시
   if (sectionKey === 'actor' || sectionKey === 'director' || sectionKey === 'toprated' || 
-    sectionKey.startsWith('like-') || sectionKey === 'social-recommend' || sectionKey.startsWith('new-genre-') ) {
+    sectionKey.startsWith('like-') || sectionKey === 'social-recommend' || sectionKey.startsWith('new-genre-')) {
     return (
       <div className={styles.card} onClick={handleCardClick} style={{ cursor: movie.movieCd ? 'pointer' : 'default' }}>
         {/* 배우 정보 표시 */}
@@ -140,6 +140,32 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
         </span>
       </div>
       <div className={styles.audience}>누적관객 {movie.audience || movie.formattedAudiAcc || '-'}</div>
+    </div>
+    );
+  }
+
+  if (sectionKey === 'personalized') {
+    return (
+      <div className={styles.card} onClick={handleCardClick} style={{ cursor: movie.movieCd ? 'pointer' : 'default' }}>
+      <div className={styles.poster} style={{ position: 'relative' }}>
+
+        {movie.posterUrl && (
+          <img
+            src={movie.posterUrl}
+            alt={movie.movieNm || '-'}
+            className={styles.posterImg}
+          />
+        )}
+      </div>
+      <div className={styles.title}>{movie.movieNm || '-'}</div>
+      
+      <div className={styles.ratingLine}>
+        <span className={styles.star}>⭐</span>
+        <span className={styles.rating}>
+          {movie.averageRating ?? 0}
+        </span>
+      </div>
+      
     </div>
     );
   }
