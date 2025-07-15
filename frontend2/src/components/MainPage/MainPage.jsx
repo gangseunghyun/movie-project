@@ -49,7 +49,7 @@ export default function MainPage() {
       });
 
     // 평점 높은 영화 fetch
-    fetch('http://localhost:80/data/api/ratings/top-rated?limit=5')
+    fetch('http://localhost:80/data/api/ratings/top-rated?limit=20')
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -57,7 +57,7 @@ export default function MainPage() {
         return res.json();
       })
       .then(data => {
-        //console.log('평점 높은 영화:', data);
+        console.log('평점 높은 영화:', data);
         setTopRatedMovies(data);
       })
       .catch(error => {

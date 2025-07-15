@@ -41,7 +41,8 @@ public class TmdbPosterService {
     public List<MovieDetail> getTopRatedMovies(int limit) {
         // 데이터베이스 레벨에서 직접 평점 높은 영화 조회 (매우 빠름)
         org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(0, limit * 2);
-        List<MovieDetail> topRatedMovies = movieRepository.findTopRatedMoviesWithMovieList(4.0, pageRequest);
+        // MovieList JOIN 없이 평점 높은 영화 조회 (더 많은 영화가 표시되도록)
+        List<MovieDetail> topRatedMovies = movieRepository.findTopRatedMovies(4.0, pageRequest);
         
         // MovieList가 있는 영화만 필터링 (이미 JOIN으로 처리됨)
         topRatedMovies = topRatedMovies.stream()
