@@ -37,8 +37,8 @@ const dummySimilar = [
 function SimilarMovieCard({ movie }) {
   return (
     <div className={styles.similarMovieCard}>
-      <img src={movie.posterUrl} alt={movie.title} className={styles.similarPoster} />
-      <div className={styles.similarTitle}>{movie.title}</div>
+      <img src={movie.posterUrl} alt={movie.movieNm} className={styles.similarPoster} />
+      <div className={styles.similarTitle}>{movie.movieNm}</div>
     </div>
   );
 }
@@ -67,6 +67,9 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const [allCommentsModalOpen, setAllCommentsModalOpen] = useState(false);
   // 코멘트별 별점 상태
   const [commentRatings, setCommentRatings] = useState({});
+  // 비슷한 장르 영화 상태
+  const [similarMovies, setSimilarMovies] = useState([]);
+  const [similarMoviesLoading, setSimilarMoviesLoading] = useState(false);
 
   // AllCommentsModal에서 코멘트 클릭 시 상세 모달로 전환
   const handleAllCommentsCommentClick = (comment) => {
@@ -302,6 +305,35 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     setAllCommentsModalOpen(false);
   };
 
+  // 비슷한 장르 영화 가져오기
+  const fetchSimilarMovies = async () => {
+    if (!movieCd) return;
+    
+    setSimilarMoviesLoading(true);
+    try {
+      const response = await fetch(`http://localhost:80/data/api/similar-genre-movies?movieCd=${movieCd}&page=0&size=20`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      setSimilarMovies(result.data || []);
+    } catch (error) {
+      console.error('비슷한 장르 영화 로드 실패:', error);
+      setSimilarMovies([]);
+    } finally {
+      setSimilarMoviesLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 비슷한 장르 영화 가져오기
+  useEffect(() => {
+    fetchSimilarMovies();
+  }, [movieCd]);
+
   return (
     <div className={styles.detailBody}>
       <section>
@@ -424,11 +456,17 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       </section>
       <section>
         <h2>비슷한 장르의 영화</h2>
-        <MovieHorizontalSlider
-          data={dummySimilar}
-          sectionKey="similar"
-          CardComponent={SimilarMovieCard}
-        />
+        {similarMoviesLoading ? (
+          <div style={{ textAlign: 'center', padding: '20px', color: '#aaa' }}>로딩 중...</div>
+        ) : similarMovies.length > 0 ? (
+          <MovieHorizontalSlider
+            data={similarMovies}
+            sectionKey="similar"
+            CardComponent={SimilarMovieCard}
+          />
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px', color: '#aaa' }}>비슷한 장르의 영화가 없습니다.</div>
+        )}
       </section>
       <section>
         <h2>스틸컷</h2>
