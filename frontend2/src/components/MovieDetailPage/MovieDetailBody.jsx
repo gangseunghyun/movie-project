@@ -308,6 +308,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       if (response.ok) {
         const data = await response.json();
         if (data.data) {
+          //console.log(data.data);
           setSimilarMovies(data.data);
         } else {
           setSimilarMovies([]);

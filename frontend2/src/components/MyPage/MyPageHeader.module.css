@@ -277,4 +277,151 @@
   color: #888;
   font-size: 1rem;
   margin-top: 4px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .header {
+    padding: 50px 40px;
+    width: 100%;
+  }
+  
+  .nicknameRow {
+    font-size: 2.5rem;
+  }
+  
+  .tagLabel {
+    font-size: 1.8rem;
+  }
+  
+  .profileImgWrapper {
+    width: 8rem;
+    height: 8rem;
+  }
+  
+  .profileImg {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .followButton {
+    width: 150px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 40px 20px;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .infoSection {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .leftSection,
+  .rightSection {
+    min-width: auto;
+    align-items: center;
+  }
+  
+  .nicknameRow {
+    font-size: 2rem;
+  }
+  
+  .tagLabel {
+    font-size: 1.5rem;
+  }
+  
+  .profileImgWrapper {
+    width: 6rem;
+    height: 6rem;
+  }
+  
+  .profileImg {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .followButton {
+    width: 130px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+  
+  .actionSection {
+    margin-left: 0;
+    margin-top: 15px;
+  }
+  
+  .pencilIcon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  .pencilIconTag {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 30px 15px;
+  }
+  
+  .nicknameRow {
+    font-size: 1.8rem;
+  }
+  
+  .tagLabel {
+    font-size: 1.3rem;
+  }
+  
+  .profileImgWrapper {
+    width: 5rem;
+    height: 5rem;
+  }
+  
+  .profileImg {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .followButton {
+    width: 110px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+  
+  .tag {
+    font-size: 0.9rem;
+    padding: 5px 10px;
+  }
+  
+  .pencilIcon {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  .pencilIconTag {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+  
+  .settingBtn, .logoutBtn {
+    font-size: 0.9rem;
+  }
+  
+  .settingIcon, .logoutIcon {
+    width: 16px;
+    height: 16px;
+  }
 } 

@@ -129,3 +129,112 @@
   padding: 2px 10px;
   z-index: 2;
 }
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .card {
+    width: 220px;
+    min-width: 220px;
+  }
+  
+  .poster {
+    height: 330px;
+    max-height: 330px;
+  }
+  
+  .title {
+    font-size: 1.3rem;
+  }
+  
+  .info {
+    font-size: 0.9rem;
+  }
+  
+  .comingSoonDate {
+    font-size: 1rem;
+  }
+  
+  .dDayBadge,
+  .posterRank {
+    font-size: 1.1rem;
+    padding: 2px 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    width: 200px;
+    min-width: 200px;
+  }
+  
+  .poster {
+    height: 300px;
+    max-height: 300px;
+  }
+  
+  .title {
+    font-size: 1.2rem;
+  }
+  
+  .info {
+    font-size: 0.85rem;
+  }
+  
+  .comingSoonDate {
+    font-size: 0.95rem;
+  }
+  
+  .dDayBadge,
+  .posterRank {
+    font-size: 1rem;
+    padding: 1px 6px;
+  }
+  
+  .star,
+  .rating {
+    font-size: 1rem;
+  }
+  
+  .audience {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    width: 160px;
+    min-width: 160px;
+  }
+  
+  .poster {
+    height: 240px;
+    max-height: 240px;
+  }
+  
+  .title {
+    font-size: 1rem;
+  }
+  
+  .info {
+    font-size: 0.8rem;
+  }
+  
+  .comingSoonDate {
+    font-size: 0.9rem;
+  }
+  
+  .dDayBadge,
+  .posterRank {
+    font-size: 0.9rem;
+    padding: 1px 4px;
+  }
+  
+  .star,
+  .rating {
+    font-size: 0.9rem;
+  }
+  
+  .audience {
+    font-size: 0.75rem;
+  }
+}

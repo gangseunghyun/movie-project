@@ -20,6 +20,8 @@ import ActorDetailPage from './components/PersonDetailPage/ActorDetailPage';
 import MyPage from './components/MyPage/MyPage';
 import ProfileEditPage from './components/MyPage/ProfileEditPage';
 import BookingPage from './components/BookingPage/BookingPage';
+import MovieEditPage from './components/Admin/MovieEditPage';
+import MovieRegisterPage from './components/Admin/MovieRegisterPage';
 
 export default function App() {
   return (
@@ -44,6 +46,8 @@ export default function App() {
             <Route path="/person/actor/:id" element={<ActorDetailPage />} />
             <Route path="/mypage/:userId" element={<MyPage />} />
             <Route path="/profile-edit" element={<ProfileEditPage />} />
+            <Route path="/admin/movie/edit/:movieCd" element={<MovieEditPage />} />
+            <Route path="/admin/movie/register" element={<MovieRegisterPage />} />
           </Routes>
         </DefaultLayout>
       </BrowserRouter>

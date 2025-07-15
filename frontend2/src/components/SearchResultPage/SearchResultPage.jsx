@@ -3,10 +3,10 @@ import styles from './SearchResultPage.module.css';
 import searchIcon from '../../assets/search_icon.png';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MovieCard from '../MainPage/MovieCard';
+import MovieHorizontalSlider from '../MainPage/MovieHorizontalSlider';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import userIcon from '../../assets/user_icon.png';
-
 function ActorCard({ actor }) {
   const personLink = actor.role === '감독'
     ? `/person/director/${actor.id}`
@@ -74,7 +74,7 @@ function UserCard({ user, onUserClick }) {
       <div
         className={styles.userImg}
         style={{
-          backgroundImage: `url(${user.photoUrl ? user.photoUrl : userIcon})`,
+          backgroundImage: `url(${user.profileImageUrl ? user.profileImageUrl : userIcon})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
@@ -104,6 +104,8 @@ function ActorHorizontalSlider({ data }) {
     </div>
   );
 }
+
+
 
 export default function SearchResultPage() {
   const [searchParams] = useSearchParams();
@@ -183,9 +185,8 @@ export default function SearchResultPage() {
         //   profileImageUrl: null // API에서 프로필 이미지 URL이 제공되지 않으므로 null로 설정
         // }));
         setUsers(userData);
-        console.log('유저:', userData);
         
-        // console.log('영화:', movies);
+         console.log('영화:', movies);
         // console.log('인물:', peopleList);
         //console.log('유저:', userData);
       })
@@ -250,11 +251,11 @@ export default function SearchResultPage() {
         {error && <div style={{ color: 'red' }}>{error}</div>}
         {(!loading && movies.length === 0) && <div className={styles.emptyMessage}>검색 결과가 없습니다.</div>}
         {movies.length > 0 && (
-          <div className={styles.cardList}>
-            {movies.map((movie, idx) => (
-              <MovieCard key={movie.movieCd || idx} movie={movie} index={idx + 1} showOpenDt={false} sectionKey="search" />
-            ))}
-          </div>
+          <MovieHorizontalSlider 
+            data={movies} 
+            sectionKey="search" 
+            CardComponent={MovieCard}
+          />
         )}
       </div>
       <div className={styles.section}>

@@ -292,3 +292,51 @@
   opacity: 1 !important;
   transition: background 0.2s;
 }
+
+.adminSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adminNotice {
+  color: #ff6b6b;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 4px 8px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.adminRegisterBtn {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adminRegisterBtn:hover {
+  background: #357abd;
+}
+
+@media (max-width: 768px) {
+  .adminNotice {
+    font-size: 12px;
+    margin-right: 10px;
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .adminNotice {
+    font-size: 10px;
+    margin-right: 8px;
+    padding: 2px 4px;
+  }
+}

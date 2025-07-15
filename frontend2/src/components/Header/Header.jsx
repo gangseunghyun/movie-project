@@ -27,6 +27,17 @@ export default function Header() {
     setMenuVisible(false);
   }, [user]);
 
+  // 영화 등록 핸들러
+  const handleMovieRegister = () => {
+    if (!user || user.role !== 'ADMIN') {
+      alert('관리자만 영화를 등록할 수 있습니다.');
+      return;
+    }
+    
+    // 영화 등록 페이지로 이동
+    navigate('/admin/movie/register');
+  };
+
   //로그아웃
   const handleLogout = async () => {
     console.log('로그아웃 시작');
@@ -91,6 +102,16 @@ export default function Header() {
             <img src={logo} alt="Filmer" />
           </Link>
           <nav className={styles.nav}>
+            {user && user.role === 'ADMIN' && (
+              <div className={styles.adminSection}>
+                <div className={styles.adminNotice}>
+                  관리자 계정으로 로그인 중입니다
+                </div>
+                <button className={styles.adminRegisterBtn} onClick={handleMovieRegister}>
+                  영화 등록
+                </button>
+              </div>
+            )}
             {(!location.pathname.startsWith('/search')) && (
               showSearchModal ? (
                 <button className={styles.searchCloseBtn} onClick={() => setShowSearchModal(false)}>
