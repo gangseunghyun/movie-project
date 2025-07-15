@@ -41,7 +41,7 @@ export default function MainPage() {
       })
       .then(data => {
         const movies = data.data || [];
-        console.log('박스오피스 데이터:', movies);
+        //console.log('박스오피스 데이터:', movies);
         setBoxOfficeData(movies);
       })
       .catch(error => {
@@ -144,7 +144,7 @@ export default function MainPage() {
             companyNm: movie.companyNm || '',
             directorName: movie.directorName || ''
           }));
-          console.log('감독 추천 영화:', enrichedMovies);
+          //console.log('감독 추천 영화:', enrichedMovies);
           setDirectorMovies(enrichedMovies);
         }
       })
@@ -225,7 +225,7 @@ export default function MainPage() {
           return res.json();
         })
         .then(data => {
-          console.log("개인 영화추천 API 응답:", data);
+          //console.log("개인 영화추천 API 응답:", data);
           setPersonalizedMovies(Array.isArray(data) ? data : []);
         })
         .catch(error => {

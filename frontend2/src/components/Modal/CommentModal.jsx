@@ -232,7 +232,7 @@ const CommentModal = ({
                   );
                 })}
               </div>
-              {ratingLoading && <span className={styles.loadingText}>별점 저장 중...</span>}
+              {/* {ratingLoading && <span className={styles.loadingText}>별점 저장 중...</span>} */}
             </div>
           )}
           <span className={styles.length}>{comment.length}/{maxLength}</span>

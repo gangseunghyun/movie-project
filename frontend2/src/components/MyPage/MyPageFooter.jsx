@@ -36,6 +36,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   const [localTempUserInfo, setLocalTempUserInfo] = useState(tempUserInfo);
   const [likedModalOpen, setLikedModalOpen] = useState(false);
   const [myCommentsModalOpen, setMyCommentsModalOpen] = useState(false);
+  const [lastModalType, setLastModalType] = useState(null);
 
   // sessionStorage에서 tempUserInfo 확인 (새로고침 시에도 유지)
   useEffect(() => {
@@ -207,7 +208,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
       <div className={styles.commentGrid}>
         {likedLoading ? <div>로딩 중...</div> : (
           likedComments.length === 0 ? <div className={styles.emptyMessage}>아직 좋아요한 코멘트가 없습니다.</div> :
-            likedComments.slice(0, 4).map(comment => renderCommentCard(comment, false))
+            likedComments.slice(0, 8).map(comment => renderCommentCard(comment, false))
         )}
       </div>
       {/* 좋아요한 코멘트 전체보기 모달 */}
@@ -217,8 +218,9 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         likedComments={likedComments}
         onCommentClick={comment => {
           setSelectedComment(comment);
-          setLikedModalOpen(false);   // 전체보기 모달 닫기
-          setModalOpen(true);         // 상세모달 열기
+          setLikedModalOpen(false);
+          setLastModalType('liked');
+          setModalOpen(true);
         }}
       />
       {/* 내가 작성한 코멘트 전체보기 모달 */}
@@ -229,8 +231,9 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         title={isOwnPage ? '내가 작성한 코멘트 전체보기' : `${displayUser?.nickname || '익명'}님이 작성한 코멘트 전체보기`}
         onCommentClick={comment => {
           setSelectedComment(comment);
-          setMyCommentsModalOpen(false); // 전체보기 모달 닫기
-          setModalOpen(true);            // 상세모달 열기
+          setMyCommentsModalOpen(false);
+          setLastModalType('my');
+          setModalOpen(true);
         }}
       />
       {/* 코멘트 상세 모달 */}
@@ -238,9 +241,9 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onBack={() => {
-          setModalOpen(false);           // 상세모달 닫기
-          if (likedModalOpen) setLikedModalOpen(true);
-          if (myCommentsModalOpen === false) setMyCommentsModalOpen(true); // 내가 작성한 코멘트 전체보기 모달 다시 열기
+          setModalOpen(false);
+          if (lastModalType === 'liked') setLikedModalOpen(true);
+          else if (lastModalType === 'my') setMyCommentsModalOpen(true);
         }}
         comment={selectedComment}
         reviewId={selectedComment?.id}

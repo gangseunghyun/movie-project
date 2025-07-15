@@ -18,7 +18,7 @@ const FollowingModal = ({ followings, onClose }) => {
           {followings.length === 0 ? (
             <div className={styles.empty}>팔로잉이 없습니다.</div>
           ) : (
-            followings.map((following, idx) => (
+            followings.map((following) => (
               <div key={following.id} className={styles.followerItem}>
                 <img
                   src={following.profileImageUrl || require("../../assets/user_icon.png")}
@@ -32,7 +32,6 @@ const FollowingModal = ({ followings, onClose }) => {
                 >
                   {following.nickname}
                 </a>
-                {idx !== followings.length - 1 && <div className={styles.divider} />}
               </div>
             ))
           )}

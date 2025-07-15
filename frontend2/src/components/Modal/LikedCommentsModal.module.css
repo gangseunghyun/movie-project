@@ -9,13 +9,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-y: hidden;
 }
 .modalContent {
   background: #181818;
   border-radius: 12px;
   width: 700px;
   min-height: 90vh;
-  overflow-y: auto;
+  max-height: 90vh;
+  overflow-y: hidden;
   padding: 32px 32px 24px 32px;
   box-shadow: 0 4px 32px rgba(0,0,0,0.3);
   position: relative;
