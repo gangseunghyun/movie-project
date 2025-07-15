@@ -55,7 +55,7 @@ export default function Header() {
         // navigate('/');
         localStorage.removeItem('autoLogin');
         localStorage.removeItem('user');
-        alert('로그아웃 성공(test).');
+        //alert('로그아웃 성공(test).');
         window.location.href = "http://localhost:3000/login";
       } else {
         alert(data.message || '로그아웃에 실패했습니다.');
@@ -104,12 +104,12 @@ export default function Header() {
           <nav className={styles.nav}>
             {user && user.role === 'ADMIN' && (
               <div className={styles.adminSection}>
-                <div className={styles.adminNotice}>
-                  관리자 계정으로 로그인 중입니다
-                </div>
                 <button className={styles.adminRegisterBtn} onClick={handleMovieRegister}>
                   영화 등록
                 </button>
+                <div className={styles.adminNotice}>
+                  관리자 계정으로 로그인 중입니다
+                </div>
               </div>
             )}
             {(!location.pathname.startsWith('/search')) && (

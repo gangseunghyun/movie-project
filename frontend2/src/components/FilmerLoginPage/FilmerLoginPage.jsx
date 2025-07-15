@@ -50,7 +50,7 @@ export default function FilmerLoginPage() {
           localStorage.removeItem('autoLogin');
           localStorage.removeItem('user');
         }
-        alert(`${data.user.nickname}님, 환영합니다!`);
+        //alert(`${data.user.nickname}님, 환영합니다!`);
         // 또는 toast.success(`${data.user.nickname}님, 환영합니다!`);
         // 메인 페이지 등으로 이동
         navigate('/');

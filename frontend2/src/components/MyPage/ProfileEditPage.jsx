@@ -36,7 +36,7 @@ export default function ProfileEditPage() {
       });
       const data = await response.json();
       if (data.success) {
-        alert('프로필이 수정되었습니다!');
+        //alert('프로필이 수정되었습니다!');
         navigate(-1);
         setTimeout(() => {
           window.location.reload();
