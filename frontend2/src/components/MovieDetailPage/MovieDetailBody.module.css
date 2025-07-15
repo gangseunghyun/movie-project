@@ -220,6 +220,7 @@ h2 {
   margin-bottom: 6px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .similarMovieCard:hover {

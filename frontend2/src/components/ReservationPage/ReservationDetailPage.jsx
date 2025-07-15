@@ -14,6 +14,9 @@ const ReservationDetailPage = () => {
   const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
+    // 페이지 맨 위로 스크롤
+    window.scrollTo(0, 0);
+    
     if (user?.id && reservationId) {
       fetchReservationDetail();
     }
