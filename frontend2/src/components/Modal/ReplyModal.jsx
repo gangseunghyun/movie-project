@@ -43,7 +43,7 @@ const ReplyModal = ({ open, onClose, reviewId, parentId, isReply = false, onSave
         });
         const data = await response.json();
         if (data.success) {
-          alert(data.message);
+          //alert(data.message);
           if (onUpdate) onUpdate(comment, editTarget.id);
           onClose();
           setComment('');
@@ -67,7 +67,7 @@ const ReplyModal = ({ open, onClose, reviewId, parentId, isReply = false, onSave
         });
         const data = await response.json();
         if (data.success) {
-          alert(data.message);
+          //alert(data.message);
           if (onSave) onSave(comment, data.commentId, data.commentType);
           onClose();
           setComment('');

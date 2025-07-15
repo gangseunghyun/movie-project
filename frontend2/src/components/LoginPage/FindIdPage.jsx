@@ -20,13 +20,13 @@ export default function FindIdPage() {
       const data = await response.json();
       console.log(data);
       if (data.success && data.maskedLoginId) {
-        alert('아이디를 찾았습니다!');
+        //alert('아이디를 찾았습니다!');
         navigate('/find-id-result', { state: { maskedLoginId: data.maskedLoginId } });
       } else if (data.message && data.message.includes('소셜')) {
         alert(data.message);
         navigate('/login');
       } else {
-        alert(data.message || '일치하는 정보가 없습니다.');
+        //alert(data.message || '일치하는 정보가 없습니다.');
         navigate('/find-id-result', { state: { maskedLoginId: '' } });
       }
     } catch (error) {

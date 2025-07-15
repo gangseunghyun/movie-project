@@ -239,7 +239,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         setUser(null);
         localStorage.removeItem("autoLogin");
         localStorage.removeItem("user");
-        alert("로그아웃 성공(test).");
+        //("로그아웃 성공(test).");
         window.location.href = "http://localhost:3000/login";
       } else {
         alert(data.message || "로그아웃에 실패했습니다.");

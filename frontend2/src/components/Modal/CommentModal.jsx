@@ -83,7 +83,7 @@ const CommentModal = ({
       }
 
       if (data.success) {
-        alert(data.message || '별점이 저장되었습니다.');
+        //alert(data.message || '별점이 저장되었습니다.');
       } else {
         alert(data.message || '별점 저장에 실패했습니다.');
       }
@@ -137,7 +137,7 @@ const CommentModal = ({
         });
         const data = await response.json();
         if (data.success) {
-          alert('리뷰가 수정되었습니다!');
+          //alert('리뷰가 수정되었습니다!');
           if (onEditSave) onEditSave(comment, latestRating);
           onClose();
         } else {
@@ -159,7 +159,7 @@ const CommentModal = ({
         });
         const data = await response.json();
         if (data.success) {
-          alert('리뷰가 작성되었습니다!');
+          //alert('리뷰가 작성되었습니다!');
           if (onSave) onSave(comment, userRating);
           onClose();
         } else {

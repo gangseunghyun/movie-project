@@ -210,7 +210,7 @@ const CommentDetailModal = ({ open, onClose, onBack, comment, reviewId, fetchCom
       });
       const data = await res.json();
       if (data.success) {
-        alert('댓글이 삭제되었습니다.');
+        //alert('댓글이 삭제되었습니다.');
         fetchReplies();
         if (fetchComments) fetchComments();
         setLocalComment(prev => ({

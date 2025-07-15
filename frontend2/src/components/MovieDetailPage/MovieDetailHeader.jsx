@@ -244,7 +244,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
     };
     const handleCommentSave = (comment) => {
         // TODO: 저장 로직 구현
-        alert('코멘트가 저장되었습니다!\n' + comment);
+        //alert('코멘트가 저장되었습니다!\n' + comment);
         setCommentModalOpen(false);
         if (onCommentSaved) onCommentSaved();
     };
