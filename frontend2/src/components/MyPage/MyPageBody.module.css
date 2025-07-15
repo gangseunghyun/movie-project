@@ -128,3 +128,117 @@
   margin: 32px 0 32px 82px;
   
 }
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .sectionTitle {
+    font-size: 1.8rem;
+    margin: 12px 0 20px 50px;
+  }
+  
+  .cardList {
+    margin-left: 50px;
+  }
+  
+  .slider {
+    margin-left: 50px;
+  }
+  
+  .emptyMessage {
+    margin: 32px 0 32px 62px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sectionTitle {
+    font-size: 1.5rem;
+    margin: 12px 0 16px 30px;
+  }
+  
+  .cardList {
+    margin-left: 30px;
+    gap: 1rem;
+  }
+  
+  .slider {
+    margin-left: 30px;
+    gap: 15px;
+  }
+  
+  .actorCard {
+    min-width: 160px;
+    width: 160px;
+    height: 260px;
+  }
+  
+  .actorImg {
+    height: 200px;
+  }
+  
+  .actorName {
+    font-size: 1rem;
+  }
+  
+  .actorRole {
+    font-size: 0.9rem;
+  }
+  
+  .emptyMessage {
+    margin: 32px 0 32px 42px;
+    font-size: 1.1rem;
+  }
+  
+  .navBtn img {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sectionTitle {
+    font-size: 1.3rem;
+    margin: 12px 0 12px 20px;
+  }
+  
+  .cardList {
+    margin-left: 20px;
+    gap: 0.8rem;
+  }
+  
+  .slider {
+    margin-left: 20px;
+    gap: 12px;
+  }
+  
+  .actorCard {
+    min-width: 140px;
+    width: 140px;
+    height: 230px;
+  }
+  
+  .actorImg {
+    height: 180px;
+  }
+  
+  .actorName {
+    font-size: 0.9rem;
+  }
+  
+  .actorRole {
+    font-size: 0.8rem;
+  }
+  
+  .emptyMessage {
+    margin: 32px 0 32px 32px;
+    font-size: 1rem;
+  }
+  
+  .navBtn img {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  .navBtn {
+    padding: 0.3rem;
+  }
+}

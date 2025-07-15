@@ -8,6 +8,38 @@ import styles from "./MyPage.module.css";
 const MyPage = () => {
   const { userId } = useParams();
   const [tempUserInfo, setTempUserInfo] = useState(null);
+  const [targetUser, setTargetUser] = useState(null);
+
+  // targetUserId로 사용자 정보 조회
+  useEffect(() => {
+    const fetchTargetUser = async () => {
+      if (!userId) return;
+
+      // tempUserInfo가 있으면 우선적으로 사용
+      if (tempUserInfo && tempUserInfo.id === userId) {
+        setTargetUser(tempUserInfo);
+        return;
+      }
+
+      // userId로 사용자 정보 조회
+      try {
+        const response = await fetch(`http://localhost:80/api/users/${userId}/info`, {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setTargetUser(userData);
+        } else {
+          console.error('사용자 정보를 가져오는데 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('사용자 정보를 가져오는 중 오류가 발생했습니다:', error);
+      }
+    };
+
+    fetchTargetUser();
+  }, [userId, tempUserInfo]);
 
   useEffect(() => {
     // 항상 맨 위로 이동
@@ -30,9 +62,9 @@ const MyPage = () => {
 
   return (
     <div className={styles.container}>
-      <MyPageHeader targetUserId={tempUserInfo ? tempUserInfo.id : userId} tempUserInfo={tempUserInfo} />
-      <MyPageBody targetUserId={tempUserInfo ? tempUserInfo.id : userId} tempUserInfo={tempUserInfo} />
-      <MyPageFooter targetUserId={tempUserInfo ? tempUserInfo.id : userId} tempUserInfo={tempUserInfo} />
+      <MyPageHeader targetUserId={userId} tempUserInfo={tempUserInfo} targetUser={targetUser} />
+      <MyPageBody targetUserId={userId} tempUserInfo={tempUserInfo} targetUser={targetUser} />
+      <MyPageFooter targetUserId={userId} tempUserInfo={tempUserInfo} targetUser={targetUser} />
     </div>
   );
 };

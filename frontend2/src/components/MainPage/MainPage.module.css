@@ -26,4 +26,46 @@
     height: 100%;
     object-fit: cover;
     border-radius: 14px;
-  }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+    .sectionTitle {
+        font-size: 1.8rem;
+        margin: 30px 0 20px 50px;
+    }
+    
+    .section {
+        margin: 50px 0 0 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .main {
+        padding-top: 30px;
+    }
+    
+    .sectionTitle {
+        font-size: 1.5rem;
+        margin: 25px 0 15px 30px;
+    }
+    
+    .section {
+        margin: 40px 0 0 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .main {
+        padding-top: 20px;
+    }
+    
+    .sectionTitle {
+        font-size: 1.3rem;
+        margin: 20px 0 10px 20px;
+    }
+    
+    .section {
+        margin: 30px 0 0 0;
+    }
+}

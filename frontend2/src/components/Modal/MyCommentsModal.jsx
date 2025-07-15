@@ -2,14 +2,14 @@ import React from 'react';
 import styles from './LikedCommentsModal.module.css';
 import userIcon from '../../assets/user_icon.png';
 
-export default function MyCommentsModal({ open, onClose, myComments = [], onCommentClick }) {
+export default function MyCommentsModal({ open, onClose, myComments = [], onCommentClick, title = '내가 작성한 코멘트 전체보기' }) {
   if (!open) return null;
 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
         <div className={styles.headerRow}>
-          <span className={styles.title}>내가 작성한 코멘트 전체보기</span>
+          <span className={styles.title}>{title}</span>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
         <div className={styles.countRow}>{myComments.length}개의 코멘트</div>

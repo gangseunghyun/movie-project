@@ -54,8 +54,11 @@ public class RedisConfig {
                 // 인기검색어 캐시: 2분 TTL
                 .withCacheConfiguration("popularKeywords", 
                     defaultConfig.entryTtl(Duration.ofMinutes(2)))
-                // 평균 별점 캐시: 5분 TTL
+                // 평균 별점 캐시: 5분 TTL (적절한 로딩 속도와 최신성)
                 .withCacheConfiguration("averageRatings", 
+                    defaultConfig.entryTtl(Duration.ofMinutes(5)))
+                // 평점 높은 영화 캐시: 5분 TTL (적절한 로딩 속도와 최신성)
+                .withCacheConfiguration("topRatedMovies", 
                     defaultConfig.entryTtl(Duration.ofMinutes(5)))
                 // 별점 개수 캐시: 5분 TTL
                 .withCacheConfiguration("ratingCounts", 

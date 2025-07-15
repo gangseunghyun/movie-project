@@ -4,4 +4,17 @@
   overflow-x: hidden;
   background: none;
   margin-top: 40px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .container {
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    margin-top: 20px;
+  }
 } 

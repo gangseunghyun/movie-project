@@ -21,7 +21,7 @@ function formatRelativeTime(dateString) {
   return commentDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-const MyPageFooter = ({ targetUserId, tempUserInfo }) => {
+const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }) => {
   const { user } = useUser();
   const [myComments, setMyComments] = useState([]);
   const [likedComments, setLikedComments] = useState([]);
@@ -51,9 +51,9 @@ const MyPageFooter = ({ targetUserId, tempUserInfo }) => {
     }
   }, []);
 
-  // 표시할 유저 결정 (localTempUserInfo가 있으면 localTempUserInfo 사용, targetUserId가 있으면 targetUserId 사용, 없으면 현재 로그인한 user)
-  const displayUserId = localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id);
-  const displayUser = localTempUserInfo || user;
+  // 표시할 유저 결정 (propTargetUser가 있으면 propTargetUser, localTempUserInfo가 있으면 localTempUserInfo, 없으면 현재 로그인한 user)
+  const displayUserId = propTargetUser ? propTargetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
+  const displayUser = propTargetUser || localTempUserInfo || user;
   const isOwnPage = String(displayUserId) === String(user?.id);
 
 
@@ -226,6 +226,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo }) => {
         open={myCommentsModalOpen}
         onClose={() => setMyCommentsModalOpen(false)}
         myComments={myComments}
+        title={isOwnPage ? '내가 작성한 코멘트 전체보기' : `${displayUser?.nickname || '익명'}님이 작성한 코멘트 전체보기`}
         onCommentClick={comment => {
           setSelectedComment(comment);
           setMyCommentsModalOpen(false); // 전체보기 모달 닫기

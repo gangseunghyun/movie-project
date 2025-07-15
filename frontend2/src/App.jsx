@@ -45,8 +45,8 @@ export default function App() {
             <Route path="/movie-detail/:movieCd" element={<MovieDetailPage />} />
             <Route path="/booking/:movieId" element={<BookingPage />} />
             <Route path="/reservations" element={<ReservationPage />} />
-                    <Route path="/reservations/:reservationId" element={<ReservationDetailPage />} />
-            <Route path="/admin/movie/edit/:movieId" element={<MovieEditPage />} />
+            <Route path="/reservations/:reservationId" element={<ReservationDetailPage />} />
+            <Route path="/admin/movie/edit/:movieCd" element={<MovieEditPage />} />
             <Route path="/admin/movie/register" element={<MovieRegisterPage />} />
             <Route path="/person/director/:id" element={<DirectorDetailPage />} />
             <Route path="/person/actor/:id" element={<ActorDetailPage />} />

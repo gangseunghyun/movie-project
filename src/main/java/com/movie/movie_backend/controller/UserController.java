@@ -785,6 +785,39 @@ public class UserController {
         }
     }
 
+    // userId로 사용자 정보 조회 API 추가 (인증 없이 접근 가능)
+    @GetMapping("/api/users/{userId}/info")
+    public ResponseEntity<?> getUserById(@PathVariable Long userId) {
+        log.info("=== getUserById 호출됨 ===");
+        log.info("요청된 userId: {}", userId);
+        
+        try {
+            var userOpt = userRepository.findById(userId);
+            log.info("데이터베이스 조회 결과: {}", userOpt.isPresent() ? "유저 찾음" : "유저 없음");
+            
+            if (userOpt.isEmpty()) {
+                log.warn("userId '{}'에 해당하는 유저를 찾을 수 없습니다.", userId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            var user = userOpt.get();
+            log.info("유저 정보: id={}, nickname={}, email={}", user.getId(), user.getNickname(), user.getEmail());
+            
+            // 마이페이지: 닉네임, 이메일, ID 반환
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", user.getId());
+            result.put("nickname", user.getNickname());
+            result.put("email", user.getEmail());
+            result.put("profileImageUrl", user.getProfileImageUrl());
+            
+            log.info("응답 데이터: {}", result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("getUserById 에러 발생: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "유저 정보 조회 중 오류가 발생했습니다."));
+        }
+    }
+
     // [1] 장르 태그 전체 조회
     @GetMapping("/api/genre-tags")
     public ResponseEntity<List<String>> getGenreTags() {
@@ -1017,8 +1050,10 @@ public class UserController {
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     reviewDto.put("likeCount", likeCount);
                     
-                    // 내가 좋아요했는지 여부 추가 (내가 작성한 코멘트이므로 true)
-                    reviewDto.put("likedByMe", true);
+                    // 현재 로그인한 사용자가 좋아요했는지 여부 추가
+                    Long currentUserId = getCurrentUserId();
+                    boolean likedByMe = currentUserId != null ? reviewLikeRepository.existsByReviewIdAndUserId(review.getId(), currentUserId) : false;
+                    reviewDto.put("likedByMe", likedByMe);
                     
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
@@ -1079,8 +1114,10 @@ public class UserController {
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     dto.put("likeCount", likeCount);
                     
-                    // 내가 좋아요했는지 여부 추가 (좋아요한 코멘트이므로 true)
-                    dto.put("likedByMe", true);
+                    // 현재 로그인한 사용자가 좋아요했는지 여부 추가
+                    Long currentUserId = getCurrentUserId();
+                    boolean likedByMe = currentUserId != null ? reviewLikeRepository.existsByReviewIdAndUserId(review.getId(), currentUserId) : false;
+                    dto.put("likedByMe", likedByMe);
                     
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
