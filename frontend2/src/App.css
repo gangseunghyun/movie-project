@@ -1,0 +1,6 @@
+/* App.css 예시: global theme colors */
+:root {
+  --color-bg: #060D15;
+  --color-text: #E0E0E0;
+  --color-primary: #FFC107;
+}

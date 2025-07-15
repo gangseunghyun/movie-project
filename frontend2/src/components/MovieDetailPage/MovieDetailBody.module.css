@@ -1,0 +1,452 @@
+.detailBody {
+  width: 100%;
+  padding: 32px 0;
+  background: var(--background-color);
+  max-width: 1905px;
+}
+
+section {
+  margin-bottom: 48px;
+}
+
+h2 {
+  color: #fff;
+  font-size: 1.7rem;
+  margin-left: 70px;
+  margin-bottom: 18px;
+  font-weight: 700;
+  padding-left: 12px;
+}
+
+.castSliderWrapper {
+  position: relative;
+  width: 100%;
+  /* min-height: auto;  // 완전히 제거 */
+  /* height: auto;      // 필요 없다면 제거 */
+  display: flex;
+  align-items: stretch; /* stretch로 변경 */
+  overflow: hidden;
+
+}
+
+.castSliderTrack {
+  display: flex;
+  width: 98%;
+  transition: transform 0.5s;
+  align-items: stretch; /* stretch로 변경 */
+}
+
+.castGrid {
+  min-width: 100%;
+  /* 한 번에 하나만 보이게 */
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px 10px;
+  transition: none;
+  will-change: auto;
+}
+
+.castCard {
+  display: flex;
+  align-items: center;
+  background: none;
+  padding: 12px 0px;
+  color: #fff;
+  gap: 16px;
+  transition: transform 0.18s cubic-bezier(0.4,0,0.2,1);
+  transform-origin: center left;
+}
+
+.castCard:hover {
+  transform: scale(1.06);
+}
+
+.castImg {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.castInfo {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+}
+
+.castName {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.castRole {
+  font-size: 0.95rem;
+  color: #b0b8c1;
+}
+
+.firstCastGrid {
+  margin-left: 70px;
+}
+
+/* 코멘트 카드 */
+.commentCard {
+  width: 400px;
+  min-width: 220px;
+  min-height: 350px;
+  background: #292929;
+  border-radius: 14px;
+  padding: 18px 18px 12px 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+  margin-bottom: 6px;
+  font-family: 'Pretendard', sans-serif;
+}
+.commentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.commentUser {
+  color: #aaa;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: left;
+}
+.commentRating {
+  color: #FFD600;
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-align: right;
+}
+.commentDivider {
+  width: 100%;
+  height: 1px;
+  background: #393943;
+  margin: 8px 0 12px 0;
+  border: none;
+}
+.commentContent {
+  color: #aaa;
+  font-size: 1.08rem;
+  margin-bottom: 12px;
+  word-break: keep-all;
+  min-height: 165px;
+}
+.commentFooterDivider {
+  width: 100%;
+  height: 1px;
+  background: #393943;
+  margin: 8px 0 8px 0;
+  border: none;
+}
+.commentFooter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #aaa;
+  font-size: 0.98rem;
+  margin-top: 8px;
+}
+.commentFooter span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.commentDate {
+  color: #aaa;
+  font-size: 0.92rem;
+  text-align: left;
+  margin-left: 0;
+  font-weight: 400;
+}
+
+.commentActions{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-left: auto;
+}
+
+.replyEditBtn {
+  background: #222;
+  color: #aaa;
+  border: none;
+  border-radius: 5px;
+  padding: 3px 10px;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: solid 1px #525252;
+  transition: background 0.2s, color 0.2s;
+}
+.replyEditBtn:hover {
+  background: #FFD600;
+  color: #222;
+}
+.replyDeleteBtn {
+  background: #222;
+  color: #ff4d4f;
+  border: none;
+  border-radius: 5px;
+  padding: 3px 10px;
+  margin-left: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: solid 1px #525252;
+  transition: background 0.2s, color 0.2s;
+}
+.replyDeleteBtn:hover {
+  background: #ff4d4f;
+  color: #fff;
+}
+
+/* 비슷한 작품 카드 */
+.similarMovieCard {
+  width: 240px;
+  min-width: 240px;
+  height: 360px+120px;
+  background: --color-bg;
+
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.similarMovieCard:hover {
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 1.5px 6px rgba(0, 0, 0, 0.10);
+  z-index: 3;
+}
+
+.similarPoster {
+  width: 100%;
+  height: 360px;
+  /* 원하는 고정 높이 */
+  max-height: 360px;
+  background: #444;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* 순위(번호) 배치용 */
+  overflow: hidden;
+  /* 이미지가 넘치면 잘리게 */
+}
+
+.posterImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 비율 유지하며 꽉 채우기, 넘치는 부분은 잘림 */
+  border-radius: 14px;
+  display: block;
+}
+
+.similarTitle {
+  margin-top: 0.5rem;
+  font-size: 1.4rem;
+  color: #fff;
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  /* 한 줄로만 표시 */
+  overflow: hidden;
+  /* 넘치는 부분 숨김 */
+  text-overflow: ellipsis;
+  /* ...으로 표시 */
+  width: 100%;
+  /* 카드 너비에 맞춤 */
+  box-sizing: border-box;
+}
+
+
+/* 스틸컷 카드 */
+.stillcutCard {
+  height: 534px;
+  width: 1280px;
+  min-width: 1280px;
+  background: #222;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+  margin-bottom: 6px;
+}
+
+.stillcutImg {
+  aspect-ratio: 2.39 / 1;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  background: #444;
+}
+
+.castNavBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  z-index: 4;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.castNavBtn img {
+  width: 2rem;
+  height: 2rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.castNavBtn img:hover {
+  opacity: 1;
+}
+
+.castNavBtn.left {
+  left: 0.4rem;
+}
+
+.castNavBtn.right {
+  right: 0.4rem;
+}
+
+
+.castInfoWithBorder {
+  position: relative;
+}
+
+.castInfoWithBorder::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: #575757;
+  bottom: -30px;
+  border-radius: 0;
+}
+
+.commentGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px 18px;
+  margin: 0 70px 32px 70px;
+}
+
+.StillsliderWrapper {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+  margin-left: 70px;
+}
+
+/* 좌우 버튼 */
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  z-index: 40;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navBtn img {
+  width: 2rem;
+  height: 2rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.navBtn:hover img {
+  opacity: 1;
+}
+
+.left {
+  left: -4rem;
+}
+
+.right {
+  right: 5rem;
+}
+
+.commentIconRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  margin-left: 2px;
+}
+.commentIcon {
+  width: 30px;
+  height: 30px;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.commentIcon:hover {
+  opacity: 1;
+}
+
+.commentSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 70px;
+  margin-right: 70px;
+  margin-bottom: 18px;
+}
+.commentSectionTitle {
+  margin: 0;
+  padding: 0;
+  color: #fff;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+.commentSectionMore {
+  color: #aaa;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.commentSectionMore:hover {
+  color: #fff;
+}
+
+.commentUserProfileImage {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+  display: inline-block;
+  vertical-align: middle;
+}

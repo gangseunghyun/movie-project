@@ -1,0 +1,128 @@
+/* src/components/Footer/Footer.module.css */
+
+.footer {
+  background: var(--color-bg);
+  padding: 2rem 0 1rem;
+  color: #a1a1aa;
+  font-size: 0.75rem;
+}
+
+.inner {
+  /* 1) 화면 너비 100% 중에서… */
+  width: 100%;
+
+  /* 2) 최대 너비 1780px (1920−30×2) */
+  max-width: 1860px;
+
+  /* 3) 좌우 70px 패딩, 반응형 대응 */
+  padding: 12px 30px;
+  box-sizing: border-box;
+  /* 전역으로 이미 적용돼 있을 거예요 */
+
+  /* 4) 컨테이너 중앙 고정 */
+  margin: 0 auto;
+
+  /* 6) 내용은 왼쪽 정렬 */
+  text-align: left;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #2a2f3a;
+  margin: 0 0 1rem;
+  /* 선 아래 여백 */
+  width: 100%;
+}
+
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.menu a {
+  color: #e0e0e0;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.menu a:hover {
+  color: var(--color-primary);
+}
+
+.info {
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  
+  font-size: 0.9rem;
+}
+
+.info p {
+  margin: 0.3rem 0;
+}
+
+.linkInfo {
+  color: #a1a1aa;
+  text-decoration: underline;
+  margin: 0 0.25rem;
+  letter-spacing: 0.03em;
+}
+
+.copy {
+  color: #6b7280;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+/* 반응형: 테블릿 이하에서는 패딩 축소 */
+@media (max-width: 1024px) {
+  .inner {
+    padding: 16px 32px;
+  }
+}
+
+/* 모바일 이하에서는 더 축소 */
+@media (max-width: 600px) {
+  .inner {
+    padding: 8px 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .inner {
+    padding: 10px 10px;
+  }
+  .menu {
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .info {
+    font-size: 0.85rem;
+  }
+  .copy {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .inner {
+    padding: 4px 4px;
+  }
+  .menu {
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  .info {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  .copy {
+    font-size: 0.6rem;
+    margin-top: 0.2rem;
+  }
+}

@@ -1,0 +1,106 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Pretendard', sans-serif;
+}
+
+.modalContent {
+    background: #181818;
+    border-radius: 10px;
+    width: 350px;
+    height: 50%;
+    max-width: 95vw;
+    padding: 24px 24px 24px 24px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+    position: relative;
+    font-family: 'Pretendard', sans-serif;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.modalHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.title {
+    font-size: 1.3rem;
+    font-weight: 500;
+    text-align: left;
+    margin: 0;
+}
+
+.closeBtn {
+    position: static;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin-left: auto;
+}
+
+.closeBtn:hover {
+    color: #fff;
+}
+
+.follwerCount {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #aaa;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.followerItem {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.profileImg {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    border: 1px solid #aaa;
+}
+
+.nickname {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    background: #393943;
+    margin: 10px 0 15px 0;
+    border: none;
+}
+
+.empty {
+    text-align: center;
+    color: #888;
+    padding: 32px 0;
+}

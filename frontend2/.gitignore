@@ -1,0 +1,21 @@
+# ========== Node (React) ==========
+frontend/node_modules/
+frontend/build/
+frontend/.env*
+
+# ========== Java (Spring Boot) ==========
+backend/target/
+backend/.idea/
+backend/.classpath
+backend/.project
+backend/.settings/
+*.iml
+
+# ========== OS/Tool Related ==========
+.DS_Store
+Thumbs.db
+*.log
+
+# ========== VSCode ==========
+.vscode/
+node_modules

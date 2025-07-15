@@ -1,0 +1,266 @@
+/* src/components/FilmerLoginPage/FilmerLoginPage.module.css */
+
+/* ─── 너비 조절 변수 ─── */
+:root {
+  /* 입력창 너비 */
+  --input-width: 450px;
+  /* 버튼 너비 */
+  --button-width: 450px;
+}
+
+/* ────────────────────── */
+
+/* 1) 화면 전체 wrapper (폼 박스 없음) */
+.outer {
+  height: 100%; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 16px;
+  background: #060D15;
+  color: #E0E0E0;
+  transform: scale(1.2);
+  transform-origin: center center;
+}
+
+/* 2) 로고 & 타이틀 */
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* 3) form 레이아웃 (투명 박스) */
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  /* background/padding/shadow 전부 제거 */
+}
+
+/* 4) 입력 그룹 */
+.inputGroup {
+  position: relative;
+}
+
+/* 5) 입력 필드 (고정 너비) */
+.input {
+  width: var(--input-width);
+  padding: 1.25rem 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background: #262626;
+  color: #A7A7A7;
+  outline: none;
+}
+
+.input::placeholder {
+  color: #777;
+}
+
+/* 6) Eye 토글 버튼 */
+.eyeBtn {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.eyeIcon {
+  width: 1.5rem;
+  height: 1.25rem;
+  object-fit: contain;
+  display: block;
+  color: #777;
+}
+
+.checkIcon {
+  width: 1rem;
+  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+  display: block;
+}
+
+/* 7) 자동 로그인 */
+.autoLogin {
+  align-self: flex-start; /* 폼 왼쪽 끝에 붙도록 */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #A7A7A7;
+  cursor: pointer;
+}
+
+.autoLogin input {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #555;
+  border-radius: 50%;
+  position: relative;
+}
+
+.autoLogin input:checked {
+  background-color: #555;
+}
+
+.autoLogin input:checked::after {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0.35rem;
+  width: 0.25rem;
+  height: 0.5rem;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* 8) 버튼 스타일 (고정 너비) */
+.primaryBtn,
+.secondaryBtn {
+  width: var(--button-width);
+  padding: 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.primaryBtn {
+  background: #404040;
+  color: #ADADAD;
+  margin-top: 1.5rem;
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  cursor: default;
+}
+
+.primaryBtn:enabled {
+  background-color: #F4BB1F;
+  color: #ffffff;
+}
+
+.secondaryBtn {
+  background: #6B6B6B;
+  color: #BEBEBE;
+}
+
+.secondaryBtn:hover {
+  background: rgb(85, 85, 85);
+}
+
+/* 9) 하단 링크 */
+.links {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #A7A7A7;
+}
+
+.links a {
+  color: #A7A7A7;
+  text-decoration: none;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* 10) 안내 문구 */
+.note {
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+  color: #686868;
+  text-align: center;
+  max-width: var(--input-width);
+}
+
+.note a {
+  color: #777;
+  text-decoration: underline;
+}
+
+/* ──────── 반응형 추가 ──────── */
+@media (max-width: 1024px) {
+  :root {
+    --input-width: 380px;
+    --button-width: 380px;
+  }
+  .title {
+    font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --input-width: 300px;
+    --button-width: 300px;
+  }
+  .title {
+    font-size: 1.2rem;
+  }
+  .input {
+    font-size: 0.95rem;
+    padding: 1rem 2.2rem 1rem 1rem;
+  }
+  .primaryBtn,
+  .secondaryBtn {
+    font-size: 0.95rem;
+    padding: 0.85rem;
+  }
+  .note {
+    font-size: 0.7rem;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --input-width: 90vw;
+    --button-width: 90vw;
+  }
+  .outer {
+    padding: 32px 4px;
+  }
+  .title {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  .primaryBtn,
+  .secondaryBtn {
+    font-size: 0.9rem;
+    padding: 0.7rem;
+  }
+  .input {
+    font-size: 0.9rem;
+    padding: 0.7rem 2rem 0.7rem 0.7rem;
+  }
+  .note {
+    font-size: 0.65rem;
+    margin-top: 0.7rem;
+  }
+  .links {
+    font-size: 0.8rem;
+    margin-top: 1rem;
+  }
+}
+
+/* 최소/최대 너비 제한 */
+.input, .primaryBtn, .secondaryBtn {
+  min-width: 180px;
+  max-width: 100vw;
+}

@@ -1,0 +1,109 @@
+.sliderWrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.slider {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  height: 640px;
+}
+
+@media (min-width: 768px) {
+  .slider {
+    height: 500px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .slider {
+    height: 600px;
+  }
+}
+
+.slide {
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  border-radius: 1rem;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.firstBanner {
+  margin-left: 70px;
+}
+
+.indicatorWrapper {
+  position: absolute;
+  right: 8rem;
+  bottom: 2.5rem;
+  display: flex;
+  gap: 0.6rem;
+  z-index: 5;
+}
+
+.indicatorDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #888;
+  opacity: 0.5;
+  transition: background 0.2s, opacity 0.2s;
+  display: inline-block;
+}
+
+.activeDot {
+  background: #fff;
+  opacity: 1;
+}
+
+/* 좌우 버튼 */
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  z-index: 4;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navBtn img {
+  width: 2rem;
+  height: 2rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.navBtn:hover img {
+  opacity: 1;
+}
+
+.left {
+  left: 0.4rem;
+}
+
+.right {
+  right: 0.4rem;
+}
+
+/* 제목 */
+.title {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 3px black;
+}

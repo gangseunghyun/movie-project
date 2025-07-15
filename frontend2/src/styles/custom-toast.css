@@ -1,0 +1,21 @@
+/* custom-toast.css */
+.Toastify__toast {
+  font-size: 14px;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.Toastify__toast--success {
+  background: #1e90ff; /* 파란색 성공 알림 */
+  color: #fff;
+}
+
+.Toastify__toast--error {
+  background: #ff4d4f; /* 진한 빨강 에러 알림 */
+  color: #fff;
+}
+
+.Toastify__progress-bar {
+  background: rgba(255, 255, 255, 0.4);
+  height: 4px;
+}

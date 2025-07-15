@@ -1,0 +1,242 @@
+
+:root {
+  --input-width: 450px;
+  --button-width: 450px;
+}
+
+.outer {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 16px 0 16px;
+  background: #060D15;
+  color: #E0E0E0;
+  transform: scale(1.2);
+  transform-origin: center center;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  text-align: center;
+  width: min(100%, var(--element-width));
+}
+
+
+.inputGroup {
+  width: min(100%, var(--element-width));
+  display: flex;
+  gap: 0.5rem;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+
+}
+
+.inputGroupRow {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  width: min(100%, var(--element-width));
+  position: relative;
+  align-items: flex-start;
+  /* 설명글이 있어도 정렬 깨지지 않게 */
+  flex-wrap: nowrap;
+}
+
+.input {
+  flex: 1;
+  width: var(--element-width);
+  padding: 1.25rem 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background: #262626;
+  color: #A7A7A7;
+  outline: none;
+}
+
+.input::placeholder {
+  color: #777;
+}
+
+.button {
+  width: 150px;
+  padding: 1rem 1rem;
+  background: none;
+  color: #ccc;
+  border: #3D3D3D 1px solid;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.inputDesc {
+  font-size: 0.75rem;
+  /* 작게 */
+  color: #777;
+  /* 회색 계열 */
+  padding-left: 2px;
+  /* 살짝 들여쓰기하면 더 자연스러움 */
+}
+
+.invalid {
+  color: #ff5c5c !important;
+}
+
+.checkboxGroup {
+  width: min(100%, var(--element-width));
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  color: #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkboxRow img {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.checkboxRow img:first-child {
+  margin-left: 4px;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.bigCheckIcon {
+  margin-left: 0px !important;
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+.nextIcon {
+  object-fit: contain;
+  display: block;
+  margin-left: auto;
+}
+
+.submitBtn {
+  width: min(100%, var(--element-width));
+  padding: 1rem;
+  font-size: 1rem;
+  background: #F4BB1F;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.submitBtn:disabled {
+  background: #444;
+  color: #888;
+  cursor: default;
+}
+
+.loginLink {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.loginLink a {
+  color: #eee;
+  text-decoration: underline;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  :root {
+    --input-width: 380px;
+    --button-width: 380px;
+  }
+  .title {
+    font-size: 1.7rem;
+  }
+  .submitBtn {
+    font-size: 0.95rem;
+    padding: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --input-width: 300px;
+    --button-width: 300px;
+  }
+  .title {
+    font-size: 1.2rem;
+  }
+  .input {
+    font-size: 0.95rem;
+    padding: 1rem 0.8rem;
+  }
+  .button {
+    font-size: 0.95rem;
+    padding: 0.85rem 0.85rem;
+  }
+  .submitBtn {
+    font-size: 0.9rem;
+    padding: 0.8rem;
+  }
+  .inputDesc {
+    font-size: 0.7rem;
+  }
+  .loginLink {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --input-width: 90vw;
+    --button-width: 90vw;
+  }
+  .outer {
+    padding: 32px 4px 0 4px;
+  }
+  .title {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  .input {
+    font-size: 0.9rem;
+    padding: 0.7rem 0.7rem;
+  }
+  .button {
+    font-size: 0.9rem;
+    padding: 0.7rem 0.7rem;
+    width: 100px;
+  }
+  .submitBtn {
+    font-size: 0.85rem;
+    padding: 0.7rem;
+  }
+  .inputDesc {
+    font-size: 0.65rem;
+  }
+  .loginLink {
+    font-size: 0.7rem;
+    margin-top: 0.7rem;
+  }
+}
+
+/* 최소/최대 너비 제한 */
+.input, .submitBtn, .button {
+  min-width: 120px;
+  max-width: 100vw;
+}

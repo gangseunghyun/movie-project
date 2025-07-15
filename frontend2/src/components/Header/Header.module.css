@@ -1,0 +1,294 @@
+/* src/components/Header/Header.module.css */
+
+.header {
+  background: var(--color-bg);
+  padding: 1.5rem 0;
+
+  /* 위아래 높이는 기존 그대로 유지하세요 */
+}
+
+.inner {
+  /* 1) 전체 폭 100% 중에서… */
+  width: 100%;
+
+  /* 2) 최대 콘텐츠 너비는 1780px (=1920−50×2) */
+  max-width: 1860px;
+
+  /* 3) 양쪽 50px씩 고정 패딩 */
+  padding: 0 50px;
+
+  /* 4) 중앙 정렬 */
+  margin: 0 auto;
+
+  /* 기존 flex 배치는 그대로 */
+  display: flex;
+  align-items: center;
+}
+
+.logo img {
+  height: 2rem;
+  /* 필요하다면 크기 조절 */
+}
+
+.nav {
+  margin-left: auto;
+}
+
+.link {
+  color: var(--color-text);
+  font-size: 1rem;
+  padding: 0 1rem;
+}
+
+.link:hover {
+  color: var(--color-primary);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  /* 아이콘, 프로필, 닉네임 간격 */
+}
+
+.icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: 15px;
+  cursor: pointer;
+}
+
+.profileInline {
+  display: flex;
+  align-items: center;
+  /* 세로 가운데 정렬 */
+  gap: 0.85rem;
+  /* 이미지와 닉네임 사이 간격 */
+}
+
+.profileImg {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: #333;
+  object-fit: cover;
+  border: 1.5px solid #444;
+}
+
+.nickname {
+  color: #ccc;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.profileWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profileMenu {
+  opacity: 0;
+  pointer-events: none;
+
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: #222;
+  color: #A7A7A7;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  width: 280px;
+  min-width: 220px;
+  z-index: 2001;
+  padding: 18px 0 10px 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profileTop {
+  display: flex;
+  align-items: center;
+  padding: 0 20px 10px 20px;
+}
+
+.menuProfileImg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.menuNickname {
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 2px;
+  color: #fff;
+}
+
+.menuSwitch {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.menuDivider {
+  height: 1px;
+  background: #333;
+  margin: 8px 0;
+}
+
+.menuItem {
+  padding: 10px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.menuShow {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  /* 아래로 내려옴 */
+}
+
+.menuHide {
+  opacity: 0;
+  pointer-events: none;
+
+}
+
+.menuItem:hover {
+  background: #333;
+  color: #fff
+}
+
+/* 반응형: 화면이 좁아지면 패딩 줄이기 */
+@media (max-width: 1024px) {
+  .inner {
+    padding: 0 32px;
+    /* 태블릿 이하에선 32px 여백 */
+  }
+}
+
+@media (max-width: 600px) {
+  .inner {
+    padding: 0 16px;
+    /* 모바일에선 16px 여백 */
+  }
+}
+
+@media (max-width: 768px) {
+  .inner {
+    padding: 0 10px;
+  }
+
+  .logo img {
+    height: 1.2rem;
+  }
+
+  .link {
+    font-size: 0.9rem;
+    padding: 0 0.5rem;
+  }
+
+  .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 8px;
+
+  }
+
+  .profileImg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nickname {
+    font-size: 13px;
+  }
+
+  .menuProfileImg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .menuNickname {
+    font-size: 16px;
+  }
+
+  .menuItem {
+    font-size: 15px;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .inner {
+    padding: 0 4px;
+  }
+
+  .logo img {
+    height: 1rem;
+  }
+
+  .link {
+    font-size: 0.8rem;
+    padding: 0 0.2rem;
+  }
+
+  .icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-right: 4px;
+  }
+
+  .profileImg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .nickname {
+    font-size: 10px;
+  }
+
+  .menuProfileImg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .menuNickname {
+    font-size: 12px;
+  }
+
+  .menuItem {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}
+
+.stickyHeader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: var(--color-bg, #181c22);
+  padding: 1.5rem 0;
+  opacity: 0.95;
+}
+
+.searchCloseBtn {
+  background: none;
+  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #fff;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.activeSearch {
+  background: #000 !important;
+  opacity: 1 !important;
+  transition: background 0.2s;
+}

@@ -1,0 +1,130 @@
+.body {
+  background: var(--color-bg);
+  min-height: 45vh;
+  color: #fff;
+  max-width: 1920px;
+  width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.section {
+  margin: 40px 0 0 0;
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 12px 0 24px 70px;
+  letter-spacing: -1px;
+}
+
+.cardList {
+  display: flex;
+  gap: 1.2rem;
+  margin-left: 70px;
+  min-height: 320px;
+}
+
+.sliderWrapper {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-left: 70px;
+}
+
+.navBtn {
+  position: absolute;
+  top: 30%;
+  background: none;
+  border: none;
+  z-index: 4;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 2rem;
+  color: #fff;
+  opacity: 0.7;
+}
+
+.navBtn:hover {
+  opacity: 1;
+}
+
+.navBtn img {
+  width: 2rem;
+  height: 2rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.navBtn:hover img {
+  opacity: 1;
+}
+
+.left {
+  left: 0.4rem;
+}
+
+.right {
+  right: 0.4rem;
+}
+
+/* 인물 카드 */
+.actorCard {
+  min-width: 180px;
+  width: 180px;
+  height: 290px;
+  background: var(--color-bg);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.actorCard:hover {
+  transform: scale(1.08);
+}
+
+.actorImg {
+  width: 100%;
+  height: 220px;
+  background: #aaa;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.actorName {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.actorRole {
+  font-size: 1rem;
+  color: #bbb;
+}
+
+.divider {
+  width: 93%;
+  border: none;
+  border-top: 1.5px solid #2c323a;
+  margin: 40px auto 0 auto;
+}
+
+.emptyMessage {
+  text-align: left;
+  color: #bbb;
+  font-size: 1.2rem;
+  margin: 32px 0 32px 82px;
+  
+}

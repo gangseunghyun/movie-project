@@ -1,0 +1,237 @@
+.main {
+    background: var(--color-bg);
+    min-height: 100vh;
+    color: #fff;
+    max-width: 1920px;
+    width: 100%;
+    margin: 0 auto;
+    overflow-x: hidden;
+    padding-top: 80px;
+}
+
+.section {
+    margin: 64px 0 0 0;
+}
+
+.sectionTitle {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 40px 0 24px 70px;
+    letter-spacing: -1px;
+}
+
+.posterImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+.searchBarWrap {
+    width: 80%;
+    display: flex;
+    align-items: center;
+    margin-bottom: 36px;
+    margin-top: 36px;
+    margin-left: auto;
+    /* 추가 */
+    margin-right: auto;
+}
+
+.searchInput {
+    flex: 1;
+    height: 5rem;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 4px;
+    padding: 0 20px;
+    background: #272727;
+    color: #fff;
+    outline: none;
+}
+
+.searchIcon {
+    width: 3rem;
+    height: 3rem;
+    margin-left: -5rem;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+
+.cardList {
+    display: flex;
+    gap: 1.2rem;
+    margin-left: 70px;
+    min-height: 320px;
+}
+
+.movieCardDummy {
+    width: 240px;
+    height: 320px;
+    background: #bdbdbd33;
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #fff;
+    padding-bottom: 18px;
+}
+
+.sliderWrapper {
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+    overflow: visible;
+}
+
+
+.slider {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-left: 70px;
+}
+
+.navBtn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    z-index: 4;
+    cursor: pointer;
+    padding: 0.5rem;
+    font-size: 2rem;
+    color: #fff;
+    opacity: 0.7;
+}
+
+.navBtn:hover {
+    opacity: 1;
+}
+
+.left {
+    left: 0.4rem;
+}
+
+.right {
+    right: 0.4rem;
+}
+
+/* 인물 카드 */
+.actorCard {
+    width: 180px;
+    height: 320px;
+    background: var(--color-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    transition: transform 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.actorCard:hover {
+    transform: scale(1.08);
+}
+
+.actorImg {
+    width: 100%;
+    height: 220px;
+    background: #aaa;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.actorName {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.actorRole {
+    font-size: 1rem;
+    color: #bbb;
+}
+
+/* 유저 카드 */
+.userCard {
+    width: 180px;
+    height: 260px;
+    background: var(--color-bg);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    transition: transform 0.18s cubic-bezier(0.4,0,0.2,1);
+    cursor: pointer;
+    padding: 20px 0 16px 0;
+}
+
+.userCard:hover {
+    transform: scale(1.08);
+}
+
+.userImg {
+    width: 120px;
+    height: 120px;
+    background: #aaa;
+    border-radius: 50%;
+    margin-bottom: 12px;
+}
+
+.userName {
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 0 10px;
+}
+
+.userFollowStats {
+    font-size: 0.9rem;
+    color: #bbb;
+    text-align: center;
+    padding: 0 10px;
+    margin-bottom: 12px;
+}
+
+.followButton {
+    width: 80%;
+    height: 32px;
+    border: none;
+    border-radius: 16px;
+    background: #007bff;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: auto;
+}
+
+.followButton:hover {
+    background: #0056b3;
+}
+
+.followButton:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+.followButton.following {
+    background: #6c757d;
+}
+
+.followButton.following:hover {
+    background: #545b62;
+}
+
+.emptyMessage {
+    text-align: left;
+    color: #bbb;
+    font-size: 1.2rem;
+    margin: 32px 0 32px 82px;
+}

@@ -1,0 +1,707 @@
+.bookingPage {
+  min-height: 100vh;
+  background-color: #060D15;
+  padding: 20px 0;
+  margin-top: 50px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #b0b8c1;
+}
+
+/* 헤더 스타일 */
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  
+}
+
+.backButton {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #4a9eff;
+  cursor: pointer;
+  padding: 10px;
+  margin-right: 20px;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background-color: #1a2332;
+}
+
+.title {
+  font-size: 40px;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 0 0 18px 0;
+  text-align: center;
+  width: 100%;
+  display: block;
+  letter-spacing: -1px;
+}
+
+/* 영화 정보 스타일 */
+.movieInfo {
+  display: flex;
+  align-items: center;
+  background: #0f1419;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 30px;
+  border: 1px solid #1a2332;
+}
+
+.poster {
+  width: 120px;
+  height: 180px;
+  margin-right: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.movieDetails {
+  flex: 1;
+}
+
+.movieTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+}
+
+.movieMeta {
+  display: flex;
+  gap: 15px;
+  color: #b0b8c1;
+  font-size: 14px;
+}
+
+.movieMeta span {
+  background-color: #1a2332;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #b0b8c1;
+}
+
+/* 섹션 공통 스타일 */
+.section {
+  background: #0f1419;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 20px;
+  border: 1px solid #1a2332;
+  width: 640px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 0 0 20px 0;
+}
+
+/* 상영관 선택 스타일 */
+.theaterList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.theaterButton {
+  background: #23232b;
+  border: 2px solid #23232b;
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #fff;
+  font-size: 15px;
+}
+.theaterButton:hover {
+  border-color: #ff1744;
+  background-color: #1a1a1f;
+  color: #fff;
+}
+.theaterButton.selected {
+  border: 2px solid #ff3b3b;
+  background: #1a1a1f;
+}
+
+.theaterName {
+  font-size: 15px;
+  font-weight: 550;
+  color: #ffffff;
+  margin-bottom: 3px;
+}
+
+.theaterLocation {
+  font-size: 13px;
+  color: #b0b8c1;
+}
+
+/* 날짜 선택 스타일 */
+.dateList {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dateButton {
+  background: #23232b;
+  border: 2px solid #23232b;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500 !important;
+  color: #fff;
+  
+}
+.dateButton:hover {
+  border-color: #ff1744;
+  background-color: #1a1a1f;
+  color: #fff;
+}
+
+.dateButton.selected {
+  border-color: #ff1744;
+  background-color: #ff1744;
+  color: white;
+}
+
+/* 시간 선택 스타일 */
+.timeList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.timeButton {
+  background: #23232b;
+  border: 2px solid #23232b;
+  border-radius: 8px;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  min-width: 80px;
+  color: #fff;
+  font-weight: 500 !important;
+}
+.timeButton:hover {
+  border-color: #ff1744;
+  background-color: #1a1a1f;
+  color: #fff;
+}
+
+.timeButton.selected {
+  border-color: #ff1744;
+  background-color: #ff1744;
+  color: white;
+}
+
+/* 좌석 선택 스타일 */
+.seatMap {
+  text-align: center;
+}
+
+.screen {
+  background: linear-gradient(45deg, #1a2332, #2a3441);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+  font-weight: bold;
+  font-size: 16px;
+  border: 1px solid #ff1744;
+}
+
+.seats {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+}
+
+.seatRow {
+  display: flex;
+  gap: 5px;
+}
+
+.seat {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #23232b;
+  border-radius: 5px;
+  background: #23232b;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 500 !important;
+}
+.seat:hover {
+  border-color: #ff1744;
+  background-color: #1a1a1f;
+  color: #fff;
+}
+
+.seat.selected {
+  border-color: #ff1744;
+  background-color: #ff1744;
+  color: white;
+}
+
+.seat.reserved {
+  background: #3a3d42;
+  color: #aaa;
+  border: 2px solid #555;
+  cursor: not-allowed;
+  position: relative;
+}
+.seat.disabled {
+  background: #23272e;
+  color: #888;
+  border: 2px solid #444;
+  cursor: not-allowed;
+  position: relative;
+}
+.seat.disabled::after {
+  content: '';
+}
+
+/* 선택된 좌석 표시 */
+.selectedSeats {
+  background: #1e3a5f;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #4a9eff;
+}
+
+.selectedSeats h4 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+/* 예매 버튼 스타일 */
+.bookingButtonContainer {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.bookingButton {
+  background: linear-gradient(135deg, #ff3b3b, #d32f2f);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 59, 59, 0.3);
+}
+
+.bookingButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff5252, #e53935);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 59, 59, 0.4);
+}
+
+.bookingButton:disabled {
+  background: #2a3441;
+  color: #666;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+.cancelButton {
+  background: #23272e;
+  color: #b0b8c1;
+  border: none;
+  padding: 15px 32px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-right: 12px;
+}
+.cancelButton:hover:not(:disabled) {
+  background: #2a3441;
+  color: #fff;
+}
+
+/* legend 스타일 */
+.seatLegend {
+  display: flex;
+  gap: 18px;
+  margin-top: 30px;
+  font-size: 15px;
+  color: #b0b8c1;
+  align-items: center;
+  justify-content: center;
+}
+.seatLegend > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.seatLegend .seat {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  min-width: 22px;
+  min-height: 22px;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+  
+  .movieInfo {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .poster {
+    margin-right: 0;
+    margin-bottom: 15px;
+  }
+  
+  .theaterList {
+    grid-template-columns: 1fr;
+  }
+  
+  .dateList,
+  .timeList {
+    justify-content: center;
+  }
+  
+  .seat {
+    width: 35px;
+    height: 35px;
+    font-size: 10px;
+  }
+  
+  .bookingButton {
+    width: 100%;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 24px;
+  }
+  
+  .section {
+    padding: 20px;
+  }
+  
+  .seat {
+    width: 30px;
+    height: 30px;
+    font-size: 9px;
+  }
+} 
+
+.bookingSummary {
+  display: flex;
+  align-items: center;
+  background: #181e29;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  padding: 18px 24px;
+  margin-top: 30px;
+  color: #fff;
+  border: 1px solid #1a2332;
+  gap: 18px;
+  width: 100%;
+}
+.summaryPoster img {
+  width: 87px;
+  height: 125px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.summaryInfo {
+  flex: 1;
+}
+.summaryTitle {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.summaryMeta {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  color: #b0b8c1;
+  margin-bottom: 10px;
+}
+.summaryMeta span {
+  background: #1a2332;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.summaryDetail > div {
+  font-size: 14px;
+  margin-bottom: 3px;
+  color: #e0e6ed;
+} 
+
+.paymentPage {
+  max-width: 480px;
+  margin: 40px auto;
+  background: #18181c;
+  border-radius: 12px;
+  padding: 32px 24px;
+  color: #fff;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+.paymentTitle {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.paymentSubTitle {
+  color: #b0b8c1;
+  font-size: 15px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.paymentSummaryBox {
+  background: #23232b;
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 28px;
+}
+.paymentSummaryTitle {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.paymentSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.paymentPrice {
+  color: #ff3b3b;
+  font-weight: bold;
+  font-size: 17px;
+}
+.paymentPeriod {
+  color: #b0b8c1;
+  font-size: 13px;
+  margin-left: 4px;
+}
+.paymentSectionTitle {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.paymentMethodList {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.paymentMethodBtn {
+  flex: 1;
+  background: #23232b;
+  color: #fff;
+  border: 2px solid #23232b;
+  border-radius: 8px;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: border 0.2s, background 0.2s;
+}
+.paymentMethodBtn.selected, .paymentMethodBtn:hover {
+  border: 2px solid #ff3b3b;
+  background: #1a1a1f;
+}
+.paymentAgreement {
+  margin-bottom: 18px;
+}
+.paymentAgreement label {
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.paymentAgreementList {
+  margin: 10px 0 0 0;
+  padding-left: 18px;
+  color: #b0b8c1;
+  font-size: 14px;
+}
+.paymentNotice {
+  color: #b0b8c1;
+  font-size: 13px;
+  margin-bottom: 24px;
+  line-height: 1.6;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.paymentButtonContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+} 
+
+.theaterButton, .dateButton, .timeButton, .seat {
+  flex: 1;
+  background: #23232b;
+  color: #fff;
+  border: 2px solid #23232b;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: border 0.2s, background 0.2s;
+}
+.theaterButton.selected, .dateButton.selected, .timeButton.selected, .seat.selected,
+.theaterButton:hover, .dateButton:hover, .timeButton:hover, .seat:hover {
+  border: 2px solid #ff3b3b;
+  background: #1a1a1f;
+  color: #fff;
+}
+
+/* 개별 버튼 크기/간격 등은 기존 스타일 유지 */
+.theaterButton { padding: 15px; text-align: left; }
+.dateButton { padding: 12px 20px; font-size: 14px; }
+.timeButton { padding: 10px 15px; font-size: 14px; min-width: 80px; }
+.seat { width: 40px; height: 40px; font-size: 12px; display: flex; align-items: center; justify-content: center; } 
+
+.movieInfoHeader {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 32px;
+  background: linear-gradient(90deg, #10151e 60%, #181e29 100%);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  border: 1.5px solid #1a2332;
+  padding: 32px 0 32px 0;
+}
+
+.movieInfoHeaderInner {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.movieInfoSectionTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #ff3b3b;
+  margin-bottom: 18px;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.movieInfoContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+}
+
+.moviePosterWrap {
+  flex: 0 0 auto;
+  width: 120px;
+  height: 170px;
+  margin-right: 0;
+  background: #222;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+
+.moviePoster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.movieInfoText {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-width: 220px;
+}
+
+.movieTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.movieMetaLine {
+  font-size: 1.1rem;
+  color: #bdbdbd;
+  margin-bottom: 4px;
+} 
+
+.noScheduleMsg {
+  color: #b0b8c1;
+  text-align: left;
+  width: 100%;
+  padding: 6px 0;
+  font-size: 15px;
+} 

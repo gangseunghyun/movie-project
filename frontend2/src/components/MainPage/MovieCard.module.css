@@ -1,0 +1,131 @@
+:root {
+  --poster-height: 360px;
+}
+
+.card {
+  width: 240px;
+  min-width: 240px;
+  height: 360px+120px;
+  background: --color-bg;
+
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.10);
+  z-index: 3;
+}
+
+.poster {
+  width: 100%;
+  height: 360px;
+  /* 원하는 고정 높이 */
+  max-height: 360px;
+  background: #444;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* 순위(번호) 배치용 */
+  overflow: hidden;
+  /* 이미지가 넘치면 잘리게 */
+}
+
+.posterImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 비율 유지하며 꽉 채우기, 넘치는 부분은 잘림 */
+  border-radius: 14px;
+  display: block;
+}
+
+.title {
+  margin-top: 0.5rem;
+  font-size: 1.4rem;
+  color: #fff;
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  /* 한 줄로만 표시 */
+  overflow: hidden;
+  /* 넘치는 부분 숨김 */
+  text-overflow: ellipsis;
+  /* ...으로 표시 */
+  width: 100%;
+  /* 카드 너비에 맞춤 */
+  box-sizing: border-box;
+}
+
+.info {
+  font-size: 1rem;
+  color: #fff;
+
+  text-align: center;
+}
+
+.comingSoonDate {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.dDayBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(65, 65, 65, 0.85);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  padding: 2px 10px;
+  z-index: 2;
+}
+
+.ratingLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+
+}
+
+.star {
+  color: #ffd700;
+  font-size: 1.1rem;
+}
+
+.rating {
+  color: #ffd700;
+  font-size: 1.1rem;
+}
+
+.audience {
+  font-size: 0.9rem;
+  color: #fff;
+  opacity: 0.8;
+  text-align: center;
+
+}
+
+.posterRank {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(65, 65, 65, 0.85);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  padding: 2px 10px;
+  z-index: 2;
+}

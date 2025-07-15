@@ -1,0 +1,79 @@
+.privacyTableWrapper {
+  width: 95%;
+  overflow-x: auto;
+  margin: 24px 0;
+}
+
+.privacyTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: none;
+  color: #aaa;
+  font-size: 15px;
+  min-width: 400px;
+  
+}
+
+.privacyTable th,
+.privacyTable td {
+  border: 1px solid #333;
+  padding: 16px 12px;
+  text-align: left;
+  vertical-align: top;
+  vertical-align: middle;
+}
+
+.privacyTable th {
+  background: #232323;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.modaltext {
+    margin-bottom: 20px;
+    margin-right: 20px;
+    color: #aaa;
+}
+
+@media (max-width: 1024px) {
+  .privacyTable {
+    font-size: 14px;
+    min-width: 320px;
+  }
+  .privacyTable th {
+    font-size: 15px;
+  }
+  .privacyTable th, .privacyTable td {
+    padding: 12px 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .privacyTable {
+    font-size: 13px;
+    min-width: 200px;
+  }
+  .privacyTable th {
+    font-size: 13px;
+  }
+  .privacyTable th, .privacyTable td {
+    padding: 8px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .privacyTableWrapper {
+    width: 100%;
+    margin: 10px 0;
+  }
+  .privacyTable {
+    font-size: 11px;
+    min-width: 120px;
+  }
+  .privacyTable th {
+    font-size: 11px;
+  }
+  .privacyTable th, .privacyTable td {
+    padding: 4px 2px;
+  }
+}

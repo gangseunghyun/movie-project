@@ -1,0 +1,54 @@
+/* reset */
+:root {
+  /* 전역 테마 컬러 */
+  --color-bg: #060D15;
+  --color-text: #E5E5E5;
+  --color-primary: #F4BB1F; /* 포인트 색상은 기존처럼 유지 */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+/* 전역 html/body */
+html {
+  font-size: 16px;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Pretendard', sans-serif;
+  line-height: 1.5;
+}
+
+/* 반응형 그리드 컨테이너 */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.outer{
+  padding-top: 80px;
+}
+/* 링크 기본 스타일 제거 */
+a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+/* 이미지 반응형 */
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

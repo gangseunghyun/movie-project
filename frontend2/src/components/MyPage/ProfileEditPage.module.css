@@ -1,0 +1,222 @@
+/* ProfileEditPage.module.css */
+
+.outer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #060D15;
+    color: #E0E0E0;
+    transform: scale(1.2);
+    transform-origin: center center;
+}
+
+.heading {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+    text-align: center;
+}
+
+.formBox {
+    width: 480px;
+    margin: 0 auto;
+}
+
+.profileImgBox {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.profileImgBox:hover {
+    transform: translateY(-6px);
+}
+
+.profileImg {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    opacity: 0.5;
+    position: absolute;
+    top: 0;
+    left: 0;
+
+}
+
+.profileEditBtn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: none;
+    border: none;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+}
+
+.pencilIcon {
+    width: 40px;
+    height: 40px;
+    filter: brightness(1.2);
+}
+
+.input {
+    width: 100%;
+    padding: 1.25rem 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    background: #262626;
+    color: #A7A7A7;
+    outline: none;
+    margin-bottom: 0.5rem;
+}
+
+.descSub {
+    color: #777;
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.buttonGroup {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.primaryBtn,
+.secondaryBtn {
+    flex: 1 1 0;
+    padding: 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.primaryBtn {
+    background: #404040;
+    color: #ADADAD;
+    margin-top: 0;
+}
+
+.primaryBtn:disabled {
+    cursor: default;
+}
+
+.primaryBtn:enabled {
+    background-color: #F4BB1F;
+    color: #ffffff;
+}
+
+.secondaryBtn {
+    background: #6B6B6B;
+    color: #BEBEBE;
+}
+
+.secondaryBtn:hover {
+    background: rgb(85, 85, 85);
+}
+
+.errorMsg {
+    color: red;
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .heading {
+        font-size: 1.25rem;
+    }
+
+    .formBox,
+    .buttonGroup {
+        max-width: 380px;
+    }
+
+    .input {
+        font-size: 0.95rem;
+        padding: 0.7rem 0.8rem;
+    }
+
+    .profileImgBox {
+        width: 90px;
+        height: 90px;
+    }
+
+    .profileImg {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+@media (max-width: 768px) {
+    .heading {
+        font-size: 1.1rem;
+    }
+
+    .formBox,
+    .buttonGroup {
+        max-width: 300px;
+    }
+
+    .input {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.6rem;
+    }
+
+    .profileImgBox {
+        width: 70px;
+        height: 70px;
+    }
+
+    .profileImg {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .heading {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .formBox,
+    .buttonGroup {
+        max-width: 95vw;
+        width: 100%;
+        gap: 0.7rem;
+    }
+
+    .input {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.3rem;
+    }
+
+    .profileImgBox {
+        width: 56px;
+        height: 56px;
+    }
+
+    .profileImg {
+        width: 56px;
+        height: 56px;
+    }
+}

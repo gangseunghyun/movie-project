@@ -1,0 +1,125 @@
+.wrapper {
+  width: 100%;
+  min-height: 100vh;
+  background: none;
+  color: #fff;
+  padding: 70px 0 0 0;
+}
+
+.profileSection {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 70px;
+  flex-direction: column;
+}
+
+
+.photo {
+  width: 140px;
+  height: 180px;
+  background: #ccc;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.name {
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.meta {
+  font-size: 1.1rem;
+  color: #bbb;
+  margin-bottom: 12px;
+}
+
+.divider {
+  width: 93%;
+  border: none;
+  border-top: 1.5px solid #2c323a;
+  margin: 0 auto 20px auto;
+  /* 좌우 auto로 변경 */
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 18px;
+}
+
+.actorCard {
+  width: 180px;
+  height: 300px;
+  background: var(--color-bg);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.actorImg {
+  width: 100%;
+  height: 220px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  overflow: hidden;
+}
+
+.actorPhoto {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eee;
+}
+
+
+.actorName {
+  font-size: 1.5rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+}
+
+.actorRole {
+  font-size: 1.1rem;
+  color: #bbb;
+}
+
+.likeSection {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  margin-left: 60px;
+}
+
+.likeIcon {
+  width: 2rem;
+  height: 2rem;
+  margin-right: 3px;
+  transition: transform 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.likeIcon:hover {
+  transform: scale(1.08);
+}
+
+.likeCount {
+  color: #cecece;
+  font-size: 16px;
+}

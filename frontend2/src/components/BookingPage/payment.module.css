@@ -1,0 +1,210 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.paymentPage {
+  min-width: 630px;
+  min-height: 700px;
+  max-height: 90vh;
+  background: #18181c;
+  border-radius: 12px;
+  padding: 48px 40px;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+.paymentTitle {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.paymentSubTitle {
+  color: #b0b8c1;
+  font-size: 17px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+.paymentSummaryBox {
+  background: #000;
+  padding: 18px 48px;
+  margin-bottom: 32px;
+  width: calc(100% + 80px);
+  margin-left: -40px;
+  margin-right: -40px;
+  box-shadow: none;
+  border: none;
+  border-radius: 8px;
+}
+.paymentSummaryTitle {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+.paymentSummaryRow {
+  display: flex;
+  justify-content: flex-start;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+.paymentPrice {
+  color: #ff3b3b;
+  font-size: 16px;
+  margin-left: 30px;
+}
+.paymentPeriod {
+  color: #b0b8c1;
+  font-size: 16px;
+  margin-left: 4x;
+}
+.paymentSectionTitle {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 14px;
+}
+.paymentMethodList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.paymentMethodBtn {
+  flex: 1;
+  background: #23232b;
+  color: #fff;
+  border: 2px solid #23232b;
+  border-radius: 8px;
+  padding: 18px 0;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: border 0.2s, background 0.2s;
+}
+.paymentMethodBtn.selected, .paymentMethodBtn:hover {
+  border: 2px solid #ff3b3b;
+  background: #1a1a1f;
+}
+.paymentAgreement {
+  margin-bottom: 24px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.bigCheckIcon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.paymentAgreementList {
+  margin: 8px 0 0 0;
+  color: #b0b8c1;
+  font-size: 15px;
+  list-style: none;
+  margin-left: 4px;
+}
+
+.paymentAgreementList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  padding: 4px 0;
+}
+
+.paymentAgreementList li img {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.paymentAgreementList li span {
+  color: #b0b8c1;
+  font-size: 14px;
+}
+.paymentNotice {
+  color: #b0b8c1;
+  font-size: 13px;
+  margin-bottom: 32px;
+  line-height: 1.7;
+}
+
+/* ScrollbarsCustom 스크롤바 숨기기 */
+
+
+:global(.ScrollbarsCustom-ThumbX) {
+  background: transparent !important;
+}
+
+:global(.ScrollbarsCustom-Track) {
+  background: transparent !important;
+}
+
+:global(.ScrollbarsCustom-TrackX) {
+  background: transparent !important;
+}
+.paymentButtonContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cancelButton {
+  flex: 1;
+  background: #18181c;
+  color: #fff;
+  border: 1.5px solid #fff;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 16px 0;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  
+}
+.cancelButton:hover:not(:disabled) {
+  background: #23232b;
+}
+.bookingButton {
+  flex: 1;
+  background: #ff1744;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 16px 0;
+  cursor: pointer;
+  transition: background 0.2s;
+  
+}
+.bookingButton:hover:not(:disabled) {
+  background: #23232b;
+}
+
+.bookingButton:disabled {
+  background: #4a4a4a;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.bookingButton:disabled:hover {
+  background: #4a4a4a;
+} 

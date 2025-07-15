@@ -1,0 +1,29 @@
+.main {
+    background: var(--color-bg);
+    min-height: 100vh;
+    padding-top: 40px;
+    color: #fff;
+    max-width: 1920px;
+    width: 100%;
+    
+    margin: 0 auto;
+    overflow-x: hidden;
+}
+
+.section {
+    margin: 64px 0 0 0;
+}
+
+.sectionTitle {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 40px 0 24px 70px;
+    letter-spacing: -1px;
+}
+
+.posterImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+  }

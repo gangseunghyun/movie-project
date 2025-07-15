@@ -1,0 +1,146 @@
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Pretendard', sans-serif;
+}
+.modalContainer {
+  background: #181818;
+  border-radius: 10px;
+  width: 550px;
+  max-width: 95vw;
+  padding: 32px 24px 24px 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  position: relative;
+  font-family: 'Pretendard', sans-serif;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 12px;
+}
+.title {
+  display: flex;
+  align-items: center;
+}
+.star {
+  color: #FFD600;
+  font-size: 1.1rem;
+  margin-left: 8px;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.closeBtn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.closeBtn:hover {
+  color: #fff;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: #393943;
+  margin: 16px 0 16px 0;
+  border: none;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 250px;
+  background: #181818;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 350;
+  font-family: 'Pretendard', sans-serif;
+  resize: none;
+  margin-bottom: 16px;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.length {
+  color: #aaa;
+  font-size: 0.95rem;
+}
+.saveBtn {
+  background: #FFD600;
+  color: #232328;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 8px 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 30%;
+  height: 40px;
+  font-family: 'Pretendard', sans-serif;
+}
+.saveBtn:disabled {
+  background: #555;
+  color: #aaa;
+  cursor: default;
+} 
+
+.starInputRow {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  justify-content: flex-start;
+  margin-right: auto;
+}
+.starInputLabel {
+  color: #aaa;
+  font-size: 0.95rem;
+  margin-right: 8px;
+}
+.starInputIcons {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+.starIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+.starIcon.disabled {
+  cursor: not-allowed;
+} 
+
+.loadingText {
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-left: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+} 

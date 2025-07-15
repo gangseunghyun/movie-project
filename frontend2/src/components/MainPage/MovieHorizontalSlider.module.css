@@ -1,0 +1,61 @@
+:root {
+  --card-width: 240px;   /* 원하는 카드 가로 크기 */
+  --card-gap: 0.85rem;      /* 원하는 gap (rem 단위) */
+}
+
+.sliderWrapper {
+  position: relative;
+  width: 100%;
+  /* 카드 7개+gap */
+  margin: 0 auto;
+  overflow: visible;
+  /* 중요! */
+}
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: var(--card-gap);
+  flex-direction: row;
+  transition: transform 0.4s;
+}
+
+.first {
+  padding-left: 70px;
+  /* 원하는 여백 */
+}
+
+/* 좌우 버튼 */
+.navBtn {
+  position: absolute;
+  top: calc(var(--poster-height) /2);
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  z-index: 4;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navBtn img {
+  width: 2rem;
+  height: 2rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.navBtn:hover img {
+  opacity: 1;
+}
+
+.left {
+  left: 0.4rem;
+}
+
+.right {
+  right: 0.4rem;
+}
