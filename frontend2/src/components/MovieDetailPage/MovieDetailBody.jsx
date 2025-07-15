@@ -20,6 +20,7 @@ import CommentDetailModal from '../Modal/CommentDetailModal';
 import { useUser } from '../../contexts/UserContext';
 import CommentModal from '../Modal/CommentModal';
 import AllCommentsModal from '../Modal/AllCommentsModal';
+import StillcutGalleryModal from '../Modal/StillcutGalleryModal';
 
 
 const dummySimilar = [
@@ -71,6 +72,9 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const [allCommentsModalOpen, setAllCommentsModalOpen] = useState(false);
   // 코멘트별 별점 상태
   const [commentRatings, setCommentRatings] = useState({});
+  // 스틸컷 갤러리 모달 상태
+  const [stillcutGalleryOpen, setStillcutGalleryOpen] = useState(false);
+  const [selectedStillcutIndex, setSelectedStillcutIndex] = useState(0);
   
   // 비슷한 장르 영화 상태 추가
   const [similarMovies, setSimilarMovies] = useState([]);
@@ -217,6 +221,12 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const handlePrev = () => setStillStart(Math.max(0, stillStart - 1));
   const handleNext = () => setStillStart(Math.min(stillcutsData.length - stillVisible, stillStart + 1));
 
+  // 스틸컷 갤러리 모달 핸들러
+  const handleStillcutClick = (index) => {
+    setSelectedStillcutIndex(index);
+    setStillcutGalleryOpen(true);
+  };
+
   // 댓글 상세 모달 핸들러
   const handleCommentCardClick = (reviewId) => {
     const comment = comments.find(c => c.id === reviewId);
@@ -343,6 +353,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     setEditModalOpen(false);
     setReplyModalOpen(false);
     setAllCommentsModalOpen(false);
+    setStillcutGalleryOpen(false);
   };
 
   return (
@@ -507,6 +518,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                   flex: `0 0 ${stillCardWidth}px`,
                   marginRight: idx !== stillcutsData.length - 1 ? `${stillCardGap}px` : 0
                 }}
+                onClick={() => handleStillcutClick(idx)}
               >
                 <img src={still.imageUrl} alt="스틸컷" className={styles.stillcutImg} />
               </div>
@@ -559,6 +571,13 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
         onClose={() => setAllCommentsModalOpen(false)}
         movieId={movieCd} // 또는 실제 id 변수명
         onCommentClick={handleAllCommentsCommentClick}
+      />
+      {/* 스틸컷 갤러리 모달 */}
+      <StillcutGalleryModal
+        open={stillcutGalleryOpen}
+        onClose={() => setStillcutGalleryOpen(false)}
+        stillcuts={stillcutsData}
+        initialIndex={selectedStillcutIndex}
       />
     </div>
   );
