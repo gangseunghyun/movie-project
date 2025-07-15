@@ -17,7 +17,7 @@ import posterImg from '../../assets/banner1.jpg'; // 임시 포스터 이미지
 import starFull from '../../assets/star_full.svg';
 import starHalf from '../../assets/star_half.svg';
 import starEmpty from '../../assets/star_empty.svg';
-import CommentModal from '../Modal/CommentModal';
+import ReviewModal from '../Modal/ReviewModal';
 import { Bar, Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -236,6 +236,10 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
     };
 
     const handleCommentClick = () => {
+        if (!user) {
+            alert('로그인 후 입력해주세요.');
+            return;
+        }
         if (userRating === 0) {
             alert('별점을 먼저 입력해주세요.');
             return;
@@ -243,8 +247,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
         setCommentModalOpen(true);
     };
     const handleCommentSave = (comment) => {
-        // TODO: 저장 로직 구현
-        //alert('코멘트가 저장되었습니다!\n' + comment);
+        // ReviewModal에서 이미 알림을 보여주므로 여기서는 제거
         setCommentModalOpen(false);
         if (onCommentSaved) onCommentSaved();
     };
@@ -604,7 +607,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
                 </div>
             </div>
             <hr className={styles.detailDivider} />
-            <CommentModal
+            <ReviewModal
                 open={commentModalOpen}
                 onClose={() => setCommentModalOpen(false)}
                 onSave={handleCommentSave}

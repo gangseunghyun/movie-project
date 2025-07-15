@@ -15,12 +15,13 @@ import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
 import shareIcon from '../../assets/share_icon.png';
-import ReplyModal from '../Modal/ReplyModal';
-import CommentDetailModal from '../Modal/CommentDetailModal';
-import { useUser } from '../../contexts/UserContext';
 import CommentModal from '../Modal/CommentModal';
+import ReviewDetailModal from '../Modal/ReviewDetailModal';
+import ReviewCommentsModal from '../Modal/ReviewCommentsModal';
+import { useUser } from '../../contexts/UserContext';
 import AllCommentsModal from '../Modal/AllCommentsModal';
 import StillcutGalleryModal from '../Modal/StillcutGalleryModal';
+import ReviewModal from '../Modal/ReviewModal';
 
 
 const dummySimilar = [
@@ -83,6 +84,8 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   // 스틸컷 갤러리 모달 상태
   const [stillcutGalleryOpen, setStillcutGalleryOpen] = useState(false);
   const [selectedStillcutIndex, setSelectedStillcutIndex] = useState(0);
+  // 댓글 목록 모달 상태
+  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   
   // 비슷한 장르 영화 상태 추가
   const [similarMovies, setSimilarMovies] = useState([]);
@@ -274,7 +277,16 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   // 대댓글(Reply) 모달 핸들러
   const handleReplyIconClick = (e, reviewId) => {
     e.stopPropagation(); // commentCard 클릭 이벤트 버블링 방지
+    
+    if (!user) {
+      alert('로그인 후 입력해주세요.');
+      return;
+    }
+    
+    // 해당 리뷰 정보 찾기
+    const targetComment = comments.find(comment => comment.id === reviewId);
     setSelectedReviewId(reviewId);
+    setSelectedComment(targetComment);
     setReplyModalOpen(true);
   };
 
@@ -391,6 +403,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     setReplyModalOpen(false);
     setAllCommentsModalOpen(false);
     setStillcutGalleryOpen(false);
+    setCommentsModalOpen(false);
   };
 
   return (
@@ -480,7 +493,17 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
               <hr className={styles.commentFooterDivider} />
               <div className={styles.commentFooter}>
                 <span>좋아요 {comment.likeCount ?? 0}</span>
-                <span>댓글 {comment.commentCount ?? 0}</span>
+                <span 
+                  className={styles.commentCount}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedComment(comment);
+                    setCommentsModalOpen(true);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  댓글 {comment.commentCount ?? 0}
+                </span>
 
                 {/* 👇 조건부 버튼 */}
                 {user && user.id === comment.userId && (
@@ -573,7 +596,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       </section>
 
       {/* 댓글 상세 모달 */}
-      <CommentDetailModal
+      <ReviewDetailModal
         open={commentDetailModalOpen}
         onClose={handleCloseAllModals} // 닫기(×) 버튼
         onBack={handleDetailModalClose} // 이전(←) 버튼
@@ -581,8 +604,8 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
         reviewId={selectedReviewId}
         fetchComments={fetchComments}
       />
-      {/* 코멘트 수정 모달 */}
-      <CommentModal
+      {/* 리뷰 수정 모달 */}
+      <ReviewModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         movieTitle={editTarget?.movieNm}
@@ -593,14 +616,15 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
         onEditSave={handleEditSave}
         reviewId={editTarget?.id}
       />
-      {/* 대댓글 작성 모달(기존) */}
-      <ReplyModal
+      {/* 댓글 작성 모달 */}
+      <CommentModal
         open={replyModalOpen}
         onClose={() => setReplyModalOpen(false)}
         reviewId={selectedReviewId}
-        parentId={null}
-        isReply={true}
         onSave={handleReplySave}
+        movieTitle={selectedComment?.movieNm || ''}
+        reviewContent={selectedComment?.content || ''}
+        userId={user?.id}
       />
       {/* 전체 코멘트 모달 */}
       <AllCommentsModal
@@ -615,6 +639,12 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
         onClose={() => setStillcutGalleryOpen(false)}
         stillcuts={stillcutsData}
         initialIndex={selectedStillcutIndex}
+      />
+      {/* 댓글 목록 모달 */}
+      <ReviewCommentsModal
+        isOpen={commentsModalOpen}
+        onClose={() => setCommentsModalOpen(false)}
+        review={selectedComment}
       />
     </div>
   );

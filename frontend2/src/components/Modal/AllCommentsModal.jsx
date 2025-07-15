@@ -4,7 +4,7 @@ import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
 import userIcon from '../../assets/user_icon.png';
-import CommentDetailModal from './CommentDetailModal';
+import ReviewDetailModal from './ReviewDetailModal';
 
 const SORT_OPTIONS = [
   { className: 'date', value: 'latest', label: '최신 순' },

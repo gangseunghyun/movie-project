@@ -4,7 +4,7 @@ import { useUser } from '../../contexts/UserContext';
 import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
-import CommentDetailModal from '../Modal/CommentDetailModal';
+import ReviewDetailModal from '../Modal/ReviewDetailModal';
 import CommentModal from '../Modal/CommentModal';
 import LikedCommentsModal from '../Modal/LikedCommentsModal';
 import MyCommentsModal from '../Modal/MyCommentsModal';
@@ -237,7 +237,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         }}
       />
       {/* 코멘트 상세 모달 */}
-      <CommentDetailModal
+      <ReviewDetailModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onBack={() => {

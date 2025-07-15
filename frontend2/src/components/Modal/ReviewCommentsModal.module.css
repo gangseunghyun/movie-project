@@ -1,0 +1,396 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 24px 16px 24px;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.title {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.movieTitle {
+  color: #cccccc;
+  font-size: 16px;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.divider {
+  height: 1px;
+  background-color: #333333;
+  margin: 0 24px;
+}
+
+/* 로그인 안내 메시지 */
+.loginNotice {
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  margin: 16px 24px;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.loginNotice p {
+  color: #cccccc;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 댓글 섹션 */
+.commentsSection {
+  padding: 0 24px 24px 24px;
+}
+
+/* 영화 정보 및 원본 리뷰 */
+.reviewSection {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid #333333;
+  margin-bottom: 20px;
+}
+
+.moviePoster {
+  flex-shrink: 0;
+}
+
+.moviePoster img {
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #333333;
+}
+
+.reviewInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.reviewInfo .movieTitle {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.reviewContent {
+  color: #cccccc;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.commentsHeader {
+  margin-bottom: 16px;
+}
+
+.commentsCount {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.loading, .error, .noComments {
+  text-align: center;
+  padding: 40px 20px;
+  color: #cccccc;
+  font-size: 14px;
+}
+
+.error {
+  color: #ff6b6b;
+}
+
+/* 댓글 목록 */
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.commentItem {
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid #333;
+  padding: 18px 0 12px 0;
+  background: #232323;
+  margin: 0;
+  border-radius: 0;
+  color: #eee;
+}
+
+.replyItem {
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid #333;
+  padding: 18px 0 12px 0;
+  background: #232323;
+  margin: 0;
+  border-radius: 0;
+  padding-left: 32px;
+  border-left: 2px solid #2196f3;
+  color: #eee;
+}
+
+.commentHeaderLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 2px;
+  color: #eee;
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.replySection {
+  margin-top: 8px;
+  padding-left: 0;
+  border-left: 0;
+}
+
+.profileImage {
+  width: 36px;
+  height: 36px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.profileImage img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #333;
+}
+
+.commentContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.commentText {
+  font-size: 15px;
+  color: #eee;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.timestamp {
+  color: #aaa;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.replyButton, .editButton, .deleteButton {
+  border: none;
+  background: none;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+.replyButton:hover, .editButton:hover, .deleteButton:hover {
+  color: #fff;
+  background: #2a2a2a;
+}
+
+/* 비활성화된 버튼 스타일 */
+.replyButton.disabled, .likeButton.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.replyButton.disabled:hover, .likeButton.disabled:hover {
+  color: #aaa;
+  background: none;
+}
+
+.likeButton {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #aaa;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.likeButton:hover {
+  color: #fff;
+}
+.likeIcon {
+  width: 16px;
+  height: 16px;
+}
+.likeCount {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.replyTextarea, .editTextarea {
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #181818;
+  color: #eee;
+  margin-top: 6px;
+  padding: 8px 10px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.saveButton {
+  background: #2196f3;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
+  margin-right: 4px;
+  font-size: 13px;
+}
+.saveButton:hover {
+  background: #1565c0;
+}
+.cancelButton {
+  background: #333;
+  color: #eee;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.cancelButton:hover {
+  background: #444;
+}
+.editButtons, .replyButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.replyTo {
+  color: #2196f3;
+  font-weight: 600;
+  margin-right: 4px;
+  font-size: 15px;
+}
+
+/* 스크롤바 스타일링 */
+.modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.modal::-webkit-scrollbar-thumb {
+  background: #444444;
+  border-radius: 3px;
+}
+
+.modal::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .header {
+    padding: 20px 20px 12px 20px;
+  }
+  
+  .originalReview {
+    padding: 16px 20px;
+  }
+  
+  .commentsSection {
+    padding: 0 20px 20px 20px;
+  }
+  
+  .title {
+    font-size: 20px;
+  }
+  
+  .movieTitle {
+    font-size: 14px;
+  }
+  .replyItem {
+    padding-left: 16px;
+  }
+  .profileImage {
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+  }
+  .commentText {
+    font-size: 14px;
+  }
+  .replyTo {
+    font-size: 14px;
+  }
+} 

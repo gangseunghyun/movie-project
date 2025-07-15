@@ -70,9 +70,9 @@ public class KobisPopularMovieService {
         int failCount = 0;
         
         try {
-            // 최근 52주간의 박스오피스 데이터를 수집 (주간 TOP-10씩)
-            // 중복 제거 후 200개를 확보하기 위해 더 많은 주간 데이터 수집
-            for (int week = 0; week < 52 && popularMovies.size() < limit; week++) {
+            // 최근 12주간의 박스오피스 데이터만 수집 (52주에서 12주로 변경)
+            // 중복 제거 후 목표 개수를 확보하기 위해 더 많은 주간 데이터 수집
+            for (int week = 0; week < 12 && popularMovies.size() < limit; week++) {
                 LocalDate targetDate = LocalDate.now().minusWeeks(week);
                 String dateStr = targetDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
                 
@@ -94,17 +94,23 @@ public class KobisPopularMovieService {
                         try {
                             MovieListDto movieDto = convertBoxOfficeToMovieListDto(movie);
                             if (movieDto != null && !isDuplicateMovie(popularMovies, movieDto)) {
-                                popularMovies.add(movieDto);
-                                if (!movieListRepository.existsByMovieCd(movieDto.getMovieCd())) {
-                                    MovieList entity = movieListMapper.toEntity(movieDto);
-                                    movieListRepository.save(entity);
-                                    saveCount++;
+                                // 개봉일 필터링: 5년 이내 영화만 포함
+                                if (isRecentMovie(movieDto)) {
+                                    popularMovies.add(movieDto);
+                                    if (!movieListRepository.existsByMovieCd(movieDto.getMovieCd())) {
+                                        MovieList entity = movieListMapper.toEntity(movieDto);
+                                        movieListRepository.save(entity);
+                                        saveCount++;
+                                    } else {
+                                        skipCount++;
+                                    }
+                                    log.debug("박스오피스 영화 추가 및 저장: {} ({}) - 순위: {}, 총 {}개", 
+                                        movieDto.getMovieNm(), movieDto.getMovieCd(), 
+                                        movie.get("rank").asText(), popularMovies.size());
                                 } else {
-                                    skipCount++;
+                                    log.debug("오래된 영화 제외: {} ({}) - 개봉일: {}", 
+                                        movieDto.getMovieNm(), movieDto.getMovieCd(), movieDto.getOpenDt());
                                 }
-                                log.debug("박스오피스 영화 추가 및 저장: {} ({}) - 순위: {}, 총 {}개", 
-                                    movieDto.getMovieNm(), movieDto.getMovieCd(), 
-                                    movie.get("rank").asText(), popularMovies.size());
                             } else if (movieDto != null) {
                                 log.debug("중복 영화 건너뛰기: {} ({})", movieDto.getMovieNm(), movieDto.getMovieCd());
                             }
@@ -126,8 +132,8 @@ public class KobisPopularMovieService {
                 log.info("주간 박스오피스로 {}개만 수집되어 일일 박스오피스 추가 수집 시작", popularMovies.size());
                 int additionalNeeded = limit - popularMovies.size();
                 
-                // 최근 60일간의 일일 박스오피스 추가 수집
-                for (int day = 0; day < 60 && popularMovies.size() < limit; day++) {
+                // 최근 30일간의 일일 박스오피스 추가 수집 (60일에서 30일로 변경)
+                for (int day = 0; day < 30 && popularMovies.size() < limit; day++) {
                     LocalDate targetDate = LocalDate.now().minusDays(day);
                     String dateStr = targetDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
                     
@@ -149,10 +155,16 @@ public class KobisPopularMovieService {
                             try {
                                 MovieListDto movieDto = convertBoxOfficeToMovieListDto(movie);
                                 if (movieDto != null && !isDuplicateMovie(popularMovies, movieDto)) {
-                                    popularMovies.add(movieDto);
-                                    log.info("일일 박스오피스 영화 추가: {} ({}) - 순위: {}, 총 {}개", 
-                                        movieDto.getMovieNm(), movieDto.getMovieCd(), 
-                                        movie.get("rank").asText(), popularMovies.size());
+                                    // 개봉일 필터링: 5년 이내 영화만 포함
+                                    if (isRecentMovie(movieDto)) {
+                                        popularMovies.add(movieDto);
+                                        log.info("일일 박스오피스 영화 추가: {} ({}) - 순위: {}, 총 {}개", 
+                                            movieDto.getMovieNm(), movieDto.getMovieCd(), 
+                                            movie.get("rank").asText(), popularMovies.size());
+                                    } else {
+                                        log.debug("일일 박스오피스 오래된 영화 제외: {} ({}) - 개봉일: {}", 
+                                            movieDto.getMovieNm(), movieDto.getMovieCd(), movieDto.getOpenDt());
+                                    }
                                 }
                             } catch (Exception e) {
                                 log.warn("일일 박스오피스 영화 변환 실패: {}", movie.get("movieNm"), e);
@@ -171,6 +183,19 @@ public class KobisPopularMovieService {
             log.error("KOBIS 박스오피스 영화 가져오기 실패", e);
             return new ArrayList<>();
         }
+    }
+
+    /**
+     * 최근 영화인지 확인 (5년 이내 개봉)
+     */
+    private boolean isRecentMovie(MovieListDto movieDto) {
+        if (movieDto.getOpenDt() == null) {
+            // 개봉일이 없으면 포함 (나중에 상세정보에서 확인)
+            return true;
+        }
+        
+        LocalDate fiveYearsAgo = LocalDate.now().minusYears(5);
+        return !movieDto.getOpenDt().isBefore(fiveYearsAgo);
     }
 
     /**
