@@ -86,7 +86,7 @@ function ActorHorizontalSlider({ data }) {
 
 // 더미 likedMovies 제거
 
-const MyPageBody = ({ targetUserId, tempUserInfo }) => {
+const MyPageBody = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }) => {
   const { user, isLoading: userLoading } = useUser();
   const [likedMovies, setLikedMovies] = useState([]);
   const [likedActors, setLikedActors] = useState([]);
@@ -110,10 +110,10 @@ const MyPageBody = ({ targetUserId, tempUserInfo }) => {
     }
   }, []);
 
-  // 표시할 유저 결정 (내 마이페이지면 tempUserInfo 무시)
+  // 표시할 유저 결정 (propTargetUser가 있으면 propTargetUser, localTempUserInfo가 있으면 localTempUserInfo, 없으면 현재 로그인한 user)
   const isOwnPage = String(targetUserId || user?.id) === String(user?.id);
-  const displayUserId = isOwnPage ? user?.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
-  const displayUser = isOwnPage ? user : (localTempUserInfo || user);
+  const displayUserId = isOwnPage ? user?.id : (propTargetUser ? propTargetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id)));
+  const displayUser = isOwnPage ? user : (propTargetUser || localTempUserInfo || user);
 
   
 

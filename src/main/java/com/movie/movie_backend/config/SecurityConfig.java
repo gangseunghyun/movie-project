@@ -151,6 +151,7 @@ public class SecurityConfig {
                     "/data/**",
                     "/api/users/search",
                     "/api/users/nickname/**",
+                    "/api/users/*/info",
                     "/api/users/*/followers",
                     "/api/users/*/following",
                     "/api/users/*/liked-movies",

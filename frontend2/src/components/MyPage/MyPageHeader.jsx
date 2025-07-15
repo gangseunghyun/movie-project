@@ -9,22 +9,24 @@ import ProfileImageUploadModal from '../Modal/ProfileImageUploadModal';
 import FollowersModal from '../Modal/FollowersModal';
 import FollowingModal from '../Modal/FollowingModal';
 
-const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
+const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }) => {
   const { user, setUser } = useUser();
   const navigate = useNavigate();
-
-  // 표시할 사용자 결정 (localTempUserInfo가 있으면 localTempUserInfo, targetUser가 있으면 targetUser, 없으면 현재 로그인한 user)
-  const [localTempUserInfo, setLocalTempUserInfo] = useState(tempUserInfo);
-  const displayUserId = (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
-  const isOwnPage = String(displayUserId) === String(user?.id);
-  const displayUser = isOwnPage ? user : (localTempUserInfo || user);
 
   // 태그 모달 상태 및 태그 상태 관리
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [targetUser, setTargetUser] = useState(null);
+  const [targetUser, setTargetUser] = useState(propTargetUser);
+
+  // 표시할 사용자 결정 (targetUser가 있으면 targetUser, localTempUserInfo가 있으면 localTempUserInfo, 없으면 현재 로그인한 user)
+  const [localTempUserInfo, setLocalTempUserInfo] = useState(tempUserInfo);
+  const displayUserId = (targetUser ? targetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id)));
+  const isOwnPage = String(displayUserId) === String(user?.id);
+  const displayUser = isOwnPage ? user : (targetUser || localTempUserInfo || user);
+  
+
 
   // 팔로워/팔로잉 수 상태 추가
   const [followersCount, setFollowersCount] = useState(0);
@@ -38,7 +40,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
 
   // 팔로워/팔로잉 수 가져오기 함수 (useEffect보다 위에 선언)
   const fetchFollowCounts = async () => {
-    const userId = localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id);
+    const userId = targetUser ? targetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
     if (!userId) {
       console.log('사용자 정보가 없습니다.');
       return;
@@ -70,7 +72,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
   };
 
   const fetchFollowersList = async () => {
-    const userId = localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id);
+    const userId = targetUser ? targetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
     if (!userId) return;
     try {
       const response = await fetch(`http://localhost:80/api/users/${userId}/followers`, {
@@ -78,6 +80,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
       });
       if (response.ok) {
         const data = await response.json();
+
         setFollowersList(data.data || []);
       } else {
         setFollowersList([]);
@@ -88,7 +91,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
   };
 
   const fetchFollowingList = async () => {
-    const userId = localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id);
+    const userId = targetUser ? targetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
     if (!userId) return;
     try {
       const response = await fetch(`http://localhost:80/api/users/${userId}/following`, {
@@ -96,6 +99,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
       });
       if (response.ok) {
         const data = await response.json();
+
         setFollowingList(data.data || []);
       } else {
         setFollowingList([]);
@@ -120,45 +124,18 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
     }
   }, []);
 
-  // targetUserId가 있으면 해당 사용자 정보를 가져오기
+  // propTargetUser가 변경되면 targetUser 상태 업데이트
   useEffect(() => {
-    const fetchTargetUser = async () => {
-      if (!targetUserId) {
-        setLoading(false);
-        return;
-      }
-
-      // localTempUserInfo가 있으면 우선적으로 사용
-      if (localTempUserInfo && localTempUserInfo.id === targetUserId) {
-        setTargetUser(localTempUserInfo);
-        setLoading(false);
-        return;
-      }
-
-      // try {
-      //   const response = await fetch(`http://localhost:80/api/users/${targetUserId}`, {
-      //     credentials: 'include',
-      //   });
-      //   if (response.ok) {
-      //     const userData = await response.json();
-      //     setTargetUser(userData.data);
-      //   } else {
-      //     console.error('타겟 사용자 정보를 가져오는데 실패했습니다.');
-      //   }
-      // } catch (error) {
-      //   console.error('타겟 사용자 정보를 가져오는 중 오류가 발생했습니다:', error);
-      // } finally {
-      //   setLoading(false);
-      // }
-    };
-
-    fetchTargetUser();
-  }, [targetUserId, localTempUserInfo]);
+    if (propTargetUser) {
+      setTargetUser(propTargetUser);
+      setLoading(false);
+    }
+  }, [propTargetUser]);
 
   // 사용자의 선호 태그 가져오기
   useEffect(() => {
     const fetchUserPreferredGenres = async () => {
-      const userId = targetUserId || user?.id;
+      const userId = targetUser ? targetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
       if (!userId) {
         console.log('사용자 정보가 없습니다.');
         setLoading(false);
@@ -184,7 +161,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo }) => {
     };
 
     fetchUserPreferredGenres();
-  }, [targetUserId, user]);
+  }, [targetUserId, user, localTempUserInfo, targetUser]);
 
   // 마이페이지 진입 시 팔로워/팔로잉 수를 가져옴
   useEffect(() => {

@@ -2,6 +2,7 @@ import React from "react";
 import styles from "./FollowingModal.module.css";
 
 const FollowingModal = ({ followings, onClose }) => {
+
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
@@ -24,7 +25,13 @@ const FollowingModal = ({ followings, onClose }) => {
                   alt="프로필"
                   className={styles.profileImg}
                 />
-                <span className={styles.nickname}>{following.nickname}</span>
+                <a 
+                  href={`/mypage/${following.id}`}
+                  className={styles.nickname}
+                  style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                >
+                  {following.nickname}
+                </a>
                 {idx !== followings.length - 1 && <div className={styles.divider} />}
               </div>
             ))
