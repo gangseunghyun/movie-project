@@ -7,6 +7,7 @@ const BookingSummary = ({
   selectedTheater,
   selectedTime,
   selectedSeats,
+  totalPrice,
 }) => {
   if (!movieInfo) return null;
 
@@ -30,6 +31,11 @@ const BookingSummary = ({
           <div>
             <b>좌석</b> {selectedSeats.length > 0 ? selectedSeats.join(", ") : "-"}
           </div>
+          {totalPrice && (
+            <div className={styles.summaryPrice}>
+              <b>결제금액</b> <span className={styles.priceAmount}>{totalPrice.toLocaleString()}원</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

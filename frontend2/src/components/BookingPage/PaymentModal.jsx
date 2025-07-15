@@ -6,10 +6,13 @@ import checkTrue from '../../assets/check_true.png';
 import checkFalse from '../../assets/check_false.png';
 import checkTrue2 from '../../assets/check_true2.png';
 import checkFalse2 from '../../assets/check_false2.png';
+import PaymentService from '../../services/PaymentService';
+import { PAYMENT_METHODS } from '../../services/paymentConfig';
 
 const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
   const [selectedMethod, setSelectedMethod] = useState("naverpay");
   const [agreed, setAgreed] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [agreements, setAgreements] = useState({
     agreeAll: false,
     agreeThirdParty: false,
@@ -34,10 +37,58 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
     }
   };
 
-  const handlePay = () => {
-    if (agreements.agreeAll) {
-      onPay();
-      onClose();
+  // 실제 결제 처리 함수
+  const handlePay = async () => {
+    if (!agreements.agreeAll) {
+      alert('모든 약관에 동의해주세요.');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // 결제 데이터 준비
+      const paymentData = {
+        merchantUid: `merchant_${Date.now()}`,
+        amount: bookingInfo.totalPrice,
+        itemName: `${bookingInfo.movieInfo?.title || '영화'} 예매`,
+        quantity: bookingInfo.selectedSeats?.length || 1,
+        userId: localStorage.getItem('userId') || 'guest',
+        customerName: localStorage.getItem('userName') || '고객',
+        customerEmail: localStorage.getItem('userEmail') || '',
+        bookingInfo: {
+          movieInfo: bookingInfo.movieInfo,
+          selectedCinema: bookingInfo.selectedCinema,
+          selectedTheater: bookingInfo.selectedTheater,
+          selectedTime: bookingInfo.selectedTime,
+          selectedSeats: bookingInfo.selectedSeats,
+          totalPrice: bookingInfo.totalPrice
+        }
+      };
+
+      // 선택된 결제 수단으로 결제 처리
+      const paymentResult = await PaymentService.processPayment(selectedMethod, paymentData);
+
+      if (paymentResult.success) {
+        // 결제 성공 시 예매 정보 저장
+        await PaymentService.createPayment({
+          ...paymentData,
+          paymentId: paymentResult.paymentId,
+          paymentMethod: selectedMethod,
+          status: 'completed'
+        });
+
+        alert('결제가 완료되었습니다!');
+        onPay(paymentResult);
+        onClose();
+      } else {
+        alert('결제에 실패했습니다: ' + paymentResult.message);
+      }
+    } catch (error) {
+      console.error('결제 오류:', error);
+      alert('결제 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -105,39 +156,27 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
           }}
         >
           {/* 예매 정보 요약 */}
-          <div className={styles.paymentSummaryBox}>
-            <BookingSummary
-              movieInfo={bookingInfo.movieInfo || {}}
-              selectedCinema={bookingInfo.selectedCinema || ''}
-              selectedTheater={bookingInfo.selectedTheater || ''}
-              selectedTime={bookingInfo.selectedTime || ''}
-              selectedSeats={bookingInfo.selectedSeats || []}
-            />
-            <div className={styles.paymentSummaryRow}>
-              <span>결제금액</span>
-              <span className={styles.paymentPrice}>7,900원</span>
-            </div>
-          </div>
+          <BookingSummary
+            movieInfo={bookingInfo.movieInfo || {}}
+            selectedCinema={bookingInfo.selectedCinema || ''}
+            selectedTheater={bookingInfo.selectedTheater || ''}
+            selectedTime={bookingInfo.selectedTime || ''}
+            selectedSeats={bookingInfo.selectedSeats || []}
+            totalPrice={bookingInfo.totalPrice}
+          />
 
           {/* 결제수단 선택 */}
           <div className={styles.paymentSectionTitle} style={{marginBottom: '10px'}}>결제수단 선택</div>
           <div className={styles.paymentMethodList}>
-            <button
-              className={`${styles.paymentMethodBtn} ${selectedMethod === "naverpay" ? styles.selected : ""}`}
-              onClick={() => setSelectedMethod("naverpay")}
-            >N pay</button>
-            <button
-              className={`${styles.paymentMethodBtn} ${selectedMethod === "kakaopay" ? styles.selected : ""}`}
-              onClick={() => setSelectedMethod("kakaopay")}
-            >카카오 pay</button>
-            <button
-              className={`${styles.paymentMethodBtn} ${selectedMethod === "tosspay" ? styles.selected : ""}`}
-              onClick={() => setSelectedMethod("tosspay")}
-            >toss pay</button>
-            <button
-              className={`${styles.paymentMethodBtn} ${selectedMethod === "card" ? styles.selected : ""}`}
-              onClick={() => setSelectedMethod("card")}
-            >신용카드</button>
+            {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
+              <button
+                key={key}
+                className={`${styles.paymentMethodBtn} ${selectedMethod === key ? styles.selected : ""}`}
+                onClick={() => setSelectedMethod(key)}
+              >
+                {method.name}
+              </button>
+            ))}
           </div>
 
           {/* 약관 동의 */}
@@ -176,19 +215,20 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
             <p>- 예매 티켓은 타인에게 양도할 수 없습니다.</p>
             <p>- 기타 자세한 사항은 별도 이용정책 및 구매 페이지를 참고해 주세요.</p>
             <p>- 결제 오류 발생 시 고객센터로 문의해 주세요.</p>
-            
           </div>
         </Scrollbar>
 
         {/* 하단 버튼 */}
         <div className={styles.paymentButtonContainer}>
-          <button className={styles.cancelButton} onClick={onClose}>이전</button>
+          <button className={styles.cancelButton} onClick={onClose} disabled={isProcessing}>
+            이전
+          </button>
           <button
             className={styles.bookingButton}
             onClick={handlePay}
-            disabled={!agreements.agreeAll}
+            disabled={!agreements.agreeAll || isProcessing}
           >
-            결제하기
+            {isProcessing ? '결제 처리 중...' : '결제하기'}
           </button>
         </div>
       </div>

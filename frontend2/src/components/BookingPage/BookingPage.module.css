@@ -451,11 +451,12 @@
 .bookingSummary {
   display: flex;
   align-items: center;
-  background: #181e29;
-  border-radius: 10px;
+  background: #23232b;
+  border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  padding: 18px 24px;
+  padding: 18px 20px;
   margin-top: 30px;
+  margin-bottom: 28px;
   color: #fff;
   border: 1px solid #1a2332;
   gap: 18px;
@@ -491,7 +492,20 @@
   font-size: 14px;
   margin-bottom: 3px;
   color: #e0e6ed;
-} 
+}
+
+.summaryPrice {
+  font-size: 16px;
+  margin-top: 8px;
+  color: #e0e6ed;
+  font-weight: 500;
+}
+
+.priceAmount {
+  color: #ff3b3b;
+  font-weight: bold;
+  margin-left: 4px;
+}
 
 .paymentPage {
   max-width: 480px;

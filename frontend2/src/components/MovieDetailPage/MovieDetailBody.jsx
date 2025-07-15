@@ -37,8 +37,12 @@ const dummySimilar = [
 function SimilarMovieCard({ movie }) {
   return (
     <div className={styles.similarMovieCard}>
-      <img src={movie.posterUrl} alt={movie.movieNm} className={styles.similarPoster} />
-      <div className={styles.similarTitle}>{movie.movieNm}</div>
+      <img 
+        src={movie.posterUrl || movie.posterImageUrl || banner1} 
+        alt={movie.title || movie.movieNm} 
+        className={styles.similarPoster} 
+      />
+      <div className={styles.similarTitle}>{movie.title || movie.movieNm}</div>
     </div>
   );
 }
@@ -67,9 +71,11 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const [allCommentsModalOpen, setAllCommentsModalOpen] = useState(false);
   // 코멘트별 별점 상태
   const [commentRatings, setCommentRatings] = useState({});
-  // 비슷한 장르 영화 상태
+  
+  // 비슷한 장르 영화 상태 추가
   const [similarMovies, setSimilarMovies] = useState([]);
   const [similarMoviesLoading, setSimilarMoviesLoading] = useState(false);
+  const [similarMoviesError, setSimilarMoviesError] = useState(null);
 
   // AllCommentsModal에서 코멘트 클릭 시 상세 모달로 전환
   const handleAllCommentsCommentClick = (comment) => {
@@ -287,9 +293,42 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     }
   };
 
+  // 비슷한 장르 영화 조회 함수
+  const fetchSimilarMovies = async () => {
+    if (!movieCd) return;
+    
+    setSimilarMoviesLoading(true);
+    setSimilarMoviesError(null);
+    
+    try {
+      const response = await fetch(`http://localhost:80/data/api/similar-genre-movies?movieCd=${movieCd}&page=0&size=20`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data) {
+          setSimilarMovies(data.data);
+        } else {
+          setSimilarMovies([]);
+        }
+      } else {
+        setSimilarMoviesError('비슷한 장르 영화를 불러오는데 실패했습니다.');
+        setSimilarMovies([]);
+      }
+    } catch (error) {
+      console.error('비슷한 장르 영화 조회 실패:', error);
+      setSimilarMoviesError('네트워크 오류가 발생했습니다.');
+      setSimilarMovies([]);
+    } finally {
+      setSimilarMoviesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!movieCd) return;
     fetchComments();
+    fetchSimilarMovies(); // 비슷한 장르 영화도 함께 조회
   }, [movieCd, fetchComments]);
 
   // 대댓글 작성 후 코멘트 목록 새로고침
@@ -304,35 +343,6 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     setReplyModalOpen(false);
     setAllCommentsModalOpen(false);
   };
-
-  // 비슷한 장르 영화 가져오기
-  const fetchSimilarMovies = async () => {
-    if (!movieCd) return;
-    
-    setSimilarMoviesLoading(true);
-    try {
-      const response = await fetch(`http://localhost:80/data/api/similar-genre-movies?movieCd=${movieCd}&page=0&size=20`, {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      setSimilarMovies(result.data || []);
-    } catch (error) {
-      console.error('비슷한 장르 영화 로드 실패:', error);
-      setSimilarMovies([]);
-    } finally {
-      setSimilarMoviesLoading(false);
-    }
-  };
-
-  // 컴포넌트 마운트 시 비슷한 장르 영화 가져오기
-  useEffect(() => {
-    fetchSimilarMovies();
-  }, [movieCd]);
 
   return (
     <div className={styles.detailBody}>
@@ -456,16 +466,17 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       </section>
       <section>
         <h2>비슷한 장르의 영화</h2>
-        {similarMoviesLoading ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#aaa' }}>로딩 중...</div>
-        ) : similarMovies.length > 0 ? (
+        {similarMoviesLoading && <div style={{ textAlign: 'center', padding: '20px' }}>로딩 중...</div>}
+        {similarMoviesError && <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>{similarMoviesError}</div>}
+        {!similarMoviesLoading && !similarMoviesError && similarMovies.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '20px' }}>비슷한 장르의 영화가 없습니다.</div>
+        )}
+        {!similarMoviesLoading && !similarMoviesError && similarMovies.length > 0 && (
           <MovieHorizontalSlider
             data={similarMovies}
             sectionKey="similar"
             CardComponent={SimilarMovieCard}
           />
-        ) : (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#aaa' }}>비슷한 장르의 영화가 없습니다.</div>
         )}
       </section>
       <section>

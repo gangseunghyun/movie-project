@@ -192,11 +192,15 @@ const BookingPage = () => {
       console.log('seatInfo:', seatInfo);
       console.log('seatInfo seatIds:', seatInfo.map(seat => seat.seatId)); // 추가!
       console.log('selectedSeatIds:', selectedSeatIds);
+    
+    // 결제 금액 계산 (좌석당 10,000원)
+    const totalPrice = selectedSeats.length * 10000;
+    
     const bookingData = {
       movieId,
       screeningId: selectedScreeningId,
       seatIds: selectedSeatIds,
-      totalPrice: selectedSeats.length * 10000
+      totalPrice: totalPrice
     };
 
     try {
@@ -283,11 +287,11 @@ const BookingPage = () => {
           <h3 className={styles.sectionTitle}>상영관 선택</h3>
           <div className={styles.theaterList}>
             {!selectedCinemaId ? (
-              <div style={{ color: '#b0b8c1', padding: '6px 0', width: '100%', textAlign: 'left' }}>
+              <div style={{ color: '#b0b8c1', padding: '6px 0', width: '110%', textAlign: 'left' }}>
                 영화관을 먼저 선택해주세요.
               </div>
             ) : theaterList.length === 0 ? (
-              <div style={{ color: '#b0b8c1', padding: '6px 0', width: '100%', textAlign: 'left' }}>
+              <div style={{ color: '#b0b8c1', padding: '6px 0', width: '110%', textAlign: 'left' }}>
                 상영관 정보가 없습니다.
               </div>
             ) : (
@@ -379,6 +383,7 @@ const BookingPage = () => {
           selectedTheater={theaterList.find(t => String(t.id) === selectedTheater)?.name || ''}
           selectedTime={selectedTime || ''}
           selectedSeats={selectedSeats || []}
+          // totalPrice={selectedSeats.length > 0 ? selectedSeats.length * 10000 : null}
         />
 
         {/* 예매/취소 버튼 */}
@@ -409,7 +414,8 @@ const BookingPage = () => {
           selectedCinema: cinemas.find(c => String(c.id) === selectedCinemaId)?.name || '',
           selectedTheater: theaterList.find(t => String(t.id) === selectedTheater)?.name || '',
           selectedTime: selectedTime || '',
-          selectedSeats: selectedSeats || []
+          selectedSeats: selectedSeats || [],
+          totalPrice: selectedSeats.length * 10000
         }}
         onPay={handlePayment}
       />

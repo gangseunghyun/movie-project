@@ -37,7 +37,7 @@
   margin-bottom: 32px;
 }
 .paymentSummaryBox {
-  background: #000;
+  background: none;
   padding: 18px 48px;
   margin-bottom: 32px;
   width: calc(100% + 80px);
