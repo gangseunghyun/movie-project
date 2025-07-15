@@ -1017,8 +1017,9 @@ public class UserController {
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     reviewDto.put("likeCount", likeCount);
                     
-                    // 내가 좋아요했는지 여부 추가 (내가 작성한 코멘트이므로 true)
-                    reviewDto.put("likedByMe", true);
+                    // 내가 좋아요했는지 여부 추가 (실제 좋아요 여부 확인)
+                    boolean likedByMe = reviewLikeRepository.existsByReviewIdAndUserId(review.getId(), userId);
+                    reviewDto.put("likedByMe", likedByMe);
                     
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
