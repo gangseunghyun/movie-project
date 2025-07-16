@@ -47,4 +47,39 @@ public class MoviePosterController {
         response.put("imageUrl", imageUrl);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * 포스터 URL 설정
+     */
+    @PutMapping("/{movieCd}/poster-url")
+    public ResponseEntity<Map<String, Object>> setPosterUrl(
+            @PathVariable String movieCd,
+            @RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String posterUrl = request.get("posterUrl");
+            if (posterUrl == null || posterUrl.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "포스터 URL이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            MovieList movie = movieListRepository.findById(movieCd)
+                .orElseThrow(() -> new IllegalArgumentException("영화를 찾을 수 없습니다: " + movieCd));
+
+            movie.setPosterUrl(posterUrl.trim());
+            movieListRepository.save(movie);
+
+            response.put("success", true);
+            response.put("imageUrl", posterUrl.trim());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("포스터 URL 설정 실패: {} - {}", movieCd, e.getMessage());
+            response.put("success", false);
+            response.put("message", "포스터 URL 설정 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 } 

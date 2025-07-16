@@ -27,29 +27,46 @@ public class StillcutController {
             @PathVariable String movieCd,
             @RequestParam("images") List<MultipartFile> files) {
         Map<String, Object> response = new HashMap<>();
-        MovieDetail movieDetail = movieDetailRepository.findByMovieCd(movieCd);
-        if (movieDetail == null) {
-            throw new IllegalArgumentException("영화 상세정보 없음");
-        }
-        List<String> imageUrls = new ArrayList<>();
-        int order = (int) stillcutRepository.countByMovieDetailId(movieDetail.getId());
-        for (MultipartFile file : files) {
-            try {
-                String imageUrl = fileUploadService.uploadImage(file, movieCd, "stillcuts");
-                Stillcut stillcut = Stillcut.builder()
-                        .imageUrl(imageUrl)
-                        .orderInMovie(order++)
-                        .movieDetail(movieDetail)
-                        .build();
-                stillcutRepository.save(stillcut);
-                imageUrls.add(imageUrl);
-            } catch (Exception e) {
-                log.error("스틸컷 업로드 실패: {}", e.getMessage());
+        
+        try {
+            MovieDetail movieDetail = movieDetailRepository.findByMovieCd(movieCd);
+            if (movieDetail == null) {
+                response.put("success", false);
+                response.put("message", "영화를 찾을 수 없습니다: " + movieCd);
+                return ResponseEntity.badRequest().body(response);
             }
+
+            // 기존 스틸컷 개수 확인 (순서 번호 계산용)
+            int existingCount = (int) stillcutRepository.countByMovieDetailId(movieDetail.getId());
+
+            // 새 스틸컷들 저장
+            List<String> imageUrls = new ArrayList<>();
+            for (int i = 0; i < files.size(); i++) {
+                try {
+                    MultipartFile file = files.get(i);
+                    String imageUrl = fileUploadService.uploadImage(file, movieCd, "stillcuts");
+                    Stillcut stillcut = Stillcut.builder()
+                            .imageUrl(imageUrl)
+                            .orderInMovie(existingCount + i + 1)
+                            .movieDetail(movieDetail)
+                            .build();
+                    stillcutRepository.save(stillcut);
+                    imageUrls.add(imageUrl);
+                } catch (Exception e) {
+                    log.error("스틸컷 업로드 실패: {}", e.getMessage());
+                }
+            }
+
+            response.put("success", true);
+            response.put("imageUrls", imageUrls);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("스틸컷 업로드 실패: {} - {}", movieCd, e.getMessage());
+            response.put("success", false);
+            response.put("message", "스틸컷 업로드 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
-        response.put("success", true);
-        response.put("imageUrls", imageUrls);
-        return ResponseEntity.ok(response);
     }
 
     // 개별 삭제
@@ -67,5 +84,60 @@ public class StillcutController {
         stillcutRepository.delete(stillcut);
         response.put("success", true);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 스틸컷 URL 설정
+     */
+    @PutMapping("/movies/{movieCd}/stillcut-urls")
+    public ResponseEntity<Map<String, Object>> setStillcutUrls(
+            @PathVariable String movieCd,
+            @RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> imageUrls = (List<String>) request.get("imageUrls");
+            if (imageUrls == null || imageUrls.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "스틸컷 URL이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            MovieDetail movieDetail = movieDetailRepository.findByMovieCd(movieCd);
+            if (movieDetail == null) {
+                response.put("success", false);
+                response.put("message", "영화를 찾을 수 없습니다: " + movieCd);
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 기존 스틸컷 개수 확인 (순서 번호 계산용)
+            int existingCount = (int) stillcutRepository.countByMovieDetailId(movieDetail.getId());
+
+            // 새 스틸컷들 저장
+            List<String> savedUrls = new ArrayList<>();
+            for (int i = 0; i < imageUrls.size(); i++) {
+                String imageUrl = imageUrls.get(i).trim();
+                if (!imageUrl.isEmpty()) {
+                    Stillcut stillcut = Stillcut.builder()
+                            .imageUrl(imageUrl)
+                            .orderInMovie(existingCount + i + 1)
+                            .movieDetail(movieDetail)
+                            .build();
+                    stillcutRepository.save(stillcut);
+                    savedUrls.add(imageUrl);
+                }
+            }
+
+            response.put("success", true);
+            response.put("imageUrls", savedUrls);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("스틸컷 URL 설정 실패: {} - {}", movieCd, e.getMessage());
+            response.put("success", false);
+            response.put("message", "스틸컷 URL 설정 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 } 

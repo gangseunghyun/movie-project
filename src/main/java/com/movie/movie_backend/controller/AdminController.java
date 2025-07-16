@@ -7,6 +7,7 @@ import com.movie.movie_backend.dto.BoxOfficeDto;
 import com.movie.movie_backend.constant.MovieStatus;
 import com.movie.movie_backend.dto.AdminMovieDto;
 import com.movie.movie_backend.service.AdminMovieService;
+import com.movie.movie_backend.service.MovieManagementService;
 import com.movie.movie_backend.service.BoxOfficeService;
 import com.movie.movie_backend.service.TmdbPosterService;
 import com.movie.movie_backend.service.KobisPopularMovieService;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -41,6 +43,7 @@ import com.movie.movie_backend.service.FileUploadService;
 public class AdminController {
 
     private final AdminMovieService adminMovieService;
+    private final MovieManagementService movieManagementService;
     private final BoxOfficeService boxOfficeService;
     private final TmdbPosterService tmdbPosterService;
     private final KobisPopularMovieService kobisPopularMovieService;
@@ -112,6 +115,30 @@ public class AdminController {
         } catch (Exception e) {
             log.error("영화 활성화 실패: {} - {}", movieCd, e.getMessage());
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * 영화 삭제
+     */
+    @DeleteMapping("/movies/{movieCd}")
+    public ResponseEntity<Map<String, Object>> deleteMovie(@PathVariable String movieCd) {
+        try {
+            log.info("영화 삭제 요청: {}", movieCd);
+            
+            // MovieManagementService의 deleteMovie 메서드 사용
+            movieManagementService.deleteMovie(movieCd);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "영화가 삭제되었습니다.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("영화 삭제 실패: {} - {}", movieCd, e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "영화 삭제에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -505,6 +532,51 @@ public class AdminController {
     }
 
     /**
+     * 감독 이미지 URL 설정
+     */
+    @PutMapping("/movies/{movieCd}/director-image-url")
+    public ResponseEntity<Map<String, Object>> setDirectorImageUrl(
+            @PathVariable String movieCd,
+            @RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String imageUrl = request.get("imageUrl");
+            if (imageUrl == null || imageUrl.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "감독 이미지 URL이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            MovieDetail movieDetail = movieDetailRepository.findByMovieCd(movieCd);
+            if (movieDetail == null) {
+                response.put("success", false);
+                response.put("message", "영화를 찾을 수 없습니다: " + movieCd);
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            if (movieDetail.getDirector() == null) {
+                response.put("success", false);
+                response.put("message", "감독 정보가 없습니다. 먼저 감독을 등록해주세요.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            movieDetail.getDirector().setPhotoUrl(imageUrl.trim());
+            directorRepository.save(movieDetail.getDirector());
+
+            response.put("success", true);
+            response.put("imageUrl", imageUrl.trim());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("감독 이미지 URL 설정 실패: {} - {}", movieCd, e.getMessage());
+            response.put("success", false);
+            response.put("message", "감독 이미지 URL 설정 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
      * 배우 이미지 업로드 (여러 명)
      */
     @PostMapping("/movies/{movieCd}/actor-images")
@@ -524,25 +596,28 @@ public class AdminController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // 배우 목록 조회 (Cast를 통해)
+            // 배우 목록 조회 (Cast를 통해 해당 영화의 배우만 조회)
             List<Cast> casts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movieCd);
             if (casts.isEmpty()) {
                 response.put("success", false);
-                response.put("message", "배우 정보가 없습니다.");
+                response.put("message", "해당 영화의 배우 정보가 없습니다.");
                 return ResponseEntity.badRequest().body(response);
             }
+            
+            List<Actor> actors = casts.stream()
+                .map(Cast::getActor)
+                .collect(Collectors.toList());
             
             List<String> imageUrls = new ArrayList<>();
             int successCount = 0;
             
             // 파일 개수와 배우 개수 중 작은 값만큼 처리
-            int maxCount = Math.min(files.size(), casts.size());
+            int maxCount = Math.min(files.size(), actors.size());
             
             for (int i = 0; i < maxCount; i++) {
                 try {
                     MultipartFile file = files.get(i);
-                    Cast cast = casts.get(i);
-                    Actor actor = cast.getActor();
+                    Actor actor = actors.get(i);
                     
                     // 기존 이미지 삭제
                     if (actor.getPhotoUrl() != null) {
@@ -580,6 +655,88 @@ public class AdminController {
             response.put("success", false);
             response.put("message", "배우 이미지 업로드에 실패했습니다: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * 배우 이미지 URL 설정
+     */
+    @PutMapping("/movies/{movieCd}/actor-image-urls")
+    public ResponseEntity<Map<String, Object>> setActorImageUrls(
+            @PathVariable String movieCd,
+            @RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> imageUrls = (List<String>) request.get("imageUrls");
+            if (imageUrls == null || imageUrls.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "배우 이미지 URL이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            MovieDetail movieDetail = movieDetailRepository.findByMovieCd(movieCd);
+            if (movieDetail == null) {
+                response.put("success", false);
+                response.put("message", "영화를 찾을 수 없습니다: " + movieCd);
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 배우 목록 조회 (Cast를 통해 해당 영화의 배우만 조회)
+            List<Cast> casts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movieCd);
+            if (casts.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "해당 영화의 배우 정보가 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            List<Actor> actors = casts.stream()
+                .map(Cast::getActor)
+                .collect(Collectors.toList());
+
+            List<String> savedUrls = new ArrayList<>();
+            int successCount = 0;
+            boolean hasError = false;
+            String errorMessage = "";
+
+            // URL 개수와 배우 개수 중 작은 값만큼 처리
+            int maxCount = Math.min(imageUrls.size(), actors.size());
+
+            for (int i = 0; i < maxCount; i++) {
+                try {
+                    String imageUrl = imageUrls.get(i).trim();
+                    if (!imageUrl.isEmpty()) {
+                        Actor actor = actors.get(i);
+                        actor.setPhotoUrl(imageUrl);
+                        actorRepository.save(actor);
+                        savedUrls.add(imageUrl);
+                        successCount++;
+                    }
+                } catch (Exception e) {
+                    log.error("배우 이미지 URL 설정 실패: index={}, error={}", i, e.getMessage());
+                    hasError = true;
+                    errorMessage = e.getMessage();
+                    break; // 하나라도 실패하면 중단
+                }
+            }
+
+            if (hasError) {
+                response.put("success", false);
+                response.put("message", "배우 이미지 URL 설정 실패: " + errorMessage);
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            response.put("success", true);
+            response.put("imageUrls", savedUrls);
+            response.put("message", String.format("배우 이미지 URL %d개가 설정되었습니다.", successCount));
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("배우 이미지 URL 설정 실패: {} - {}", movieCd, e.getMessage());
+            response.put("success", false);
+            response.put("message", "배우 이미지 URL 설정 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

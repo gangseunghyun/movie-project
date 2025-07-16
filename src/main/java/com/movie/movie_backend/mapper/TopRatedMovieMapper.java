@@ -40,6 +40,11 @@ public class TopRatedMovieMapper {
         } catch (Exception e) {
             // 로그는 남기되 에러는 발생시키지 않음
         }
+        
+        // 포스터 URL이 null이거나 "null" 문자열이면 빈 문자열로 설정
+        if (posterUrl == null || "null".equals(posterUrl) || posterUrl.trim().isEmpty()) {
+            posterUrl = "";
+        }
 
         // 왓챠피디아 스타일 정보 계산
         int calculatedDaysSinceRelease = calculateDaysSinceRelease(movieDetail.getOpenDt());

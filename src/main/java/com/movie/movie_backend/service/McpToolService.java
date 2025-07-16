@@ -168,6 +168,12 @@ public class McpToolService {
                 posterUrl = movieList.getPosterUrl();
                 status = movieList.getStatus() != null ? movieList.getStatus().name() : null;
             }
+            
+            // 포스터 URL이 null이거나 "null" 문자열이면 빈 문자열로 설정
+            if (posterUrl == null || "null".equals(posterUrl) || posterUrl.trim().isEmpty()) {
+                posterUrl = "";
+            }
+            
             return MovieDetailDto.builder()
                     .movieCd(movie.getMovieCd())
                     .movieNm(movie.getMovieNm())

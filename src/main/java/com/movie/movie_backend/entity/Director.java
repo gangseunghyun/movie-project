@@ -16,6 +16,7 @@ public class Director {
     private LocalDate birthDate; // 감독 생년월일
     private String nationality; // 국적
     private String biography; // 감독 소개
+    @Column(length = 1000)
     private String photoUrl; // 감독 사진 URL
 
     @OneToMany(mappedBy = "director")

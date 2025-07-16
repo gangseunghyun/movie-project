@@ -5,6 +5,7 @@ import com.movie.movie_backend.entity.Tag;
 import com.movie.movie_backend.entity.Director;
 import com.movie.movie_backend.entity.Actor;
 import com.movie.movie_backend.entity.Cast;
+import com.movie.movie_backend.entity.Stillcut;
 import com.movie.movie_backend.constant.MovieStatus;
 import com.movie.movie_backend.constant.RoleType;
 import com.movie.movie_backend.dto.AdminMovieDto;
@@ -78,14 +79,20 @@ public class AdminMovieService {
         }
         
         // MovieList 먼저 저장 (외래키 제약조건 때문에)
+        // 필수 필드 기본값 설정
+        LocalDate openDt = movieDto.getOpenDt() != null ? movieDto.getOpenDt() : LocalDate.now();
+        String genreNm = (movieDto.getGenreNm() != null && !movieDto.getGenreNm().trim().isEmpty()) ? movieDto.getGenreNm() : "기타";
+        String nationNm = (movieDto.getNationNm() != null && !movieDto.getNationNm().trim().isEmpty()) ? movieDto.getNationNm() : "한국";
+        String watchGradeNm = (movieDto.getWatchGradeNm() != null && !movieDto.getWatchGradeNm().trim().isEmpty()) ? movieDto.getWatchGradeNm() : "전체관람가";
+        
         MovieList movieList = MovieList.builder()
                 .movieCd(movieDto.getMovieCd())
                 .movieNm(movieDto.getMovieNm())
                 .movieNmEn(movieDto.getMovieNmEn())
-                .openDt(movieDto.getOpenDt())
-                .genreNm(movieDto.getGenreNm())
-                .nationNm(movieDto.getNationNm())
-                .watchGradeNm(movieDto.getWatchGradeNm())
+                .openDt(openDt)
+                .genreNm(genreNm)
+                .nationNm(nationNm)
+                .watchGradeNm(watchGradeNm)
                 .status(MovieStatus.COMING_SOON)
                 .build();
         
@@ -94,6 +101,27 @@ public class AdminMovieService {
         
         // DTO를 Entity로 변환
         MovieDetail movieDetail = convertToEntity(movieDto);
+        
+        // 필수 필드 기본값 설정
+        if (movieDetail.getOpenDt() == null) {
+            movieDetail.setOpenDt(LocalDate.now()); // 오늘 날짜를 기본값으로
+            log.info("개봉일이 없어서 오늘 날짜로 설정: {}", movieDetail.getOpenDt());
+        }
+        
+        if (movieDetail.getGenreNm() == null || movieDetail.getGenreNm().trim().isEmpty()) {
+            movieDetail.setGenreNm("기타"); // 기본 장르 설정
+            log.info("장르가 없어서 '기타'로 설정");
+        }
+        
+        if (movieDetail.getNationNm() == null || movieDetail.getNationNm().trim().isEmpty()) {
+            movieDetail.setNationNm("한국"); // 기본 국가 설정
+            log.info("국가가 없어서 '한국'으로 설정");
+        }
+        
+        if (movieDetail.getWatchGradeNm() == null || movieDetail.getWatchGradeNm().trim().isEmpty()) {
+            movieDetail.setWatchGradeNm("전체관람가"); // 기본 등급 설정
+            log.info("관람등급이 없어서 '전체관람가'로 설정");
+        }
         
         // 기본값 설정
 //        if (movieDetail.getStatus() == null) {
@@ -110,6 +138,23 @@ public class AdminMovieService {
         // 영화 저장
         MovieDetail savedMovie = movieRepository.save(movieDetail);
         log.info("영화 등록 완료: {} ({})", savedMovie.getMovieNm(), savedMovie.getMovieCd());
+        
+        // 스틸컷 정보 저장
+        if (movieDto.getStillcutUrls() != null && !movieDto.getStillcutUrls().isEmpty()) {
+            for (int i = 0; i < movieDto.getStillcutUrls().size(); i++) {
+                String imageUrl = movieDto.getStillcutUrls().get(i);
+                if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                    Stillcut stillcut = Stillcut.builder()
+                            .imageUrl(imageUrl)
+                            .orderInMovie(i + 1)
+                            .movieDetail(savedMovie)
+                            .build();
+                    savedMovie.getStillcuts().add(stillcut);
+                    log.info("스틸컷 정보 저장: {} (순서: {})", imageUrl, i + 1);
+                }
+            }
+            movieRepository.save(savedMovie);
+        }
         
         // 배우 정보 저장
         if (movieDto.getActorNames() != null && !movieDto.getActorNames().trim().isEmpty()) {
@@ -602,6 +647,15 @@ public class AdminMovieService {
         movie.setDescription(dto.getDescription());
 //        movie.setStatus(dto.getStatus());
         
+        // 컬렉션 필드들 초기화
+        movie.setStillcuts(new ArrayList<>());
+        movie.setCasts(new ArrayList<>());
+        movie.setTags(new ArrayList<>());
+        movie.setRatings(new ArrayList<>());
+        movie.setReviews(new ArrayList<>());
+        movie.setLikes(new ArrayList<>());
+        movie.setScreenings(new ArrayList<>());
+        
         return movie;
     }
 
@@ -626,6 +680,20 @@ public class AdminMovieService {
         dto.setCompanyNm(movie.getCompanyNm());
         dto.setDescription(movie.getDescription());
 //        dto.setStatus(movie.getStatus());
+        
+        // 감독 정보
+        if (movie.getDirector() != null) {
+            dto.setDirectorName(movie.getDirector().getName());
+        }
+        
+        // 배우 정보 (Cast에서 가져오기)
+        List<Cast> casts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movie.getMovieCd());
+        if (!casts.isEmpty()) {
+            String actorNames = casts.stream()
+                    .map(cast -> cast.getActor().getName())
+                    .collect(Collectors.joining(", "));
+            dto.setActorNames(actorNames);
+        }
         
         // 태그 정보
         List<String> tagNames = movie.getTags().stream()
@@ -957,11 +1025,20 @@ public class AdminMovieService {
      * 감독 이름으로 저장 또는 조회
      */
     private Director saveDirectorByName(String directorName) {
-        // 기존 감독이 있는지 확인
-        Optional<Director> existingDirector = directorRepository.findByName(directorName);
-        
-        if (existingDirector.isPresent()) {
-            return existingDirector.get();
+        try {
+            // 기존 감독이 있는지 확인
+            Optional<Director> existingDirector = directorRepository.findByName(directorName);
+            
+            if (existingDirector.isPresent()) {
+                return existingDirector.get();
+            }
+        } catch (Exception e) {
+            // 중복된 이름이 있을 경우 첫 번째 것을 찾아서 반환
+            log.warn("감독 이름 중복 발견: {}, 첫 번째 감독 사용", directorName);
+            List<Director> directors = directorRepository.findByNameContainingIgnoreCase(directorName);
+            if (!directors.isEmpty()) {
+                return directors.get(0);
+            }
         }
         
         // 새 감독 생성

@@ -471,30 +471,27 @@ public class DataViewController {
         try {
             log.info("영화 통합 검색 요청(띄어쓰기 무시): keyword={}, page={}, size={}", keyword, page, size);
             
-            // 2. movie_detail에서 검색 (기존 통합 검색)
+            // 2. movie_list에서 검색 (기본 검색)
+            List<MovieListDto> movieListDtos = prdMovieListService.searchMoviesIgnoreSpace(keyword);
+            log.info("movie_list 검색 결과: {}개", movieListDtos.size());
+            
+            // 3. movie_detail에서도 검색 (상세 정보가 있는 영화들)
             List<MovieDetail> movieDetailResults = prdMovieService.searchMoviesIgnoreSpace(keyword);
             log.info("movie_detail 검색 결과: {}개", movieDetailResults.size());
             
-            // 3. movie_detail에 없으면 movie_list에서 검색
+            // 4. MovieListDto를 MovieDetail로 변환 (기본 정보만)
             List<MovieDetail> movieListResults = new ArrayList<>();
-            if (movieDetailResults.isEmpty()) {
-                log.info("movie_detail에 결과가 없어 movie_list에서 검색 시도");
-                List<MovieListDto> movieListDtos = prdMovieListService.searchMoviesIgnoreSpace(keyword);
-                
-                // MovieListDto를 MovieDetail로 변환 (기본 정보만)
-                for (MovieListDto movieListDto : movieListDtos) {
-                    MovieDetail movieDetail = new MovieDetail();
-                    movieDetail.setMovieCd(movieListDto.getMovieCd());
-                    movieDetail.setMovieNm(movieListDto.getMovieNm());
-                    movieDetail.setMovieNmEn(movieListDto.getMovieNmEn());
-                    movieDetail.setOpenDt(movieListDto.getOpenDt());
-                    movieDetail.setGenreNm(movieListDto.getGenreNm());
-                    movieDetail.setNationNm(movieListDto.getNationNm());
-                    movieDetail.setWatchGradeNm(movieListDto.getWatchGradeNm());
+            for (MovieListDto movieListDto : movieListDtos) {
+                MovieDetail movieDetail = new MovieDetail();
+                movieDetail.setMovieCd(movieListDto.getMovieCd());
+                movieDetail.setMovieNm(movieListDto.getMovieNm());
+                movieDetail.setMovieNmEn(movieListDto.getMovieNmEn());
+                movieDetail.setOpenDt(movieListDto.getOpenDt());
+                movieDetail.setGenreNm(movieListDto.getGenreNm());
+                movieDetail.setNationNm(movieListDto.getNationNm());
+                movieDetail.setWatchGradeNm(movieListDto.getWatchGradeNm());
 //                    movieDetail.setStatus(movieListDto.getStatus());
-                    movieListResults.add(movieDetail);
-                }
-                log.info("movie_list 검색 결과: {}개", movieListResults.size());
+                movieListResults.add(movieDetail);
             }
             
             // 4. 두 결과 합치기 (중복 제거)

@@ -15,6 +15,8 @@ const ReservationPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelPayment, setCancelPayment] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
     period: 'all',
@@ -49,31 +51,52 @@ const ReservationPage = () => {
   };
 
   const handleCancelPayment = async (payment, reservationId) => {
-    const reason = window.prompt('결제 취소 사유를 입력하세요 (선택)') || '';
+    setCancelPayment({ payment, reservationId });
+    setShowCancelConfirm(true);
+    setShowDetailModal(false);
+  };
+
+  const confirmCancelPayment = async () => {
+    if (!cancelPayment) return;
+    
+    const { payment, reservationId } = cancelPayment;
+    const reason = window.prompt('결제 취소 사유를 입력하세요 (선택)');
+    
+    // 사용자가 취소 버튼을 누르면 null이 반환됨
+    if (reason === null) {
+      setShowCancelConfirm(false);
+      setCancelPayment(null);
+      return;
+    }
+    
     const impUid = payment.impUid || payment.imp_uid;
     
     if (!impUid) {
       alert('결제정보가 없습니다.');
+      setShowCancelConfirm(false);
+      setCancelPayment(null);
       return;
     }
 
     try {
       const response = await axios.post(
         'http://localhost:80/api/payments/cancel',
-        { imp_uid: impUid, reason },
+        { imp_uid: impUid, reason: reason || '' },
         { withCredentials: true }
       );
 
       if (response.data.success) {
         alert('결제가 취소되었습니다.');
         fetchReservations(); // 목록 새로고침
-        setShowDetailModal(false);
       } else {
         alert('결제취소 실패: ' + response.data.message);
       }
     } catch (error) {
       console.error('결제취소 오류:', error);
       alert('결제취소 중 오류가 발생했습니다.');
+    } finally {
+      setShowCancelConfirm(false);
+      setCancelPayment(null);
     }
   };
 
@@ -174,6 +197,12 @@ const ReservationPage = () => {
                 key={reservation.reservationId}
                 reservation={reservation}
                 onClick={() => handleCardClick(reservation)}
+                onCancelClick={(reservation) => {
+                  const payment = reservation.payments?.[0];
+                  if (payment) {
+                    handleCancelPayment(payment, reservation.reservationId);
+                  }
+                }}
               />
             ))}
           </div>
@@ -185,8 +214,37 @@ const ReservationPage = () => {
         <ReservationDetailModal
           reservation={selectedReservation}
           onClose={() => setShowDetailModal(false)}
-          onCancelPayment={handleCancelPayment}
+          onCancelPayment={(payment, reservationId) => {
+            setCancelPayment({ payment, reservationId });
+            setShowCancelConfirm(true);
+            setShowDetailModal(false);
+          }}
         />
+      )}
+
+      {/* 결제취소 확인 모달 */}
+      {showCancelConfirm && (
+        <div className={styles.modalOverlay} onClick={() => setShowCancelConfirm(false)}>
+          <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <h3>결제 취소 확인</h3>
+            <p>정말로 이 예매를 취소하시겠습니까?</p>
+            <p>취소 후에는 되돌릴 수 없습니다.</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.closeModalButton}
+                onClick={() => setShowCancelConfirm(false)}
+              >
+                취소
+              </button>
+              <button 
+                className={styles.cancelPaymentButton}
+                onClick={confirmCancelPayment}
+              >
+                결제취소
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

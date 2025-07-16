@@ -71,7 +71,7 @@ function StillcutCard({ still }) {
 
 
 
-export default function MovieDetailBody({ actors, directors, stillcuts, movieCd, comments, commentLoading, commentError, fetchComments }) {
+export default function MovieDetailBody({ actors, directors, stillcuts, movieCd, comments, setComments, commentLoading, commentError, fetchComments }) {
 
   const [castPage, setCastPage] = useState(0);
   const [replyModalOpen, setReplyModalOpen] = useState(false);
@@ -189,10 +189,16 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
 
     // 날짜 차이 계산 (밀리초 단위)
     const diffTime = now.getTime() - commentDate.getTime();
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) {
-      return '오늘';
+    if (diffMinutes < 1) {
+      return '방금 전';
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes}분 전`;
+    } else if (diffHours < 24) {
+      return `${diffHours}시간 전`;
     } else if (diffDays === 1) {
       return '어제';
     } else if (diffDays < 7) {
@@ -460,6 +466,16 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     }
   };
 
+  // 댓글 개수 변경 콜백
+  const handleReviewCommentCountChange = (reviewId, newCount) => {
+    if (!setComments) return;
+    setComments(prev =>
+      prev.map(c =>
+        c.id === reviewId ? { ...c, commentCount: newCount } : c
+      )
+    );
+  };
+
   return (
     <div className={styles.detailBody}>
       <section>
@@ -627,7 +643,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
             {stillcutsData.map((still, idx) => (
               <div
                 className={styles.stillcutCard}
-                key={still.id ? `still-${still.id}` : `still-idx-${idx}`}
+                key={`still-${still.id || idx}-${still.imageUrl}`}
                 style={{
                   flex: `0 0 ${stillCardWidth}px`,
                   marginRight: idx !== stillcutsData.length - 1 ? `${stillCardGap}px` : 0
@@ -699,6 +715,10 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
         isOpen={commentsModalOpen}
         onClose={() => setCommentsModalOpen(false)}
         review={selectedComment}
+        onCommentCountChange={handleReviewCommentCountChange}
+        handleLikeReview={handleLike}
+        handleReplyIconClick={handleReplyIconClick}
+        user={user}
       />
     </div>
   );
