@@ -44,8 +44,8 @@ public interface PRDMovieRepository extends JpaRepository<MovieDetail, Long> {
             "LEFT JOIN actor a ON c.actor_id = a.id " +
             "WHERE REPLACE(m.movie_nm, ' ', '') LIKE CONCAT('%', :keyword, '%') " +
             "OR REPLACE(m.genre_nm, ' ', '') LIKE CONCAT('%', :keyword, '%') " +
-            "OR REPLACE(d.name, ' ', '') LIKE CONCAT('%', :keyword, '%') " +
-            "OR REPLACE(a.name, ' ', '') LIKE CONCAT('%', :keyword, '%')",
+            "OR (d.name IS NOT NULL AND REPLACE(d.name, ' ', '') LIKE CONCAT('%', :keyword, '%')) " +
+            "OR (a.name IS NOT NULL AND REPLACE(a.name, ' ', '') LIKE CONCAT('%', :keyword, '%'))",
             nativeQuery = true)
     List<MovieDetail> searchIgnoreSpace(@Param("keyword") String keyword);
     

@@ -16,6 +16,7 @@ public class Actor {
     private LocalDate birthDate; // 배우 생년월일
     private String nationality; // 국적
     private String biography; // 배우 소개
+    @Column(length = 1000)
     private String photoUrl; // 배우 사진 URL
 
     @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, orphanRemoval = true)

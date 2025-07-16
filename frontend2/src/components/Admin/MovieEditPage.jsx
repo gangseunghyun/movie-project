@@ -18,11 +18,41 @@ const MovieEditPage = () => {
         watchGradeNm: '',
         companyNm: '',
         description: '',
-        posterUrl: ''
+        posterUrl: '',
+        directorName: '',
+        actorNames: '',
+        tags: '',
+        nationNm: '',
+        prdtYear: '',
+        prdtStatNm: '',
+        typeNm: ''
     });
     
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // 이미지 업로드 관련 상태
+    const [posterFile, setPosterFile] = useState(null);
+    const [posterPreview, setPosterPreview] = useState('');
+    const [posterUploadMethod, setPosterUploadMethod] = useState('url');
+    const [posterUrl, setPosterUrl] = useState('');
+    
+    const [stillcutFiles, setStillcutFiles] = useState([]);
+    const [stillcutUrls, setStillcutUrls] = useState([]);
+    const [stillcutUploadMethod, setStillcutUploadMethod] = useState('file');
+    const [stillcutUrlInputs, setStillcutUrlInputs] = useState(['']);
+    
+    const [directorImageFile, setDirectorImageFile] = useState(null);
+    const [directorImagePreview, setDirectorImagePreview] = useState('');
+    const [directorImageUrl, setDirectorImageUrl] = useState('');
+    const [directorImageUploadMethod, setDirectorImageUploadMethod] = useState('url');
+    const [directorImageUrlInput, setDirectorImageUrlInput] = useState('');
+    
+    const [actorImageFiles, setActorImageFiles] = useState([]);
+    const [actorImagePreviews, setActorImagePreviews] = useState([]);
+    const [actorImageUrls, setActorImageUrls] = useState([]);
+    const [actorImageUploadMethod, setActorImageUploadMethod] = useState('file');
+    const [actorImageUrlInputs, setActorImageUrlInputs] = useState(['']);
 
     // 관리자 권한 확인
     useEffect(() => {
@@ -40,7 +70,10 @@ const MovieEditPage = () => {
 
             // location.state에서 전달받은 영화 정보가 있으면 우선 사용
             if (location.state?.movieDetail) {
-                setMovieData(location.state.movieDetail);
+                const detail = location.state.movieDetail;
+                setMovieData(detail);
+                setPosterUrl(detail.posterUrl || '');
+                setStillcutUrls(detail.stillcuts?.map(s => s.imageUrl) || []);
                 return;
             }
 
@@ -53,6 +86,8 @@ const MovieEditPage = () => {
                     const data = await response.json();
                     if (data.success && data.data) {
                         setMovieData(data.data);
+                        setPosterUrl(data.data.posterUrl || '');
+                        setStillcutUrls(data.data.stillcuts?.map(s => s.imageUrl) || []);
                     } else {
                         setError('영화 정보를 불러올 수 없습니다.');
                     }
@@ -131,6 +166,355 @@ const MovieEditPage = () => {
         navigate(`/movie-detail/${movieCd}`);
     };
 
+    // 포스터 파일 선택
+    const handlePosterFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setPosterFile(file);
+            setPosterPreview(URL.createObjectURL(file));
+            setPosterUploadMethod('file');
+            setPosterUrl('');
+        }
+    };
+
+    // 포스터 URL 입력
+    const handlePosterUrlChange = (e) => {
+        const { value } = e.target;
+        setPosterUrl(value);
+        setPosterUploadMethod('url');
+        setPosterFile(null);
+        setPosterPreview('');
+    };
+
+    // 포스터 업로드
+    const handlePosterUpload = async () => {
+        if (posterUploadMethod === 'file') {
+            if (!posterFile) {
+                alert('포스터 파일을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', posterFile);
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/poster`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setPosterUrl(data.imageUrl);
+                    setMovieData(prev => ({ ...prev, posterUrl: data.imageUrl }));
+                    alert('포스터 업로드 성공!');
+                } else {
+                    alert('포스터 업로드 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('포스터 업로드 실패:', error);
+                alert('포스터 업로드 중 오류가 발생했습니다.');
+            }
+        } else {
+            // URL 방식
+            if (!posterUrl || !posterUrl.trim()) {
+                alert('포스터 URL을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/poster-url`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ posterUrl: posterUrl })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setMovieData(prev => ({ ...prev, posterUrl: posterUrl }));
+                    alert('포스터 URL이 설정되었습니다!');
+                } else {
+                    alert('포스터 URL 설정 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('포스터 URL 설정 실패:', error);
+                alert('포스터 URL 설정 중 오류가 발생했습니다.');
+            }
+        }
+    };
+
+    // 스틸컷 파일 선택
+    const handleStillcutChange = (e) => {
+        setStillcutFiles([...e.target.files]);
+        setStillcutUploadMethod('file');
+        setStillcutUrlInputs(['']);
+    };
+
+    // 스틸컷 URL 입력
+    const handleStillcutUrlChange = (index, value) => {
+        const newInputs = [...stillcutUrlInputs];
+        newInputs[index] = value;
+        setStillcutUrlInputs(newInputs);
+        setStillcutUploadMethod('url');
+        setStillcutFiles([]);
+    };
+
+    const addStillcutUrlInput = () => {
+        setStillcutUrlInputs([...stillcutUrlInputs, '']);
+    };
+
+    const removeStillcutUrlInput = (index) => {
+        const newInputs = stillcutUrlInputs.filter((_, i) => i !== index);
+        setStillcutUrlInputs(newInputs);
+    };
+
+    // 스틸컷 업로드
+    const handleStillcutUpload = async () => {
+        if (stillcutUploadMethod === 'file') {
+            if (stillcutFiles.length === 0) {
+                alert('스틸컷 파일을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            stillcutFiles.forEach(file => {
+                formData.append('images', file);
+            });
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/stillcuts`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const newUrls = data.imageUrls || [];
+                    setStillcutUrls(newUrls);
+                    setMovieData(prev => ({ ...prev, stillcutUrls: newUrls }));
+                    alert('스틸컷 업로드 성공!');
+                } else {
+                    alert('스틸컷 업로드 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('스틸컷 업로드 실패:', error);
+                alert('스틸컷 업로드 중 오류가 발생했습니다.');
+            }
+        } else {
+            // URL 방식
+            const urls = stillcutUrlInputs.filter(url => url.trim() !== '');
+            if (urls.length === 0) {
+                alert('스틸컷 URL을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/stillcut-urls`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ imageUrls: urls })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const newUrls = data.imageUrls || [];
+                    setStillcutUrls(newUrls);
+                    setMovieData(prev => ({ ...prev, stillcutUrls: newUrls }));
+                    alert('스틸컷 URL이 설정되었습니다!');
+                } else {
+                    alert('스틸컷 URL 설정 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('스틸컷 URL 설정 실패:', error);
+                alert('스틸컷 URL 설정 중 오류가 발생했습니다.');
+            }
+        }
+    };
+
+    // 감독 이미지 파일 선택
+    const handleDirectorImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setDirectorImageFile(file);
+            setDirectorImagePreview(URL.createObjectURL(file));
+            setDirectorImageUploadMethod('file');
+            setDirectorImageUrlInput('');
+        }
+    };
+
+    // 감독 이미지 URL 입력
+    const handleDirectorImageUrlChange = (e) => {
+        const { value } = e.target;
+        setDirectorImageUrlInput(value);
+        setDirectorImageUploadMethod('url');
+        setDirectorImageFile(null);
+        setDirectorImagePreview('');
+    };
+
+    // 감독 이미지 업로드
+    const handleDirectorImageUpload = async () => {
+        if (directorImageUploadMethod === 'file') {
+            if (!directorImageFile) {
+                alert('감독 이미지 파일을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', directorImageFile);
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/director-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setDirectorImageUrl(data.imageUrl);
+                    alert('감독 이미지 업로드 성공!');
+                } else {
+                    alert('감독 이미지 업로드 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('감독 이미지 업로드 실패:', error);
+                alert('감독 이미지 업로드 중 오류가 발생했습니다.');
+            }
+        } else {
+            // URL 방식
+            if (!directorImageUrlInput || !directorImageUrlInput.trim()) {
+                alert('감독 이미지 URL을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/director-image-url`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ imageUrl: directorImageUrlInput })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setDirectorImageUrl(data.imageUrl);
+                    alert('감독 이미지 URL이 설정되었습니다!');
+                } else {
+                    alert('감독 이미지 URL 설정 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('감독 이미지 URL 설정 실패:', error);
+                alert('감독 이미지 URL 설정 중 오류가 발생했습니다.');
+            }
+        }
+    };
+
+    // 배우 이미지 파일 선택
+    const handleActorImageChange = (e) => {
+        setActorImageFiles([...e.target.files]);
+        setActorImageUploadMethod('file');
+        setActorImageUrlInputs(['']);
+    };
+
+    // 배우 이미지 URL 입력
+    const handleActorImageUrlChange = (index, value) => {
+        const newInputs = [...actorImageUrlInputs];
+        newInputs[index] = value;
+        setActorImageUrlInputs(newInputs);
+        setActorImageUploadMethod('url');
+        setActorImageFiles([]);
+    };
+
+    const addActorImageUrlInput = () => {
+        setActorImageUrlInputs([...actorImageUrlInputs, '']);
+    };
+
+    const removeActorImageUrlInput = (index) => {
+        const newInputs = actorImageUrlInputs.filter((_, i) => i !== index);
+        setActorImageUrlInputs(newInputs);
+    };
+
+    // 배우 이미지 업로드
+    const handleActorImageUpload = async () => {
+        if (actorImageUploadMethod === 'file') {
+            if (actorImageFiles.length === 0) {
+                alert('배우 이미지 파일을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            actorImageFiles.forEach(file => {
+                formData.append('images', file);
+            });
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/actor-images`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setActorImageUrls(data.imageUrls || []);
+                    alert('배우 이미지 업로드 성공!');
+                } else {
+                    alert('배우 이미지 업로드 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('배우 이미지 업로드 실패:', error);
+                alert('배우 이미지 업로드 중 오류가 발생했습니다.');
+            }
+        } else {
+            // URL 방식
+            const urls = actorImageUrlInputs.filter(url => url.trim() !== '');
+            if (urls.length === 0) {
+                alert('배우 이미지 URL을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/actor-image-urls`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ imageUrls: urls })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setActorImageUrls(data.imageUrls || []);
+                    alert('배우 이미지 URL이 설정되었습니다!');
+                } else {
+                    alert('배우 이미지 URL 설정 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('배우 이미지 URL 설정 실패:', error);
+                alert('배우 이미지 URL 설정 중 오류가 발생했습니다.');
+            }
+        }
+    };
+
     if (!user || user.role !== 'ADMIN') {
         return null;
     }
@@ -148,7 +532,7 @@ const MovieEditPage = () => {
                 </div>
             )}
 
-                        <form onSubmit={handleSubmit} className={styles.form}>
+            <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
                     <label htmlFor="movieNm">영화 제목 (한글)</label>
                     <input
@@ -242,15 +626,239 @@ const MovieEditPage = () => {
                     />
                 </div>
 
-                <div className={styles.formGroup}>
-                    <label htmlFor="posterUrl">포스터 URL</label>
-                    <input
-                        type="url"
-                        id="posterUrl"
-                        name="posterUrl"
-                        value={movieData.posterUrl}
-                        onChange={handleInputChange}
-                    />
+                {/* 포스터 업로드 섹션 */}
+                <div className={styles.imageSection}>
+                    <h3>포스터 이미지</h3>
+                    <div className={styles.uploadMethod}>
+                        <label>
+                            <input
+                                type="radio"
+                                name="posterUploadMethod"
+                                value="file"
+                                checked={posterUploadMethod === 'file'}
+                                onChange={() => setPosterUploadMethod('file')}
+                            />
+                            파일 업로드
+                        </label>
+                        <label>
+                            <input
+                                type="radio"
+                                name="posterUploadMethod"
+                                value="url"
+                                checked={posterUploadMethod === 'url'}
+                                onChange={() => setPosterUploadMethod('url')}
+                            />
+                            URL 입력
+                        </label>
+                    </div>
+
+                    {posterUploadMethod === 'file' ? (
+                        <div className={styles.fileUpload}>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handlePosterFileChange}
+                            />
+                            {posterPreview && (
+                                <img src={posterPreview} alt="포스터 미리보기" className={styles.preview} />
+                            )}
+                        </div>
+                    ) : (
+                        <div className={styles.urlInput}>
+                            <input
+                                type="url"
+                                placeholder="포스터 이미지 URL을 입력하세요"
+                                value={posterUrl}
+                                onChange={handlePosterUrlChange}
+                            />
+                        </div>
+                    )}
+                    <button type="button" onClick={handlePosterUpload} className={styles.uploadButton}>
+                        포스터 업로드
+                    </button>
+                </div>
+
+                {/* 감독 이미지 업로드 섹션 */}
+                <div className={styles.imageSection}>
+                    <h3>감독 이미지</h3>
+                    <div className={styles.uploadMethod}>
+                        <label>
+                            <input
+                                type="radio"
+                                name="directorImageUploadMethod"
+                                value="file"
+                                checked={directorImageUploadMethod === 'file'}
+                                onChange={() => setDirectorImageUploadMethod('file')}
+                            />
+                            파일 업로드
+                        </label>
+                        <label>
+                            <input
+                                type="radio"
+                                name="directorImageUploadMethod"
+                                value="url"
+                                checked={directorImageUploadMethod === 'url'}
+                                onChange={() => setDirectorImageUploadMethod('url')}
+                            />
+                            URL 입력
+                        </label>
+                    </div>
+
+                    {directorImageUploadMethod === 'file' ? (
+                        <div className={styles.fileUpload}>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleDirectorImageChange}
+                            />
+                            {directorImagePreview && (
+                                <img src={directorImagePreview} alt="감독 이미지 미리보기" className={styles.preview} />
+                            )}
+                        </div>
+                    ) : (
+                        <div className={styles.urlInput}>
+                            <input
+                                type="url"
+                                placeholder="감독 이미지 URL을 입력하세요"
+                                value={directorImageUrlInput}
+                                onChange={handleDirectorImageUrlChange}
+                            />
+                        </div>
+                    )}
+                    <button type="button" onClick={handleDirectorImageUpload} className={styles.uploadButton}>
+                        감독 이미지 업로드
+                    </button>
+                </div>
+
+                {/* 배우 이미지 업로드 섹션 */}
+                <div className={styles.imageSection}>
+                    <h3>배우 이미지</h3>
+                    <div className={styles.uploadMethod}>
+                        <label>
+                            <input
+                                type="radio"
+                                name="actorImageUploadMethod"
+                                value="file"
+                                checked={actorImageUploadMethod === 'file'}
+                                onChange={() => setActorImageUploadMethod('file')}
+                            />
+                            파일 업로드
+                        </label>
+                        <label>
+                            <input
+                                type="radio"
+                                name="actorImageUploadMethod"
+                                value="url"
+                                checked={actorImageUploadMethod === 'url'}
+                                onChange={() => setActorImageUploadMethod('url')}
+                            />
+                            URL 입력
+                        </label>
+                    </div>
+
+                    {actorImageUploadMethod === 'file' ? (
+                        <div className={styles.fileUpload}>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleActorImageChange}
+                            />
+                            {actorImagePreviews.length > 0 && (
+                                <div className={styles.previewGrid}>
+                                    {actorImagePreviews.map((preview, index) => (
+                                        <img key={index} src={preview} alt={`배우 이미지 미리보기 ${index + 1}`} className={styles.preview} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className={styles.urlInputs}>
+                            {actorImageUrlInputs.map((url, index) => (
+                                <div key={index} className={styles.urlInputRow}>
+                                    <input
+                                        type="url"
+                                        placeholder={`배우 ${index + 1} 이미지 URL을 입력하세요`}
+                                        value={url}
+                                        onChange={(e) => handleActorImageUrlChange(index, e.target.value)}
+                                    />
+                                    {actorImageUrlInputs.length > 1 && (
+                                        <button type="button" onClick={() => removeActorImageUrlInput(index)} className={styles.removeButton}>
+                                            삭제
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <button type="button" onClick={addActorImageUrlInput} className={styles.addButton}>
+                                URL 추가
+                            </button>
+                        </div>
+                    )}
+                    <button type="button" onClick={handleActorImageUpload} className={styles.uploadButton}>
+                        배우 이미지 업로드
+                    </button>
+                </div>
+
+                {/* 스틸컷 업로드 섹션 */}
+                <div className={styles.imageSection}>
+                    <h3>스틸컷 이미지</h3>
+                    <div className={styles.uploadMethod}>
+                        <label>
+                            <input
+                                type="radio"
+                                name="stillcutUploadMethod"
+                                value="file"
+                                checked={stillcutUploadMethod === 'file'}
+                                onChange={() => setStillcutUploadMethod('file')}
+                            />
+                            파일 업로드
+                        </label>
+                        <label>
+                            <input
+                                type="radio"
+                                name="stillcutUploadMethod"
+                                value="url"
+                                checked={stillcutUploadMethod === 'url'}
+                                onChange={() => setStillcutUploadMethod('url')}
+                            />
+                            URL 입력
+                        </label>
+                    </div>
+
+                    {stillcutUploadMethod === 'file' ? (
+                        <div className={styles.fileUpload}>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleStillcutChange}
+                            />
+                        </div>
+                    ) : (
+                        <div className={styles.urlInputs}>
+                            {stillcutUrlInputs.map((url, index) => (
+                                <div key={index} className={styles.urlInputRow}>
+                                    <input
+                                        type="url"
+                                        placeholder={`스틸컷 ${index + 1} 이미지 URL을 입력하세요`}
+                                        value={url}
+                                        onChange={(e) => handleStillcutUrlChange(index, e.target.value)}
+                                    />
+                                    {stillcutUrlInputs.length > 1 && (
+                                        <button type="button" onClick={() => removeStillcutUrlInput(index)} className={styles.removeButton}>
+                                            삭제
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <button type="button" onClick={addStillcutUrlInput} className={styles.addButton}>
+                                URL 추가
+                            </button>
+                        </div>
+                    )}
+                    <button type="button" onClick={handleStillcutUpload} className={styles.uploadButton}>
+                        스틸컷 업로드
+                    </button>
                 </div>
 
                 <div className={styles.buttonGroup}>

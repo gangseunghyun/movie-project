@@ -12,6 +12,7 @@ const ReservationDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [cancelPayment, setCancelPayment] = useState(null);
 
   useEffect(() => {
     // 페이지 맨 위로 스크롤
@@ -45,18 +46,35 @@ const ReservationDetailPage = () => {
       return;
     }
 
-    const reason = window.prompt('결제 취소 사유를 입력하세요 (선택)') || '';
-    const impUid = payment.impUid || payment.imp_uid;
+    setCancelPayment(payment);
+    setShowCancelConfirm(true);
+  };
+
+  const confirmCancelPayment = async () => {
+    if (!cancelPayment) return;
+    
+    const reason = window.prompt('결제 취소 사유를 입력하세요 (선택)');
+    
+    // 사용자가 취소 버튼을 누르면 null이 반환됨
+    if (reason === null) {
+      setShowCancelConfirm(false);
+      setCancelPayment(null);
+      return;
+    }
+    
+    const impUid = cancelPayment.impUid || cancelPayment.imp_uid;
     
     if (!impUid) {
       alert('결제정보가 없습니다.');
+      setShowCancelConfirm(false);
+      setCancelPayment(null);
       return;
     }
 
     try {
       const response = await axios.post(
         'http://localhost:80/api/payments/cancel',
-        { imp_uid: impUid, reason },
+        { imp_uid: impUid, reason: reason || '' },
         { withCredentials: true }
       );
 
@@ -69,6 +87,9 @@ const ReservationDetailPage = () => {
     } catch (error) {
       console.error('결제취소 오류:', error);
       alert('결제취소 중 오류가 발생했습니다.');
+    } finally {
+      setShowCancelConfirm(false);
+      setCancelPayment(null);
     }
   };
 
@@ -164,31 +185,31 @@ const ReservationDetailPage = () => {
             <h4 className={styles.sectionTitle}>📋 예매 정보</h4>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>예매번호</span>
+                <span className={styles.infoLabel2}>예매번호</span>
                 <span className={styles.infoValue}>{reservationId}</span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>🏢 영화관</span>
+                <span className={styles.infoLabel2}>🏢 영화관</span>
                 <span className={styles.infoValue}>{cinema?.name || '영화관'}</span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>🏟️ 상영관</span>
+                <span className={styles.infoLabel2}>🏟️ 상영관</span>
                 <span className={styles.infoValue}>{theater?.name || '상영관'}</span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>🕒 상영일시</span>
+                <span className={styles.infoLabel2}>🕒 상영일시</span>
                 <span className={styles.infoValue}>
                   {formatTime(screening?.startTime)}
                 </span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>💺 좌석</span>
+                <span className={styles.infoLabel2}>💺 좌석</span>
                 <span className={styles.infoValue}>
                   {seats?.map(seat => seat.seatNumber).join(', ') || '좌석 정보 없음'}
                 </span>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>📅 예매일시</span>
+                <span className={styles.infoLabel2}>📅 예매일시</span>
                 <span className={styles.infoValue}>
                   {formatDate(reservedAt)}
                 </span>
@@ -202,23 +223,23 @@ const ReservationDetailPage = () => {
               <h4 className={styles.sectionTitle}>💳 결제 정보</h4>
               <div className={styles.infoGrid}>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제금액</span>
+                  <span className={styles.infoLabel2}>결제금액</span>
                   <span className={styles.infoValue}>
                     <span className={styles.amount}>{totalAmount?.toLocaleString() || 0}원</span>
                   </span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제수단</span>
+                  <span className={styles.infoLabel2}>결제수단</span>
                   <span className={styles.infoValue}>{payment.method || 'N/A'}</span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제상태</span>
+                  <span className={styles.infoLabel2}>결제상태</span>
                   <span className={`${styles.infoValue} ${styles.status}`}>
                     {payment.cancelled ? '취소됨' : payment.status || 'N/A'}
                   </span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제일시</span>
+                  <span className={styles.infoLabel2}>결제일시</span>
                   <span className={styles.infoValue}>
                     {formatDate(payment.paidAt)}
                   </span>
@@ -239,7 +260,7 @@ const ReservationDetailPage = () => {
           {payment && !payment.cancelled && (payment.status === 'SUCCESS' || payment.status === 'PAID') && (
             <button 
               className={styles.cancelButton}
-              onClick={() => setShowCancelConfirm(true)}
+              onClick={handleCancelPayment}
             >
               예매취소
             </button>
@@ -377,7 +398,7 @@ const ReservationDetailPage = () => {
               </button>
               <button 
                 className={styles.cancelPaymentButton}
-                onClick={handleCancelPayment}
+                onClick={confirmCancelPayment}
               >
                 예매 취소
               </button>

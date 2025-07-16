@@ -38,6 +38,9 @@ public class AdminMovieDto {
     // 태그 정보
     private List<String> tagNames;
     
+    // 스틸컷 정보
+    private List<String> stillcutUrls;
+    
     // 관리용 정보
     private LocalDate createdAt;
     private LocalDate updatedAt;

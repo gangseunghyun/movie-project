@@ -110,42 +110,42 @@ const ReservationDetailModal = ({ reservation, onClose, onCancelPayment }) => {
               <h4 className={styles.sectionTitle}>💳 결제 정보</h4>
               <div className={styles.infoGrid}>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제금액</span>
+                  <span className={styles.infoLabel2}>결제금액</span>
                   <span className={styles.infoValue}>
                     <span className={styles.amount}>{totalAmount?.toLocaleString() || 0}원</span>
                   </span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제수단</span>
+                  <span className={styles.infoLabel2}>결제수단</span>
                   <span className={styles.infoValue}>{payment.method || 'N/A'}</span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제상태</span>
+                  <span className={styles.infoLabel2}>결제상태</span>
                   <span className={`${styles.infoValue} ${styles.status}`}>
                     {payment.cancelled ? '취소됨' : payment.status || 'N/A'}
                   </span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제일시</span>
+                  <span className={styles.infoLabel2}>결제일시</span>
                   <span className={styles.infoValue}>
                     {formatDate(payment.paidAt)}
                   </span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>결제번호</span>
+                  <span className={styles.infoLabel2}>결제번호</span>
                   <span className={styles.infoValue}>
                     <span className={styles.code}>{payment.impUid || 'N/A'}</span>
                   </span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>주문번호</span>
+                  <span className={styles.infoLabel2}>주문번호</span>
                   <span className={styles.infoValue}>
                     <span className={styles.code}>{payment.merchantUid || 'N/A'}</span>
                   </span>
                 </div>
                 {payment.receiptNumber && (
                   <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>영수증번호</span>
+                    <span className={styles.infoLabel2}>영수증번호</span>
                     <span className={styles.infoValue}>
                       <span 
                         className={styles.code}
@@ -159,30 +159,30 @@ const ReservationDetailModal = ({ reservation, onClose, onCancelPayment }) => {
                 )}
                 {payment.cardName && (
                   <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>카드사명</span>
+                    <span className={styles.infoLabel2}>카드사명</span>
                     <span className={styles.infoValue}>{payment.cardName}</span>
                   </div>
                 )}
                 {payment.cardNumberSuffix && (
                   <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>카드번호(끝4자리)</span>
+                    <span className={styles.infoLabel2}>카드번호(끝4자리)</span>
                     <span className={styles.infoValue}>{payment.cardNumberSuffix}</span>
                   </div>
                 )}
                 {payment.approvalNumber && (
                   <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>승인번호</span>
+                    <span className={styles.infoLabel2}>승인번호</span>
                     <span className={styles.infoValue}>{payment.approvalNumber}</span>
                   </div>
                 )}
                 {payment.cancelled && (
                   <>
                     <div className={styles.infoItem}>
-                      <span className={styles.infoLabel}>취소사유</span>
+                      <span className={styles.infoLabel2}>취소사유</span>
                       <span className={styles.infoValue}>{payment.cancelReason || 'N/A'}</span>
                     </div>
                     <div className={styles.infoItem}>
-                      <span className={styles.infoLabel}>취소일시</span>
+                      <span className={styles.infoLabel2}>취소일시</span>
                       <span className={styles.infoValue}>
                         {formatDate(payment.cancelledAt)}
                       </span>

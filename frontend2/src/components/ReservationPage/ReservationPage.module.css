@@ -40,14 +40,16 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 8px 12px;
   border-radius: 8px;
   transition: background-color 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  color: #ffffff;
+  font-size: 14px;
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 .backButton:hover {
@@ -260,12 +262,22 @@
   width: 15px;
   margin-right: 12px;
   font-size: 14px;
+  word-break: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
 }
 
 .infoLabel2 {
   width: 80px;
   margin-right: 12px;
   font-size: 14px;
+  word-break: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
 }
 
 .infoValue {
@@ -434,17 +446,37 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  max-width: 100%;
 }
 
 .infoItem {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  word-break: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.infoItem span {
+  word-break: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
 }
 
 .infoValue {
   font-size: 14px;
   color: #cccccc;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
 
 .amount {
@@ -744,6 +776,24 @@
   
   .infoGrid {
     grid-template-columns: 1fr;
+    gap: 12px;
+    max-width: 100%;
+  }
+  
+  .infoItem {
+    padding: 8px 0;
+    max-width: 100%;
+    min-width: 0;
+  }
+  
+  .infoValue {
+    font-size: 13px;
+    word-break: normal;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
   }
   
   .modalActions {

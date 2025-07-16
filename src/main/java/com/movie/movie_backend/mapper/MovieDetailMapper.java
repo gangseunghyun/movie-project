@@ -62,6 +62,12 @@ public class MovieDetailMapper {
         } catch (Exception e) {
             // 로그는 남기되 에러는 발생시키지 않음
         }
+        
+        // 포스터 URL이 null이거나 "null" 문자열이면 빈 문자열로 설정
+        if (posterUrl == null || "null".equals(posterUrl) || posterUrl.trim().isEmpty()) {
+            posterUrl = "";
+        }
+        
         dto.setPosterUrl(posterUrl);
         dto.setDirectorName(directorName);
         dto.setAverageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0);
@@ -97,14 +103,20 @@ public class MovieDetailMapper {
             dto.setActors(actors);
         }
         
-        dto.setStillcuts(movieDetail.getStillcuts() != null ? 
-            movieDetail.getStillcuts().stream()
+        // 스틸컷 정보 매핑 (정렬된 순서로)
+        if (movieDetail.getStillcuts() != null && !movieDetail.getStillcuts().isEmpty()) {
+            List<MovieDetailDto.Stillcut> stillcutDtos = movieDetail.getStillcuts().stream()
+                .sorted((s1, s2) -> Integer.compare(s1.getOrderInMovie(), s2.getOrderInMovie()))
                 .map(stillcut -> MovieDetailDto.Stillcut.builder()
                     .id(stillcut.getId())
                     .imageUrl(stillcut.getImageUrl())
                     .orderInMovie(stillcut.getOrderInMovie())
                     .build())
-                .collect(Collectors.toList()) : null);
+                .collect(Collectors.toList());
+            dto.setStillcuts(stillcutDtos);
+        } else {
+            dto.setStillcuts(null);
+        }
         
         // 태그 정보 매핑
         dto.setTags(movieDetail.getTags() != null ? movieDetail.getTags() : List.of());

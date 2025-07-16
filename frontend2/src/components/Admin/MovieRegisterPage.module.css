@@ -178,4 +178,164 @@
     .header h1 {
         font-size: 1.8rem;
     }
+}
+
+/* 이미지 업로드 관련 스타일 */
+.uploadMethodSelector {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #333;
+    border-radius: 8px;
+}
+
+.uploadMethodSelector label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.uploadMethodSelector input[type="radio"] {
+    width: auto;
+    margin: 0;
+}
+
+.previewContainer {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.posterPreview {
+    max-width: 200px;
+    max-height: 300px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    margin-bottom: 10px;
+}
+
+.uploadButton {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.uploadButton:hover {
+    background: #218838;
+}
+
+.uploadButton:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+/* 2단계 등록 관련 스타일 */
+.stepIndicator {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #333;
+    border-radius: 8px;
+    border-left: 4px solid #4a90e2;
+}
+
+.stepIndicator h2 {
+    margin: 0 0 10px 0;
+    color: #4a90e2;
+    font-size: 1.5rem;
+}
+
+.stepIndicator p {
+    margin: 0;
+    color: #b0b8c1;
+    font-size: 1rem;
+}
+
+.successMessage {
+    color: #28a745;
+    font-weight: 500;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.stillcutPreview {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin: 5px;
+    border: 2px solid #444;
+}
+
+.directorPreview {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 2px solid #444;
+}
+
+.actorPreview {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin: 5px;
+    border: 2px solid #444;
+}
+
+/* URL 입력 관련 스타일 */
+.urlInputGroup {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.urlInputGroup input {
+    flex: 1;
+}
+
+.removeButton {
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+}
+
+.removeButton:hover {
+    background: #c82333;
+}
+
+.addButton {
+    background: #17a2b8;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-bottom: 10px;
+}
+
+.addButton:hover {
+    background: #138496;
 } 
