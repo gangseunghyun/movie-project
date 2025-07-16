@@ -20,7 +20,7 @@ public class MovieList {
     private String genreNm; // 장르
     private String nationNm; // 제작국가
     private String watchGradeNm; // 관람등급
-    @Column(nullable = true)
+    @Column(nullable = true, length = 1000)
     private String posterUrl; // 포스터 이미지 URL
     @Column(nullable = true)
     private String kmdbId; // KMDb 영화 ID (nullable)

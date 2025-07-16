@@ -3,9 +3,10 @@ import styles from './ReviewCommentsModal.module.css';
 import userIcon from '../../assets/user_icon.png';
 import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
+import commentIcon2 from '../../assets/comment_icon2.png';
 import banner1 from '../../assets/banner1.jpg';
 
-export default function ReviewCommentsModal({ isOpen, onClose, review }) {
+export default function ReviewCommentsModal({ isOpen, onClose, review, onCommentCountChange, handleLikeReview, handleReplyIconClick, user }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -18,6 +19,10 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
   // 클린봇 차단된 댓글 표시 상태 관리
   const [showBlocked, setShowBlocked] = useState({});
 
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [likedByMe, setLikedByMe] = useState(review?.likedByMe || false);
+  const [likeCount, setLikeCount] = useState(review?.likeCount || 0);
+
   useEffect(() => {
     if (isOpen && review) {
       console.log('Review 객체:', review); // 디버깅용
@@ -25,6 +30,23 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
       fetchCurrentUser();
     }
   }, [isOpen, review]);
+
+  useEffect(() => {
+    setLikedByMe(review?.likedByMe || false);
+    setLikeCount(review?.likeCount || 0);
+  }, [review]);
+
+  // comments 상태가 변경될 때마다 댓글 개수 업데이트를 강제로 트리거
+  useEffect(() => {
+    // comments 상태가 변경되면 강제로 리렌더링을 트리거
+    console.log('댓글 목록 업데이트됨, 총 개수:', getTotalCommentCount(comments));
+  }, [comments]);
+
+  useEffect(() => {
+    if (onCommentCountChange && review) {
+      onCommentCountChange(review.id, getTotalCommentCount(comments));
+    }
+  }, [comments]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -90,8 +112,13 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
+    if (diffMinutes < 1) return '방금 전';
+    if (diffMinutes < 60) return `${diffMinutes}분 전`;
+    if (diffHours < 24) return `${diffHours}시간 전`;
     if (diffDays === 1) return '어제';
     if (diffDays < 7) return `${diffDays}일 전`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전`;
@@ -108,47 +135,26 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
     return content;
   };
 
-  const handleLike = async (commentId, likedByMe) => {
-    if (!currentUser) {
+  // 좋아요/댓글 버튼 로직을 영화상세 카드와 동일하게 적용
+  const handleLike = async () => {
+    if (!user) {
       alert('로그인이 필요합니다.');
       return;
     }
-
-    try {
-      if (likedByMe) {
-        // 좋아요 취소
-        const response = await fetch(`http://localhost:80/api/comments/${commentId}/like?userId=${currentUser.id}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-        
-        if (response.ok) {
-          fetchComments();
-        } else {
-          alert('좋아요 취소에 실패했습니다.');
-        }
-      } else {
-        // 좋아요 추가
-        const response = await fetch(`http://localhost:80/api/comments/${commentId}/like`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            userId: currentUser.id
-          }),
-        });
-        
-        if (response.ok) {
-          fetchComments();
-        } else {
-          alert('좋아요 추가에 실패했습니다.');
-        }
-      }
-    } catch (error) {
-      console.error('좋아요 처리 오류:', error);
-      alert('네트워크 오류가 발생했습니다.');
+    if (handleLikeReview && review) {
+      await handleLikeReview(review.id, likedByMe);
+      // 상태 즉시 반영
+      setLikedByMe(prev => !prev);
+      setLikeCount(prev => prev + (likedByMe ? -1 : 1));
+    }
+  };
+  const handleCommentClick = () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    if (handleReplyIconClick && review) {
+      handleReplyIconClick(null, review.id);
     }
   };
 
@@ -220,7 +226,26 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
       });
 
       if (response.ok) {
-        fetchComments();
+        // 삭제 성공 시 즉시 로컬 상태에서 해당 댓글 제거
+        setComments(prevComments => {
+          const removeCommentRecursively = (comments, targetId) => {
+            return comments.filter(comment => {
+              if (comment.id === targetId) {
+                return false; // 삭제할 댓글 제거
+              }
+              if (comment.replies && comment.replies.length > 0) {
+                comment.replies = removeCommentRecursively(comment.replies, targetId);
+              }
+              return true;
+            });
+          };
+          return removeCommentRecursively([...prevComments], commentId);
+        });
+        
+        // 백그라운드에서 댓글 목록 새로고침 (동기화용)
+        setTimeout(() => {
+          fetchComments();
+        }, 100);
       } else {
         alert('댓글 삭제에 실패했습니다.');
       }
@@ -282,6 +307,47 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
     }
   };
 
+  // 댓글 좋아요 핸들러 추가
+  const handleCommentLike = async (commentId, likedByMe) => {
+    if (!currentUser) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    try {
+      let res;
+      if (likedByMe) {
+        // 댓글 좋아요 취소 (DELETE)
+        res = await fetch(`http://localhost:80/api/comments/${commentId}/like?userId=${currentUser.id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+      } else {
+        // 댓글 좋아요 (POST)
+        res = await fetch(`http://localhost:80/api/comments/${commentId}/like`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            userId: currentUser.id
+          }),
+        });
+      }
+      
+      if (res.ok) {
+        fetchComments(); // 댓글 목록 새로고침
+      } else if (res.status === 401) {
+        alert('로그인이 필요합니다.');
+      } else {
+        alert('좋아요 처리 실패');
+      }
+    } catch (e) {
+      alert('네트워크 오류');
+    }
+  };
+
   // 재귀적으로 모든 댓글/대댓글/대대댓글...을 평면적으로 수직 나열
   const renderCommentTree = (comment, parentNickname, depth = 0) => {
     const items = [
@@ -318,19 +384,19 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
               </div>
             </div>
           ) : (
-            renderCommentText(comment)
+            renderCommentText(comment, parentNickname)
           )}
           <div className={styles.actionButtons}>
+            {/* 댓글의 좋아요 버튼 수정 */}
             <div 
               className={`${styles.likeButton} ${!currentUser ? styles.disabled : ''}`} 
-              onClick={() => currentUser ? handleLike(comment.id, comment.likedByMe) : alert('로그인이 필요합니다.')}
+              onClick={() => handleCommentLike(comment.id, comment.likedByMe)}
             >
               <img
                 src={comment.likedByMe ? likeIconTrue : likeIcon}
                 alt="좋아요"
                 className={styles.likeIcon}
               />
-              <span className={styles.likeCount}>{comment.likeCount || 0}</span>
             </div>
             <button 
               className={`${styles.replyButton} ${!currentUser ? styles.disabled : ''}`} 
@@ -364,7 +430,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
     ];
     if (comment.replies && comment.replies.length > 0) {
       comment.replies.forEach(child =>
-        items.push(...renderCommentTree(child, comment.userNickname, depth + 1))
+        items.push(...renderCommentTree(child, comment.userNickname || comment.user || '익명', depth + 1))
       );
     }
     return items;
@@ -378,8 +444,13 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
     }));
   };
 
+  // 최상위 댓글 개수 계산 (대댓글 제외)
+  const getTotalCommentCount = (comments) => {
+    return comments.length; // 최상위 댓글만 카운트
+  };
+
   // 클린봇 차단된 댓글 렌더링 함수
-  const renderCommentText = (comment) => {
+  const renderCommentText = (comment, parentNickname) => {
     if (comment.isBlockedByCleanbot) {
       return (
         <div className={styles.commentText} style={{ color: '#888', fontStyle: 'italic' }}>
@@ -412,8 +483,8 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
     } else {
       return (
         <div className={styles.commentText}>
-          {comment.parent && (
-            <span className={styles.replyTo}>@{comment.parent.userNickname || '익명'}</span>
+          {parentNickname && (
+            <span className={styles.replyTo}>@{parentNickname}</span>
           )}
           {comment.content}
         </div>
@@ -469,9 +540,55 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
               </div>
             </div>
           </div>
-          
+          {/* 좋아요/댓글 개수 한 줄 텍스트 */}
+          <div className={styles.countsLine} style={{ margin: '8px 0 0 0', fontSize: '15px', color: '#555', fontWeight: 500 }}>
+            좋아요 {likeCount}  댓글 {getTotalCommentCount(comments)}
+          </div>
+
+          {/* 좋아요/댓글 버튼 추가 */}
+          <div style={{ display: 'flex', gap: 16, margin: '16px 0 12px 0' }}>
+            <button
+              className={styles.likeButton}
+              onClick={e => {
+                e.stopPropagation();
+                if (!user) {
+                  alert('로그인이 필요합니다.');
+                  return;
+                }
+                handleLike();
+              }}
+              style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <img
+                src={likedByMe ? likeIconTrue : likeIcon}
+                alt="좋아요"
+                className={styles.likeIcon}
+                style={{ width: 22, height: 22, marginRight: 4 }}
+              />
+            </button>
+            <button
+              className={styles.replyButton}
+              onClick={e => {
+                e.stopPropagation();
+                if (!user) {
+                  alert('로그인이 필요합니다.');
+                  return;
+                }
+                handleReplyIconClick(e, review.id);
+              }}
+              style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <img
+                src={commentIcon2}
+                alt="댓글"
+                style={{ width: 22, height: 22, marginRight: 4 }}
+              />
+              <span>댓글</span>
+            </button>
+          </div>
+
           <div className={styles.commentsHeader}>
-            <span className={styles.commentsCount}>댓글 {comments.length}개</span>
+            <span className={styles.commentsCount}>댓글 {getTotalCommentCount(comments)}개</span>
           </div>
 
           {loading ? (

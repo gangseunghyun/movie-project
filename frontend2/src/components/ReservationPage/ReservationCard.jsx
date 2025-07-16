@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './ReservationPage.module.css';
 
-const ReservationCard = ({ reservation, onClick }) => {
+const ReservationCard = ({ reservation, onClick, onCancelClick }) => {
   const { screening, cinema, theater, seats, payments, totalAmount, reservedAt } = reservation;
   const payment = payments?.[0];
 
@@ -104,7 +104,13 @@ const ReservationCard = ({ reservation, onClick }) => {
           상세보기
         </button>
         {payment && !payment.cancelled && (payment.status === 'SUCCESS' || payment.status === 'PAID') && (
-          <button className={styles.cancelButton}>
+          <button 
+            className={styles.cancelButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCancelClick && onCancelClick(reservation);
+            }}
+          >
             취소하기
           </button>
         )}

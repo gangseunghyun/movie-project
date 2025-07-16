@@ -4,6 +4,7 @@ import com.movie.movie_backend.dto.MovieDetailDto;
 import com.movie.movie_backend.entity.*;
 import com.movie.movie_backend.mapper.MovieDetailMapper;
 import com.movie.movie_backend.repository.*;
+import com.movie.movie_backend.repository.CastRepository;
 import com.movie.movie_backend.constant.MovieStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +28,11 @@ public class MovieManagementService {
     private final PRDTagRepository tagRepository;
     private final REVLikeRepository likeRepository;
     private final REVRatingRepository ratingRepository;
+    private final REVReviewRepository reviewRepository;
     private final MovieDetailMapper movieDetailMapper;
     private final USRUserRepository userRepository;
     private final FileUploadService fileUploadService;
+    private final CastRepository castRepository;
 
     /**
      * 영화 등록
@@ -109,24 +112,82 @@ public class MovieManagementService {
             director.setName(directorDto.getPeopleNm());
             director = directorRepository.save(director);
             movieDetail.setDirector(director);
+        } else if (movieDto.getDirectorName() != null && !movieDto.getDirectorName().trim().isEmpty()) {
+            // 문자열로 전송된 감독명 처리
+            Director director = new Director();
+            director.setName(movieDto.getDirectorName().trim());
+            director = directorRepository.save(director);
+            movieDetail.setDirector(director);
+            log.info("감독 정보 저장: {}", director.getName());
         }
         
-        // 배우 정보 저장
+        // 태그 정보 저장
+        if (movieDto.getTags() != null && !movieDto.getTags().isEmpty()) {
+            for (Tag tag : movieDto.getTags()) {
+                // 태그가 이미 존재하는지 확인
+                Optional<Tag> existingTag = tagRepository.findByName(tag.getName());
+                if (existingTag.isPresent()) {
+                    movieDetail.getTags().add(existingTag.get());
+                } else {
+                    // 새 태그 생성
+                    Tag newTag = new Tag();
+                    newTag.setName(tag.getName());
+                    Tag savedTag = tagRepository.save(newTag);
+                    movieDetail.getTags().add(savedTag);
+                }
+            }
+        }
+        
+        // 먼저 MovieDetail을 저장
+        MovieDetail savedMovie = movieRepository.save(movieDetail);
+        
+        // 배우 정보 저장 (MovieDetail이 저장된 후)
         if (movieDto.getActors() != null && !movieDto.getActors().isEmpty()) {
-            for (MovieDetailDto.Actor actorDto : movieDto.getActors()) {
+            for (int i = 0; i < movieDto.getActors().size(); i++) {
+                MovieDetailDto.Actor actorDto = movieDto.getActors().get(i);
                 Actor actor = new Actor();
                 actor.setName(actorDto.getPeopleNm());
                 actor = actorRepository.save(actor);
                 
                 Cast cast = new Cast();
-                cast.setMovieDetail(movieDetail);
+                cast.setMovieDetail(savedMovie);
                 cast.setActor(actor);
                 cast.setCharacterName(actorDto.getCast());
+                cast.setOrderInCredits(i + 1);
+                castRepository.save(cast);
+                
+                log.info("배우 정보 저장: {} (순서: {})", actor.getName(), i + 1);
+            }
+        } else if (movieDto.getActorNames() != null && !movieDto.getActorNames().trim().isEmpty()) {
+            // 문자열로 전송된 배우명 처리
+            String[] actorNames = movieDto.getActorNames().split(",");
+            for (int i = 0; i < actorNames.length; i++) {
+                String actorName = actorNames[i].trim();
+                if (!actorName.isEmpty()) {
+                    Actor actor = new Actor();
+                    actor.setName(actorName);
+                    actor = actorRepository.save(actor);
+                    
+                    Cast cast = new Cast();
+                    cast.setMovieDetail(savedMovie);
+                    cast.setActor(actor);
+                    cast.setCharacterName(actorName);
+                    cast.setOrderInCredits(i + 1);
+                    castRepository.save(cast);
+                    
+                    log.info("배우 정보 저장: {} (순서: {})", actor.getName(), i + 1);
+                }
             }
         }
-        
-        MovieDetail savedMovie = movieRepository.save(movieDetail);
         log.info("영화 등록 완료: {} (ID: {})", savedMovie.getMovieNm(), savedMovie.getMovieCd());
+        
+        // Cast 정보 저장 확인
+        List<Cast> savedCasts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(savedMovie.getMovieCd());
+        log.info("저장된 Cast 개수: {}", savedCasts.size());
+        for (Cast cast : savedCasts) {
+            log.info("Cast 정보: 배우={}, 순서={}, 캐릭터={}", 
+                cast.getActor().getName(), cast.getOrderInCredits(), cast.getCharacterName());
+        }
         
         // DB 저장 확인을 위한 추가 로깅
         log.info("=== 영화 등록 상세 정보 ===");
@@ -138,6 +199,7 @@ public class MovieManagementService {
         log.info("저장된 상영시간: {}", savedMovie.getShowTm());
         log.info("저장된 개봉일: {}", savedMovie.getOpenDt());
         log.info("저장된 감독: {}", savedMovie.getDirector() != null ? savedMovie.getDirector().getName() : "없음");
+        log.info("저장된 태그: {}", savedMovie.getTags().stream().map(Tag::getName).collect(java.util.stream.Collectors.joining(", ")));
         log.info("=== 영화 등록 완료 ===");
         
         return savedMovie;
@@ -180,14 +242,15 @@ public class MovieManagementService {
     public void deleteMovie(String movieCd) {
         log.info("영화 삭제 시작: {}", movieCd);
         
-        // 포스터 파일도 함께 삭제
+        // MovieDetail 조회
+        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
+        
+        // MovieList 조회 및 포스터 파일 삭제
         MovieList movieList = movieListRepository.findById(movieCd).orElse(null);
         if (movieList != null && movieList.getPosterUrl() != null) {
             fileUploadService.deleteImage(movieList.getPosterUrl(), "posters");
         }
-        
-        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
-                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
         // 관련 데이터 삭제 (찜, 평점, 댓글 등)
         List<Like> likes = likeRepository.findAll().stream()
@@ -201,8 +264,24 @@ public class MovieManagementService {
                 .toList();
         ratingRepository.deleteAll(ratings);
         
-        // 영화 삭제
+        // 리뷰 데이터 삭제
+        List<Review> reviews = reviewRepository.findAll().stream()
+                .filter(review -> review.getMovieDetail().getMovieCd().equals(movieCd))
+                .toList();
+        reviewRepository.deleteAll(reviews);
+        
+        // Cast 데이터 삭제
+        List<Cast> casts = castRepository.findByMovieDetailMovieCdOrderByOrderInCreditsAsc(movieCd);
+        castRepository.deleteAll(casts);
+        
+        // MovieDetail 삭제
         movieRepository.delete(movie);
+        
+        // MovieList 삭제
+        if (movieList != null) {
+            movieListRepository.delete(movieList);
+        }
+        
         log.info("영화 삭제 완료: {}", movieCd);
     }
 

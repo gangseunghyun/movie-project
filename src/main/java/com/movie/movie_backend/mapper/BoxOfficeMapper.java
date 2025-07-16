@@ -50,6 +50,11 @@ public class BoxOfficeMapper {
                 posterUrl = movieList.getPosterUrl();
             }
         }
+        
+        // 포스터 URL이 null이거나 "null" 문자열이면 빈 문자열로 설정
+        if (posterUrl == null || "null".equals(posterUrl) || posterUrl.trim().isEmpty()) {
+            posterUrl = "";
+        }
 
         // 평점 정보 가져오기 (캐시된 데이터 사용)
         Double averageRating = null;

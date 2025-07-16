@@ -422,8 +422,8 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
         if (confirmDelete) {
             console.log('영화 삭제 시작:', movieDetail.movieCd);
             
-            // 영화 삭제 API 호출 (MovieManagementController 사용)
-            fetch(`http://localhost:80/api/movies/${movieDetail.movieCd}`, {
+            // 영화 삭제 API 호출 (AdminController 사용)
+            fetch(`http://localhost:80/api/admin/movies/${movieDetail.movieCd}`, {
                 method: 'DELETE',
                 credentials: 'include',
             })

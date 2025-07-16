@@ -162,7 +162,7 @@ public class REVReviewService {
                     int likeCount = reviewLikeRepository.countByReviewId(review.getId());
                     dto.setLikeCount(likeCount);
                     
-                    // 댓글 개수 설정 (활성 상태만)
+                    // 댓글 개수 설정 (활성 상태만, 최상위 댓글만)
                     int commentCount = commentRepository.getTopLevelCommentCountByReviewId(review.getId()).intValue();
                     dto.setCommentCount(commentCount);
                     

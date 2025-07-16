@@ -7,6 +7,13 @@ import nextIcon from '../../assets/next_icon.png';
 const StillcutGalleryModal = ({ open, onClose, stillcuts, initialIndex = 0 }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
+  // 모달이 열릴 때마다 initialIndex로 초기화
+  React.useEffect(() => {
+    if (open) {
+      setCurrentIndex(initialIndex);
+    }
+  }, [open, initialIndex]);
+
   if (!open || !stillcuts || stillcuts.length === 0) return null;
 
   const handlePrevious = () => {

@@ -28,6 +28,7 @@ public class MovieDetailDto {
     private int totalAudience;       // 누적관객수
     private String posterUrl;        // 포스터 URL
     private String directorName;     // 감독이름
+    private String actorNames;       // 배우이름들 (쉼표로 구분)
     private double averageRating;    // 평균 평점
     private List<Nation> nations;    // 제작국가 목록
     private List<Genre> genres;      // 장르 목록

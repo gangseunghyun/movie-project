@@ -9,6 +9,7 @@ public class Stillcut {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 스틸컷 고유 ID
 
+    @Column(length = 1000)
     private String imageUrl; // 스틸컷 이미지 URL
     private int orderInMovie; // 영화 내 스틸컷 순서(선택)
 

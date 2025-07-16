@@ -144,6 +144,7 @@ export default function MovieDetailPage() {
         movieCd={movieDetail.movieCd}
         movieId={movieDetail.movieId || movieDetail.id}
         comments={comments}
+        setComments={setComments}
         commentLoading={commentLoading}
         commentError={commentError}
         fetchComments={fetchComments}
