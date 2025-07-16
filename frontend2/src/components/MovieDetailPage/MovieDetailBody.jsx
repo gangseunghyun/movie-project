@@ -97,6 +97,9 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const [similarMoviesLoading, setSimilarMoviesLoading] = useState(false);
   const [similarMoviesError, setSimilarMoviesError] = useState(null);
 
+  // 클린봇 차단된 리뷰 표시 상태 관리
+  const [showBlocked, setShowBlocked] = useState({});
+
   // AllCommentsModal에서 코멘트 클릭 시 상세 모달로 전환
   const handleAllCommentsCommentClick = (comment) => {
     setSelectedReviewId(comment.id);
@@ -411,6 +414,52 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     setCommentsModalOpen(false);
   };
 
+  // 클린봇 차단된 리뷰 표시 토글 함수
+  const toggleBlockedContent = (commentId) => {
+    setShowBlocked(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }));
+  };
+
+  // 클린봇 차단된 리뷰 렌더링 함수
+  const renderCommentContent = (comment) => {
+    if (comment.blockedByCleanbot) {
+      return (
+        <div className={styles.commentContent} style={{ color: '#888', fontStyle: 'italic' }}>
+          {showBlocked[comment.id] ? (
+            <>
+              <span style={{ color: '#ff2f6e', fontWeight: 600 }}>[클린봇 감지]</span> {comment.content}
+            </>
+          ) : (
+            <>
+              이 리뷰는 클린봇이 감지한 악성 리뷰입니다.{' '}
+              <button 
+                style={{ 
+                  color: '#3b82f6', 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  textDecoration: 'underline' 
+                }} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleBlockedContent(comment.id);
+                }}
+              >
+                보기
+              </button>
+            </>
+          )}
+        </div>
+      );
+    } else {
+      return (
+        <div className={styles.commentContent}>{comment.content}</div>
+      );
+    }
+  };
+
   return (
     <div className={styles.detailBody}>
       <section>
@@ -494,7 +543,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                 </span>
               </div>
               <hr className={styles.commentDivider} />
-              <div className={styles.commentContent}>{comment.content}</div>
+              {renderCommentContent(comment)}
               <hr className={styles.commentFooterDivider} />
               <div className={styles.commentFooter}>
                 <span>좋아요 {comment.likeCount ?? 0}</span>

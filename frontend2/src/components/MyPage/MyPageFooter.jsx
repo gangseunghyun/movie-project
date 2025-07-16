@@ -38,6 +38,9 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   const [myCommentsModalOpen, setMyCommentsModalOpen] = useState(false);
   const [lastModalType, setLastModalType] = useState(null);
 
+  // 클린봇 차단된 리뷰 표시 상태 관리
+  const [showBlocked, setShowBlocked] = useState({});
+
   // sessionStorage에서 tempUserInfo 확인 (새로고침 시에도 유지)
   useEffect(() => {
     const storedUserInfo = sessionStorage.getItem('tempUserInfo');
@@ -139,6 +142,52 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     }
   };
 
+  // 클린봇 차단된 리뷰 표시 토글 함수
+  const toggleBlockedContent = (reviewId) => {
+    setShowBlocked(prev => ({
+      ...prev,
+      [reviewId]: !prev[reviewId]
+    }));
+  };
+
+  // 클린봇 차단된 리뷰 렌더링 함수
+  const renderReviewContent = (review) => {
+    if (review.blockedByCleanbot) {
+      return (
+        <div className={styles.commentContent} style={{ color: '#888', fontStyle: 'italic' }}>
+          {showBlocked[review.id] ? (
+            <>
+              <span style={{ color: '#ff2f6e', fontWeight: 600 }}>[클린봇 감지]</span> {review.content}
+            </>
+          ) : (
+            <>
+              이 리뷰는 클린봇이 감지한 악성 리뷰입니다.{' '}
+              <button 
+                style={{ 
+                  color: '#3b82f6', 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  textDecoration: 'underline' 
+                }} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleBlockedContent(review.id);
+                }}
+              >
+                보기
+              </button>
+            </>
+          )}
+        </div>
+      );
+    } else {
+      return (
+        <div className={styles.commentContent}>{review.content}</div>
+      );
+    }
+  };
+
   // MovieDetailBody.jsx의 코멘트 카드 레이아웃 복사
   const renderCommentCard = (comment, showActions = false) => (
     <div
@@ -168,7 +217,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
           <span className={styles.commentMovieTitle}>{comment.movieNm}</span>
           <img src={comment.posterUrl} alt="영화 포스터" className={styles.commentMoviePoster} />
         </div>
-        <div className={styles.commentContent}>{comment.content}</div>
+        {renderReviewContent(comment)}
       </div>
       <hr className={styles.commentFooterDivider} />
       <div className={styles.commentFooter}>

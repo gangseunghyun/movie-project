@@ -14,6 +14,9 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [replyContent, setReplyContent] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // 클린봇 차단된 댓글 표시 상태 관리
+  const [showBlocked, setShowBlocked] = useState({});
 
   useEffect(() => {
     if (isOpen && review) {
@@ -315,12 +318,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
               </div>
             </div>
           ) : (
-            <div className={styles.commentText}>
-              {depth > 0 && (
-                <span className={styles.replyTo}>@{parentNickname || '익명'}</span>
-              )}
-              {comment.content}
-            </div>
+            renderCommentText(comment)
           )}
           <div className={styles.actionButtons}>
             <div 
@@ -370,6 +368,57 @@ export default function ReviewCommentsModal({ isOpen, onClose, review }) {
       );
     }
     return items;
+  };
+
+  // 클린봇 차단된 댓글 표시 토글 함수
+  const toggleBlockedContent = (commentId) => {
+    setShowBlocked(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }));
+  };
+
+  // 클린봇 차단된 댓글 렌더링 함수
+  const renderCommentText = (comment) => {
+    if (comment.isBlockedByCleanbot) {
+      return (
+        <div className={styles.commentText} style={{ color: '#888', fontStyle: 'italic' }}>
+          {showBlocked[comment.id] ? (
+            <>
+              <span style={{ color: '#ff2f6e', fontWeight: 600 }}>[클린봇 감지]</span> {comment.content}
+            </>
+          ) : (
+            <>
+              이 댓글은 클린봇이 감지한 악성 댓글입니다.{' '}
+              <button 
+                style={{ 
+                  color: '#3b82f6', 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  textDecoration: 'underline' 
+                }} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleBlockedContent(comment.id);
+                }}
+              >
+                보기
+              </button>
+            </>
+          )}
+        </div>
+      );
+    } else {
+      return (
+        <div className={styles.commentText}>
+          {comment.parent && (
+            <span className={styles.replyTo}>@{comment.parent.userNickname || '익명'}</span>
+          )}
+          {comment.content}
+        </div>
+      );
+    }
   };
 
   if (!isOpen) return null;
