@@ -1059,6 +1059,9 @@ public class UserController {
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
                     reviewDto.put("commentCount", commentCount != null ? commentCount.intValue() : 0);
                     
+                    // 클린봇 차단 여부 추가
+                    reviewDto.put("blockedByCleanbot", review.isBlockedByCleanbot());
+                    
                     return reviewDto;
                 })
                 .collect(Collectors.toList());
@@ -1122,6 +1125,10 @@ public class UserController {
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
                     dto.put("commentCount", commentCount != null ? commentCount.intValue() : 0);
+                    
+                    // 클린봇 차단 여부 추가
+                    dto.put("blockedByCleanbot", review.isBlockedByCleanbot());
+                    
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -1188,6 +1195,9 @@ public class UserController {
                     int likeCount = commentLikeRepository.countByCommentId(comment.getId());
                     commentDto.put("likeCount", likeCount);
                     commentDto.put("likedByMe", true);
+                    
+                    // 클린봇 차단 여부 추가
+                    commentDto.put("isBlockedByCleanbot", comment.isBlockedByCleanbot());
                     
                     return commentDto;
                 })
