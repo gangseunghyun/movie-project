@@ -4,6 +4,12 @@ import { useNavigate } from 'react-router-dom';
 
 export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpenDt = true }) {
   const navigate = useNavigate();
+  
+  // 포스터가 없는 영화는 렌더링하지 않음
+  if (!movie.posterUrl || movie.posterUrl.trim() === '' || movie.posterUrl === 'null') {
+    return null;
+  }
+  
   function getDDay(openDt) {
     if (!openDt) return null;
     const today = new Date();
@@ -169,6 +175,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
     </div>
     );
   }
+  
   // 그 외 섹션은 기존 정보 모두 표시
   return (
     <div className={styles.card} onClick={handleCardClick} style={{ cursor: movie.movieCd ? 'pointer' : 'default' }}>

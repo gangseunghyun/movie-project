@@ -39,6 +39,11 @@ const dummySimilar = [
 function SimilarMovieCard({ movie }) {
   const navigate = useNavigate();
   
+  // 포스터가 없는 영화는 렌더링하지 않음
+  if (!movie.posterUrl || movie.posterUrl.trim() === '' || movie.posterUrl === 'null') {
+    return null;
+  }
+  
   const handleClick = () => {
     if (movie.movieCd) {
       navigate(`/movie-detail/${movie.movieCd}`);
