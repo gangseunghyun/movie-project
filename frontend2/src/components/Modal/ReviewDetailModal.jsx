@@ -3,9 +3,10 @@ import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
 import userIcon from '../../assets/user_icon.png';
-import styles from './ReviewCommentsModal.module.css';
+import styles from './ReviewDetailModal.module.css';
+import LikedUsersModal from './LikedUsersModal';
 
-const ReviewDetailModal = ({ open, onClose, comment, reviewId, fetchComments }) => {
+const ReviewDetailModal = ({ open, onClose, comment, reviewId, fetchComments, onShowLikedUsers, onShowComments }) => {
   const [likeLoading, setLikeLoading] = useState(false);
   const [likedByMe, setLikedByMe] = useState(comment?.likedByMe || false);
   const [likeCount, setLikeCount] = useState(comment?.likeCount || 0);
@@ -43,8 +44,18 @@ const ReviewDetailModal = ({ open, onClose, comment, reviewId, fetchComments }) 
   };
 
   const handleCommentClick = () => {
-    // 댓글 모달/입력창 열기 등 원하는 동작 구현
-    alert('댓글 입력창/모달을 여는 로직을 구현하세요!');
+    // 부모 컴포넌트에 댓글 모달 열기 요청
+    if (onShowComments) {
+      onShowComments(comment);
+    }
+  };
+
+  const handleLikeCountClick = () => {
+    console.log('좋아요 개수 클릭됨!', { likeCount, commentId: comment.id });
+    // 부모 컴포넌트에 좋아요한 유저 목록 모달 열기 요청
+    if (onShowLikedUsers) {
+      onShowLikedUsers(comment.id);
+    }
   };
 
   return (
@@ -67,6 +78,30 @@ const ReviewDetailModal = ({ open, onClose, comment, reviewId, fetchComments }) 
           <div className={styles.reviewInfo}>
             <h3 className={styles.movieTitle}>{comment.movieNm || '영화'}</h3>
             <div className={styles.reviewContent}>{comment.content}</div>
+            
+            {/* 좋아요/댓글 개수 텍스트 */}
+            <div 
+              className={styles.countsLine} 
+              style={{ 
+                margin: '8px 0 0 0', 
+                fontSize: '15px', 
+                color: '#555', 
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              <span 
+                onClick={handleLikeCountClick}
+                style={{ 
+                  color: '#3b82f6',
+                  textDecoration: 'underline'
+                }}
+              >
+                좋아요 {likeCount}
+              </span>
+              <span style={{ marginLeft: '16px' }}>댓글 {comment.commentCount || 0}</span>
+            </div>
+
             {/* 좋아요/댓글 버튼 */}
             <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
               <button
@@ -81,7 +116,6 @@ const ReviewDetailModal = ({ open, onClose, comment, reviewId, fetchComments }) 
                   className={styles.likeIcon}
                   style={{ width: 22, height: 22, marginRight: 4 }}
                 />
-                <span className={styles.likeCount}>{likeCount}</span>
               </button>
               <button
                 className={styles.replyButton}

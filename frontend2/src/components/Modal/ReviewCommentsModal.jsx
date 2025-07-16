@@ -568,13 +568,19 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
             </button>
             <button
               className={styles.replyButton}
-              onClick={e => {
+              onClick={(e) => {
+                console.log('댓글 아이콘 클릭됨!');
                 e.stopPropagation();
+                
                 if (!user) {
                   alert('로그인이 필요합니다.');
                   return;
                 }
-                handleReplyIconClick(e, review.id);
+                
+                // 부모 컴포넌트의 댓글 작성 모달 열기
+                if (handleReplyIconClick && review) {
+                  handleReplyIconClick(e, review.id);
+                }
               }}
               style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
             >
@@ -583,7 +589,6 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
                 alt="댓글"
                 style={{ width: 22, height: 22, marginRight: 4 }}
               />
-              <span>댓글</span>
             </button>
           </div>
 

@@ -21,4 +21,7 @@ public interface ReviewLikeRepository extends JpaRepository<ReviewLike, Long> {
            "AND r.user.id != :userId " +
            "ORDER BY rl.createdAt DESC")
     List<ReviewLike> findLikedReviewsByUserIdExcludingOwn(@Param("userId") Long userId);
+
+    // 특정 리뷰를 좋아요한 모든 ReviewLike 엔티티 조회
+    List<ReviewLike> findByReviewId(Long reviewId);
 } 

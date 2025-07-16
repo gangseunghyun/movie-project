@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+import com.movie.movie_backend.entity.ReviewLike;
+import com.movie.movie_backend.repository.ReviewLikeRepository;
+import com.movie.movie_backend.service.USRUserService;
 
 @Slf4j
 @RestController
@@ -28,6 +31,8 @@ public class ReviewController {
 
     private final REVReviewService reviewService;
     private final USRUserRepository userRepository;
+    private final ReviewLikeRepository reviewLikeRepository;
+    private final USRUserService userService;
 
     /**
      * 리뷰 작성
@@ -456,6 +461,35 @@ public class ReviewController {
     }
 
     /**
+     * 특정 리뷰를 좋아요한 유저 목록 조회
+     */
+    @GetMapping("/{reviewId}/liked-users")
+    public ResponseEntity<Map<String, Object>> getLikedUsersForReview(@PathVariable Long reviewId, @AuthenticationPrincipal Object principal) {
+        Long currentUserId = getCurrentUserId(principal);
+        List<ReviewLike> likes = reviewService.getReviewLikesByReviewId(reviewId);
+        List<Map<String, Object>> users = likes.stream().map(like -> {
+            var user = like.getUser();
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", user.getId());
+            userInfo.put("nickname", user.getNickname());
+            userInfo.put("profileImageUrl", user.getProfileImageUrl());
+            // 현재 사용자가 이 유저를 팔로우하고 있는지 확인 (로그인한 경우에만)
+            if (currentUserId != null && !currentUserId.equals(user.getId())) {
+                boolean isFollowing = userService.getFollowing(currentUserId).contains(user);
+                userInfo.put("isFollowing", isFollowing);
+            } else {
+                userInfo.put("isFollowing", false);
+            }
+            return userInfo;
+        }).toList();
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", users);
+        response.put("count", users.size());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 현재 인증된 사용자의 ID를 가져오는 헬퍼 메서드
      */
     private Long getCurrentUserId(Object principal) {
@@ -467,6 +501,18 @@ public class ReviewController {
         }
         
         log.info("Principal 클래스: {}", principal.getClass().getName());
+        
+        // anonymousUser 처리 (비로그인 상태)
+        if (principal instanceof String && "anonymousUser".equals(principal)) {
+            log.info("익명 사용자 - 로그인하지 않음");
+            return null;
+        }
+        
+        // AnonymousAuthenticationToken 처리 (비로그인 상태)
+        if (principal instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            log.info("AnonymousAuthenticationToken - 로그인하지 않음");
+            return null;
+        }
         
         if (principal instanceof DefaultOAuth2User) {
             // OAuth2 로그인 (소셜 로그인)

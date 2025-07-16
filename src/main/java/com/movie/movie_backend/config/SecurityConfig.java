@@ -195,6 +195,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/movies/**").hasRole("ADMIN")
                 .requestMatchers("/api/reviews/movie/*").permitAll()  // 리뷰 목록 조회는 누구나
                 .requestMatchers("/api/reviews/movie/*/content-only").permitAll()  // 댓글만 조회도 누구나
+                .requestMatchers("/api/reviews/*/liked-users").permitAll()  // 좋아요한 유저 목록 조회는 누구나
                 .requestMatchers("/api/reviews/**").authenticated()  // 나머지 리뷰 관련 기능은 인증 필요
                 .requestMatchers("/api/comments/review/*").permitAll()  // 댓글 조회는 누구나
                 .requestMatchers("/api/comments/review/*/all").permitAll()  // 전체 댓글 조회는 누구나
