@@ -1,1 +1,162 @@
-/* ReviewDetailModal.module.css */ 
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.modal {
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 24px 16px 24px;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.title {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.movieTitle {
+  color: #cccccc;
+  font-size: 16px;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.divider {
+  height: 1px;
+  background-color: #333333;
+  margin: 0 24px;
+}
+
+/* 리뷰 섹션 */
+.reviewSection {
+  display: flex;
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+.moviePoster {
+  flex-shrink: 0;
+}
+
+.moviePoster img {
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #333333;
+}
+
+.reviewInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.reviewInfo .movieTitle {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.reviewContent {
+  color: #cccccc;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  margin-bottom: 16px;
+}
+
+.countsLine {
+  margin: 8px 0 0 0;
+  font-size: 15px;
+  color: #555;
+  font-weight: 500;
+}
+
+.likeButton, .replyButton {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #cccccc;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.likeButton:hover, .replyButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.likeIcon {
+  width: 22px;
+  height: 22px;
+  margin-right: 4px;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .header {
+    padding: 16px 16px 12px 16px;
+  }
+  
+  .reviewSection {
+    padding: 16px;
+  }
+  
+  .title {
+    font-size: 20px;
+  }
+  
+  .movieTitle {
+    font-size: 14px;
+  }
+} 

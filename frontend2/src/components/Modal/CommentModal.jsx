@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './CommentModal.module.css';
 
 const CommentModal = ({
@@ -11,6 +11,11 @@ const CommentModal = ({
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const maxLength = 1000;
+
+  // open 상태 변경 추적
+  useEffect(() => {
+    console.log('CommentModal open 상태 변경:', open);
+  }, [open]);
 
   // 욕설 필터링 (ReviewModal과 동일한 리스트 사용)
   const forbiddenWords = [
@@ -73,7 +78,11 @@ const CommentModal = ({
       
       if (data.success) {
         alert('댓글이 작성되었습니다!');
-        if (onSave) onSave(comment);
+        // 성공 시에만 onSave 호출하고 모달 닫기
+        if (onSave) {
+          onSave();
+        }
+        setComment(''); // 입력 내용 초기화
         onClose();
       } else {
         alert(data.message || '댓글 작성에 실패했습니다.');
