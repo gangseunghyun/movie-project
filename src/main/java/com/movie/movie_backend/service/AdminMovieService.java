@@ -238,6 +238,26 @@ public class AdminMovieService {
 //            movie.setStatus(updateDto.getStatus());
 //        }
         
+        // 스틸컷 업데이트
+        if (updateDto.getStillcutUrls() != null) {
+            // 기존 스틸컷 삭제
+            movie.getStillcuts().clear();
+            
+            // 새 스틸컷 추가
+            for (int i = 0; i < updateDto.getStillcutUrls().size(); i++) {
+                String imageUrl = updateDto.getStillcutUrls().get(i);
+                if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                    Stillcut stillcut = Stillcut.builder()
+                            .imageUrl(imageUrl)
+                            .orderInMovie(i + 1)
+                            .movieDetail(movie)
+                            .build();
+                    movie.getStillcuts().add(stillcut);
+                    log.info("스틸컷 정보 업데이트: {} (순서: {})", imageUrl, i + 1);
+                }
+            }
+        }
+        
         // 태그 업데이트
         if (updateDto.getTagNames() != null) {
             setMovieTags(movieCd, updateDto.getTagNames());

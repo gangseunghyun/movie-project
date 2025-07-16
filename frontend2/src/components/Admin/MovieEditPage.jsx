@@ -34,7 +34,7 @@ const MovieEditPage = () => {
     // 이미지 업로드 관련 상태
     const [posterFile, setPosterFile] = useState(null);
     const [posterPreview, setPosterPreview] = useState('');
-    const [posterUploadMethod, setPosterUploadMethod] = useState('url');
+    const [posterUploadMethod, setPosterUploadMethod] = useState('file'); // 기본값을 'file'로 변경
     const [posterUrl, setPosterUrl] = useState('');
     
     const [stillcutFiles, setStillcutFiles] = useState([]);
@@ -45,7 +45,7 @@ const MovieEditPage = () => {
     const [directorImageFile, setDirectorImageFile] = useState(null);
     const [directorImagePreview, setDirectorImagePreview] = useState('');
     const [directorImageUrl, setDirectorImageUrl] = useState('');
-    const [directorImageUploadMethod, setDirectorImageUploadMethod] = useState('url');
+    const [directorImageUploadMethod, setDirectorImageUploadMethod] = useState('file');
     const [directorImageUrlInput, setDirectorImageUrlInput] = useState('');
     
     const [actorImageFiles, setActorImageFiles] = useState([]);
@@ -73,6 +73,8 @@ const MovieEditPage = () => {
                 const detail = location.state.movieDetail;
                 setMovieData(detail);
                 setPosterUrl(detail.posterUrl || '');
+                // 기본적으로 'file' 방식으로 설정
+                setPosterUploadMethod('file');
                 setStillcutUrls(detail.stillcuts?.map(s => s.imageUrl) || []);
                 return;
             }
@@ -87,6 +89,8 @@ const MovieEditPage = () => {
                     if (data.success && data.data) {
                         setMovieData(data.data);
                         setPosterUrl(data.data.posterUrl || '');
+                        // 기본적으로 'file' 방식으로 설정
+                        setPosterUploadMethod('file');
                         setStillcutUrls(data.data.stillcuts?.map(s => s.imageUrl) || []);
                     } else {
                         setError('영화 정보를 불러올 수 없습니다.');
@@ -126,6 +130,13 @@ const MovieEditPage = () => {
         setError('');
 
         try {
+            // 스틸컷 URL 정보를 포함한 수정 데이터 준비
+            const updateData = {
+                ...movieData,
+                stillcutUrls: stillcutUrls // 현재 스틸컷 URL 배열 추가
+            };
+            
+            console.log('전송할 수정 데이터:', updateData);
             console.log('API 호출 시작:', `http://localhost:80/api/admin/movies/${movieCd}`);
             
             const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}`, {
@@ -134,7 +145,7 @@ const MovieEditPage = () => {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify(movieData)
+                body: JSON.stringify(updateData)
             });
 
             console.log('API 응답 상태:', response.status);
@@ -274,6 +285,14 @@ const MovieEditPage = () => {
         setStillcutUrlInputs(newInputs);
     };
 
+    // 기존 스틸컷 삭제
+    const removeStillcut = (index) => {
+        if (window.confirm('이 스틸컷을 삭제하시겠습니까?')) {
+            const newUrls = stillcutUrls.filter((_, i) => i !== index);
+            setStillcutUrls(newUrls);
+        }
+    };
+
     // 스틸컷 업로드
     const handleStillcutUpload = async () => {
         if (stillcutUploadMethod === 'file') {
@@ -298,15 +317,16 @@ const MovieEditPage = () => {
 
                 if (response.ok && data.success) {
                     const newUrls = data.imageUrls || [];
-                    setStillcutUrls(newUrls);
-                    setMovieData(prev => ({ ...prev, stillcutUrls: newUrls }));
-                    alert('스틸컷 업로드 성공!');
+                    // 기존 스틸컷에 새 스틸컷 추가
+                    setStillcutUrls(prev => [...prev, ...newUrls]);
+                    setStillcutFiles([]); // 파일 선택 초기화
+                    alert('스틸컷 추가 성공!');
                 } else {
-                    alert('스틸컷 업로드 실패: ' + (data.message || '알 수 없는 오류'));
+                    alert('스틸컷 추가 실패: ' + (data.message || '알 수 없는 오류'));
                 }
             } catch (error) {
-                console.error('스틸컷 업로드 실패:', error);
-                alert('스틸컷 업로드 중 오류가 발생했습니다.');
+                console.error('스틸컷 추가 실패:', error);
+                alert('스틸컷 추가 중 오류가 발생했습니다.');
             }
         } else {
             // URL 방식
@@ -316,30 +336,10 @@ const MovieEditPage = () => {
                 return;
             }
 
-            try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/stillcut-urls`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ imageUrls: urls })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    const newUrls = data.imageUrls || [];
-                    setStillcutUrls(newUrls);
-                    setMovieData(prev => ({ ...prev, stillcutUrls: newUrls }));
-                    alert('스틸컷 URL이 설정되었습니다!');
-                } else {
-                    alert('스틸컷 URL 설정 실패: ' + (data.message || '알 수 없는 오류'));
-                }
-            } catch (error) {
-                console.error('스틸컷 URL 설정 실패:', error);
-                alert('스틸컷 URL 설정 중 오류가 발생했습니다.');
-            }
+            // 기존 스틸컷에 새 URL들 추가
+            setStillcutUrls(prev => [...prev, ...urls]);
+            setStillcutUrlInputs(['']); // URL 입력 초기화
+            alert('스틸컷 URL이 추가되었습니다!');
         }
     };
 
@@ -636,7 +636,10 @@ const MovieEditPage = () => {
                                 name="posterUploadMethod"
                                 value="file"
                                 checked={posterUploadMethod === 'file'}
-                                onChange={() => setPosterUploadMethod('file')}
+                                onChange={() => {
+                                    setPosterUploadMethod('file');
+                                    setPosterUrl(''); // URL 입력 필드 초기화
+                                }}
                             />
                             파일 업로드
                         </label>
@@ -646,7 +649,11 @@ const MovieEditPage = () => {
                                 name="posterUploadMethod"
                                 value="url"
                                 checked={posterUploadMethod === 'url'}
-                                onChange={() => setPosterUploadMethod('url')}
+                                onChange={() => {
+                                    setPosterUploadMethod('url');
+                                    setPosterFile(null); // 파일 선택 초기화
+                                    setPosterPreview(''); // 미리보기 초기화
+                                }}
                             />
                             URL 입력
                         </label>
@@ -688,7 +695,10 @@ const MovieEditPage = () => {
                                 name="directorImageUploadMethod"
                                 value="file"
                                 checked={directorImageUploadMethod === 'file'}
-                                onChange={() => setDirectorImageUploadMethod('file')}
+                                onChange={() => {
+                                    setDirectorImageUploadMethod('file');
+                                    setDirectorImageUrlInput(''); // URL 입력 필드 초기화
+                                }}
                             />
                             파일 업로드
                         </label>
@@ -698,7 +708,11 @@ const MovieEditPage = () => {
                                 name="directorImageUploadMethod"
                                 value="url"
                                 checked={directorImageUploadMethod === 'url'}
-                                onChange={() => setDirectorImageUploadMethod('url')}
+                                onChange={() => {
+                                    setDirectorImageUploadMethod('url');
+                                    setDirectorImageFile(null); // 파일 선택 초기화
+                                    setDirectorImagePreview(''); // 미리보기 초기화
+                                }}
                             />
                             URL 입력
                         </label>
@@ -740,7 +754,10 @@ const MovieEditPage = () => {
                                 name="actorImageUploadMethod"
                                 value="file"
                                 checked={actorImageUploadMethod === 'file'}
-                                onChange={() => setActorImageUploadMethod('file')}
+                                onChange={() => {
+                                    setActorImageUploadMethod('file');
+                                    setActorImageUrlInputs(['']); // URL 입력 필드 초기화
+                                }}
                             />
                             파일 업로드
                         </label>
@@ -750,7 +767,11 @@ const MovieEditPage = () => {
                                 name="actorImageUploadMethod"
                                 value="url"
                                 checked={actorImageUploadMethod === 'url'}
-                                onChange={() => setActorImageUploadMethod('url')}
+                                onChange={() => {
+                                    setActorImageUploadMethod('url');
+                                    setActorImageFiles([]); // 파일 선택 초기화
+                                    setActorImagePreviews([]); // 미리보기 초기화
+                                }}
                             />
                             URL 입력
                         </label>
@@ -802,6 +823,30 @@ const MovieEditPage = () => {
                 {/* 스틸컷 업로드 섹션 */}
                 <div className={styles.imageSection}>
                     <h3>스틸컷 이미지</h3>
+                    
+                    {/* 기존 스틸컷 표시 */}
+                    {stillcutUrls.length > 0 && (
+                        <div className={styles.existingStillcuts}>
+                            <h4>기존 스틸컷 ({stillcutUrls.length}개)</h4>
+                            <div className={styles.stillcutGrid}>
+                                {stillcutUrls.map((url, index) => (
+                                    <div key={index} className={styles.stillcutItem}>
+                                        <img src={url} alt={`스틸컷 ${index + 1}`} />
+                                        <div className={styles.stillcutActions}>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => removeStillcut(index)}
+                                                className={styles.removeButton}
+                                            >
+                                                삭제
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
                     <div className={styles.uploadMethod}>
                         <label>
                             <input
@@ -857,7 +902,7 @@ const MovieEditPage = () => {
                         </div>
                     )}
                     <button type="button" onClick={handleStillcutUpload} className={styles.uploadButton}>
-                        스틸컷 업로드
+                        스틸컷 추가
                     </button>
                 </div>
 
