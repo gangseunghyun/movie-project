@@ -409,38 +409,45 @@ const ChatbotModal = ({ isOpen, onClose }) => {
   };
 
   // 영화 카드 렌더링 (포스터 포함)
-  const renderMovieCard = (movie) => (
-    <div key={movie.movieCd} className={styles.movieCard}>
-      <div className={styles.movieCardContent}>
-        <div className={styles.moviePoster}>
-          {movie.posterUrl ? (
-            <img 
-              src={movie.posterUrl} 
-              alt={movie.movieNm}
-            />
-          ) : (
-            <div className={styles.moviePosterPlaceholder}>
-              🎬
-            </div>
-          )}
-        </div>
-        <div className={styles.movieInfo}>
-          <h4 className={styles.movieTitle}>{movie.movieNm}</h4>
-          <p className={styles.movieGenre}>{movie.genreNm}</p>
-          {movie.averageRating && movie.averageRating > 0 && (
-            <p className={styles.movieRating}>
-              ⭐ {movie.averageRating.toFixed(1)}
-            </p>
-          )}
-          {movie.openDt && (
-            <p className={styles.movieDate}>
-              📅 {movie.openDt}
-            </p>
-          )}
+  const renderMovieCard = (movie) => {
+    // 포스터가 없는 영화는 렌더링하지 않음
+    if (!movie.posterUrl || movie.posterUrl.trim() === '' || movie.posterUrl === 'null') {
+      return null;
+    }
+    
+    return (
+      <div key={movie.movieCd} className={styles.movieCard}>
+        <div className={styles.movieCardContent}>
+          <div className={styles.moviePoster}>
+            {movie.posterUrl ? (
+              <img 
+                src={movie.posterUrl} 
+                alt={movie.movieNm}
+              />
+            ) : (
+              <div className={styles.moviePosterPlaceholder}>
+                🎬
+              </div>
+            )}
+          </div>
+          <div className={styles.movieInfo}>
+            <h4 className={styles.movieTitle}>{movie.movieNm}</h4>
+            <p className={styles.movieGenre}>{movie.genreNm}</p>
+            {movie.averageRating && movie.averageRating > 0 && (
+              <p className={styles.movieRating}>
+                ⭐ {movie.averageRating.toFixed(1)}
+              </p>
+            )}
+            {movie.openDt && (
+              <p className={styles.movieDate}>
+                📅 {movie.openDt}
+              </p>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (!isOpen) return null;
 

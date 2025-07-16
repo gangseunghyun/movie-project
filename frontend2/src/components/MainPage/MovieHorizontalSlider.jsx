@@ -39,8 +39,18 @@ export default function MovieHorizontalSlider({ data, sectionKey, ratings, actor
   const cardGap = remToPx(cardGapRem);
   const visible = 7;
 
-  // data 사용, 아니면 더미데이터 사용
-  const movies = data && data.length > 0 ? data : dummyMovies;
+  // 포스터가 있는 영화만 필터링
+  const filterMoviesWithPosters = (movies) => {
+    if (!movies || !Array.isArray(movies)) return [];
+    return movies.filter(movie => 
+      movie.posterUrl && 
+      movie.posterUrl.trim() !== '' && 
+      movie.posterUrl !== 'null'
+    );
+  };
+
+  // data 사용, 아니면 더미데이터 사용 (포스터 필터링 적용)
+  const movies = data && data.length > 0 ? filterMoviesWithPosters(data) : dummyMovies;
 
   const prev = () => setStart(Math.max(0, start - visible));
   const next = () => setStart(Math.min(movies.length - visible, start + visible));
