@@ -661,11 +661,15 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
               </div>
               <hr className={styles.commentDivider} />
               <div
-                className={styles.commentContent}
                 onClick={() => handleCommentCardClick(comment.id)}
-                onMouseEnter={() => { console.log('hover!'); }}
-                onMouseLeave={() => { console.log('leave!'); }}
-                // role="button"과 tabIndex={0} 제거
+                style={{ 
+                  cursor: 'pointer',
+                  color: '#aaa',
+                  fontSize: '1.08rem',
+                  marginBottom: '12px',
+                  wordBreak: 'keep-all',
+                  minHeight: '165px'
+                }}
               >
                 {renderCommentContent(comment)}
               </div>

@@ -6,6 +6,20 @@
 MCP Server(Node.js)와 외부 영화 API(KOBIS, TMDB, KMDB, NAVER) 연동,  
 Redis 기반 세션/캐시, Docker 컨테이너 환경을 지원합니다.
 
+## 📊 WBS (Work Breakdown Structure)
+
+![WBS](./images/wbs%20readme.png)
+
+## 📋 전체 흐름 구상도
+
+![전체흐름구상도](./images/전체흐름%20구상도drawio.png)
+
+## 🗄️ 데이터베이스 흐름도
+
+![DB흐름도1](./images/db흐름1.png)
+
+![DB흐름도2](./images/db흐름2.png)
+
 ---
 
 ## 📚 프로젝트 개요

@@ -31,7 +31,7 @@
 //     private String kmdbApiKey;
 //
 //     @Bean
-//     @Order(7)  // 태그 매핑 다음에 실행
+//     @Order(8)  // 태그 매핑 다음에 실행
 //     public CommandLineRunner updateMovieStatusFromKmdb() {
 //         return args -> {
 //             log.info("=== KMDb status 동기화 시작 ===");

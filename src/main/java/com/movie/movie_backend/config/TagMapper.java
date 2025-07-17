@@ -16,7 +16,7 @@
 //     private final TagDataService tagDataService;
 //
 //     @Bean
-//     @Order(6)  // KMDb ID 매핑 다음에 실행
+//     @Order(7)  // KMDb ID 매핑 다음에 실행
 //     public CommandLineRunner autoMapMovieDetailTags() {
 //         return args -> {
 //             log.info("=== TagDataService.setupTagData() 자동 실행 ===");

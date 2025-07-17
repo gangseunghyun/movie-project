@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import styles from "./MyPageFooter.module.css";
 import { useUser } from '../../contexts/UserContext';
+import { Link, useNavigate } from 'react-router-dom';
 import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
-import ReviewDetailModal from '../Modal/ReviewDetailModal';
+import userIcon from '../../assets/user_icon.png';
 import CommentModal from '../Modal/CommentModal';
 import LikedCommentsModal from '../Modal/LikedCommentsModal';
 import MyCommentsModal from '../Modal/MyCommentsModal';
+import ReviewCommentsModal from '../Modal/ReviewCommentsModal';
+import LikedUsersModal from '../Modal/LikedUsersModal';
+import ReviewModal from '../Modal/ReviewModal';
 
 function formatRelativeTime(dateString) {
   if (!dateString) return '';
@@ -23,12 +27,12 @@ function formatRelativeTime(dateString) {
 
 const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }) => {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [myComments, setMyComments] = useState([]);
   const [likedComments, setLikedComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [likedLoading, setLikedLoading] = useState(true);
   // 모달 상태 및 선택된 코멘트 관리
-  const [modalOpen, setModalOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState(null);
   // 수정 모달 상태 및 타겟
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -36,7 +40,13 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   const [localTempUserInfo, setLocalTempUserInfo] = useState(tempUserInfo);
   const [likedModalOpen, setLikedModalOpen] = useState(false);
   const [myCommentsModalOpen, setMyCommentsModalOpen] = useState(false);
-  const [lastModalType, setLastModalType] = useState(null);
+  
+  // 댓글 관련 모달 상태 추가
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedReviewId, setSelectedReviewId] = useState(null);
+  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
+  const [likedUsersModalOpen, setLikedUsersModalOpen] = useState(false);
+  const [selectedReviewIdForLikes, setSelectedReviewIdForLikes] = useState(null);
 
   // 클린봇 차단된 리뷰 표시 상태 관리
   const [showBlocked, setShowBlocked] = useState({});
@@ -113,7 +123,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     };
     console.log('mergedComment:', mergedComment);
     setSelectedComment(mergedComment);
-    setModalOpen(true);
+    setCommentsModalOpen(true);
   };
 
   // 코멘트 수정 핸들러
@@ -139,6 +149,35 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
           }
         })
         .catch(() => alert('삭제 중 오류 발생'));
+    }
+  };
+
+  // 프로필 클릭 핸들러
+  const handleProfileClick = (userId) => {
+    console.log('프로필 클릭됨, userId:', userId);
+    if (userId) {
+      // 현재 페이지인지 확인
+      if (String(userId) === String(user?.id)) {
+        alert('이미 내 페이지입니다.');
+        return;
+      }
+      
+      // 모든 모달 닫기
+      setMyCommentsModalOpen(false);
+      setLikedModalOpen(false);
+      setCommentsModalOpen(false);
+      setReplyModalOpen(false);
+      setLikedUsersModalOpen(false);
+      setEditModalOpen(false);
+      
+      console.log('마이페이지로 이동:', `/mypage/${userId}`);
+      navigate(`/mypage/${userId}`);
+      // 페이지 이동 후 스크롤을 맨 위로
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    } else {
+      console.log('userId가 없음');
     }
   };
 
@@ -188,21 +227,110 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     }
   };
 
+  // 좋아요한 유저 목록 모달 열기 함수
+  const handleShowLikedUsers = (reviewId) => {
+    setSelectedReviewIdForLikes(reviewId);
+    setLikedUsersModalOpen(true);
+  };
+
+  // 댓글 모달 열기 함수
+  const handleShowComments = (comment) => {
+    setSelectedComment(comment);
+    setCommentsModalOpen(true);
+  };
+
+  // 댓글 아이콘 클릭 핸들러
+  const handleReplyIconClick = (e, reviewId) => {
+    e.stopPropagation();
+    setSelectedReviewId(reviewId);
+    setReplyModalOpen(true);
+  };
+
+  // 댓글 작성 후 코멘트 목록 새로고침
+  const handleReplySave = () => {
+    console.log('handleReplySave 호출됨 - 댓글 목록 새로고침');
+    fetchMyComments();
+    fetchLikedComments();
+    
+    // 댓글 작성 후 ReviewCommentsModal 다시 열기
+    if (selectedComment) {
+      setTimeout(() => {
+        setCommentsModalOpen(true);
+      }, 500); // 0.5초 후 ReviewCommentsModal 열기
+    }
+  };
+
+  // 좋아요 핸들러
+  const handleLike = async (commentId, likedByMe) => {
+    try {
+      let res;
+      if (likedByMe) {
+        // 좋아요 취소 (DELETE)
+        res = await fetch(`http://localhost:80/api/reviews/dto/${commentId}/like`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+      } else {
+        // 좋아요 (POST)
+        res = await fetch(`http://localhost:80/api/reviews/dto/${commentId}/like`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+      }
+      if (res.ok) {
+        fetchMyComments(); // 좋아요 상태 및 카운트 갱신
+        fetchLikedComments();
+      } else if (res.status === 401) {
+        alert('로그인이 필요합니다.');
+      } else {
+        alert('좋아요 처리 실패');
+      }
+    } catch (e) {
+      alert('네트워크 오류');
+    }
+  };
+
+  // 댓글 개수 변경 콜백
+  const handleReviewCommentCountChange = (reviewId, newCount) => {
+    setMyComments(prev =>
+      prev.map(c =>
+        c.id === reviewId ? { ...c, commentCount: newCount } : c
+      )
+    );
+    setLikedComments(prev =>
+      prev.map(c =>
+        c.id === reviewId ? { ...c, commentCount: newCount } : c
+      )
+    );
+  };
+
   // MovieDetailBody.jsx의 코멘트 카드 레이아웃 복사
   const renderCommentCard = (comment, showActions = false) => (
     <div
       className={styles.commentCard}
       key={comment.id}
-      style={{ cursor: 'pointer' }}
       onClick={() => handleCommentClick(comment)}
     >
-      <div className={styles.commentHeader}>
+      <div 
+        className={styles.commentHeader}
+        onClick={e => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <img
-            src={comment.authorProfileImageUrl || require('../../assets/user_profile.png')}
+            src={comment.authorProfileImageUrl && comment.authorProfileImageUrl.trim() !== '' ? comment.authorProfileImageUrl : userIcon}
             alt="프로필"
             className={styles.profileImage}
-            style={{ width: 24, height: 24, borderRadius: '50%' }}
+            style={{ 
+              width: 24, 
+              height: 24, 
+              borderRadius: '50%', 
+              cursor: 'pointer'
+            }}
+            onClick={e => {
+              e.stopPropagation();
+              console.log('프로필 이미지 클릭됨');
+              handleProfileClick(comment.userId || comment.authorId);
+            }}
           />
           <span className={styles.commentUser}>{comment.authorNickname || displayUser?.nickname || '익명'}</span>
           <span className={styles.commentDate}>{formatRelativeTime(comment.updatedAt || comment.date)}</span>
@@ -212,17 +340,81 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         </span>
       </div>
       <hr className={styles.commentDivider} />
-      <div className={styles.commentContentWrap}>
+      <div 
+        className={styles.commentContentWrap}
+        onClick={e => {
+          e.stopPropagation();
+          setSelectedComment(comment);
+          setCommentsModalOpen(true);
+        }}
+        style={{ cursor: 'pointer' }}
+      >
         <div className={styles.commentMovieInfo}>
           <span className={styles.commentMovieTitle}>{comment.movieNm}</span>
-          <img src={comment.posterUrl} alt="영화 포스터" className={styles.commentMoviePoster} />
+          <img 
+            src={comment.posterUrl} 
+            alt="영화 포스터" 
+            className={styles.commentMoviePoster}
+            onClick={e => {
+              e.stopPropagation();
+              setSelectedComment(comment);
+              setCommentsModalOpen(true);
+            }}
+            style={{ cursor: 'pointer' }}
+          />
         </div>
-        {renderReviewContent(comment)}
+        <div>
+          {renderReviewContent(comment)}
+        </div>
       </div>
       <hr className={styles.commentFooterDivider} />
-      <div className={styles.commentFooter}>
-        <span>좋아요 {comment.likeCount ?? '-'}</span>
-        <span>댓글 {comment.commentCount ?? '-'}</span>
+      <div 
+        className={styles.commentFooter}
+        onClick={e => e.stopPropagation()}
+        style={{ cursor: 'default' }}
+      >
+        <div className={styles.commentFooterLeft}>
+          <div className={styles.commentCountContainer}>
+            <span 
+              className={styles.commentCount}
+              onClick={e => {
+                e.stopPropagation();
+                handleShowLikedUsers(comment.id);
+              }}
+            >
+              좋아요 {comment.likeCount ?? 0}
+            </span>
+            <img
+              src={comment.likedByMe ? likeIconTrue : likeIcon}
+              alt="좋아요"
+              className={styles.commentIcon}
+              onClick={e => {
+                e.stopPropagation();
+                handleLike(comment.id, comment.likedByMe);
+              }}
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
+          <div className={styles.commentCountContainer}>
+            <span 
+              className={styles.commentCount}
+              onClick={e => {
+                e.stopPropagation();
+                setSelectedComment(comment);
+                setCommentsModalOpen(true);
+              }}
+            >
+              댓글 {comment.commentCount ?? 0}
+            </span>
+            <img
+              src={commentIcon2}
+              alt="댓글"
+              className={styles.commentIcon}
+              onClick={e => handleReplyIconClick(e, comment.id)}
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
+        </div>
         {showActions && (
           <div className={styles.commentActions} onClick={e => e.stopPropagation()}>
             <button className={styles.replyEditBtn} onClick={() => handleEdit(comment)}>수정</button>
@@ -268,9 +460,12 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         onCommentClick={comment => {
           setSelectedComment(comment);
           setLikedModalOpen(false);
-          setLastModalType('liked');
-          setModalOpen(true);
+          setCommentsModalOpen(true);
         }}
+        onShowLikedUsers={handleShowLikedUsers}
+        onLikeClick={handleLike}
+        onReplyIconClick={handleReplyIconClick}
+        onProfileClick={handleProfileClick}
       />
       {/* 내가 작성한 코멘트 전체보기 모달 */}
       <MyCommentsModal
@@ -281,26 +476,16 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         onCommentClick={comment => {
           setSelectedComment(comment);
           setMyCommentsModalOpen(false);
-          setLastModalType('my');
-          setModalOpen(true);
+          setCommentsModalOpen(true);
         }}
+        onShowLikedUsers={handleShowLikedUsers}
+        onLikeClick={handleLike}
+        onReplyIconClick={handleReplyIconClick}
+        onProfileClick={handleProfileClick}
       />
-      {/* 코멘트 상세 모달 */}
-      <ReviewDetailModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onBack={() => {
-          setModalOpen(false);
-          if (lastModalType === 'liked') setLikedModalOpen(true);
-          else if (lastModalType === 'my') setMyCommentsModalOpen(true);
-        }}
-        comment={selectedComment}
-        reviewId={selectedComment?.id}
-        fetchMyComments={fetchMyComments}
-        fetchLikedComments={fetchLikedComments}
-      />
+
       {/* 코멘트 수정 모달 */}
-      <CommentModal
+      <ReviewModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         movieTitle={editTarget?.movieNm}
@@ -321,6 +506,32 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
           }
         }}
         reviewId={editTarget?.id}
+      />
+      {/* 댓글 작성 모달 */}
+      <CommentModal
+        open={replyModalOpen}
+        onClose={() => setReplyModalOpen(false)}
+        reviewId={selectedReviewId}
+        onSave={handleReplySave}
+        movieTitle={selectedComment?.movieNm || ''}
+        reviewContent={selectedComment?.content || ''}
+        userId={user?.id}
+      />
+      {/* 댓글 목록 모달 */}
+      <ReviewCommentsModal
+        isOpen={commentsModalOpen}
+        onClose={() => setCommentsModalOpen(false)}
+        review={selectedComment}
+        onCommentCountChange={handleReviewCommentCountChange}
+        handleLikeReview={handleLike}
+        handleReplyIconClick={handleReplyIconClick}
+        user={user}
+      />
+      {/* 좋아요한 유저 목록 모달 */}
+      <LikedUsersModal 
+        isOpen={likedUsersModalOpen} 
+        onClose={() => setLikedUsersModalOpen(false)} 
+        reviewId={selectedReviewIdForLikes} 
       />
     </footer>
   );
