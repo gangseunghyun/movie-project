@@ -158,14 +158,16 @@ export default function AllReviewsModal({ open, onClose, movieId, onCommentClick
                 </div>
                 <div className={styles.commentDivider}></div>
                 <div
-                  className={styles.commentContent}
                   onClick={() => {
                     if (onCommentClick) {
                       onCommentClick(comment);
                     }
                   }}
-                  tabIndex={0}
-                  role="button"
+                  style={{ 
+                    cursor: 'pointer',
+                    color: '#cecece',
+                    minHeight: '48px'
+                  }}
                 >
                   {comment.content}
                 </div>
