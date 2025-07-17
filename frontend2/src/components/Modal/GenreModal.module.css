@@ -1,0 +1,220 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  overflow: auto;
+  position: relative;
+  border: 1px solid #333;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.closeButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.selectedCount {
+  display: inline-block;
+  background-color: #8B5CF6;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.count {
+  font-weight: 600;
+  color: #fff;
+}
+
+.genreGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.genreLabel {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: #2a2a2a;
+  border: 1px solid #333;
+  transition: all 0.2s ease;
+}
+
+.genreLabel:hover {
+  background-color: #333;
+  border-color: #8B5CF6;
+}
+
+.genreLabel:has(.checkbox:checked) {
+  background-color: #8B5CF6;
+  border-color: #8B5CF6;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  margin-right: 12px;
+  accent-color: #8B5CF6;
+  cursor: pointer;
+}
+
+.genreText {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.genreLabel:has(.checkbox:checked) .genreText {
+  color: #fff;
+  font-weight: 600;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid #333;
+}
+
+.resetButton {
+  padding: 10px 20px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  background-color: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover:not(:disabled) {
+  background-color: #333;
+  border-color: #666;
+  color: #fff;
+}
+
+.resetButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmButton {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  background-color: #8B5CF6;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.confirmButton:hover {
+  background-color: #7C3AED;
+  transform: translateY(-1px);
+}
+
+/* 스크롤바 스타일링 */
+.modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal::-webkit-scrollbar-track {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+.modal::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.modal::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .modal {
+    padding: 24px;
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .genreGrid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  
+  .genreLabel {
+    padding: 10px 12px;
+  }
+  
+  .title {
+    font-size: 1.3rem;
+  }
+} 

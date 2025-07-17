@@ -52,15 +52,22 @@ export default function MovieHorizontalSlider({ data, sectionKey, ratings, actor
   // data 사용, 아니면 더미데이터 사용 (포스터 필터링 적용)
   const movies = data && data.length > 0 ? filterMoviesWithPosters(data) : dummyMovies;
 
+  // start 상태가 항상 유효한 범위 내에 있도록 보정
+  React.useEffect(() => {
+    if (start > Math.max(0, movies.length - visible)) {
+      setStart(Math.max(0, movies.length - visible));
+    }
+  }, [movies.length, visible]);
+
   const prev = () => setStart(Math.max(0, start - visible));
-  const next = () => setStart(Math.min(movies.length - visible, start + visible));
+  const next = () => setStart(Math.min(Math.max(0, movies.length - visible), start + visible));
 
   // 카드 컴포넌트 결정
   const Card = CardComponent || MovieCard;
 
   return (
     <div className={styles.sliderWrapper}>
-      {start > 0 && (
+      {start > 0 && movies.length > visible && (
         <button
           className={`${styles.navBtn} ${styles.left}`}
           style={{ top: getNavBtnTop() }}
@@ -90,7 +97,7 @@ export default function MovieHorizontalSlider({ data, sectionKey, ratings, actor
           />
         ))}
       </div>
-      {start + visible < movies.length && (
+      {start + visible < movies.length && movies.length > visible && (
         <button
           className={`${styles.navBtn} ${styles.right}`}
           onClick={next}

@@ -44,16 +44,20 @@ public class MovieDetailMapper {
         dto.setDaysSinceRelease(calculateDaysSinceRelease(movieDetail.getOpenDt()));
         dto.setTotalAudience(getTotalAudience(movieDetail.getMovieCd()));
         
-        // MovieList에서 포스터 URL 가져오기
+        // MovieList에서 포스터 URL과 TMDB ID 가져오기
         String posterUrl = null;
         String directorName = null;
         String status = null;
+        Integer tmdbId = null;
+        Double tmdbPopularity = null;
         
         try {
             MovieList movieList = movieListRepository.findById(movieDetail.getMovieCd()).orElse(null);
             if (movieList != null) {
                 posterUrl = movieList.getPosterUrl();
                 status = movieList.getStatus() != null ? movieList.getStatus().name() : null;
+                tmdbId = movieList.getTmdbId();
+                tmdbPopularity = movieList.getTmdbPopularity();
             }
             
             if (movieDetail.getDirector() != null) {
@@ -72,6 +76,8 @@ public class MovieDetailMapper {
         dto.setDirectorName(directorName);
         dto.setAverageRating(movieDetail.getAverageRating() != null ? movieDetail.getAverageRating() : 0.0);
         dto.setStatus(status);
+        dto.setTmdbId(tmdbId);
+        dto.setTmdbPopularity(tmdbPopularity);
         
         // 감독 정보 매핑
         if (movieDetail.getDirector() != null) {

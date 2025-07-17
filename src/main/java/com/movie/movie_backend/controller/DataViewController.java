@@ -56,6 +56,7 @@ import com.movie.movie_backend.repository.PRDActorRepository;
 import com.movie.movie_backend.repository.PRDDirectorRepository;
 import com.movie.movie_backend.repository.MovieDetailRepository;
 import java.util.HashSet;
+import java.util.Arrays;
 
 @Slf4j
 @Controller
@@ -1119,16 +1120,80 @@ public class DataViewController {
         }
     }
 
+    /**
+     * TMDB 인기도 데이터 조회 API
+     *
+     * React에서 사용법:
+     * - 영화 제목으로 TMDB 인기도 점수 조회
+     * - 기본값: page=0, size=20
+     *
+     * 예시:
+     * fetch('/data/api/tmdb-popularity?movieNm=영화제목')
+     *   .then(res => res.json())
+     *   .then(data => console.log(data.data)); // TMDB 인기도 데이터
+     */
+    @GetMapping("/api/tmdb-popularity")
+    @ResponseBody
+    @Operation(summary = "TMDB 인기도 데이터 조회 API",
+               description = "영화 제목으로 TMDB 인기도 점수를 조회합니다. React에서 사용할 때: fetch('/data/api/tmdb-popularity?movieNm=영화제목')")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "TMDB 인기도 데이터 조회 성공"),
+        @ApiResponse(responseCode = "400", description = "TMDB 인기도 데이터 조회 실패")
+    })
+    public ResponseEntity<Map<String, Object>> getTmdbPopularityData(
+            @RequestParam(required = false) String movieNm,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        try {
+            log.info("TMDB 인기도 데이터 조회 요청: movieNm={}, page={}, size={}", movieNm, page, size);
+
+            Map<String, Object> response = new HashMap<>();
+
+            if (movieNm != null && !movieNm.trim().isEmpty()) {
+                // 특정 영화의 TMDB 인기도 조회 (임시 응답)
+                Map<String, Object> moviePopularity = Map.of(
+                    "movieNm", movieNm,
+                    "popularity", 0.0,
+                    "message", "TMDB 인기도 조회 기능은 준비 중입니다."
+                );
+                response.put("success", true);
+                response.put("data", moviePopularity);
+                response.put("message", "TMDB 인기도 조회 성공");
+            } else {
+                // TMDB 인기 영화 목록 조회 (임시 응답)
+                List<Map<String, Object>> popularMovies = List.of(Map.of(
+                    "message", "TMDB 인기 영화 목록 조회 기능은 준비 중입니다."
+                ));
+                response.put("success", true);
+                response.put("data", popularMovies);
+                response.put("total", 0);
+                response.put("page", page);
+                response.put("size", size);
+                response.put("message", "TMDB 인기 영화 목록 조회 성공");
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("TMDB 인기도 데이터 조회 실패", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
     // 현재 로그인한 사용자 반환 (없으면 null)
     private User getCurrentUser(HttpServletRequest request) {
         log.info("=== getCurrentUser 호출됨 ===");
-        
+
         // 세션에서 직접 사용자 정보 확인
         HttpSession session = request.getSession(false);
         if (session != null) {
             String sessionLoginId = (String) session.getAttribute("USER_LOGIN_ID");
             log.info("세션에서 USER_LOGIN_ID: {}", sessionLoginId);
-            
+
             if (sessionLoginId != null) {
                 User sessionUser = userRepository.findByLoginId(sessionLoginId).orElse(null);
                 if (sessionUser != null) {
@@ -1137,38 +1202,38 @@ public class DataViewController {
                 }
             }
         }
-        
+
         // Spring Security Authentication에서 사용자 정보 가져오기
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         log.info("Authentication: {}", authentication);
-        
+
         if (authentication == null) {
             log.error("Authentication이 null입니다.");
             return null;
         }
-        
+
         log.info("Authentication Principal: {}", authentication.getPrincipal());
         log.info("Authentication Principal Type: {}", authentication.getPrincipal().getClass().getName());
         log.info("Authentication Name: {}", authentication.getName());
         log.info("Authentication isAuthenticated: {}", authentication.isAuthenticated());
-        
+
         if (!authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
             log.error("인증되지 않은 사용자입니다.");
             return null;
         }
-        
+
         User user = null;
-        
+
         // OAuth2 사용자인 경우
         if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User) {
             log.info("OAuth2 사용자로 인식됨");
-            org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User = 
+            org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2User =
                 (org.springframework.security.oauth2.core.user.DefaultOAuth2User) authentication.getPrincipal();
-            
+
             String email = oauth2User.getAttribute("email");
             String provider = oauth2User.getAttribute("provider");
             String providerId = oauth2User.getAttribute("providerId");
-            
+
             // 카카오의 경우 email이 kakao_account 안에 있을 수 있음
             if (email == null && "KAKAO".equals(provider)) {
                 @SuppressWarnings("unchecked")
@@ -1177,12 +1242,12 @@ public class DataViewController {
                     email = (String) kakaoAccount.get("email");
                 }
             }
-            
+
             log.info("OAuth2 속성 - email: {}, provider: {}, providerId: {}", email, provider, providerId);
-            
+
             if (email != null && provider != null && providerId != null) {
                 try {
-                    com.movie.movie_backend.constant.Provider providerEnum = 
+                    com.movie.movie_backend.constant.Provider providerEnum =
                         com.movie.movie_backend.constant.Provider.valueOf(provider.toUpperCase());
                     user = userRepository.findByProviderAndProviderId(providerEnum, providerId).orElse(null);
                     log.info("OAuth2 사용자 조회 결과: {}", user);
@@ -1211,14 +1276,14 @@ public class DataViewController {
             user = userRepository.findByLoginId(loginId).orElse(null);
             log.info("loginId로 사용자 조회 결과: {}", user);
         }
-        
+
         if (user == null) {
             log.error("최종적으로 사용자를 찾을 수 없습니다.");
         } else {
-            log.info("최종 사용자: id={}, loginId={}, role={}, isAdmin={}", 
+            log.info("최종 사용자: id={}, loginId={}, role={}, isAdmin={}",
                 user.getId(), user.getLoginId(), user.getRole(), user.isAdmin());
         }
-        
+
         return user;
     }
 
@@ -1246,4 +1311,4 @@ public class DataViewController {
         result.put("directors", directors);
         return result;
     }
-} 
+}
