@@ -52,3 +52,22 @@ img {
   max-width: 100%;
   height: auto;
 }
+
+/* 전역 포커스 스타일 제거 */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+*:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}

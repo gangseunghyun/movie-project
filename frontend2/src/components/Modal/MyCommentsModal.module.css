@@ -169,7 +169,7 @@
   margin-left: 0;
 }
 
-/* --- 강제 우선순위: commentContent hover/focus (LikedCommentsModal) --- */
+/* --- 강제 우선순위: commentContent hover/focus (MyCommentsModal) --- */
 .commentContent:hover {
   background: #393943 !important;
   color: #ffd600 !important;
@@ -204,4 +204,6 @@
 
 .commentIcon:hover {
   opacity: 1;
-} 
+}
+
+ 

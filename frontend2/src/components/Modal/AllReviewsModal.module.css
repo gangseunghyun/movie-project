@@ -167,8 +167,13 @@
   color: #ffd600 !important;
   border-radius: 4px !important;
 }
-.commentContent:focus {
+.commentContent:focus,
+.commentContent:focus-visible,
+.commentContent:focus-within {
   outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
 }
 
 /* 아이콘 행 스타일 */
