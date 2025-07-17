@@ -6,6 +6,7 @@ import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
 import banner1 from '../../assets/banner1.jpg';
+import { Scrollbar } from "react-scrollbars-custom";
 
 export default function ReviewCommentsModal({ isOpen, onClose, review, onCommentCountChange, handleLikeReview, handleReplyIconClick, user }) {
   const [comments, setComments] = useState([]);
@@ -512,7 +513,6 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* 헤더 제거 */}
-        <div className={styles.divider}></div>
 
         {/* 리뷰 작성자 정보 + 닫기 버튼 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #333' }}>
@@ -584,7 +584,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
           </div>
 
           {/* 좋아요/댓글 버튼 추가 */}
-          <div style={{ display: 'flex', gap: 16, margin: '16px 0 12px 0' }}>
+          <div style={{ display: 'flex', gap: 10, margin: '16px 0 12px 0' }}>
             <button
               className={styles.likeButton}
               onClick={e => {
@@ -601,7 +601,6 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
                 src={likedByMe ? likeIconTrue : likeIcon}
                 alt="좋아요"
                 className={styles.likeIcon}
-                style={{ width: 22, height: 22, marginRight: 4 }}
               />
             </button>
             <button
@@ -625,7 +624,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
               <img
                 src={commentIcon2}
                 alt="댓글"
-                style={{ width: 22, height: 22, marginRight: 4 }}
+                className={styles.replyIcon}
               />
             </button>
           </div>
@@ -641,9 +640,29 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
           ) : comments.length === 0 ? (
             <div className={styles.noComments}>아직 댓글이 없습니다.</div>
           ) : (
+              <Scrollbar
+                            style={{ height: '40vh', width: '100%' }}
+                            trackYProps={{
+                              style: {
+                                left: '98.5%',
+
+                                width: '4px',
+                                height: '100%',
+                                background: 'transparent',
+                                position: 'absolute'
+                              }
+                            }}
+                            thumbYProps={{
+                              style: {
+                                background: '#555',
+                                borderRadius: '4px'
+                              }
+                            }}
+                          >
             <div className={styles.commentsList}>
               {comments.flatMap(comment => renderCommentTree(comment, null, 0))}
             </div>
+            </Scrollbar>
           )}
         </div>
       </div>

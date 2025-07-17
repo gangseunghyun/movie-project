@@ -118,6 +118,7 @@ const CommentModal = ({
           maxLength={maxLength}
           disabled={loading}
         />
+        <hr className={styles.divider} />
         <div className={styles.footer}>
           <span className={styles.length}>{comment.length}/{maxLength}</span>
           <button

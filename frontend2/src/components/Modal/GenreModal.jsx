@@ -2,25 +2,25 @@ import React from 'react';
 import styles from './GenreModal.module.css';
 
 const genres = [
-  '판타지',
-  '공포',
-  '다큐멘터리',
-  '가족',
-  '전쟁',
-  '범죄',
-  '모험',
-  '역사',
-  '애니메이션',
-  '스릴러',
-  '미스터리',
-  '액션',
-  '코미디',
-  'TV 영화',
-  '로맨스',
-  'SF',
-  '음악',
-  '드라마',
-  '서부'
+  '#판타지',
+  '#공포',
+  '#다큐멘터리',
+  '#가족',
+  '#전쟁',
+  '#범죄',
+  '#모험',
+  '#역사',
+  '#애니메이션',
+  '#릴러',
+  '#미스터리',
+  '#액션',
+  '#코미디',
+  '#TV 영화',
+  '#로맨스',
+  '#SF',
+  '#음악',
+  '#드라마',
+  '#서부'
 ];
 
 export default function GenreModal({ isOpen, onClose, selectedGenres, onGenresChange }) {
@@ -80,15 +80,13 @@ export default function GenreModal({ isOpen, onClose, selectedGenres, onGenresCh
 
         <div className={styles.genreGrid}>
           {genres.map((genre) => (
-            <label key={genre} className={styles.genreLabel}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={tempSelectedGenres.includes(genre)}
-                onChange={() => handleGenreChange(genre)}
-              />
-              <span className={styles.genreText}>{genre}</span>
-            </label>
+            <span
+              key={genre}
+              className={`${styles.genreLabel} ${tempSelectedGenres.includes(genre) ? styles.selected : ''}`}
+              onClick={() => handleGenreChange(genre)}
+            >
+              {genre}
+            </span>
           ))}
         </div>
 
