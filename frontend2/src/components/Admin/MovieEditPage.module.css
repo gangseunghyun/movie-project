@@ -227,6 +227,73 @@
     cursor: not-allowed;
 }
 
+/* 기존 스틸컷 표시 스타일 */
+.existingStillcuts {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #333;
+    border-radius: 8px;
+    border: 1px solid #555;
+}
+
+.existingStillcuts h4 {
+    margin-bottom: 15px;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.stillcutGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+}
+
+.stillcutItem {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #555;
+    transition: border-color 0.2s ease;
+}
+
+.stillcutItem:hover {
+    border-color: #4a90e2;
+}
+
+.stillcutItem img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+}
+
+.stillcutActions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.stillcutItem:hover .stillcutActions {
+    opacity: 1;
+}
+
+.stillcutActions .removeButton {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    background: rgba(231, 76, 60, 0.9);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.stillcutActions .removeButton:hover {
+    background: rgba(231, 76, 60, 1);
+}
+
 .preview {
     max-width: 200px;
     max-height: 200px;

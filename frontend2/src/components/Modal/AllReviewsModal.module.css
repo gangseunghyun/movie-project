@@ -97,6 +97,14 @@
   color: #cecece;
   /* 필요시 height나 line-height 조정 가능 */
 }
+.commentContent:hover {
+  background: #393943;
+  color: #ffd600;
+  border-radius: 4px;
+}
+.commentContent:focus {
+  outline: none !important;
+}
 .commentFooter {
   display: flex;
   gap: 18px;
@@ -151,4 +159,36 @@
   font-weight: 400;
   text-align: left;
   margin-left: 0;
+}
+
+/* --- 강제 우선순위: commentContent hover/focus (AllReviewsModal) --- */
+.commentContent:hover {
+  background: #393943 !important;
+  color: #ffd600 !important;
+  border-radius: 4px !important;
+}
+.commentContent:focus {
+  outline: none !important;
+}
+
+/* 아이콘 행 스타일 */
+.commentIconRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  margin-left: 2px;
+}
+
+.commentIcon {
+  width: 30px;
+  height: 30px;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.commentIcon:hover {
+  opacity: 1;
 }

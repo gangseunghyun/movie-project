@@ -101,6 +101,14 @@ export default function Header() {
           >
             <img src={logo} alt="Filmer" />
           </Link>
+          
+          {/* 영화 탭 추가 */}
+          <div className={styles.navTabs}>
+            <Link to="/movies" className={`${styles.navTab} ${location.pathname.startsWith('/movies') ? styles.active : ''}`}>
+              영화
+            </Link>
+          </div>
+          
           <nav className={styles.nav}>
             {user && user.role === 'ADMIN' && (
               <div className={styles.adminSection}>

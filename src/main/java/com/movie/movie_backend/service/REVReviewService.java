@@ -276,6 +276,13 @@ public class REVReviewService {
         }
     }
 
+    /**
+     * 특정 리뷰를 좋아요한 유저 목록 조회
+     */
+    public List<ReviewLike> getReviewLikesByReviewId(Long reviewId) {
+        return reviewLikeRepository.findByReviewId(reviewId);
+    }
+
     // [DTO 기반] 리뷰 등록
     @Transactional
     public ReviewResponseDto createReviewDto(ReviewRequestDto dto) {

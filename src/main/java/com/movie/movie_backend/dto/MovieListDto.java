@@ -22,4 +22,6 @@ public class MovieListDto {
     private String posterUrl;         // 포스터 이미지 URL
     private MovieStatus status;       // 영화 상태
     private String kmdbId;              // KMDb 영화 ID (nullable)
+    private Integer tmdbId;             // TMDB 영화 ID (nullable)
+    private Double tmdbPopularity;      // TMDB 인기도 점수 (nullable)
 } 

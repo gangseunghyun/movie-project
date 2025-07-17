@@ -134,6 +134,15 @@ h2 {
   margin-bottom: 12px;
   word-break: keep-all;
   min-height: 165px;
+  pointer-events: auto;
+}
+.commentContent:hover {
+  background: #393943 !important;
+  color: #ffd600 !important;
+  border-radius: 4px !important;
+}
+.commentContent:focus {
+  outline: none !important;
 }
 .commentFooterDivider {
   width: 100%;
@@ -158,6 +167,7 @@ h2 {
 
 .commentCount {
   transition: color 0.2s;
+  cursor: pointer;
 }
 
 .commentCount:hover {
@@ -466,3 +476,4 @@ h2 {
   display: inline-block;
   vertical-align: middle;
 }
+

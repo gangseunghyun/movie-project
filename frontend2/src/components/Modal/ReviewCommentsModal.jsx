@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import styles from './ReviewCommentsModal.module.css';
 import userIcon from '../../assets/user_icon.png';
 import likeIcon from '../../assets/like_icon.png';
@@ -357,13 +358,26 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
         style={depth === 1 ? { paddingLeft: 32, borderLeft: '2px solid #2196f3' } : {}}
       >
         <div className={styles.profileImage}>
-          <img
-            src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== ''
-              ? comment.userProfileImageUrl
-              : userIcon}
-            alt="프로필"
-            onError={e => { e.target.src = userIcon; }}
-          />
+          {comment.userId ? (
+            <Link to={`/mypage/${comment.userId}`} style={{ display: 'inline-block' }}>
+              <img
+                src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== ''
+                  ? comment.userProfileImageUrl
+                  : userIcon}
+                alt="프로필"
+                onError={e => { e.target.src = userIcon; }}
+                style={{ cursor: 'pointer' }}
+              />
+            </Link>
+          ) : (
+            <img
+              src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== ''
+                ? comment.userProfileImageUrl
+                : userIcon}
+              alt="프로필"
+              onError={e => { e.target.src = userIcon; }}
+            />
+          )}
         </div>
         <div className={styles.commentContent}>
           <div className={styles.commentHeaderLine}>
@@ -497,18 +511,43 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* 헤더 */}
-        <div className={styles.header}>
-          <div className={styles.headerLeft}>
-            <h2 className={styles.title}>댓글</h2>
-            <p className={styles.movieTitle}>{review?.movieNm || '영화'}</p>
+        {/* 헤더 제거 */}
+        <div className={styles.divider}></div>
+
+        {/* 리뷰 작성자 정보 + 닫기 버튼 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #333' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {review?.userId ? (
+              <Link to={`/mypage/${review.userId}`} style={{ display: 'inline-block' }}>
+                <img
+                  src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl : userIcon}
+                  alt="프로필"
+                  style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', cursor: 'pointer', background: '#222' }}
+                />
+              </Link>
+            ) : (
+              <img
+                src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl : userIcon}
+                alt="프로필"
+                style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', background: '#222' }}
+              />
+            )}
+            <span style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem' }}>{review.userNickname || review.user || '익명'}</span>
+            <span style={{ color: '#aaa', fontSize: '0.9em' }}>{formatDate(review?.createdAt || review?.updatedAt)}</span>
           </div>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button className={styles.closeButton} onClick={onClose} style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: '#aaa', 
+            fontSize: '1.2rem', 
+            cursor: 'pointer', 
+            padding: '4px 8px', 
+            borderRadius: 4, 
+            transition: 'color 0.2s ease-in-out' 
+          }}>
             ✕
           </button>
         </div>
-
-        <div className={styles.divider}></div>
 
         {/* 비로그인 사용자 안내 메시지 */}
         {!currentUser && (
@@ -531,7 +570,6 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
                 }}
               />
             </div>
-            
             {/* 영화 정보 및 리뷰 내용 */}
             <div className={styles.reviewInfo}>
               <h3 className={styles.movieTitle}>{review?.movieNm || '영화'}</h3>
@@ -568,13 +606,19 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
             </button>
             <button
               className={styles.replyButton}
-              onClick={e => {
+              onClick={(e) => {
+                console.log('댓글 아이콘 클릭됨!');
                 e.stopPropagation();
+                
                 if (!user) {
                   alert('로그인이 필요합니다.');
                   return;
                 }
-                handleReplyIconClick(e, review.id);
+                
+                // 부모 컴포넌트의 댓글 작성 모달 열기
+                if (handleReplyIconClick && review) {
+                  handleReplyIconClick(e, review.id);
+                }
               }}
               style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
             >
@@ -583,7 +627,6 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
                 alt="댓글"
                 style={{ width: 22, height: 22, marginRight: 4 }}
               />
-              <span>댓글</span>
             </button>
           </div>
 

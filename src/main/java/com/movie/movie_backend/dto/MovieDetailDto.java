@@ -30,6 +30,8 @@ public class MovieDetailDto {
     private String directorName;     // 감독이름
     private String actorNames;       // 배우이름들 (쉼표로 구분)
     private double averageRating;    // 평균 평점
+    private Integer tmdbId;          // TMDB 영화 ID (nullable)
+    private Double tmdbPopularity;   // TMDB 인기도 점수 (nullable)
     private List<Nation> nations;    // 제작국가 목록
     private List<Genre> genres;      // 장르 목록
     private List<Director> directors;// 감독 목록
@@ -37,11 +39,11 @@ public class MovieDetailDto {
     private List<ShowType> showTypes;// 상영형태 목록
     private List<Audit> audits;      // 심의정보 목록
     private List<Company> companys;  // 참여 영화사 목록
-    private List<Staff> staffs;      // 스텝 목록
-    private List<Stillcut> stillcuts;// 스틸컷 목록
+    private List<Staff> staffs;      // 스태프 목록
     private List<Tag> tags;          // 태그 목록
-    private int likeCount;           // 찜 수
-    private boolean likedByMe;       // 내가 찜을 눌렀는지
+    private boolean likedByMe;       // 내가 좋아요 했는지
+    private int likeCount;           // 좋아요 개수
+    private List<Stillcut> stillcuts;  // 스틸컷 목록
 
     // 내부 DTO들 (필요하면 더 세분화 가능)
 
