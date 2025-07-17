@@ -636,11 +636,22 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
             >
               <div className={styles.commentHeader}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <img
-                    className={styles.commentUserProfileImage}
-                    src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
-                    alt="프로필"
-                  />
+                  {comment.userId ? (
+                    <Link to={`/mypage/${comment.userId}`} style={{ display: 'inline-block' }}>
+                      <img
+                        className={styles.commentUserProfileImage}
+                        src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
+                        alt="프로필"
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </Link>
+                  ) : (
+                    <img
+                      className={styles.commentUserProfileImage}
+                      src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
+                      alt="프로필"
+                    />
+                  )}
                   <span className={styles.commentUser}>{comment.userNickname || comment.user || '익명'}</span>
                   <span className={styles.commentDate}>{formatRelativeTime(comment.updatedAt || comment.date)}</span>
                 </div>
@@ -729,20 +740,20 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       <section>
         <h2>스틸컷</h2>
         <div className={styles.StillsliderWrapper}>
-          {/* {stillStart > 0 && (
+          {stillStart > 0 && (
             <button
               className={`${styles.navBtn} ${styles.left}`}
               onClick={handlePrev}
             >
               <img src={previousIcon} alt="이전" />
             </button>
-          )} */}
+          )}
           <div
             className={styles.slider}
             style={{
               display: 'flex',
               transition: 'transform 0.4s',
-              transform: `translateX(-${0 * (stillCardWidth + stillCardGap)}px)`
+              transform: `translateX(-${stillStart * (stillCardWidth + stillCardGap)}px)`
             }}
           >
             {stillcutsData.map((still, idx) => (
@@ -759,14 +770,14 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
               </div>
             ))}
           </div>
-          {/* {stillStart + stillVisible < stillcutsData.length && (
+          {stillStart + stillVisible < stillcutsData.length && (
             <button
               className={`${styles.navBtn} ${styles.right}`}
               onClick={handleNext}
             >
               <img src={nextIcon} alt="다음" />
             </button>
-          )} */}
+          )}
         </div>
       </section>
 

@@ -22,6 +22,8 @@ public class MovieListMapper {
                 .watchGradeNm(movieList.getWatchGradeNm())
                 .posterUrl(movieList.getPosterUrl())
                 .status(movieList.getStatus())
+                .kmdbId(movieList.getKmdbId())
+                .tmdbId(movieList.getTmdbId())
                 .build();
     }
 
@@ -36,6 +38,8 @@ public class MovieListMapper {
                 .watchGradeNm(dto.getWatchGradeNm())
                 .posterUrl(dto.getPosterUrl())
                 .status(dto.getStatus())
+                .kmdbId(dto.getKmdbId())
+                .tmdbId(dto.getTmdbId())
                 .build();
     }
 

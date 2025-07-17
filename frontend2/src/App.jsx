@@ -26,6 +26,7 @@ import MovieEditPage from './components/Admin/MovieEditPage';
 import MovieRegisterPage from './components/Admin/MovieRegisterPage';
 import ChatbotIcon from './components/ChatbotIcon';
 import ScrollToTopButton from './components/ScrollToTopButton';
+import MoviesPage from './components/MainPage/MoviesPage';
 
 export default function App() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="/person/actor/:id" element={<ActorDetailPage />} />
             <Route path="/mypage/:userId" element={<MyPage />} />
             <Route path="/profile-edit" element={<ProfileEditPage />} />
+            <Route path="/movies" element={<MoviesPage />} />
           </Routes>
         </DefaultLayout>
         {/* 스크롤 탑 버튼 - 모든 페이지에서 보임 */}

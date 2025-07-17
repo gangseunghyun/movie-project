@@ -340,3 +340,31 @@
     padding: 2px 4px;
   }
 }
+
+/* 네비게이션 탭 스타일 */
+.navTabs {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-left: 48px;
+}
+
+.navTab {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight:500;
+  padding: 8px 0;
+  border-bottom: 2px solid transparent;
+  transition: all 00.2e-in-out;
+  cursor: pointer;
+}
+
+.navTab:hover {
+  color: #fff;
+}
+
+.navTab.active {
+  color: #fff;
+  border-bottom-color: #ffd600
+}

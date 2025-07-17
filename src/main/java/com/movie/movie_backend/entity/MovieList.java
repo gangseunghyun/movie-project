@@ -24,6 +24,10 @@ public class MovieList {
     private String posterUrl; // 포스터 이미지 URL
     @Column(nullable = true)
     private String kmdbId; // KMDb 영화 ID (nullable)
+    @Column(nullable = true)
+    private Integer tmdbId; // TMDB 영화 ID (nullable)
+    @Column(nullable = true)
+    private Double tmdbPopularity; // TMDB 인기도 점수 (nullable)
 
     @Enumerated(EnumType.STRING)
     private MovieStatus status; // 영화 상태

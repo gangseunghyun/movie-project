@@ -192,11 +192,13 @@ public class SecurityConfig {
                 .requestMatchers("/api/movies/*/like").authenticated()
                 .requestMatchers("/api/person/*/like").authenticated()
                 .requestMatchers("/api/person/*/like-status").permitAll()
-                .requestMatchers("/api/movies/**").hasRole("ADMIN")
+                .requestMatchers("/api/movies/filter").permitAll()  // 장르 필터링은 모든 사용자 접근 가능
+                .requestMatchers("/api/movies/**").hasRole("ADMIN")  // 나머지 영화 관리 기능은 ADMIN만
                 .requestMatchers("/api/reviews/movie/*").permitAll()  // 리뷰 목록 조회는 누구나
                 .requestMatchers("/api/reviews/movie/*/content-only").permitAll()  // 댓글만 조회도 누구나
                 .requestMatchers("/api/reviews/*/liked-users").permitAll()  // 좋아요한 유저 목록 조회는 누구나
                 .requestMatchers("/api/reviews/**").authenticated()  // 나머지 리뷰 관련 기능은 인증 필요
+                .requestMatchers("/api/tmdb/**").permitAll()  // TMDB 매핑 API는 모든 사용자 접근 가능
                 .requestMatchers("/api/comments/review/*").permitAll()  // 댓글 조회는 누구나
                 .requestMatchers("/api/comments/review/*/all").permitAll()  // 전체 댓글 조회는 누구나
                 .requestMatchers("/api/comments/review/*/flat").permitAll()  // 평탄화 댓글 조회는 누구나

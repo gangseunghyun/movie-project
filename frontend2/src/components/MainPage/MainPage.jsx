@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import styles from './MainPage.module.css';
 import BannerSlider from './BannerSlider';
 import MovieHorizontalSlider from './MovieHorizontalSlider';
@@ -249,22 +249,20 @@ export default function MainPage() {
     .slice(0, 20); // 상위 20개 장르 선택
     
   // 중복 제거를 위한 Set 사용
-  const seenMovieCds = new Set();
-  const finalNewGenreMovies = shuffledGenres
-    .map(genreObj => {
-      if (!Array.isArray(genreObj.movies) || genreObj.movies.length === 0) return null;
-      
-      // 해당 장르의 영화들 중에서 아직 사용되지 않은 첫 번째 영화 찾기
-      const availableMovie = genreObj.movies.find(movie => !seenMovieCds.has(movie.movieCd));
-      
-      if (availableMovie) {
-        seenMovieCds.add(availableMovie.movieCd);
-        return availableMovie;
-      }
-      
-      return null;
-    })
-    .filter(Boolean); // null 값 제거
+  const finalNewGenreMovies = useMemo(() => {
+    const seenMovieCds = new Set();
+    return shuffledGenres
+      .map(genreObj => {
+        if (!Array.isArray(genreObj.movies) || genreObj.movies.length === 0) return null;
+        const movie = genreObj.movies.find(m => !seenMovieCds.has(m.movieCd));
+        if (movie) {
+          seenMovieCds.add(movie.movieCd);
+          return movie;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [shuffledGenres]);
 
   const sections = [
     { title: '평점 높은 영화', key: 'toprated', data: topRatedMovies },
@@ -283,7 +281,7 @@ export default function MainPage() {
     // 선호 태그별 추천 영화 섹션 추가
     ...(user && Object.keys(recommendedMovies).length > 0
       ? Object.entries(recommendedMovies).map(([tag, movies]) => ({
-        title: `${tag} 영화`,
+        title: `내 취향 ${tag} 추천작`,
         key: `like-${tag}`,
         data: Array.isArray(movies) ? movies : [],
       }))
@@ -331,9 +329,9 @@ export default function MainPage() {
 
   const handleIntersect = useCallback((entries) => {
     if (entries[0].isIntersecting) {
-      setVisibleSectionCount((prev) => prev + 3);
+      setVisibleSectionCount((prev) => Math.min(prev + 3, sections.length));
     }
-  }, []);
+  }, [sections.length]);
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
