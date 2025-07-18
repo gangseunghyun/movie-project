@@ -44,11 +44,8 @@ public class REVRatingService {
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 기존 별점 조회
-        Optional<Rating> existingRating = ratingRepository.findAll().stream()
-                .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
-                                rating.getMovieDetail().getMovieCd().equals(movieCd))
-                .findFirst();
+        // 기존 별점 조회 - 효율적인 쿼리 사용
+        Optional<Rating> existingRating = ratingRepository.findByUserAndMovieDetail(user, movie);
         
         Rating rating;
         if (existingRating.isPresent()) {
@@ -89,11 +86,12 @@ public class REVRatingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
-        // 기존 별점 조회
-        Optional<Rating> existingRating = ratingRepository.findAll().stream()
-                .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
-                                rating.getMovieDetail().getMovieCd().equals(movieCd))
-                .findFirst();
+        // 영화 조회
+        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
+        
+        // 기존 별점 조회 - 효율적인 쿼리 사용
+        Optional<Rating> existingRating = ratingRepository.findByUserAndMovieDetail(user, movie);
         
         if (existingRating.isPresent()) {
             ratingRepository.delete(existingRating.get());
@@ -124,11 +122,16 @@ public class REVRatingService {
             return null;
         }
         
-        // 별점 조회
-        Optional<Rating> rating = ratingRepository.findAll().stream()
-                .filter(r -> r.getUser().getId().equals(user.getId()) && 
-                           r.getMovieDetail().getMovieCd().equals(movieCd))
-                .findFirst();
+        // 영화 조회
+        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
+                .orElse(null);
+        
+        if (movie == null) {
+            return null;
+        }
+        
+        // 별점 조회 - 효율적인 쿼리 사용
+        Optional<Rating> rating = ratingRepository.findByUserAndMovieDetail(user, movie);
         
         return rating.map(this::convertToDto).orElse(null);
     }
@@ -144,10 +147,8 @@ public class REVRatingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
-        // 별점 조회
-        List<Rating> ratings = ratingRepository.findAll().stream()
-                .filter(rating -> rating.getUser().getId().equals(user.getId()))
-                .toList();
+        // 별점 조회 - 효율적인 쿼리 사용
+        List<Rating> ratings = ratingRepository.findByUser(user);
         
         return ratings.stream()
                 .map(this::convertToDto)
@@ -242,5 +243,37 @@ public class REVRatingService {
                 .userEmail(rating.getUser().getEmail())
                 .userNickname(rating.getUser().getNickname())
                 .build();
+    }
+    
+    /**
+     * 여러 영화의 평균 평점을 한 번에 조회 (배치 조회 + 캐싱)
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = "averageRatings", key = "#movieCds.hashCode()", unless="#result.isEmpty()")
+    public Map<String, Double> getAverageRatingsForMovies(List<String> movieCds) {
+        if (movieCds == null || movieCds.isEmpty()) {
+            return new java.util.HashMap<>();
+        }
+        
+        log.debug("배치 평점 조회 시작: {}개 영화", movieCds.size());
+        
+        List<Object[]> results = ratingRepository.getAverageRatingsForMovies(movieCds);
+        Map<String, Double> averageRatings = new java.util.HashMap<>();
+        
+        for (Object[] result : results) {
+            String movieCd = (String) result[0];
+            Double avgRating = (Double) result[1];
+            
+            if (avgRating != null) {
+                // 소수점 첫째자리까지 반올림
+                double roundedRating = Math.round(avgRating * 10.0) / 10.0;
+                averageRatings.put(movieCd, roundedRating);
+            } else {
+                averageRatings.put(movieCd, null);
+            }
+        }
+        
+        log.debug("배치 평점 조회 완료: {}개 영화의 평점 조회됨", averageRatings.size());
+        return averageRatings;
     }
 } 

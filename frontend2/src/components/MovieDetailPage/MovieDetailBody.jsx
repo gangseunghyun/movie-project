@@ -90,13 +90,8 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const [commentDetailModalOpen, setCommentDetailModalOpen] = useState(false);
   const [detailModalClose, setDetailModalClose] = useState(false);
 
-  // 삭제 확인 모달 상태
-  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState(null);
-
-  
-  // 코멘트별 별점 상태
-  const [commentRatings, setCommentRatings] = useState({});
+  // 리뷰별 최신 평점 상태 (현재 사용자의 평점만 관리)
+  const [myRating, setMyRating] = useState(null);
   
   // 비슷한 장르 영화 상태 추가
   const [similarMovies, setSimilarMovies] = useState([]);
@@ -164,10 +159,10 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   // 전체 코멘트 개수
   const totalCommentCount = comments.length; // 필요시 props로 전달받거나 별도 fetch 필요
 
-  // 코멘트별 별점 조회 함수
-  const fetchCommentRating = async (commentUserId) => {
-    if (!movieCd || !commentUserId) return null;
-
+  // 현재 사용자의 평점 조회
+  const fetchMyRating = async () => {
+    if (!movieCd || !user) return;
+    
     try {
       const response = await fetch(`http://localhost:80/api/ratings/${movieCd}`, {
         credentials: 'include',
@@ -176,14 +171,30 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          return data.data.score;
+          setMyRating(data.data.score);
+        } else {
+          setMyRating(null);
         }
       }
     } catch (error) {
-      console.error('별점 조회 실패:', error);
+      console.error('내 평점 조회 실패:', error);
+      setMyRating(null);
     }
-    return null;
   };
+
+  // 사용자 정보가 변경될 때 내 평점 조회
+  useEffect(() => {
+    if (user && movieCd) {
+      fetchMyRating();
+    }
+  }, [user, movieCd]);
+
+  // 리뷰 목록이 변경될 때 내 평점도 다시 조회 (평점 변경 시)
+  useEffect(() => {
+    if (user && movieCd && comments.length > 0) {
+      fetchMyRating();
+    }
+  }, [comments, user, movieCd]);
 
   // 전체 코멘트(무한스크롤/정렬) fetch 함수
   // 실제 API에 맞게 수정 필요
@@ -204,28 +215,6 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     // data: { comments: [], totalCount: number }
     return data;
   };
-
-  // 코멘트 목록이 변경될 때 각 코멘트의 별점 조회
-  useEffect(() => {
-    const fetchAllCommentRatings = async () => {
-      const ratings = {};
-
-      for (const comment of comments) {
-        if (comment.userId) {
-          const rating = await fetchCommentRating(comment.userId);
-          if (rating !== null) {
-            ratings[comment.id] = rating;
-          }
-        }
-      }
-
-      setCommentRatings(ratings);
-    };
-
-    if (comments.length > 0) {
-      fetchAllCommentRatings();
-    }
-  }, [comments, movieCd]);
 
   // 작성시간을 상대적 시간으로 변환하는 함수
   const formatRelativeTime = (dateString) => {
@@ -392,62 +381,26 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     }, 100);
   };
 
-  // 삭제 확인 모달 열기
-  const handleDeleteClick = (commentId) => {
-    setDeleteTargetId(commentId);
-    setShowDeleteConfirmModal(true);
-  };
 
-  // 삭제 확인 모달에서 확인 클릭
-  const handleDeleteConfirm = async () => {
-    if (!deleteTargetId) return;
-    
-    try {
-      const response = await fetch(`/api/reviews/${deleteTargetId}`, {
+
+  // 코멘트 삭제 핸들러
+  const handleDelete = (commentId) => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      fetch(`/api/reviews/${commentId}`, {
         method: 'DELETE',
         credentials: 'include',
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        fetchComments(); // 삭제 후 목록 갱신
-        //alert('삭제되었습니다.');
-      } else {
-        alert('삭제 실패: ' + (data.message || ''));
-      }
-    } catch (error) {
-      alert('삭제 중 오류 발생');
-    } finally {
-      setShowDeleteConfirmModal(false);
-      setDeleteTargetId(null);
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            fetchComments(); // 삭제 후 목록 갱신
+          } else {
+            alert('삭제 실패: ' + (data.message || ''));
+          }
+        })
+        .catch(() => alert('삭제 중 오류 발생'));
     }
   };
-
-  // 삭제 확인 모달에서 취소 클릭
-  const handleDeleteCancel = () => {
-    setShowDeleteConfirmModal(false);
-    setDeleteTargetId(null);
-  };
-
-  // 코멘트 삭제 핸들러 (기존 함수 제거)
-  // const handleDelete = (commentId) => {
-  //   if (window.confirm('정말 삭제하시겠습니까?')) {
-  //     fetch(`/api/reviews/${commentId}`, {
-  //       method: 'DELETE',
-  //       credentials: 'include',
-  //     })
-  //       .then(res => res.json())
-  //       .then(data => {
-  //         if (data.success) {
-  //           fetchComments(); // 삭제 후 목록 갱신
-  //         } else {
-  //           alert('삭제 실패: ' + (data.message || ''));
-  //         }
-  //       })
-  //       .catch(() => alert('삭제 중 오류 발생'));
-  //   }
-  // };
 
   // 코멘트 수정 핸들러
   const handleEdit = (comment) => {
@@ -608,315 +561,290 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   };
 
   return (
-    <>
-      <div className={styles.detailBody}>
-        <section>
-          <h2>출연/제작</h2>
-          <div className={styles.castSliderWrapper}>
-            {/* {castPage > 0 && (
-              <button className={`${styles.castNavBtn} ${styles.left}`} onClick={() => setCastPage(castPage - 1)}>
-                <img src={previousIcon} alt="이전" />
-              </button>
-            )} */}
-            <div
-              className={styles.castSliderTrack}
-              style={{ transform: `translateX(-${0 * 100}%)`, transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}
-            >
-              {castPages.map((pageList, pageIdx) => (
-                <div className={`${styles.castGrid} ${pageIdx === 0 ? styles.firstCastGrid : ''}`} key={pageIdx}>
-                  {pageList.map((person, idx) => {
-                    const rowIdx = Math.floor(idx / 4);
-                    const isFirstOrSecondRow = rowIdx === 0 || rowIdx === 1;
-                    const personLink = person.type === 'director'
-                      ? `/person/director/${person.id}`
-                      : `/person/actor/${person.id}`;
-                    return (
-                      <div
-                        className={styles.castCard}
-                        key={person.id ? `person-${person.type ?? 'unknown'}-${person.id}` : `page-${pageIdx}-idx-${idx}`}
-                      >
-                        <Link to={personLink} style={{ display: 'block' }}>
-                          <img src={person.photoUrl} alt={person.peopleNm} className={styles.castImg} />
-                        </Link>
-                        <div className={
-                          styles.castInfo +
-                          (isFirstOrSecondRow ? ' ' + styles.castInfoWithBorder : '')
-                        }>
-                          <Link to={personLink} style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <div className={styles.castName}>{person.peopleNm}</div>
-                          </Link>
-                          <div className={styles.castRole}>{person.cast}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-            {/* {castPage < castTotalPage - 1 && (
-              <button className={`${styles.castNavBtn} ${styles.right}`} onClick={() => setCastPage(castPage + 1)}>
-                <img src={nextIcon} alt="다음" />
-              </button>
-            )} */}
-          </div>
-        </section>
-        <section>
-          <div className={styles.commentSectionHeader}>
-            <h2 className={styles.commentSectionTitle}>코멘트</h2>
-            <span className={styles.commentSectionMore} onClick={() => setAllCommentsModalOpen(true)}>더보기</span>
-          </div>
-          <div className={styles.commentGrid}>
-            {/* {commentLoading && <div>로딩 중...</div>} */}
-            {commentError && <div style={{ color: 'red' }}>{commentError}</div>}
-            {!commentLoading && !commentError && comments.length === 0 && <div>아직 코멘트가 없습니다.</div>}
-            {comments.map((comment, idx) => (
-              <div
-                className={styles.commentCard}
-                key={comment.id || idx}
-                style={{ cursor: 'default' }}
-              >
-                <div className={styles.commentHeader}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {comment.userId ? (
-                      <Link to={`/mypage/${comment.userId}`} style={{ display: 'inline-block' }}>
-                        <img
-                          className={styles.commentUserProfileImage}
-                          src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
-                          alt="프로필"
-                          style={{ cursor: 'pointer' }}
-                        />
+    <div className={styles.detailBody}>
+      <section>
+        <h2>출연/제작</h2>
+        <div className={styles.castSliderWrapper}>
+          {/* {castPage > 0 && (
+            <button className={`${styles.castNavBtn} ${styles.left}`} onClick={() => setCastPage(castPage - 1)}>
+              <img src={previousIcon} alt="이전" />
+            </button>
+          )} */}
+          <div
+            className={styles.castSliderTrack}
+            style={{ transform: `translateX(-${0 * 100}%)`, transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}
+          >
+            {castPages.map((pageList, pageIdx) => (
+              <div className={`${styles.castGrid} ${pageIdx === 0 ? styles.firstCastGrid : ''}`} key={pageIdx}>
+                {pageList.map((person, idx) => {
+                  const rowIdx = Math.floor(idx / 4);
+                  const isFirstOrSecondRow = rowIdx === 0 || rowIdx === 1;
+                  const personLink = person.type === 'director'
+                    ? `/person/director/${person.id}`
+                    : `/person/actor/${person.id}`;
+                  return (
+                    <div
+                      className={styles.castCard}
+                      key={person.id ? `person-${person.type ?? 'unknown'}-${person.id}` : `page-${pageIdx}-idx-${idx}`}
+                    >
+                      <Link to={personLink} style={{ display: 'block' }}>
+                        <img src={person.photoUrl} alt={person.peopleNm} className={styles.castImg} />
                       </Link>
-                    ) : (
+                      <div className={
+                        styles.castInfo +
+                        (isFirstOrSecondRow ? ' ' + styles.castInfoWithBorder : '')
+                      }>
+                        <Link to={personLink} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <div className={styles.castName}>{person.peopleNm}</div>
+                        </Link>
+                        <div className={styles.castRole}>{person.cast}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          {/* {castPage < castTotalPage - 1 && (
+            <button className={`${styles.castNavBtn} ${styles.right}`} onClick={() => setCastPage(castPage + 1)}>
+              <img src={nextIcon} alt="다음" />
+            </button>
+          )} */}
+        </div>
+      </section>
+      <section>
+        <div className={styles.commentSectionHeader}>
+          <h2 className={styles.commentSectionTitle}>코멘트</h2>
+          <span className={styles.commentSectionMore} onClick={() => setAllCommentsModalOpen(true)}>더보기</span>
+        </div>
+        <div className={styles.commentGrid}>
+          {/* {commentLoading && <div>로딩 중...</div>} */}
+          {commentError && <div style={{ color: 'red' }}>{commentError}</div>}
+          {!commentLoading && !commentError && comments.length === 0 && <div>아직 코멘트가 없습니다.</div>}
+          {comments.map((comment, idx) => (
+            <div
+              className={styles.commentCard}
+              key={comment.id || idx}
+              style={{ cursor: 'default' }}
+            >
+              <div className={styles.commentHeader}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {comment.userId ? (
+                    <Link to={`/mypage/${comment.userId}`} style={{ display: 'inline-block' }}>
                       <img
                         className={styles.commentUserProfileImage}
                         src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
                         alt="프로필"
+                        style={{ cursor: 'pointer' }}
                       />
-                    )}
-                    <span className={styles.commentUser}>{comment.userNickname || comment.user || '익명'}</span>
-                    <span className={styles.commentDate}>{formatRelativeTime(comment.updatedAt || comment.date)}</span>
-                  </div>
-                  <span className={styles.commentRating}>
-                    ★ {comment.rating ? comment.rating.toFixed(1) : '-'}
-                  </span>
+                    </Link>
+                  ) : (
+                    <img
+                      className={styles.commentUserProfileImage}
+                      src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
+                      alt="프로필"
+                    />
+                  )}
+                  <span className={styles.commentUser}>{comment.userNickname || comment.user || '익명'}</span>
+                  <span className={styles.commentDate}>{formatRelativeTime(comment.updatedAt || comment.date)}</span>
                 </div>
-                <hr className={styles.commentDivider} />
-                <div
-                  onClick={() => handleCommentCardClick(comment.id)}
-                  style={{ 
-                    cursor: 'pointer',
-                    color: '#aaa',
-                    fontSize: '1.08rem',
-                    marginBottom: '12px',
-                    wordBreak: 'keep-all',
-                    minHeight: '165px'
+                <span className={styles.commentRating}>
+                  ★ {(user && comment.userId === user.id && myRating !== null) 
+                      ? myRating.toFixed(1) 
+                      : (comment.rating ? comment.rating.toFixed(1) : '-')}
+                </span>
+              </div>
+              <hr className={styles.commentDivider} />
+              <div
+                onClick={() => handleCommentCardClick(comment.id)}
+                style={{ 
+                  cursor: 'pointer',
+                  color: '#aaa',
+                  fontSize: '1.08rem',
+                  marginBottom: '12px',
+                  wordBreak: 'keep-all',
+                  minHeight: '165px'
+                }}
+              >
+                {renderCommentContent(comment)}
+              </div>
+              <hr className={styles.commentFooterDivider} />
+              <div className={styles.commentFooter}>
+                <span 
+                  className={styles.commentCount}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleShowLikedUsers(comment.id);
                   }}
                 >
-                  {renderCommentContent(comment)}
-                </div>
-                <hr className={styles.commentFooterDivider} />
-                <div className={styles.commentFooter}>
-                  <span 
-                    className={styles.commentCount}
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleShowLikedUsers(comment.id);
-                    }}
-                  >
-                    좋아요 {comment.likeCount ?? 0}
-                  </span>
-                  <span 
-                    className={styles.commentCount}
-                    onClick={e => {
-                      e.stopPropagation();
-                      setSelectedComment(comment);
-                      setCommentsModalOpen(true);
-                    }}
-                  >
-                    댓글 {comment.commentCount ?? 0}
-                  </span>
+                  좋아요 {comment.likeCount ?? 0}
+                </span>
+                <span 
+                  className={styles.commentCount}
+                  onClick={e => {
+                    e.stopPropagation();
+                    setSelectedComment(comment);
+                    setCommentsModalOpen(true);
+                  }}
+                >
+                  댓글 {comment.commentCount ?? 0}
+                </span>
 
-                  {/* 👇 조건부 버튼 */}
-                  {user && user.id === comment.userId && (
-                    <div className={styles.commentActions} onClick={e => e.stopPropagation()}>
-                      <button className={styles.replyEditBtn} onClick={() => handleEdit(comment)}>수정</button>
-                      <button className={styles.replyDeleteBtn} onClick={() => handleDeleteClick(comment.id)}>삭제</button>
-                    </div>
-                  )}
-                </div>
-                <div className={styles.commentIconRow}>
-                  <img
-                    src={comment.likedByMe ? likeIconTrue : likeIcon}
-                    alt="좋아요"
-                    className={styles.commentIcon}
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleLike(comment.id, comment.likedByMe);
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <img
-                    src={commentIcon2}
-                    alt="댓글"
-                    className={styles.commentIcon}
-                    onClick={e => handleReplyIconClick(e, comment.id)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </div>
+                {/* 👇 조건부 버튼 */}
+                {user && user.id === comment.userId && (
+                  <div className={styles.commentActions} onClick={e => e.stopPropagation()}>
+                    <button className={styles.replyEditBtn} onClick={() => handleEdit(comment)}>수정</button>
+                    <button className={styles.replyDeleteBtn} onClick={() => handleDelete(comment.id)}>삭제</button>
+                  </div>
+                )}
+              </div>
+              <div className={styles.commentIconRow}>
+                <img
+                  src={comment.likedByMe ? likeIconTrue : likeIcon}
+                  alt="좋아요"
+                  className={styles.commentIcon}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleLike(comment.id, comment.likedByMe);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                />
+                <img
+                  src={commentIcon2}
+                  alt="댓글"
+                  className={styles.commentIcon}
+                  onClick={e => handleReplyIconClick(e, comment.id)}
+                  style={{ cursor: 'pointer' }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section>
+        <h2>비슷한 장르의 영화</h2>
+        {similarMoviesLoading && <div style={{ textAlign: 'center', padding: '20px' }}>로딩 중...</div>}
+        {similarMoviesError && <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>{similarMoviesError}</div>}
+        {!similarMoviesLoading && !similarMoviesError && similarMovies.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '20px' }}>비슷한 장르의 영화가 없습니다.</div>
+        )}
+        {!similarMoviesLoading && !similarMoviesError && similarMovies.length > 0 && (
+          <MovieHorizontalSlider
+            data={similarMovies}
+            sectionKey="similar"
+            CardComponent={SimilarMovieCard}
+          />
+        )}
+      </section>
+      <section>
+        <h2>스틸컷</h2>
+        <div className={styles.StillsliderWrapper}>
+          {stillStart > 0 && (
+            <button
+              className={`${styles.navBtn} ${styles.left}`}
+              onClick={handlePrev}
+            >
+              <img src={previousIcon} alt="이전" />
+            </button>
+          )}
+          <div
+            className={styles.slider}
+            style={{
+              display: 'flex',
+              transition: 'transform 0.4s',
+              transform: `translateX(-${stillStart * (stillCardWidth + stillCardGap)}px)`
+            }}
+          >
+            {stillcutsData.map((still, idx) => (
+              <div
+                className={styles.stillcutCard}
+                key={`still-${still.id || idx}-${still.imageUrl}`}
+                style={{
+                  flex: `0 0 ${stillCardWidth}px`,
+                  marginRight: idx !== stillcutsData.length - 1 ? `${stillCardGap}px` : 0
+                }}
+                onClick={() => handleStillcutClick(idx)}
+              >
+                <img src={still.imageUrl} alt="스틸컷" className={styles.stillcutImg} />
               </div>
             ))}
           </div>
-        </section>
-        <section>
-          <h2>비슷한 장르의 영화</h2>
-          {similarMoviesLoading && <div style={{ textAlign: 'center', padding: '20px' }}>로딩 중...</div>}
-          {similarMoviesError && <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>{similarMoviesError}</div>}
-          {!similarMoviesLoading && !similarMoviesError && similarMovies.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '20px' }}>비슷한 장르의 영화가 없습니다.</div>
-          )}
-          {!similarMoviesLoading && !similarMoviesError && similarMovies.length > 0 && (
-            <MovieHorizontalSlider
-              data={similarMovies}
-              sectionKey="similar"
-              CardComponent={SimilarMovieCard}
-            />
-          )}
-        </section>
-        <section>
-          <h2>스틸컷</h2>
-          <div className={styles.StillsliderWrapper}>
-            {stillStart > 0 && (
-              <button
-                className={`${styles.navBtn} ${styles.left}`}
-                onClick={handlePrev}
-              >
-                <img src={previousIcon} alt="이전" />
-              </button>
-            )}
-            <div
-              className={styles.slider}
-              style={{
-                display: 'flex',
-                transition: 'transform 0.4s',
-                transform: `translateX(-${stillStart * (stillCardWidth + stillCardGap)}px)`
-              }}
+          {stillStart + stillVisible < stillcutsData.length && (
+            <button
+              className={`${styles.navBtn} ${styles.right}`}
+              onClick={handleNext}
             >
-              {stillcutsData.map((still, idx) => (
-                <div
-                  className={styles.stillcutCard}
-                  key={`still-${still.id || idx}-${still.imageUrl}`}
-                  style={{
-                    flex: `0 0 ${stillCardWidth}px`,
-                    marginRight: idx !== stillcutsData.length - 1 ? `${stillCardGap}px` : 0
-                  }}
-                  onClick={() => handleStillcutClick(idx)}
-                >
-                  <img src={still.imageUrl} alt="스틸컷" className={styles.stillcutImg} />
-                </div>
-              ))}
-            </div>
-            {stillStart + stillVisible < stillcutsData.length && (
-              <button
-                className={`${styles.navBtn} ${styles.right}`}
-                onClick={handleNext}
-              >
-                <img src={nextIcon} alt="다음" />
-              </button>
-            )}
-          </div>
-        </section>
-
-        {/* 댓글 상세 모달 */}
-        <ReviewDetailModal
-          open={commentDetailModalOpen}
-          onClose={() => setCommentDetailModalOpen(false)} // 닫기(×) 버튼
-          onBack={handleDetailModalClose} // 이전(←) 버튼
-          comment={selectedComment}
-          reviewId={selectedReviewId}
-          fetchComments={fetchComments}
-          onShowLikedUsers={handleShowLikedUsers}
-          onShowComments={(comment) => {
-            setSelectedComment(comment);
-            setCommentsModalOpen(true);
-          }}
-        />
-        {/* 리뷰 수정 모달 */}
-        <ReviewModal
-          open={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          movieTitle={editTarget?.movieNm}
-          movieCd={editTarget?.movieCd}
-          editMode={true}
-          initialContent={editTarget?.content || ''}
-          initialRating={editTarget?.rating || 0}
-          onEditSave={handleEditSave}
-          reviewId={editTarget?.id}
-        />
-        {/* 댓글 작성 모달 */}
-        <CommentModal
-          open={replyModalOpen}
-          onClose={() => setReplyModalOpen(false)}
-          reviewId={selectedReviewId}
-          onSave={handleReplySave}
-          movieTitle={selectedComment?.movieNm || ''}
-          reviewContent={selectedComment?.content || ''}
-          userId={user?.id}
-        />
-        {/* 전체 코멘트 모달 */}
-        <AllReviewsModal
-          open={allCommentsModalOpen}
-          onClose={() => setAllCommentsModalOpen(false)}
-          movieId={movieCd} // 또는 실제 id 변수명
-          onCommentClick={handleAllCommentsCommentClick}
-          onShowLikedUsers={handleShowLikedUsers}
-          onLikeClick={handleLike}
-          onReplyIconClick={handleReplyIconClick}
-        />
-        {/* 스틸컷 갤러리 모달 */}
-        <StillcutGalleryModal
-          open={stillcutGalleryOpen}
-          onClose={() => setStillcutGalleryOpen(false)}
-          stillcuts={stillcutsData}
-          initialIndex={selectedStillcutIndex}
-        />
-        {/* 댓글 목록 모달 */}
-        <ReviewCommentsModal
-          isOpen={commentsModalOpen}
-          onClose={() => setCommentsModalOpen(false)}
-          review={selectedComment}
-          onCommentCountChange={handleReviewCommentCountChange}
-          handleLikeReview={handleLike}
-          handleReplyIconClick={handleReviewCommentsReplyIconClick}
-          user={user}
-        />
-        {/* 좋아요한 유저 목록 모달 */}
-        <LikedUsersModal isOpen={likedUsersModalOpen} onClose={() => setLikedUsersModalOpen(false)} reviewId={selectedReviewIdForLikes} />
-      </div>
-
-      {/* 삭제 확인 모달 */}
-      {showDeleteConfirmModal && (
-        <div className={styles.modalOverlay} onClick={handleDeleteCancel}>
-          <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
-            <h3>삭제 확인</h3>
-            <p>정말 삭제하시겠습니까?</p>
-            <p>삭제 후에는 되돌릴 수 없습니다.</p>
-            <div className={styles.modalActions}>
-              <button 
-                className={styles.closeModalButton}
-                onClick={handleDeleteCancel}
-              >
-                취소
-              </button>
-              <button 
-                className={styles.confirmButton}
-                onClick={handleDeleteConfirm}
-              >
-                삭제
-              </button>
-            </div>
-          </div>
+              <img src={nextIcon} alt="다음" />
+            </button>
+          )}
         </div>
-      )}
-    </>
+      </section>
+
+      {/* 댓글 상세 모달 */}
+      <ReviewDetailModal
+        open={commentDetailModalOpen}
+        onClose={() => setCommentDetailModalOpen(false)} // 닫기(×) 버튼
+        onBack={handleDetailModalClose} // 이전(←) 버튼
+        comment={selectedComment}
+        reviewId={selectedReviewId}
+        fetchComments={fetchComments}
+        onShowLikedUsers={handleShowLikedUsers}
+        onShowComments={(comment) => {
+          setSelectedComment(comment);
+          setCommentsModalOpen(true);
+        }}
+      />
+      {/* 리뷰 수정 모달 */}
+      <ReviewModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        movieTitle={editTarget?.movieNm}
+        movieCd={editTarget?.movieCd}
+        editMode={true}
+        initialContent={editTarget?.content || ''}
+        initialRating={editTarget?.rating || 0}
+        onEditSave={handleEditSave}
+        reviewId={editTarget?.id}
+      />
+      {/* 댓글 작성 모달 */}
+      <CommentModal
+        open={replyModalOpen}
+        onClose={() => setReplyModalOpen(false)}
+        reviewId={selectedReviewId}
+        onSave={handleReplySave}
+        movieTitle={selectedComment?.movieNm || ''}
+        reviewContent={selectedComment?.content || ''}
+        userId={user?.id}
+      />
+      {/* 전체 코멘트 모달 */}
+      <AllReviewsModal
+        open={allCommentsModalOpen}
+        onClose={() => setAllCommentsModalOpen(false)}
+        movieId={movieCd} // 또는 실제 id 변수명
+        onCommentClick={handleAllCommentsCommentClick}
+        onShowLikedUsers={handleShowLikedUsers}
+        onLikeClick={handleLike}
+        onReplyIconClick={handleReplyIconClick}
+      />
+      {/* 스틸컷 갤러리 모달 */}
+      <StillcutGalleryModal
+        open={stillcutGalleryOpen}
+        onClose={() => setStillcutGalleryOpen(false)}
+        stillcuts={stillcutsData}
+        initialIndex={selectedStillcutIndex}
+      />
+      {/* 댓글 목록 모달 */}
+      <ReviewCommentsModal
+        isOpen={commentsModalOpen}
+        onClose={() => setCommentsModalOpen(false)}
+        review={selectedComment}
+        onCommentCountChange={handleReviewCommentCountChange}
+        handleLikeReview={handleLike}
+        handleReplyIconClick={handleReviewCommentsReplyIconClick}
+        user={user}
+      />
+      {/* 좋아요한 유저 목록 모달 */}
+      <LikedUsersModal isOpen={likedUsersModalOpen} onClose={() => setLikedUsersModalOpen(false)} reviewId={selectedReviewIdForLikes} />
+    </div>
   );
 } 

@@ -7,6 +7,7 @@ import com.movie.movie_backend.repository.PRDDirectorRepository;
 import com.movie.movie_backend.repository.PRDActorRepository;
 import com.movie.movie_backend.repository.CastRepository;
 import com.movie.movie_backend.repository.PRDMovieRepository;
+import com.movie.movie_backend.repository.PRDMovieListRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.constant.Provider;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import com.movie.movie_backend.service.REVRatingService;
 
 @RestController
 @RequestMapping("/api/person")
@@ -32,10 +34,12 @@ public class PersonController {
     private final PRDDirectorRepository directorRepository;
     private final PRDActorRepository actorRepository;
     private final PRDMovieRepository movieRepository;
+    private final PRDMovieListRepository movieListRepository;
     private final CastRepository castRepository;
     private final MovieDetailMapper movieDetailMapper;
     private final PersonLikeService personLikeService;
     private final USRUserRepository userRepository;
+    private final REVRatingService ratingService;
     // 현재 추천된 배우 정보 (캐시)
     private Actor currentRecommendedActor = null;
     // 현재 추천된 감독 정보 (캐시)
@@ -185,7 +189,7 @@ public class PersonController {
     }
 
     /**
-     * 19금이 아닌 영화 6개 이상 출연한 배우들 조회
+     * 19금이 아닌 영화 6개 이상 출연한 배우들 조회 (포스터가 있는 영화만 카운트)
      */
     private List<Actor> getActorsWithMinNonAdultMovies(int minMovieCount) {
         List<Actor> allActors = actorRepository.findAll();
@@ -195,6 +199,7 @@ public class PersonController {
                     .stream()
                     .map(cast -> cast.getMovieDetail())
                     .filter(movie -> !isAdultMovie(movie))
+                    .filter(movie -> hasPoster(movie)) // 포스터가 있는 영화만 카운트
                     .collect(Collectors.toList());
                 return movies.size() >= minMovieCount;
             })
@@ -233,6 +238,19 @@ public class PersonController {
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
             .distinct() // 중복 제거
             .collect(Collectors.toList());
+        
+        // 배치 평점 조회로 성능 최적화
+        List<String> movieCds = allMovies.stream()
+                .map(MovieDetail::getMovieCd)
+                .collect(Collectors.toList());
+        Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+        
+        // 평점 정보를 MovieDetail에 설정
+        allMovies.forEach(movie -> {
+            Double rating = averageRatings.get(movie.getMovieCd());
+            movie.setAverageRating(rating);
+        });
+        
         // 개봉일순으로 정렬 (최신순)
         List<MovieDetail> sortedMovies = allMovies.stream()
             .sorted((m1, m2) -> {
@@ -330,7 +348,7 @@ public class PersonController {
     }
 
     /**
-     * 19금이 아닌 영화 6개 이상 감독한 감독들 조회
+     * 19금이 아닌 영화 6개 이상 감독한 감독들 조회 (포스터가 있는 영화만 카운트)
      */
     private List<Director> getDirectorsWithMinNonAdultMovies(int minMovieCount) {
         List<Director> allDirectors = directorRepository.findAll();
@@ -339,10 +357,38 @@ public class PersonController {
                 List<MovieDetail> movies = movieRepository.findAll().stream()
                     .filter(movie -> movie.getDirector() != null && movie.getDirector().getId().equals(director.getId()))
                     .filter(movie -> !isAdultMovie(movie))
+                    .filter(movie -> hasPoster(movie)) // 포스터가 있는 영화만 카운트
                     .collect(Collectors.toList());
                 return movies.size() >= minMovieCount;
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * 영화에 포스터가 있는지 확인하는 메서드
+     */
+    private boolean hasPoster(MovieDetail movie) {
+        try {
+            // MovieList에서 포스터 URL 확인
+            var movieListOpt = movieListRepository.findById(movie.getMovieCd());
+            if (movieListOpt.isPresent()) {
+                var movieList = movieListOpt.get();
+                if (movieList.getPosterUrl() != null && 
+                    !movieList.getPosterUrl().trim().isEmpty() && 
+                    !movieList.getPosterUrl().equals("null")) {
+                    return true;
+                }
+            }
+            
+            // 스틸컷이 있으면 포스터로 대체 가능
+            if (movie.getStillcuts() != null && !movie.getStillcuts().isEmpty()) {
+                return true;
+            }
+            
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -377,6 +423,19 @@ public class PersonController {
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
             .distinct() // 중복 제거
             .collect(Collectors.toList());
+        
+        // 배치 평점 조회로 성능 최적화
+        List<String> movieCds = allMovies.stream()
+                .map(MovieDetail::getMovieCd)
+                .collect(Collectors.toList());
+        Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+        
+        // 평점 정보를 MovieDetail에 설정
+        allMovies.forEach(movie -> {
+            Double rating = averageRatings.get(movie.getMovieCd());
+            movie.setAverageRating(rating);
+        });
+        
         // 개봉일순으로 정렬 (최신순)
         List<MovieDetail> sortedMovies = allMovies.stream()
             .sorted((m1, m2) -> {
