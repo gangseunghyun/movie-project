@@ -1,14 +1,14 @@
 .container {
   display: flex;
   min-height: 100vh;
-  background: #181c24;
+  background: var(--color-bg);
 }
 
 .sidebar {
   width: 260px;
-  background: #10131a;
-  border-right: 1.5px solid #23283a;
-  padding: 100px 24px 32px 32px;
+  background: var(--color-bg);
+  border-right: 2px solid #23283a;
+  padding: 100px 16px 32px 32px;
   box-sizing: border-box;
   min-height: 100vh;
   position: fixed;
@@ -48,7 +48,7 @@
   transition: color 0.2s;
 }
 .moreBtn:hover {
-  color: #ffb300;
+  color: #fff;
 }
 
 .resetButton {
@@ -95,7 +95,7 @@
   transition: color 0.2s;
 }
 .genreLabel:hover {
-  color: #ffb300;
+  color: #fff;
 }
 
 .checkbox {
@@ -111,7 +111,7 @@
   margin-left: 260px;
   padding: 40px 24px 32px 24px;
   min-width: 0;
-  background: #181c24;
+  background: var(--color-bg);
   width: 100vw;
   max-width: calc(100vw - 260px);
 }
@@ -134,6 +134,7 @@
 
 .sortContainer {
   position: relative;
+  top:20px;
 }
 
 .sortButton {
@@ -144,6 +145,7 @@
   font-weight: 500;
   cursor: pointer;
   padding: 8px 12px;
+  margin-right: 40px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -153,7 +155,7 @@
 }
 
 .sortButton:hover {
-  color: #ffb300;
+  color: #fff;
   background: rgba(255, 179, 0, 0.1);
 }
 
@@ -217,7 +219,6 @@
 }
 
 .card {
-  background: #23283a;
   border-radius: 16px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.18);
   overflow: hidden;
@@ -225,7 +226,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding: 18px 10px 14px 10px;
   transition: box-shadow 0.22s, transform 0.22s;
   cursor: pointer;
   border: 1.5px solid transparent;
@@ -236,7 +236,6 @@
 .card:hover {
   box-shadow: 0 12px 36px rgba(0,0,0,0.28);
   transform: translateY(-8px) scale(1.035);
-  border: 1.5px solid #ffb300;
 }
 
 /* 메인페이지와 동일하게 포스터 부모 div */
