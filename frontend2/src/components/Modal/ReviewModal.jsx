@@ -278,6 +278,8 @@ const ReviewModal = ({
         if (data.success) {
           alert('리뷰가 수정되었습니다!');
           if (onEditSave) onEditSave(comment, latestRating);
+          // 평점 변경 시 페이지 새로고침으로 댓글 모달 업데이트
+          window.location.reload();
           onClose();
         } else {
           alert(data.message || '리뷰 수정에 실패했습니다.');

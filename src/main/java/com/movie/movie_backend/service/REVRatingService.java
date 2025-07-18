@@ -44,11 +44,8 @@ public class REVRatingService {
         MovieDetail movie = movieRepository.findByMovieCd(movieCd)
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
-        // 기존 별점 조회
-        Optional<Rating> existingRating = ratingRepository.findAll().stream()
-                .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
-                                rating.getMovieDetail().getMovieCd().equals(movieCd))
-                .findFirst();
+        // 기존 별점 조회 - 효율적인 쿼리 사용
+        Optional<Rating> existingRating = ratingRepository.findByUserAndMovieDetail(user, movie);
         
         Rating rating;
         if (existingRating.isPresent()) {
@@ -89,11 +86,12 @@ public class REVRatingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
-        // 기존 별점 조회
-        Optional<Rating> existingRating = ratingRepository.findAll().stream()
-                .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
-                                rating.getMovieDetail().getMovieCd().equals(movieCd))
-                .findFirst();
+        // 영화 조회
+        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
+                .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
+        
+        // 기존 별점 조회 - 효율적인 쿼리 사용
+        Optional<Rating> existingRating = ratingRepository.findByUserAndMovieDetail(user, movie);
         
         if (existingRating.isPresent()) {
             ratingRepository.delete(existingRating.get());
@@ -124,11 +122,16 @@ public class REVRatingService {
             return null;
         }
         
-        // 별점 조회
-        Optional<Rating> rating = ratingRepository.findAll().stream()
-                .filter(r -> r.getUser().getId().equals(user.getId()) && 
-                           r.getMovieDetail().getMovieCd().equals(movieCd))
-                .findFirst();
+        // 영화 조회
+        MovieDetail movie = movieRepository.findByMovieCd(movieCd)
+                .orElse(null);
+        
+        if (movie == null) {
+            return null;
+        }
+        
+        // 별점 조회 - 효율적인 쿼리 사용
+        Optional<Rating> rating = ratingRepository.findByUserAndMovieDetail(user, movie);
         
         return rating.map(this::convertToDto).orElse(null);
     }
@@ -144,10 +147,8 @@ public class REVRatingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
-        // 별점 조회
-        List<Rating> ratings = ratingRepository.findAll().stream()
-                .filter(rating -> rating.getUser().getId().equals(user.getId()))
-                .toList();
+        // 별점 조회 - 효율적인 쿼리 사용
+        List<Rating> ratings = ratingRepository.findByUser(user);
         
         return ratings.stream()
                 .map(this::convertToDto)
