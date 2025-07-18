@@ -1418,8 +1418,8 @@ public class UserController {
                 "success", true,
                 "message", "추천할 영화가 없습니다.",
                 "recommender", java.util.Map.of(
-                    "id", recommender.getId(),
-                    "nickname", recommender.getNickname()
+                    "id", recommender.getId() != null ? recommender.getId() : 0L,
+                    "nickname", recommender.getNickname() != null ? recommender.getNickname() : ""
                 ),
                 "movies", java.util.Collections.emptyList()
             ));
@@ -1427,18 +1427,18 @@ public class UserController {
         List<java.util.Map<String, Object>> movies = movieSet.stream()
             .map(md -> {
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
-                m.put("movieCd", md.getMovieCd());
-                m.put("movieNm", md.getMovieNm());
-                m.put("posterUrl", (md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null));
-                m.put("genreNm", md.getGenreNm());
-                m.put("openDt", md.getOpenDt());
+                m.put("movieCd", md.getMovieCd() != null ? md.getMovieCd() : "");
+                m.put("movieNm", md.getMovieNm() != null ? md.getMovieNm() : "");
+                m.put("posterUrl", (md.getMovieList() != null ? md.getMovieList().getPosterUrl() : ""));
+                m.put("genreNm", md.getGenreNm() != null ? md.getGenreNm() : "");
+                m.put("openDt", md.getOpenDt() != null ? md.getOpenDt() : "");
                 return m;
             })
             .collect(java.util.stream.Collectors.toList());
         var recommenderDto = java.util.Map.of(
             "id", recommender.getId(),
             "nickname", recommender.getNickname(),
-            "profileImageUrl", recommender.getProfileImageUrl()
+            "profileImageUrl", recommender.getProfileImageUrl() != null ? recommender.getProfileImageUrl() : ""
         );
         return ResponseEntity.ok(java.util.Map.of(
             "success", true,
@@ -1544,12 +1544,12 @@ public class UserController {
             // DTO 변환
             List<java.util.Map<String, Object>> movieDtos = topMovies.stream().map(md -> {
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
-                m.put("movieCd", md.getMovieCd());
-                m.put("movieNm", md.getMovieNm());
-                m.put("posterUrl", md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null);
-                m.put("genreNm", md.getGenreNm());
-                m.put("openDt", md.getOpenDt());
-                m.put("averageRating", md.getAverageRating());
+                m.put("movieCd", md.getMovieCd() != null ? md.getMovieCd() : "");
+                m.put("movieNm", md.getMovieNm() != null ? md.getMovieNm() : "");
+                m.put("posterUrl", md.getMovieList() != null ? md.getMovieList().getPosterUrl() : "");
+                m.put("genreNm", md.getGenreNm() != null ? md.getGenreNm() : "");
+                m.put("openDt", md.getOpenDt() != null ? md.getOpenDt() : "");
+                m.put("averageRating", md.getAverageRating() != null ? md.getAverageRating() : 0.0);
                 return m;
             }).toList();
             genreResults.add(java.util.Map.of(
