@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.constant.Provider;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import com.movie.movie_backend.service.REVRatingService;
 
 @RestController
 @RequestMapping("/api/person")
@@ -38,6 +39,7 @@ public class PersonController {
     private final MovieDetailMapper movieDetailMapper;
     private final PersonLikeService personLikeService;
     private final USRUserRepository userRepository;
+    private final REVRatingService ratingService;
     // 현재 추천된 배우 정보 (캐시)
     private Actor currentRecommendedActor = null;
     // 현재 추천된 감독 정보 (캐시)
@@ -236,6 +238,19 @@ public class PersonController {
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
             .distinct() // 중복 제거
             .collect(Collectors.toList());
+        
+        // 배치 평점 조회로 성능 최적화
+        List<String> movieCds = allMovies.stream()
+                .map(MovieDetail::getMovieCd)
+                .collect(Collectors.toList());
+        Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+        
+        // 평점 정보를 MovieDetail에 설정
+        allMovies.forEach(movie -> {
+            Double rating = averageRatings.get(movie.getMovieCd());
+            movie.setAverageRating(rating);
+        });
+        
         // 개봉일순으로 정렬 (최신순)
         List<MovieDetail> sortedMovies = allMovies.stream()
             .sorted((m1, m2) -> {
@@ -408,6 +423,19 @@ public class PersonController {
             .filter(movie -> !isAdultMovie(movie)) // 19금 영화 제외
             .distinct() // 중복 제거
             .collect(Collectors.toList());
+        
+        // 배치 평점 조회로 성능 최적화
+        List<String> movieCds = allMovies.stream()
+                .map(MovieDetail::getMovieCd)
+                .collect(Collectors.toList());
+        Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+        
+        // 평점 정보를 MovieDetail에 설정
+        allMovies.forEach(movie -> {
+            Double rating = averageRatings.get(movie.getMovieCd());
+            movie.setAverageRating(rating);
+        });
+        
         // 개봉일순으로 정렬 (최신순)
         List<MovieDetail> sortedMovies = allMovies.stream()
             .sorted((m1, m2) -> {

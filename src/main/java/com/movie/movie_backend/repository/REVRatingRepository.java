@@ -34,4 +34,12 @@ public interface REVRatingRepository extends JpaRepository<Rating, Long> {
     // 유저가 평점 남긴 영화의 MovieDetail ID 리스트 조회
     @Query("SELECT r.movieDetail.id FROM Rating r WHERE r.user.id = :userId")
     List<Long> findMovieIdsByUserId(@Param("userId") Long userId);
+    
+    // 여러 영화의 평균 평점을 한 번에 조회 (배치 조회)
+    @Query("SELECT md.movieCd, AVG(r.score) as avgRating, COUNT(r) as ratingCount " +
+           "FROM MovieDetail md " +
+           "LEFT JOIN Rating r ON md.movieCd = r.movieDetail.movieCd " +
+           "WHERE md.movieCd IN :movieCds " +
+           "GROUP BY md.movieCd")
+    List<Object[]> getAverageRatingsForMovies(@Param("movieCds") List<String> movieCds);
 } 

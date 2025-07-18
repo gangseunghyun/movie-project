@@ -65,6 +65,7 @@ import com.movie.movie_backend.entity.Theater;
 import com.movie.movie_backend.repository.ReservationRepository;
 import com.movie.movie_backend.repository.ScreeningSeatRepository;
 import com.movie.movie_backend.repository.PaymentRepository;
+import com.movie.movie_backend.service.REVRatingService;
 import java.util.Set;
 
 @RestController
@@ -91,6 +92,7 @@ public class UserController {
     private final ReservationRepository reservationRepository;
     private final ScreeningSeatRepository screeningSeatRepository;
     private final PaymentRepository paymentRepository;
+    private final REVRatingService ratingService;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -1533,6 +1535,19 @@ public class UserController {
                 java.util.Collections.shuffle(movies);
             } else { // 평점순(기본)
                 movies = new ArrayList<>(movies); // 가변 리스트로 변환
+                
+                // 배치 평점 조회로 성능 최적화
+                List<String> movieCds = movies.stream()
+                        .map(MovieDetail::getMovieCd)
+                        .collect(java.util.stream.Collectors.toList());
+                Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+                
+                // 평점 정보를 MovieDetail에 설정
+                movies.forEach(movie -> {
+                    Double rating = averageRatings.get(movie.getMovieCd());
+                    movie.setAverageRating(rating);
+                });
+                
                 movies.sort((a, b) -> {
                     Double ar = a.getAverageRating() != null ? a.getAverageRating() : 0.0;
                     Double br = b.getAverageRating() != null ? b.getAverageRating() : 0.0;

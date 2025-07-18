@@ -244,4 +244,36 @@ public class REVRatingService {
                 .userNickname(rating.getUser().getNickname())
                 .build();
     }
+    
+    /**
+     * 여러 영화의 평균 평점을 한 번에 조회 (배치 조회 + 캐싱)
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = "averageRatings", key = "#movieCds.hashCode()", unless="#result.isEmpty()")
+    public Map<String, Double> getAverageRatingsForMovies(List<String> movieCds) {
+        if (movieCds == null || movieCds.isEmpty()) {
+            return new java.util.HashMap<>();
+        }
+        
+        log.debug("배치 평점 조회 시작: {}개 영화", movieCds.size());
+        
+        List<Object[]> results = ratingRepository.getAverageRatingsForMovies(movieCds);
+        Map<String, Double> averageRatings = new java.util.HashMap<>();
+        
+        for (Object[] result : results) {
+            String movieCd = (String) result[0];
+            Double avgRating = (Double) result[1];
+            
+            if (avgRating != null) {
+                // 소수점 첫째자리까지 반올림
+                double roundedRating = Math.round(avgRating * 10.0) / 10.0;
+                averageRatings.put(movieCd, roundedRating);
+            } else {
+                averageRatings.put(movieCd, null);
+            }
+        }
+        
+        log.debug("배치 평점 조회 완료: {}개 영화의 평점 조회됨", averageRatings.size());
+        return averageRatings;
+    }
 } 

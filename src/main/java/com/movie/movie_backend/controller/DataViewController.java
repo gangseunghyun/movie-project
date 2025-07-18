@@ -10,6 +10,7 @@ import com.movie.movie_backend.dto.MovieListDto;
 import com.movie.movie_backend.dto.TopRatedMovieDto;
 import com.movie.movie_backend.service.PRDMovieListService;
 import com.movie.movie_backend.service.PRDMovieService;
+import com.movie.movie_backend.service.REVRatingService;
 import com.movie.movie_backend.service.BoxOfficeService;
 import com.movie.movie_backend.service.TmdbPopularMovieService;
 import com.movie.movie_backend.service.KobisApiService;
@@ -85,6 +86,7 @@ public class DataViewController {
     private final PRDActorRepository actorRepository;
     private final PRDDirectorRepository directorRepository;
     private final MovieDetailRepository movieDetailRepository;
+    private final REVRatingService ratingService;
 
     /**
      * 데이터 조회 메인 페이지
@@ -230,6 +232,18 @@ public class DataViewController {
                     break;
                 case "rating":
                     movieDetails = movieRepository.findAll();
+                    // 배치 평점 조회로 성능 최적화
+                    List<String> movieCds = movieDetails.stream()
+                            .map(MovieDetail::getMovieCd)
+                            .collect(Collectors.toList());
+                    Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+                    
+                    // 평점 정보를 MovieDetail에 설정
+                    movieDetails.forEach(movie -> {
+                        Double rating = averageRatings.get(movie.getMovieCd());
+                        movie.setAverageRating(rating);
+                    });
+                    
                     movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
                     break;
                 default:
@@ -407,6 +421,18 @@ public class DataViewController {
                         break;
                     case "rating":
                         movieDetails = movieRepository.findAll();
+                        // 배치 평점 조회로 성능 최적화
+                        List<String> movieCds = movieDetails.stream()
+                                .map(MovieDetail::getMovieCd)
+                                .collect(Collectors.toList());
+                        Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+                        
+                        // 평점 정보를 MovieDetail에 설정
+                        movieDetails.forEach(movie -> {
+                            Double rating = averageRatings.get(movie.getMovieCd());
+                            movie.setAverageRating(rating);
+                        });
+                        
                         movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
                         break;
                     default:
