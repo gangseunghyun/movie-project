@@ -369,7 +369,7 @@ h2 {
   height: 720px;
   background: #292929;
   border-radius: 14px;
-  padding: 12px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
@@ -377,6 +377,7 @@ h2 {
   font-family: 'Pretendard', sans-serif;
   cursor: pointer;
   transition: transform 0.2s;
+  overflow: hidden;
 }
 
 .stillcutCard:hover {
@@ -386,7 +387,7 @@ h2 {
 .stillcutImg {
   width: 100%;
   height: 100%;
-  border-radius: 8px;
+  border-radius: 14px;
   object-fit: cover;
 }
 
@@ -489,7 +490,7 @@ h2 {
 }
 
 .right {
-  right: 20px;
+  right: 80px;
 }
 
 .commentIconRow {
