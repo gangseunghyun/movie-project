@@ -312,65 +312,14 @@ h2 {
   color: #fff;
 }
 
-.similarMovieCard {
-  width: 200px;
-  min-width: 200px;
-  height: 300px;
-  background: #292929;
-  border-radius: 14px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
-  margin-bottom: 6px;
-  font-family: 'Pretendard', sans-serif;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.similarMovieCard:hover {
-  transform: scale(1.05);
-}
-
-.similarPoster {
-  width: 100%;
-  height: 250px;
-  border-radius: 8px;
-  object-fit: cover;
-  margin-bottom: 8px;
-}
-
-.posterImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.similarTitle {
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1.3;
-  word-break: keep-all;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* 비슷한 영화 카드 스타일 제거 - 메인페이지 MovieCard 사용 */
 
 .stillcutCard {
   width: 1280px;
   height: 720px;
   background: #292929;
   border-radius: 14px;
-  padding: 12px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
@@ -378,6 +327,7 @@ h2 {
   font-family: 'Pretendard', sans-serif;
   cursor: pointer;
   transition: transform 0.2s;
+  overflow: hidden;
 }
 
 .stillcutCard:hover {
@@ -387,7 +337,7 @@ h2 {
 .stillcutImg {
   width: 100%;
   height: 100%;
-  border-radius: 8px;
+  border-radius: 14px;
   object-fit: cover;
 }
 
@@ -490,7 +440,7 @@ h2 {
 }
 
 .right {
-  right: 20px;
+  right: 80px;
 }
 
 .commentIconRow {

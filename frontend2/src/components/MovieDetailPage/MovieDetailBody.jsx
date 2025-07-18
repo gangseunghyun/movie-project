@@ -11,6 +11,7 @@ import userProfile from '../../assets/user_profile.png';
 import previousIcon from '../../assets/previous_icon.png';
 import nextIcon from '../../assets/next_icon.png';
 import MovieHorizontalSlider from '../MainPage/MovieHorizontalSlider';
+import MovieCard from '../MainPage/MovieCard';
 import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
@@ -38,31 +39,7 @@ const dummySimilar = [
   { id: 9, title: '비슷한 영화 6', posterUrl: banner2 },
 ];
 
-function SimilarMovieCard({ movie }) {
-  const navigate = useNavigate();
-  
-  // 포스터가 없는 영화는 렌더링하지 않음
-  if (!movie.posterUrl || movie.posterUrl.trim() === '' || movie.posterUrl === 'null') {
-    return null;
-  }
-  
-  const handleClick = () => {
-    if (movie.movieCd) {
-      navigate(`/movie-detail/${movie.movieCd}`);
-    }
-  };
-
-  return (
-    <div className={styles.similarMovieCard} onClick={handleClick}>
-      <img 
-        src={movie.posterUrl || movie.posterImageUrl || banner1} 
-        alt={movie.title || movie.movieNm} 
-        className={styles.similarPoster} 
-      />
-      <div className={styles.similarTitle}>{movie.title || movie.movieNm}</div>
-    </div>
-  );
-}
+// SimilarMovieCard 컴포넌트 제거 - MovieCard 사용
 function StillcutCard({ still }) {
   return (
     <div className={styles.stillcutCard}>
@@ -732,7 +709,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
           <MovieHorizontalSlider
             data={similarMovies}
             sectionKey="similar"
-            CardComponent={SimilarMovieCard}
+            CardComponent={MovieCard}
           />
         )}
       </section>
