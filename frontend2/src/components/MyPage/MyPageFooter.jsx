@@ -48,6 +48,10 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   const [likedUsersModalOpen, setLikedUsersModalOpen] = useState(false);
   const [selectedReviewIdForLikes, setSelectedReviewIdForLikes] = useState(null);
 
+  // 삭제 확인 모달 상태
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+
   // 클린봇 차단된 리뷰 표시 상태 관리
   const [showBlocked, setShowBlocked] = useState({});
 
@@ -132,24 +136,43 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     setEditModalOpen(true);
   };
 
-  // 코멘트 삭제 핸들러
-  const handleDelete = (commentId) => {
-    if (window.confirm('정말 삭제하시겠습니까?')) {
-      fetch(`http://localhost:80/api/reviews/${commentId}`, {
+  // 삭제 확인 모달 열기
+  const handleDeleteClick = (commentId) => {
+    setDeleteTargetId(commentId);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // 삭제 확인 모달에서 확인 클릭
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:80/api/reviews/${deleteTargetId}`, {
         method: 'DELETE',
         credentials: 'include',
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            // 삭제 후 목록 갱신
-            setMyComments(prev => prev.filter(c => c.id !== commentId));
-          } else {
-            alert('삭제 실패: ' + (data.message || ''));
-          }
-        })
-        .catch(() => alert('삭제 중 오류 발생'));
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // 삭제 후 목록 갱신
+        setMyComments(prev => prev.filter(c => c.id !== deleteTargetId));
+        alert('삭제되었습니다.');
+      } else {
+        alert('삭제 실패: ' + (data.message || ''));
+      }
+    } catch (error) {
+      alert('삭제 중 오류 발생');
+    } finally {
+      setShowDeleteConfirmModal(false);
+      setDeleteTargetId(null);
     }
+  };
+
+  // 삭제 확인 모달에서 취소 클릭
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirmModal(false);
+    setDeleteTargetId(null);
   };
 
   // 프로필 클릭 핸들러
@@ -418,7 +441,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         {showActions && (
           <div className={styles.commentActions} onClick={e => e.stopPropagation()}>
             <button className={styles.replyEditBtn} onClick={() => handleEdit(comment)}>수정</button>
-            <button className={styles.replyDeleteBtn} onClick={() => handleDelete(comment.id)}>삭제</button>
+            <button className={styles.replyDeleteBtn} onClick={() => handleDeleteClick(comment.id)}>삭제</button>
           </div>
         )}
       </div>
@@ -426,114 +449,141 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   );
 
   return (
-    <footer className={styles.footer}>
-      <div className={styles.commentSectionHeader}>
-        <h2 className={styles.commentSectionTitle}>
-          {isOwnPage ? '내가 작성한 코멘트' : `${displayUser?.nickname || '익명'}님이 작성한 코멘트`}
-        </h2>
-        <span className={styles.commentSectionMore} onClick={handleMoreMyComments}>더보기</span>
-      </div>
-      <div className={styles.commentGrid}>
-        {loading ? <div>로딩 중...</div> : (
-          myComments.length === 0 ? <div className={styles.emptyMessage}>아직 코멘트가 없습니다.</div> :
-            myComments.slice(0, 8).map(comment => renderCommentCard(comment, isOwnPage))
-        )}
-      </div>
-      <hr className={styles.divider} />
-      <div className={styles.commentSectionHeader} style={{ marginTop: '32px' }}>
-        <h2 className={styles.commentSectionTitle}>
-          {isOwnPage ? '내가 좋아요한 코멘트' : `${displayUser?.nickname || '익명'}님이 좋아요한 코멘트`}
-        </h2>
-        <span className={styles.commentSectionMore} onClick={handleMoreLikedComments}>더보기</span>
-      </div>
-      <div className={styles.commentGrid}>
-        {likedLoading ? <div>로딩 중...</div> : (
-          likedComments.length === 0 ? <div className={styles.emptyMessage}>아직 좋아요한 코멘트가 없습니다.</div> :
-            likedComments.slice(0, 8).map(comment => renderCommentCard(comment, false))
-        )}
-      </div>
-      {/* 좋아요한 코멘트 전체보기 모달 */}
-      <LikedCommentsModal
-        open={likedModalOpen}
-        onClose={() => setLikedModalOpen(false)}
-        likedComments={likedComments}
-        onCommentClick={comment => {
-          setSelectedComment(comment);
-          setLikedModalOpen(false);
-          setCommentsModalOpen(true);
-        }}
-        onShowLikedUsers={handleShowLikedUsers}
-        onLikeClick={handleLike}
-        onReplyIconClick={handleReplyIconClick}
-        onProfileClick={handleProfileClick}
-      />
-      {/* 내가 작성한 코멘트 전체보기 모달 */}
-      <MyCommentsModal
-        open={myCommentsModalOpen}
-        onClose={() => setMyCommentsModalOpen(false)}
-        myComments={myComments}
-        title={isOwnPage ? '내가 작성한 코멘트 전체보기' : `${displayUser?.nickname || '익명'}님이 작성한 코멘트 전체보기`}
-        onCommentClick={comment => {
-          setSelectedComment(comment);
-          setMyCommentsModalOpen(false);
-          setCommentsModalOpen(true);
-        }}
-        onShowLikedUsers={handleShowLikedUsers}
-        onLikeClick={handleLike}
-        onReplyIconClick={handleReplyIconClick}
-        onProfileClick={handleProfileClick}
-      />
+    <>
+      <footer className={styles.footer}>
+        <div className={styles.commentSectionHeader}>
+          <h2 className={styles.commentSectionTitle}>
+            {isOwnPage ? '내가 작성한 코멘트' : `${displayUser?.nickname || '익명'}님이 작성한 코멘트`}
+          </h2>
+          <span className={styles.commentSectionMore} onClick={handleMoreMyComments}>더보기</span>
+        </div>
+        <div className={styles.commentGrid}>
+          {loading ? <div>로딩 중...</div> : (
+            myComments.length === 0 ? <div className={styles.emptyMessage}>아직 코멘트가 없습니다.</div> :
+              myComments.slice(0, 8).map(comment => renderCommentCard(comment, isOwnPage))
+          )}
+        </div>
+        <hr className={styles.divider} />
+        <div className={styles.commentSectionHeader} style={{ marginTop: '32px' }}>
+          <h2 className={styles.commentSectionTitle}>
+            {isOwnPage ? '내가 좋아요한 코멘트' : `${displayUser?.nickname || '익명'}님이 좋아요한 코멘트`}
+          </h2>
+          <span className={styles.commentSectionMore} onClick={handleMoreLikedComments}>더보기</span>
+        </div>
+        <div className={styles.commentGrid}>
+          {likedLoading ? <div>로딩 중...</div> : (
+            likedComments.length === 0 ? <div className={styles.emptyMessage}>아직 좋아요한 코멘트가 없습니다.</div> :
+              likedComments.slice(0, 8).map(comment => renderCommentCard(comment, false))
+          )}
+        </div>
+        {/* 좋아요한 코멘트 전체보기 모달 */}
+        <LikedCommentsModal
+          open={likedModalOpen}
+          onClose={() => setLikedModalOpen(false)}
+          likedComments={likedComments}
+          onCommentClick={comment => {
+            setSelectedComment(comment);
+            setLikedModalOpen(false);
+            setCommentsModalOpen(true);
+          }}
+          onShowLikedUsers={handleShowLikedUsers}
+          onLikeClick={handleLike}
+          onReplyIconClick={handleReplyIconClick}
+          onProfileClick={handleProfileClick}
+        />
+        {/* 내가 작성한 코멘트 전체보기 모달 */}
+        <MyCommentsModal
+          open={myCommentsModalOpen}
+          onClose={() => setMyCommentsModalOpen(false)}
+          myComments={myComments}
+          title={isOwnPage ? '내가 작성한 코멘트 전체보기' : `${displayUser?.nickname || '익명'}님이 작성한 코멘트 전체보기`}
+          onCommentClick={comment => {
+            setSelectedComment(comment);
+            setMyCommentsModalOpen(false);
+            setCommentsModalOpen(true);
+          }}
+          onShowLikedUsers={handleShowLikedUsers}
+          onLikeClick={handleLike}
+          onReplyIconClick={handleReplyIconClick}
+          onProfileClick={handleProfileClick}
+        />
 
-      {/* 코멘트 수정 모달 */}
-      <ReviewModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        movieTitle={editTarget?.movieNm}
-        movieCd={editTarget?.movieCd}
-        editMode={true}
-        initialContent={editTarget?.content || ''}
-        initialRating={editTarget?.rating || 0}
-        onEditSave={() => {
-          setEditModalOpen(false);
-          // 수정 후 목록 갱신 (다시 fetch)
-          if (user?.id) {
-            setLoading(true);
-            fetch(`http://localhost:80/api/users/${user.id}/my-comments`, { credentials: 'include' })
-              .then(res => res.json())
-              .then(data => setMyComments(data.data || []))
-              .catch(() => setMyComments([]))
-              .finally(() => setLoading(false));
-          }
-        }}
-        reviewId={editTarget?.id}
-      />
-      {/* 댓글 작성 모달 */}
-      <CommentModal
-        open={replyModalOpen}
-        onClose={() => setReplyModalOpen(false)}
-        reviewId={selectedReviewId}
-        onSave={handleReplySave}
-        movieTitle={selectedComment?.movieNm || ''}
-        reviewContent={selectedComment?.content || ''}
-        userId={user?.id}
-      />
-      {/* 댓글 목록 모달 */}
-      <ReviewCommentsModal
-        isOpen={commentsModalOpen}
-        onClose={() => setCommentsModalOpen(false)}
-        review={selectedComment}
-        onCommentCountChange={handleReviewCommentCountChange}
-        handleLikeReview={handleLike}
-        handleReplyIconClick={handleReplyIconClick}
-        user={user}
-      />
-      {/* 좋아요한 유저 목록 모달 */}
-      <LikedUsersModal 
-        isOpen={likedUsersModalOpen} 
-        onClose={() => setLikedUsersModalOpen(false)} 
-        reviewId={selectedReviewIdForLikes} 
-      />
-    </footer>
+        {/* 코멘트 수정 모달 */}
+        <ReviewModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          movieTitle={editTarget?.movieNm}
+          movieCd={editTarget?.movieCd}
+          editMode={true}
+          initialContent={editTarget?.content || ''}
+          initialRating={editTarget?.rating || 0}
+          onEditSave={() => {
+            setEditModalOpen(false);
+            // 수정 후 목록 갱신 (다시 fetch)
+            if (user?.id) {
+              setLoading(true);
+              fetch(`http://localhost:80/api/users/${user.id}/my-comments`, { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => setMyComments(data.data || []))
+                .catch(() => setMyComments([]))
+                .finally(() => setLoading(false));
+            }
+          }}
+          reviewId={editTarget?.id}
+        />
+        {/* 댓글 작성 모달 */}
+        <CommentModal
+          open={replyModalOpen}
+          onClose={() => setReplyModalOpen(false)}
+          reviewId={selectedReviewId}
+          onSave={handleReplySave}
+          movieTitle={selectedComment?.movieNm || ''}
+          reviewContent={selectedComment?.content || ''}
+          userId={user?.id}
+        />
+        {/* 댓글 목록 모달 */}
+        <ReviewCommentsModal
+          isOpen={commentsModalOpen}
+          onClose={() => setCommentsModalOpen(false)}
+          review={selectedComment}
+          onCommentCountChange={handleReviewCommentCountChange}
+          handleLikeReview={handleLike}
+          handleReplyIconClick={handleReplyIconClick}
+          user={user}
+        />
+        {/* 좋아요한 유저 목록 모달 */}
+        <LikedUsersModal 
+          isOpen={likedUsersModalOpen} 
+          onClose={() => setLikedUsersModalOpen(false)} 
+          reviewId={selectedReviewIdForLikes} 
+        />
+      </footer>
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirmModal && (
+        <div className={styles.modalOverlay} onClick={handleDeleteCancel}>
+          <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <h3>삭제 확인</h3>
+            <p>정말 삭제하시겠습니까?</p>
+            <p>삭제 후에는 되돌릴 수 없습니다.</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.closeModalButton}
+                onClick={handleDeleteCancel}
+              >
+                취소
+              </button>
+              <button 
+                className={styles.confirmButton}
+                onClick={handleDeleteConfirm}
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

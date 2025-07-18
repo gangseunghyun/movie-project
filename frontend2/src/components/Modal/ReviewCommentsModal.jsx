@@ -21,6 +21,10 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
   // 클린봇 차단된 댓글 표시 상태 관리
   const [showBlocked, setShowBlocked] = useState({});
 
+  // 삭제 확인 모달 상태
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+
   const [likeLoading, setLikeLoading] = useState(false);
   const [likedByMe, setLikedByMe] = useState(review?.likedByMe || false);
   const [likeCount, setLikeCount] = useState(review?.likeCount || 0);
@@ -180,7 +184,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     }
 
     if (!editContent.trim()) {
-      alert('댓글 내용을 입력해주세요.');
+      //alert('댓글 내용을 입력해주세요.');
       return;
     }
 
@@ -210,19 +214,22 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     }
   };
 
-  // 댓글 삭제
-  const deleteComment = async (commentId) => {
-    if (!currentUser) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
+  // 삭제 확인 모달 열기
+  const handleDeleteClick = (commentId) => {
+    setDeleteTargetId(commentId);
+    setShowDeleteConfirmModal(true);
+  };
 
-    if (!window.confirm('댓글을 삭제하시겠습니까?')) {
+  // 삭제 확인 모달에서 확인 클릭
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId || !currentUser) {
+      setShowDeleteConfirmModal(false);
+      setDeleteTargetId(null);
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:80/api/comments/${commentId}?userId=${currentUser.id}`, {
+      const response = await fetch(`http://localhost:80/api/comments/${deleteTargetId}?userId=${currentUser.id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -241,20 +248,31 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
               return true;
             });
           };
-          return removeCommentRecursively([...prevComments], commentId);
+          return removeCommentRecursively([...prevComments], deleteTargetId);
         });
         
         // 백그라운드에서 댓글 목록 새로고침 (동기화용)
         setTimeout(() => {
           fetchComments();
         }, 100);
+        
+        alert('댓글이 삭제되었습니다.');
       } else {
         alert('댓글 삭제에 실패했습니다.');
       }
     } catch (error) {
       console.error('댓글 삭제 오류:', error);
       alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setShowDeleteConfirmModal(false);
+      setDeleteTargetId(null);
     }
+  };
+
+  // 삭제 확인 모달에서 취소 클릭
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirmModal(false);
+    setDeleteTargetId(null);
   };
 
   // 대댓글 작성 시작
@@ -277,7 +295,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     }
 
     if (!replyContent.trim()) {
-      alert('댓글 내용을 입력해주세요.');
+      //alert('댓글 내용을 입력해주세요.');
       return;
     }
 
@@ -422,7 +440,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
             {currentUser && comment.userId === currentUser.id && (
               <>
                 <button className={styles.editButton} onClick={() => startEdit(comment)}>수정</button>
-                <button className={styles.deleteButton} onClick={() => deleteComment(comment.id)}>삭제</button>
+                <button className={styles.deleteButton} onClick={() => handleDeleteClick(comment.id)}>삭제</button>
               </>
             )}
           </div>
@@ -510,162 +528,189 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* 헤더 제거 */}
+    <>
+      <div className={styles.overlay} onClick={onClose}>
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          {/* 헤더 제거 */}
 
-        {/* 리뷰 작성자 정보 + 닫기 버튼 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #333' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {review?.userId ? (
-              <Link to={`/mypage/${review.userId}`} style={{ display: 'inline-block' }}>
+          {/* 리뷰 작성자 정보 + 닫기 버튼 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #333' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {review?.userId ? (
+                <Link to={`/mypage/${review.userId}`} style={{ display: 'inline-block' }}>
+                  <img
+                    src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl : userIcon}
+                    alt="프로필"
+                    style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', cursor: 'pointer', background: '#222' }}
+                  />
+                </Link>
+              ) : (
                 <img
                   src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl : userIcon}
                   alt="프로필"
-                  style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', cursor: 'pointer', background: '#222' }}
+                  style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', background: '#222' }}
                 />
-              </Link>
-            ) : (
-              <img
-                src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl : userIcon}
-                alt="프로필"
-                style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', background: '#222' }}
-              />
-            )}
-            <span style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem' }}>{review.userNickname || review.user || '익명'}</span>
-            <span style={{ color: '#aaa', fontSize: '0.9em' }}>{formatDate(review?.createdAt || review?.updatedAt)}</span>
-          </div>
-          <button className={styles.closeButton} onClick={onClose} style={{ 
-            background: 'none', 
-            border: 'none', 
-            color: '#aaa', 
-            fontSize: '1.2rem', 
-            cursor: 'pointer', 
-            padding: '4px 8px', 
-            borderRadius: 4, 
-            transition: 'color 0.2s ease-in-out' 
-          }}>
-            ✕
-          </button>
-        </div>
-
-        {/* 비로그인 사용자 안내 메시지 */}
-        {!currentUser && (
-          <div className={styles.loginNotice}>
-            <p>댓글 작성과 좋아요 기능을 사용하려면 로그인이 필요합니다.</p>
-          </div>
-        )}
-
-        {/* 댓글 목록 */}
-        <div className={styles.commentsSection}>
-          {/* 영화 정보 및 원본 리뷰 */}
-          <div className={styles.reviewSection}>
-            {/* 영화 포스터 */}
-            <div className={styles.moviePoster}>
-              <img 
-                src={review?.posterUrl || banner1} 
-                alt={review?.movieNm || '영화 포스터'}
-                onError={(e) => {
-                  e.target.src = banner1;
-                }}
-              />
+              )}
+              <span style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem' }}>{review.userNickname || review.user || '익명'}</span>
+              <span style={{ color: '#aaa', fontSize: '0.9em' }}>{formatDate(review?.createdAt || review?.updatedAt)}</span>
             </div>
-            {/* 영화 정보 및 리뷰 내용 */}
-            <div className={styles.reviewInfo}>
-              <h3 className={styles.movieTitle}>{review?.movieNm || '영화'}</h3>
-              <div className={styles.reviewContent}>
-                {formatReviewContent(review?.content)}
+            <button className={styles.closeButton} onClick={onClose} style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#aaa', 
+              fontSize: '1.2rem', 
+              cursor: 'pointer', 
+              padding: '4px 8px', 
+              borderRadius: 4, 
+              transition: 'color 0.2s ease-in-out' 
+            }}>
+              ✕
+            </button>
+          </div>
+
+          {/* 비로그인 사용자 안내 메시지 */}
+          {!currentUser && (
+            <div className={styles.loginNotice}>
+              <p>댓글 작성과 좋아요 기능을 사용하려면 로그인이 필요합니다.</p>
+            </div>
+          )}
+
+          {/* 댓글 목록 */}
+          <div className={styles.commentsSection}>
+            {/* 영화 정보 및 원본 리뷰 */}
+            <div className={styles.reviewSection}>
+              {/* 영화 포스터 */}
+              <div className={styles.moviePoster}>
+                <img 
+                  src={review?.posterUrl || banner1} 
+                  alt={review?.movieNm || '영화 포스터'}
+                  onError={(e) => {
+                    e.target.src = banner1;
+                  }}
+                />
+              </div>
+              {/* 영화 정보 및 리뷰 내용 */}
+              <div className={styles.reviewInfo}>
+                <h3 className={styles.movieTitle}>{review?.movieNm || '영화'}</h3>
+                <div className={styles.reviewContent}>
+                  {formatReviewContent(review?.content)}
+                </div>
               </div>
             </div>
-          </div>
-          {/* 좋아요/댓글 개수 한 줄 텍스트 */}
-          <div className={styles.countsLine} style={{ margin: '8px 0 0 0', fontSize: '15px', color: '#555', fontWeight: 500 }}>
-            좋아요 {likeCount}  댓글 {getTotalCommentCount(comments)}
-          </div>
-
-          {/* 좋아요/댓글 버튼 추가 */}
-          <div style={{ display: 'flex', gap: 10, margin: '16px 0 12px 0' }}>
-            <button
-              className={styles.likeButton}
-              onClick={e => {
-                e.stopPropagation();
-                if (!user) {
-                  alert('로그인이 필요합니다.');
-                  return;
-                }
-                handleLike();
-              }}
-              style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              <img
-                src={likedByMe ? likeIconTrue : likeIcon}
-                alt="좋아요"
-                className={styles.likeIcon}
-              />
-            </button>
-            <button
-              className={styles.replyButton}
-              onClick={(e) => {
-                console.log('댓글 아이콘 클릭됨!');
-                e.stopPropagation();
-                
-                if (!user) {
-                  alert('로그인이 필요합니다.');
-                  return;
-                }
-                
-                // 부모 컴포넌트의 댓글 작성 모달 열기
-                if (handleReplyIconClick && review) {
-                  handleReplyIconClick(e, review.id);
-                }
-              }}
-              style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              <img
-                src={commentIcon2}
-                alt="댓글"
-                className={styles.replyIcon}
-              />
-            </button>
-          </div>
-
-          <div className={styles.commentsHeader}>
-            <span className={styles.commentsCount}>댓글 {getTotalCommentCount(comments)}개</span>
-          </div>
-
-          {loading ? (
-            <div className={styles.loading}>댓글을 불러오는 중...</div>
-          ) : error ? (
-            <div className={styles.error}>{error}</div>
-          ) : comments.length === 0 ? (
-            <div className={styles.noComments}>아직 댓글이 없습니다.</div>
-          ) : (
-              <Scrollbar
-                            style={{ height: '40vh', width: '100%' }}
-                            trackYProps={{
-                              style: {
-                                left: '98.5%',
-
-                                width: '4px',
-                                height: '100%',
-                                background: 'transparent',
-                                position: 'absolute'
-                              }
-                            }}
-                            thumbYProps={{
-                              style: {
-                                background: '#555',
-                                borderRadius: '4px'
-                              }
-                            }}
-                          >
-            <div className={styles.commentsList}>
-              {comments.flatMap(comment => renderCommentTree(comment, null, 0))}
+            {/* 좋아요/댓글 개수 한 줄 텍스트 */}
+            <div className={styles.countsLine} style={{ margin: '8px 0 0 0', fontSize: '15px', color: '#555', fontWeight: 500 }}>
+              좋아요 {likeCount}  댓글 {getTotalCommentCount(comments)}
             </div>
-            </Scrollbar>
-          )}
+
+            {/* 좋아요/댓글 버튼 추가 */}
+            <div style={{ display: 'flex', gap: 10, margin: '16px 0 12px 0' }}>
+              <button
+                className={styles.likeButton}
+                onClick={e => {
+                  e.stopPropagation();
+                  if (!user) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                  }
+                  handleLike();
+                }}
+                style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <img
+                  src={likedByMe ? likeIconTrue : likeIcon}
+                  alt="좋아요"
+                  className={styles.likeIcon}
+                />
+              </button>
+              <button
+                className={styles.replyButton}
+                onClick={(e) => {
+                  console.log('댓글 아이콘 클릭됨!');
+                  e.stopPropagation();
+                  
+                  if (!user) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                  }
+                  
+                  // 부모 컴포넌트의 댓글 작성 모달 열기
+                  if (handleReplyIconClick && review) {
+                    handleReplyIconClick(e, review.id);
+                  }
+                }}
+                style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <img
+                  src={commentIcon2}
+                  alt="댓글"
+                  className={styles.replyIcon}
+                />
+              </button>
+            </div>
+
+            <div className={styles.commentsHeader}>
+              <span className={styles.commentsCount}>댓글 {getTotalCommentCount(comments)}개</span>
+            </div>
+
+            {loading ? (
+              <div className={styles.loading}>댓글을 불러오는 중...</div>
+            ) : error ? (
+              <div className={styles.error}>{error}</div>
+            ) : comments.length === 0 ? (
+              <div className={styles.noComments}>아직 댓글이 없습니다.</div>
+            ) : (
+                <Scrollbar
+                              style={{ height: '40vh', width: '100%' }}
+                              trackYProps={{
+                                style: {
+                                  left: '98.5%',
+
+                                  width: '4px',
+                                  height: '100%',
+                                  background: 'transparent',
+                                  position: 'absolute'
+                                }
+                              }}
+                              thumbYProps={{
+                                style: {
+                                  background: '#555',
+                                  borderRadius: '4px'
+                                }
+                              }}
+                            >
+              <div className={styles.commentsList}>
+                {comments.flatMap(comment => renderCommentTree(comment, null, 0))}
+              </div>
+              </Scrollbar>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirmModal && (
+        <div className={styles.modalOverlay} onClick={handleDeleteCancel}>
+          <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <h3>댓글 삭제 확인</h3>
+            <p>댓글을 삭제하시겠습니까?</p>
+            <p>삭제 후에는 되돌릴 수 없습니다.</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.closeModalButton}
+                onClick={handleDeleteCancel}
+              >
+                취소
+              </button>
+              <button 
+                className={styles.confirmButton}
+                onClick={handleDeleteConfirm}
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 } 

@@ -23,6 +23,8 @@ const BookingPage = () => {
   const [screenings, setScreenings] = useState([]); // 상영 스케줄 목록
   const [selectedScreeningId, setSelectedScreeningId] = useState('');
   const [seatInfo, setSeatInfo] = useState([]); // 실제 좌석 정보
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [reservationId, setReservationId] = useState(null);
 
   // 영화 정보 가져오기 (실제 API 호출로 대체 필요)
   useEffect(() => {
@@ -129,7 +131,11 @@ const BookingPage = () => {
 
 
   // 시간 선택 시 screeningId 저장
-  const handleTimeSelect = (timeObj) => {
+  const handleTimeSelect = (timeObj, e) => {
+    if (e) {
+      e.preventDefault(); // 기본 동작 방지
+      e.currentTarget.blur(); // 포커스 제거
+    }
     setSelectedTime(timeObj.value);
     setSelectedScreeningId(timeObj.screeningId);
     setSelectedSeats([]); // 시간 바뀌면 좌석 초기화
@@ -158,7 +164,11 @@ const BookingPage = () => {
   }, [selectedScreeningId]);
 
   // 좌석 선택 처리
-  const handleSeatClick = (seatId) => {
+  const handleSeatClick = (seatId, e) => {
+    if (e) {
+      e.preventDefault(); // 기본 동작 방지
+      e.currentTarget.blur(); // 포커스 제거
+    }
     setSelectedSeats(prev => {
       if (prev.includes(seatId)) {
         return prev.filter(id => id !== seatId);
@@ -249,9 +259,10 @@ const BookingPage = () => {
           reservationId: response.data.reservationId
         }, { withCredentials: true });
         
-        alert('예매가 완료되었습니다.');
+        setReservationId(response.data.reservationId);
+        setIsSuccessModalOpen(true);
         setSelectedSeats([]); // 결제 완료 후에만 초기화
-        navigate(`/reservations/${response.data.reservationId}`); // 예매 상세 페이지로 이동
+        // navigate(`/reservations/${response.data.reservationId}`); // 예매 상세 페이지로 이동
       } else {
         alert(response.data.message || '예매 처리 중 오류가 발생했습니다.');
       }
@@ -321,7 +332,11 @@ const BookingPage = () => {
               <button
                 key={cinema.id}
                 className={`${styles.theaterButton} ${selectedCinemaId === String(cinema.id) ? styles.selected : ''}`}
-                onClick={() => setSelectedCinemaId(String(cinema.id))}
+                onClick={(e) => {
+                  e.preventDefault(); // 기본 동작 방지
+                  e.currentTarget.blur(); // 포커스 제거
+                  setSelectedCinemaId(String(cinema.id));
+                }}
               >
                 <div className={styles.theaterName}>{cinema.name}</div>
                 <div className={styles.theaterLocation}>{cinema.location}</div>
@@ -347,7 +362,11 @@ const BookingPage = () => {
                 <button
                   key={theater.id}
                   className={`${styles.theaterButton} ${selectedTheater === String(theater.id) ? styles.selected : ''}`}
-                  onClick={() => setSelectedTheater(String(theater.id))}
+                  onClick={(e) => {
+                    e.preventDefault(); // 기본 동작 방지
+                    e.currentTarget.blur(); // 포커스 제거
+                    setSelectedTheater(String(theater.id));
+                  }}
                 >
                   <div className={styles.theaterName}>{theater.name}</div>
                 </button>
@@ -366,7 +385,7 @@ const BookingPage = () => {
               <button
                 key={time.screeningId}
                 className={`${styles.timeButton} ${selectedTime === time.value ? styles.selected : ''}`}
-                onClick={() => handleTimeSelect(time)}
+                onClick={(e) => handleTimeSelect(time, e)}
               >
                 {time.label}
               </button>
@@ -397,7 +416,7 @@ const BookingPage = () => {
                             (seatStatus === 'reserved' ? styles.reserved + ' ' : '') +
                             (seatStatus === 'disabled' ? styles.disabled + ' ' : '')
                           }
-                          onClick={() => seatStatus === 'available' && handleSeatClick(seatId)}
+                          onClick={(e) => seatStatus === 'available' && handleSeatClick(seatId, e)}
                           disabled={seatStatus !== 'available'}
                         >
                           {seatStatus === 'disabled' ? '✕' : seatId}
@@ -469,6 +488,31 @@ const BookingPage = () => {
         }}
         onPay={handlePayment}
       />
+
+      {/* 예매 완료 모달 */}
+      {isSuccessModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3>예매 완료</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>예매가 성공적으로 완료되었습니다!</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button 
+                className={styles.modalButton}
+                onClick={() => {
+                  setIsSuccessModalOpen(false);
+                  navigate(`/reservations/${reservationId}`);
+                }}
+              >
+                예매 내역 보기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

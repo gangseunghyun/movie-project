@@ -22,6 +22,74 @@
     font-family: 'Pretendard', sans-serif;
 }
 
+/* 확인 모달 스타일 */
+.confirmModal {
+  background: #181818;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90vw;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  position: relative;
+  font-family: 'Pretendard', sans-serif;
+  text-align: center;
+}
+
+.confirmModal h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.confirmModal p {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.closeModalButton {
+  background: #393943;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.closeModalButton:hover {
+  background: #4a4a54;
+}
+
+.confirmButton {
+  background: #FFD600;
+  color: #232328;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.confirmButton:hover {
+  background: #FFE44D;
+}
+
 @keyframes modalSlideIn {
   from {
     opacity: 0;
@@ -237,6 +305,11 @@ input:checked + .slider:before {
     margin: 20px;
   }
   
+  .confirmModal {
+    width: 90%;
+    margin: 20px;
+  }
+  
   .header {
     padding: 20px 20px 12px 20px;
   }
@@ -247,5 +320,15 @@ input:checked + .slider:before {
   
   .footer {
     padding: 12px 20px 20px 20px;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .closeModalButton,
+  .confirmButton {
+    width: 100%;
   }
 } 

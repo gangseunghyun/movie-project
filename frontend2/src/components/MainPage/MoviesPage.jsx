@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GenreModal from '../Modal/GenreModal';
 import styles from './MoviesPage.module.css';
+import previousIcon from '../../assets/previous_icon.png';
+import nextIcon from '../../assets/next_icon.png';
 
 const genres = [
   '판타지', '공포', '다큐멘터리', '가족', '전쟁', '범죄', '모험', '역사', '애니메이션', '스릴러',
@@ -19,6 +21,8 @@ export default function MoviesPage() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // 사이드바 토글 상태 추가
+  const [isClosing, setIsClosing] = useState(false); // 닫기 애니메이션 상태 추가
   // 필터/무한스크롤용 독립 상태
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(0);
@@ -115,59 +119,94 @@ export default function MoviesPage() {
     }
   };
 
+  // 사이드바 닫기 핸들러
+  const handleCloseSidebar = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setSidebarOpen(false);
+      setIsClosing(false);
+    }, 300); // 애니메이션 시간과 동일
+  };
+
+  // 사이드바 열기 핸들러
+  const handleOpenSidebar = () => {
+    setSidebarOpen(true);
+  };
+
   return (
-    <div className={styles.container}>
-      {/* 왼쪽 사이드바 */}
-      <aside className={styles.sidebar}>
-        {/* 필터 섹션 */}
-        <div className={styles.filterSection}>
-          <div className={styles.sectionTitle}>
-            필터
-            {selectedGenres.length > 0 && (
-              <button 
-                className={styles.resetButton} 
+          <div className={styles.container}>
+        {/* 사이드바 - 화면 위에 띄우기 */}
+        {sidebarOpen && (
+          <aside className={`${styles.sidebar} ${isClosing ? styles.sidebarClosing : ''}`}>
+            {/* 사이드바 토글 버튼 */}
+            <button
+              className={styles.sidebarToggle}
+              onClick={handleCloseSidebar}
+              title="사이드바 닫기"
+            >
+              <img
+                src={previousIcon}
+                alt="사이드바 닫기"
+                className={styles.toggleIcon}
+              />
+            </button>
+
+
+          {/* 필터 섹션 */}
+          <div className={styles.filterSection}>
+            <div className={styles.sectionTitle}>
+              필터
+              <button
+                className={styles.resetButton}
                 onClick={handleResetAll}
+                disabled={selectedGenres.length === 0}
               >
                 <span className={styles.resetIcon}>↻</span>
                 전체 초기화
               </button>
-            )}
+            </div>
           </div>
-        </div>
+          <hr className={styles.divider} />
 
-        {/* 장르 섹션 */}
-        <div className={styles.genreSection}>
-          <div className={styles.sectionTitle}>
-            장르 <span className={styles.moreBtn} onClick={() => setShowModal(true)}>더 보기 &gt;</span>
+          {/* 장르 섹션 */}
+          <div className={styles.genreSection}>
+            <div className={styles.sectionTitle}>
+              장르 <span className={styles.moreBtn} onClick={() => setShowModal(true)}>더보기</span>
+            </div>
+            <div className={styles.genreGrid}>
+              {genres.slice(0, 10).map((genre) => (
+                <span
+                  key={genre}
+                  className={`${styles.genreLabel} ${selectedGenres.includes(genre) ? styles.selected : ''}`}
+                  onClick={() => handleGenreChange(genre)}
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
           </div>
-          <div>
-            {genres.slice(0, 10).map((genre) => (
-              <label key={genre} className={styles.genreLabel}>
-                <input
-                  type="checkbox"
-                  className={styles.checkbox}
-                  checked={selectedGenres.includes(genre)}
-                  onChange={() => handleGenreChange(genre)}
-                />
-                {genre}
-              </label>
-            ))}
-          </div>
-        </div>
-        
-        <GenreModal 
-          isOpen={showModal} 
-          onClose={() => setShowModal(false)}
-          selectedGenres={selectedGenres}
-          onGenresChange={setSelectedGenres}
-        />
-      </aside>
+        </aside>
+      )}
+
       {/* 오른쪽 영화 리스트 */}
       <main className={styles.movieList}>
+        {/* 사이드바 열기 버튼 - 화면 왼쪽 중앙에 고정 */}
+        <button
+          className={styles.sidebarOpenButton}
+          onClick={handleOpenSidebar}
+          title="사이드바 열기"
+        >
+          <img
+            src={nextIcon}
+            alt="사이드바 열기"
+            className={styles.toggleIcon}
+          />
+        </button>
+
         <div className={styles.headerSection}>
           <h2 className={styles.pageTitle}>태그검색</h2>
           <div className={styles.sortContainer}>
-            <button 
+            <button
               className={styles.sortButton}
               onClick={() => setShowSortDropdown(!showSortDropdown)}
             >
@@ -195,8 +234,8 @@ export default function MoviesPage() {
         ) : (
           <div className={styles.moviesGrid}>
             {movies.map((movie) => (
-              <div 
-                key={movie.movieCd} 
+              <div
+                key={movie.movieCd}
                 className={styles.card}
                 onClick={() => handleMovieClick(movie)}
                 style={{ cursor: 'pointer' }}
@@ -215,6 +254,14 @@ export default function MoviesPage() {
           <div style={{ color: 'var(--color-text)', padding: 40 }}>영화가 없습니다.</div>
         )}
       </main>
+
+      {/* 모달을 container 밖으로 이동 */}
+      <GenreModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        selectedGenres={selectedGenres}
+        onGenresChange={setSelectedGenres}
+      />
     </div>
   );
 }

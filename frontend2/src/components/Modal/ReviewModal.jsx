@@ -27,6 +27,7 @@ const ReviewModal = ({
   const [isChecking, setIsChecking] = useState(true);
   const [hasExistingReview, setHasExistingReview] = useState(false);
   const [existingReviewMessage, setExistingReviewMessage] = useState('');
+  const [showForbiddenWordsModal, setShowForbiddenWordsModal] = useState(false);
   const maxLength = 10000;
 
   // 욕설 리스트 (백엔드와 동일하게 맞추는 것이 이상적)
@@ -177,6 +178,89 @@ const ReviewModal = ({
     await saveRating(score); // 별점 저장 및 최신화 (항상 서버에서 받아옴)
   };
 
+  const handleSave = async () => {
+    // 코멘트 작성 시 별점이 0이면 경고
+    if (!editMode && userRating === 0) {
+      alert('별점을 먼저 입력해주세요.');
+      return;
+    }
+
+    // 욕설 필터링
+    if (containsForbiddenWords(comment)) {
+      setShowForbiddenWordsModal(true);
+      return;
+    }
+
+    await saveReview();
+  };
+
+  const saveReview = async () => {
+    setLoading(true);
+    try {
+      if (editMode) {
+        // 별점이 바뀌었으면 별점 저장 API 호출
+        let latestRating = rating;
+        if (rating !== initialRating) {
+          latestRating = await saveRating(rating); // 별점 저장 및 최신화
+        }
+        // 리뷰 수정 요청 (별점도 같이 넘김)
+        const response = await fetch(`/api/reviews/${reviewId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            content: comment,
+            rating: Number(latestRating), // 숫자로 변환 (소수점 허용)
+          }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          //alert('리뷰가 수정되었습니다!');
+          if (onEditSave) onEditSave(comment, latestRating);
+          onClose();
+        } else {
+          alert(data.message || '리뷰 수정에 실패했습니다.');
+        }
+      } else {
+        // POST 요청 (작성) - MovieDetailHeader에서 설정한 별점 사용
+        const response = await fetch('http://localhost:80/api/reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            movieCd,
+            content: comment,
+            rating: Number(userRating), // 숫자로 변환
+            spoiler: spoiler, // 스포일러 옵션 추가
+          }),
+          credentials: 'include',
+        });
+        const data = await response.json();
+        if (data.success) {
+          //alert('리뷰가 작성되었습니다!');
+          if (onSave) onSave(comment, userRating);
+          onClose();
+        } else {
+          alert(data.message || '리뷰 작성에 실패했습니다.');
+        }
+      }
+    } catch (e) {
+      alert('리뷰 저장 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForbiddenWordsConfirm = () => {
+    setShowForbiddenWordsModal(false);
+    saveReview();
+  };
+
+  const handleForbiddenWordsCancel = () => {
+    setShowForbiddenWordsModal(false);
+  };
+
   if (!open) return null;
 
   // 기존 리뷰 확인 중일 때
@@ -243,172 +327,129 @@ const ReviewModal = ({
     );
   }
 
-  const handleSave = async () => {
-    // 코멘트 작성 시 별점이 0이면 경고
-    if (!editMode && userRating === 0) {
-      alert('별점을 먼저 입력해주세요.');
-      return;
-    }
-
-    // 욕설 필터링
-    if (containsForbiddenWords(comment)) {
-      const proceed = window.confirm('클린봇에 의해 게시가 제한될 수 있습니다. 그래도 작성하시겠습니까?');
-      if (!proceed) return;
-    }
-
-    setLoading(true);
-    try {
-      if (editMode) {
-        // 별점이 바뀌었으면 별점 저장 API 호출
-        let latestRating = rating;
-        if (rating !== initialRating) {
-          latestRating = await saveRating(rating); // 별점 저장 및 최신화
-        }
-        // 리뷰 수정 요청 (별점도 같이 넘김)
-        const response = await fetch(`/api/reviews/${reviewId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            content: comment,
-            rating: Number(latestRating), // 숫자로 변환 (소수점 허용)
-          }),
-        });
-        const data = await response.json();
-        if (data.success) {
-          alert('리뷰가 수정되었습니다!');
-          if (onEditSave) onEditSave(comment, latestRating);
-          onClose();
-        } else {
-          alert(data.message || '리뷰 수정에 실패했습니다.');
-        }
-      } else {
-        // POST 요청 (작성) - MovieDetailHeader에서 설정한 별점 사용
-        const response = await fetch('http://localhost:80/api/reviews', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            movieCd,
-            content: comment,
-            rating: Number(userRating), // 숫자로 변환
-            spoiler: spoiler, // 스포일러 옵션 추가
-          }),
-          credentials: 'include',
-        });
-        const data = await response.json();
-        if (data.success) {
-          alert('리뷰가 작성되었습니다!');
-          if (onSave) onSave(comment, userRating);
-          onClose();
-        } else {
-          alert(data.message || '리뷰 작성에 실패했습니다.');
-        }
-      }
-    } catch (e) {
-      alert('리뷰 저장 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContainer}>
-        <div className={styles.header}>
-          <span className={styles.title}>
-            {movieTitle}
-            <span className={styles.star}>★ {editMode ? rating : userRating}</span>
-          </span>
-          <button className={styles.closeBtn} onClick={onClose}>×</button>
-        </div>
-        <hr className={styles.divider} />
-        <textarea
-          className={styles.textarea}
-          placeholder="이 작품에 대한 생각을 자유롭게 표현해주세요."
-          value={comment}
-          onChange={e => setComment(e.target.value)}
-          maxLength={maxLength}
-          disabled={loading}
-        />
+    <>
+      <div className={styles.modalOverlay}>
+        <div className={styles.modalContainer}>
+          <div className={styles.header}>
+            <span className={styles.title}>
+              {movieTitle}
+              <span className={styles.star}>★ {editMode ? rating : userRating}</span>
+            </span>
+            <button className={styles.closeBtn} onClick={onClose}>×</button>
+          </div>
+          <hr className={styles.divider} />
+          <textarea
+            className={styles.textarea}
+            placeholder="이 작품에 대한 생각을 자유롭게 표현해주세요."
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            maxLength={maxLength}
+            disabled={loading}
+          />
 
-        <hr className={styles.divider} />
-        
-        {/* 스포일러 옵션 */}
+          <hr className={styles.divider} />
+          
+          {/* 스포일러 옵션 */}
 
 
-        <div className={styles.footer}>
-            {!editMode && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginRight: 8
-                      }}>
-                        <span style={{ fontSize: 24, marginRight: 8 }}>✗</span>
-                        <span style={{ marginRight: 8 }}>스포일러</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={spoiler}
-                            onChange={e => setSpoiler(e.target.checked)}
-                            disabled={loading}
-                          />
-                          <span className="slider round"></span>
-                        </label>
-                      </div>
-                    )}
-          {editMode && (
-            <div className={styles.starInputRow}>
-              <label className={styles.starInputLabel}>평가하기 </label>
-              <div className={styles.starInputIcons}>
-                {[...Array(5)].map((_, i) => {
-                  const value = i + 1;
-                  let starImg = starEmpty;
-                  if ((hoverRating ? hoverRating : rating) >= value) {
-                    starImg = starFull;
-                  } else if ((hoverRating ? hoverRating : rating) >= value - 0.5) {
-                    starImg = starHalf;
-                  }
-                  return (
-                    <img
-                      key={i}
-                      src={starImg}
-                      alt={`${value}점`}
-                      onClick={e => handleStarClick(e, value)}
-                      onMouseMove={e => {
-                        const rect = e.target.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        if (x < rect.width / 2) {
-                          setHoverRating(value - 0.5);
-                        } else {
-                          setHoverRating(value);
-                        }
-                      }}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className={`${styles.starIcon}${(loading || ratingLoading) ? ' ' + styles.disabled : ''}`}
-                      role="button"
-                      aria-label={`${value}점 주기`}
-                      style={{ cursor: (loading || ratingLoading) ? 'not-allowed' : 'pointer' }}
-                      disabled={loading || ratingLoading}
-                    />
-                  );
-                })}
+          <div className={styles.footer}>
+              {!editMode && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          marginRight: 8
+                        }}>
+                          <span style={{ fontSize: 24, marginRight: 8 }}>✗</span>
+                          <span style={{ marginRight: 8 }}>스포일러</span>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              checked={spoiler}
+                              onChange={e => setSpoiler(e.target.checked)}
+                              disabled={loading}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                        </div>
+                      )}
+            {editMode && (
+              <div className={styles.starInputRow}>
+                <label className={styles.starInputLabel}>평가하기 </label>
+                <div className={styles.starInputIcons}>
+                  {[...Array(5)].map((_, i) => {
+                    const value = i + 1;
+                    let starImg = starEmpty;
+                    if ((hoverRating ? hoverRating : rating) >= value) {
+                      starImg = starFull;
+                    } else if ((hoverRating ? hoverRating : rating) >= value - 0.5) {
+                      starImg = starHalf;
+                    }
+                    return (
+                      <img
+                        key={i}
+                        src={starImg}
+                        alt={`${value}점`}
+                        onClick={e => handleStarClick(e, value)}
+                        onMouseMove={e => {
+                          const rect = e.target.getBoundingClientRect();
+                          const x = e.clientX - rect.left;
+                          if (x < rect.width / 2) {
+                            setHoverRating(value - 0.5);
+                          } else {
+                            setHoverRating(value);
+                          }
+                        }}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className={`${styles.starIcon}${(loading || ratingLoading) ? ' ' + styles.disabled : ''}`}
+                        role="button"
+                        aria-label={`${value}점 주기`}
+                        style={{ cursor: (loading || ratingLoading) ? 'not-allowed' : 'pointer' }}
+                        disabled={loading || ratingLoading}
+                      />
+                    );
+                  })}
+                </div>
+                {/* {ratingLoading && <span className={styles.loadingText}>별점 저장 중...</span>} */}
               </div>
-              {ratingLoading && <span className={styles.loadingText}>별점 저장 중...</span>}
-            </div>
-          )}
-          <span className={styles.length}>{comment.length}/{maxLength}</span>
-          <button
-            className={styles.saveBtn}
-            onClick={handleSave}
-            disabled={comment.length === 0 || loading || ratingLoading}
-          >
-            {loading ? (editMode ? '수정 중...' : '저장 중...') : (editMode ? '수정' : '저장')}
-          </button>
+            )}
+            <span className={styles.length}>{comment.length}/{maxLength}</span>
+            <button
+              className={styles.saveBtn}
+              onClick={handleSave}
+              disabled={comment.length === 0 || loading || ratingLoading}
+            >
+              {loading ? (editMode ? '수정 중...' : '저장 중...') : (editMode ? '수정' : '저장')}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* 욕설 필터링 확인 모달 */}
+      {showForbiddenWordsModal && (
+        <div className={styles.modalOverlay} onClick={handleForbiddenWordsCancel}>
+          <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <h3>클린봇 경고</h3>
+            <p>클린봇에 의해 게시가 제한될 수 있습니다.</p>
+            <p>그래도 작성하시겠습니까?</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.closeModalButton}
+                onClick={handleForbiddenWordsCancel}
+              >
+                취소
+              </button>
+              <button 
+                className={styles.confirmButton}
+                onClick={handleForbiddenWordsConfirm}
+              >
+                작성
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

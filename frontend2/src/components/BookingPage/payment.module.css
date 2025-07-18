@@ -24,18 +24,21 @@
   display: flex;
   flex-direction: column;
 }
+
 .paymentTitle {
   font-size: 28px;
   font-weight: bold;
   margin-bottom: 12px;
   text-align: center;
 }
+
 .paymentSubTitle {
   color: #b0b8c1;
   font-size: 17px;
   text-align: center;
   margin-bottom: 32px;
 }
+
 .paymentSummaryBox {
   background: none;
   padding: 18px 48px;
@@ -47,38 +50,45 @@
   border: none;
   border-radius: 8px;
 }
+
 .paymentSummaryTitle {
   font-size: 20px;
   font-weight: bold;
   margin-bottom: 12px;
 }
+
 .paymentSummaryRow {
   display: flex;
   justify-content: flex-start;
   font-size: 16px;
   margin-bottom: 6px;
 }
+
 .paymentPrice {
   color: #ff3b3b;
   font-size: 16px;
   margin-left: 30px;
 }
+
 .paymentPeriod {
   color: #b0b8c1;
   font-size: 16px;
   margin-left: 4x;
 }
+
 .paymentSectionTitle {
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 14px;
 }
+
 .paymentMethodList {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 32px;
 }
+
 .paymentMethodBtn {
   flex: 1;
   background: #23232b;
@@ -89,12 +99,38 @@
   font-size: 18px;
   font-weight: bold;
   cursor: pointer;
-  transition: border 0.2s, background 0.2s;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  transform: translateZ(0);
+  /* 하드웨어 가속 */
+  backface-visibility: hidden;
+  /* 렌더링 최적화 */
 }
-.paymentMethodBtn.selected, .paymentMethodBtn:hover {
+
+.paymentMethodBtn:hover {
   border: 2px solid #ff3b3b;
   background: #1a1a1f;
 }
+
+.paymentMethodBtn.selected {
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
+}
+
+.paymentMethodBtn:active {
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
+}
+
 .paymentAgreement {
   margin-bottom: 24px;
 }
@@ -140,6 +176,7 @@
   color: #b0b8c1;
   font-size: 14px;
 }
+
 .paymentNotice {
   color: #b0b8c1;
   font-size: 13px;
@@ -161,11 +198,13 @@
 :global(.ScrollbarsCustom-TrackX) {
   background: transparent !important;
 }
+
 .paymentButtonContainer {
   display: flex;
   justify-content: space-between;
   gap: 16px;
 }
+
 .cancelButton {
   flex: 1;
   background: #18181c;
@@ -177,11 +216,13 @@
   padding: 16px 0;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  
+
 }
+
 .cancelButton:hover:not(:disabled) {
   background: #23232b;
 }
+
 .bookingButton {
   flex: 1;
   background: #ff1744;
@@ -193,8 +234,9 @@
   padding: 16px 0;
   cursor: pointer;
   transition: background 0.2s;
-  
+
 }
+
 .bookingButton:hover:not(:disabled) {
   background: #23232b;
 }
@@ -207,4 +249,4 @@
 
 .bookingButton:disabled:hover {
   background: #4a4a4a;
-} 
+}

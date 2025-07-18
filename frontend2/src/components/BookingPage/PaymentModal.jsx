@@ -235,7 +235,11 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
               <button
                 key={key}
                 className={`${styles.paymentMethodBtn} ${selectedMethod === key ? styles.selected : ""}`}
-                onClick={() => setSelectedMethod(key)}
+                onClick={(e) => {
+                  e.preventDefault(); // 기본 동작 방지
+                  e.currentTarget.blur(); // 포커스 제거
+                  setSelectedMethod(key);
+                }}
               >
                 {method.name}
               </button>

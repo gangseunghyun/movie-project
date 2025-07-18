@@ -9,6 +9,86 @@
 
 }
 
+/* 모달 오버레이 */
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* 확인 모달 스타일 */
+.confirmModal {
+  background: #181818;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90vw;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  position: relative;
+  font-family: 'Pretendard', sans-serif;
+  text-align: center;
+}
+
+.confirmModal h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.confirmModal p {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.closeModalButton {
+  background: #393943;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.closeModalButton:hover {
+  background: #4a4a54;
+}
+
+.confirmButton {
+  background: #ff2f6e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.confirmButton:hover {
+  background: #e0255f;
+}
+
 .commentCard {
   width: 400px;
   min-width: 220px;
@@ -204,43 +284,40 @@
   gap: 8px;
   color: #aaa;
   font-size: 0.9rem;
-  margin-left: auto;
 }
 
 .replyEditBtn {
-  background: #222;
-  color: #aaa;
+  background: #393943;
+  color: #fff;
   border: none;
-  border-radius: 5px;
-  padding: 3px 10px;
-  margin-left: 8px;
-  font-size: 0.7rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 4px 8px;
   cursor: pointer;
-  border: solid 1px #525252;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
 }
 
 .replyEditBtn:hover {
-  background: #FFD600;
-  color: #222;
+  background: #4a4a54;
 }
 
 .replyDeleteBtn {
-  background: #222;
-  color: #ff4d4f;
+  background: #ff2f6e;
+  color: #fff;
   border: none;
-  border-radius: 5px;
-  padding: 3px 10px;
-  margin-left: 4px;
-  font-size: 0.7rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 4px 8px;
   cursor: pointer;
-  border: solid 1px #525252;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
 }
 
 .replyDeleteBtn:hover {
-  background: #ff4d4f;
-  color: #fff;
+  background: #e0255f;
 }
 
 .profileImage {
@@ -250,21 +327,19 @@
   object-fit: cover;
 }
 
-/* 반응형 디자인 */
 @media (max-width: 1024px) {
   .commentSectionTitle {
-    font-size: 1.8rem;
-    margin: 16px 0 12px 50px;
+    font-size: 1.5rem;
   }
-  
+
   .commentSectionHeader {
-    margin: 24px 50px 8px 0px;
+    margin: 24px 40px 8px 0px;
   }
-  
+
   .commentGrid {
-    margin-left: 50px;
+    margin-left: 40px;
   }
-  
+
   .commentCard {
     width: 350px;
   }
@@ -272,33 +347,30 @@
 
 @media (max-width: 768px) {
   .commentSectionTitle {
-    font-size: 1.5rem;
-    margin: 16px 0 12px 30px;
+    font-size: 1.3rem;
   }
-  
+
   .commentSectionHeader {
-    margin: 24px 30px 8px 0px;
+    margin: 24px 20px 8px 0px;
   }
-  
+
   .commentGrid {
-    margin-left: 30px;
-    gap: 15px;
+    margin-left: 20px;
   }
-  
+
   .commentCard {
     width: 300px;
-    padding: 15px 15px 10px 15px;
   }
-  
+
   .commentUser,
   .commentRating {
     font-size: 1rem;
   }
-  
+
   .commentContent {
     font-size: 1rem;
   }
-  
+
   .commentContent:focus,
   .commentContent:focus-visible,
   .commentContent:focus-within {
@@ -307,97 +379,110 @@
     border: none !important;
     background: transparent !important;
   }
-  
+
   .commentFooter {
     font-size: 0.9rem;
   }
-  
+
   .commentIcon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
-  
+
   .commentMovieInfo {
-    width: 33.33%;
+    width: 30%;
   }
-  
+
   .commentMoviePoster {
-    width: 80px;
-    height: 110px;
+    width: 70px;
+    height: 100px;
   }
-  
+
   .commentMovieTitle {
-    font-size: 0.75rem;
-    max-width: 80px;
+    font-size: 0.7rem;
+    max-width: 70px;
   }
 }
 
 @media (max-width: 480px) {
   .commentSectionTitle {
-    font-size: 1.3rem;
-    margin: 16px 0 12px 20px;
+    font-size: 1.1rem;
   }
-  
+
   .commentSectionHeader {
-    margin: 24px 20px 8px 0px;
+    margin: 24px 10px 8px 0px;
   }
-  
+
   .commentGrid {
-    margin-left: 20px;
-    gap: 12px;
+    margin-left: 10px;
   }
-  
+
   .commentCard {
     width: 280px;
-    padding: 12px 12px 8px 12px;
   }
-  
+
   .commentUser,
   .commentRating {
     font-size: 0.9rem;
   }
-  
+
   .commentContent {
     font-size: 0.9rem;
-    min-height: 50px;
   }
-  
+
   .commentFooter {
     font-size: 0.8rem;
-    gap: 8px;
   }
-  
+
   .commentIcon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
-  
+
   .commentIconRow {
-    gap: 10px;
+    gap: 12px;
   }
-  
+
   .commentMovieInfo {
-    width: 50%;
+    width: 35%;
   }
-  
+
   .commentMoviePoster {
-    width: 70px;
-    height: 100px;
+    width: 60px;
+    height: 80px;
   }
-  
+
   .commentMovieTitle {
-    font-size: 0.7rem;
-    max-width: 70px;
+    font-size: 0.6rem;
+    max-width: 60px;
   }
-  
+
   .replyEditBtn,
   .replyDeleteBtn {
-    font-size: 0.6rem;
-    padding: 2px 8px;
+    font-size: 0.75rem;
+    padding: 3px 6px;
   }
-  
+
   .profileImage {
     width: 20px;
     height: 20px;
+  }
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .confirmModal {
+    width: 90%;
+    margin: 20px;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .closeModalButton,
+  .confirmButton {
+    width: 100%;
   }
 }

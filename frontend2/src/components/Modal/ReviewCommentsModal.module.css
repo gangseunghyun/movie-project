@@ -24,6 +24,86 @@
     font-family: 'Pretendard', sans-serif;
 }
 
+/* 모달 오버레이 (삭제 확인용) */
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* 확인 모달 스타일 */
+.confirmModal {
+  background: #181818;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90vw;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  position: relative;
+  font-family: 'Pretendard', sans-serif;
+  text-align: center;
+}
+
+.confirmModal h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.confirmModal p {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.closeModalButton {
+  background: #393943;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.closeModalButton:hover {
+  background: #4a4a54;
+}
+
+.confirmButton {
+  background: #ff2f6e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.confirmButton:hover {
+  background: #e0255f;
+}
+
 /* 헤더 */
 .header {
   display: flex;
@@ -333,6 +413,20 @@ width: 30px;
   min-height: 48px;
   font-size: 15px;
   border: 1px solid #333;
+  border-radius: 6px;
+  background: #181818;
+  color: #eee;
+  margin-top: 6px;
+  padding: 8px 10px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.replyTextarea:focus, .editTextarea:focus {
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+  border: 1px solid #333 !important;
   border-radius: 6px;
   background: #181818;
   color: #eee;
