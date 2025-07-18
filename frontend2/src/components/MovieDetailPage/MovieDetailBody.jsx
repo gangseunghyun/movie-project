@@ -48,6 +48,31 @@ function StillcutCard({ still }) {
   );
 }
 
+// SimilarMovieCard 컴포넌트 추가
+function SimilarMovieCard({ movie }) {
+  const navigate = useNavigate();
+  
+  const handleClick = () => {
+    navigate(`/movie/${movie.movieCd}`);
+  };
+
+  return (
+    <div className={styles.similarMovieCard} onClick={handleClick}>
+      <img 
+        src={movie.posterUrl || movie.poster} 
+        alt={movie.movieNm || movie.title} 
+        className={styles.similarMoviePoster}
+        onError={(e) => {
+          e.target.src = banner1; // 기본 이미지로 대체
+        }}
+      />
+      <div className={styles.similarMovieInfo}>
+        <h3 className={styles.similarMovieTitle}>{movie.movieNm || movie.title}</h3>
+        <p className={styles.similarMovieYear}>{movie.prdtYear || movie.year}</p>
+      </div>
+    </div>
+  );
+}
 
 
 export default function MovieDetailBody({ actors, directors, stillcuts, movieCd, comments, setComments, commentLoading, commentError, fetchComments }) {
@@ -709,7 +734,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
           <MovieHorizontalSlider
             data={similarMovies}
             sectionKey="similar"
-            CardComponent={MovieCard}
+            CardComponent={SimilarMovieCard}
           />
         )}
       </section>
