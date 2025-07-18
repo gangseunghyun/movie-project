@@ -24,12 +24,14 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
   const [likeLoading, setLikeLoading] = useState(false);
   const [likedByMe, setLikedByMe] = useState(review?.likedByMe || false);
   const [likeCount, setLikeCount] = useState(review?.likeCount || 0);
+  const [currentRating, setCurrentRating] = useState(review?.rating || 0);
 
   useEffect(() => {
     if (isOpen && review) {
       console.log('Review 객체:', review); // 디버깅용
       fetchComments();
       fetchCurrentUser();
+      fetchCurrentRating();
     }
   }, [isOpen, review]);
 
@@ -68,6 +70,26 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     } catch (error) {
       console.error('사용자 정보 조회 실패:', error);
       setCurrentUser(null);
+    }
+  };
+
+  // 현재 리뷰의 최신 평점 조회
+  const fetchCurrentRating = async () => {
+    if (!review?.movieCd || !review?.userId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:80/api/ratings/${review.movieCd}`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setCurrentRating(data.data.score);
+        }
+      }
+    } catch (error) {
+      console.error('평점 조회 실패:', error);
     }
   };
 
@@ -339,7 +361,25 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
       }
       
       if (res.ok) {
-        fetchComments(); // 댓글 목록 새로고침
+        // 전체 새로고침 대신 해당 댓글만 업데이트하여 스크롤 위치 유지
+        setComments(prevComments => {
+          const updateCommentLike = (comments) => {
+            return comments.map(comment => {
+              if (comment.id === commentId) {
+                return {
+                  ...comment,
+                  likedByMe: !likedByMe,
+                  likeCount: comment.likeCount + (likedByMe ? -1 : 1)
+                };
+              }
+              if (comment.replies && comment.replies.length > 0) {
+                comment.replies = updateCommentLike(comment.replies);
+              }
+              return comment;
+            });
+          };
+          return updateCommentLike([...prevComments]);
+        });
       } else if (res.status === 401) {
         alert('로그인이 필요합니다.');
       } else {
@@ -534,6 +574,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
             )}
             <span style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem' }}>{review.userNickname || review.user || '익명'}</span>
             <span style={{ color: '#aaa', fontSize: '0.9em' }}>{formatDate(review?.createdAt || review?.updatedAt)}</span>
+            <span style={{ color: '#ffd700', fontSize: '0.9em', marginLeft: '8px' }}>★ {currentRating ? currentRating.toFixed(1) : review?.rating?.toFixed(1) || '-'}</span>
           </div>
           <button className={styles.closeButton} onClick={onClose} style={{ 
             background: 'none', 
@@ -641,11 +682,10 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
             <div className={styles.noComments}>아직 댓글이 없습니다.</div>
           ) : (
               <Scrollbar
-                            style={{ height: '40vh', width: '100%' }}
+                            style={{ height: '50vh', width: '100%' }}
                             trackYProps={{
                               style: {
                                 left: '98.5%',
-
                                 width: '4px',
                                 height: '100%',
                                 background: 'transparent',
