@@ -3,6 +3,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import styles from './MovieEditPage.module.css';
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
 const MovieEditPage = () => {
     const { movieCd } = useParams();
     const location = useLocation();
@@ -80,7 +82,7 @@ const MovieEditPage = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:80/api/movies/${movieCd}`, {
+                const response = await fetch(`/api/movies/${movieCd}`, {
                     credentials: 'include'
                 });
 
@@ -137,9 +139,9 @@ const MovieEditPage = () => {
             };
             
             console.log('전송할 수정 데이터:', updateData);
-            console.log('API 호출 시작:', `http://localhost:80/api/admin/movies/${movieCd}`);
+            console.log('API 호출 시작:', `/api/admin/movies/${movieCd}`);
             
-            const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}`, {
+            const response = await fetch(`/api/admin/movies/${movieCd}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -209,7 +211,7 @@ const MovieEditPage = () => {
             formData.append('image', posterFile);
 
             try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/poster`, {
+                const response = await fetch(`/api/admin/movies/${movieCd}/poster`, {
                     method: 'POST',
                     credentials: 'include',
                     body: formData
@@ -236,7 +238,7 @@ const MovieEditPage = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/poster-url`, {
+                const response = await fetch(`/api/admin/movies/${movieCd}/poster-url`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -307,7 +309,7 @@ const MovieEditPage = () => {
             });
 
             try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/stillcuts`, {
+                const response = await fetch(`/api/admin/movies/${movieCd}/stillcuts`, {
                     method: 'POST',
                     credentials: 'include',
                     body: formData
@@ -375,7 +377,7 @@ const MovieEditPage = () => {
             formData.append('image', directorImageFile);
 
             try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/director-image`, {
+                const response = await fetch(`/api/admin/movies/${movieCd}/director-image`, {
                     method: 'POST',
                     credentials: 'include',
                     body: formData
@@ -401,7 +403,7 @@ const MovieEditPage = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/director-image-url`, {
+                const response = await fetch(`/api/admin/movies/${movieCd}/director-image-url`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -464,7 +466,7 @@ const MovieEditPage = () => {
             });
 
             try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/actor-images`, {
+                const response = await fetch(`/api/admin/movies/${movieCd}/actor-images`, {
                     method: 'POST',
                     credentials: 'include',
                     body: formData
@@ -491,7 +493,7 @@ const MovieEditPage = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:80/api/admin/movies/${movieCd}/actor-image-urls`, {
+                const response = await fetch(`/api/admin/movies/${movieCd}/actor-image-urls`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -513,6 +515,12 @@ const MovieEditPage = () => {
                 alert('배우 이미지 URL 설정 중 오류가 발생했습니다.');
             }
         }
+    };
+
+    const getImageUrl = (url) => {
+      if (!url) return '';
+      if (url.startsWith('http')) return url;
+      return url;
     };
 
     if (!user || user.role !== 'ADMIN') {
@@ -831,7 +839,7 @@ const MovieEditPage = () => {
                             <div className={styles.stillcutGrid}>
                                 {stillcutUrls.map((url, index) => (
                                     <div key={index} className={styles.stillcutItem}>
-                                        <img src={url} alt={`스틸컷 ${index + 1}`} />
+                                        <img src={getImageUrl(url)} alt={`스틸컷 ${index + 1}`} />
                                         <div className={styles.stillcutActions}>
                                             <button 
                                                 type="button" 

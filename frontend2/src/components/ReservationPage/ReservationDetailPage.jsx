@@ -4,6 +4,8 @@ import axios from 'axios';
 import styles from './ReservationPage.module.css';
 import { useUser } from '../../contexts/UserContext';
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
 const ReservationDetailPage = () => {
   const { reservationId } = useParams();
   const { user } = useUser();
@@ -26,7 +28,7 @@ const ReservationDetailPage = () => {
   const fetchReservationDetail = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:80/api/users/${user.id}/reservations/${reservationId}`, {
+      const response = await axios.get(`/api/users/${user.id}/reservations/${reservationId}`, {
         withCredentials: true
       });
       setReservation(response.data);
@@ -73,7 +75,7 @@ const ReservationDetailPage = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:80/api/payments/cancel',
+        '/api/payments/cancel',
         { imp_uid: impUid, reason: reason || '' },
         { withCredentials: true }
       );
@@ -116,6 +118,12 @@ const ReservationDetailPage = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getImageUrl = (url) => {
+    if (!url) return '/placeholder-actor.png';
+    if (url.startsWith('http')) return url;
+    return url;
   };
 
   if (loading) {
@@ -162,7 +170,7 @@ const ReservationDetailPage = () => {
           <div className={styles.movieSection}>
             <div className={styles.movieHeader}>
               <img
-                src={screening?.posterUrl || '/placeholder-actor.png'}
+                src={getImageUrl(screening?.posterUrl)}
                 alt={screening?.movieNm || '영화 포스터'}
                 className={styles.moviePoster}
                 onError={(e) => {
@@ -297,7 +305,7 @@ const ReservationDetailPage = () => {
               {/* 영화 정보 */}
               <div className={styles.printMovieSection}>
                 <img
-                  src={screening?.posterUrl || '/placeholder-actor.png'}
+                  src={getImageUrl(screening?.posterUrl)}
                   alt={screening?.movieNm || '영화 포스터'}
                   className={styles.printPoster}
                   onError={(e) => {

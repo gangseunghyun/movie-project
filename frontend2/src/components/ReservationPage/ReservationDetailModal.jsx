@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import styles from './ReservationPage.module.css';
+import { useNavigate } from 'react-router-dom';
+
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
 
 const ReservationDetailModal = ({ reservation, onClose, onCancelPayment }) => {
   const { screening, cinema, theater, seats, payments, totalAmount, reservedAt } = reservation;
   const payment = payments?.[0];
   const [showFullReceipt, setShowFullReceipt] = useState(false);
+  const navigate = useNavigate();
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -36,6 +40,12 @@ const ReservationDetailModal = ({ reservation, onClose, onCancelPayment }) => {
     }
   };
 
+  const getImageUrl = (url) => {
+    if (!url) return '/placeholder-actor.png';
+    if (url.startsWith('http')) return url;
+    return url;
+  };
+
   return (
     <div className={styles.modalOverlay} onClick={handleBackdropClick}>
       <div className={styles.detailModal}>
@@ -53,9 +63,15 @@ const ReservationDetailModal = ({ reservation, onClose, onCancelPayment }) => {
           <div className={styles.movieSection}>
             <div className={styles.movieHeader}>
               <img
-                src={screening?.posterUrl || '/placeholder-actor.png'}
+                src={getImageUrl(screening?.posterUrl)}
                 alt={screening?.movieNm || '영화 포스터'}
                 className={styles.moviePoster}
+                onClick={() => {
+                  if (screening?.movieCd) {
+                    navigate(`/movies/${screening.movieCd}`);
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = '/placeholder-actor.png';

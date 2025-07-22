@@ -25,7 +25,7 @@
 3. **환경 변수 예시**
    ```env
    # API 서버 URL
-   REACT_APP_API_URL=http://localhost:80
+   REACT_APP_API_URL=http://localhost:8090
 
    # 나이스페이 설정
    REACT_APP_NICE_CLIENT_ID=your_nice_client_id

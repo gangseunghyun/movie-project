@@ -58,7 +58,7 @@ const ChatbotModal = ({ isOpen, onClose }) => {
   const fetchMovieInfo = async (movieName) => {
     try {
       console.log('영화 정보 조회 시도:', movieName);
-      const response = await fetch('http://localhost:80/api/mcp/tools/getMovieInfo', {
+      const response = await fetch('/api/mcp/tools/getMovieInfo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ parameters: { movieCd: movieName } })
@@ -331,7 +331,7 @@ const ChatbotModal = ({ isOpen, onClose }) => {
   const generateRecommendationResponse = async (queryType, originalInput, message, apiParameters) => {
     try {
       // 백엔드 API 호출
-      const response = await fetch('http://localhost:80/api/mcp/tools/searchMovies', {
+      const response = await fetch('/api/mcp/tools/searchMovies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ parameters: apiParameters })

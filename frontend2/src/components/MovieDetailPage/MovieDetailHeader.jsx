@@ -84,7 +84,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
             if (!movieDetail?.movieCd || hasLoadedRating) return;
 
             try {
-                const response = await fetch(`http://localhost:80/api/ratings/${movieDetail.movieCd}`, {
+                const response = await fetch(`/api/ratings/${movieDetail.movieCd}`, {
                     credentials: 'include',
                 });
 
@@ -121,7 +121,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
     // 별점 분포도 불러오기
     useEffect(() => {
         if (!movieDetail?.movieCd) return;
-        fetch(`http://localhost:80/api/ratings/movie/${movieDetail.movieCd}/distribution`, {
+        fetch(`/api/ratings/movie/${movieDetail.movieCd}/distribution`, {
             credentials: 'include'
         })
             .then(res => res.json())
@@ -277,7 +277,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
 
         try {
             const method = prevIsLiked ? 'DELETE' : 'POST';
-            const response = await fetch(`http://localhost:80/api/movies/${movieDetail.movieCd}/like`, {
+            const response = await fetch(`/api/movies/${movieDetail.movieCd}/like`, {
                 method,
                 credentials: 'include',
             });
@@ -311,7 +311,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
 
         setRatingLoading(true);
         try {
-            const response = await fetch('http://localhost:80/api/ratings', {
+            const response = await fetch('/api/ratings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -328,7 +328,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
             if (data.success) {
                 // 별점 저장 성공 시 사용자 별점을 다시 조회하여 정확한 값 설정
                 try {
-                    const ratingResponse = await fetch(`http://localhost:80/api/ratings/${movieDetail.movieCd}`, {
+                    const ratingResponse = await fetch(`/api/ratings/${movieDetail.movieCd}`, {
                         credentials: 'include',
                     });
 
@@ -423,7 +423,7 @@ const MovieDetailHeader = ({ movieDetail, onCommentSaved, onRefreshMovieDetail }
             console.log('영화 삭제 시작:', movieDetail.movieCd);
             
             // 영화 삭제 API 호출 (AdminController 사용)
-            fetch(`http://localhost:80/api/admin/movies/${movieDetail.movieCd}`, {
+            fetch(`/api/admin/movies/${movieDetail.movieCd}`, {
                 method: 'DELETE',
                 credentials: 'include',
             })

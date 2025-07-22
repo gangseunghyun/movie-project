@@ -5,9 +5,12 @@ import com.movie.movie_backend.repository.PRDMovieListRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,9 +31,15 @@ public class TmdbPopularityService {
     public void updateAllMoviePopularity() {
         log.info("=== TMDB 인기도 업데이트 시작 ===");
         
-        List<MovieList> moviesWithTmdbId = movieListRepository.findAll().stream()
-            .filter(movie -> movie.getTmdbId() != null)
-            .toList();
+        List<MovieList> moviesWithTmdbId = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page++, size));
+            moviesWithTmdbId.addAll(moviePage.getContent().stream()
+                .filter(m -> m.getTmdbId() != null)
+                .toList());
+        } while (moviePage.hasNext());
         
         log.info("TMDB ID가 있는 영화 수: {}", moviesWithTmdbId.size());
         
@@ -128,5 +137,16 @@ public class TmdbPopularityService {
             .filter(movie -> movie.getTmdbPopularity() != null && movie.getTmdbPopularity() >= minPopularity)
             .sorted((m1, m2) -> Double.compare(m2.getTmdbPopularity(), m1.getTmdbPopularity()))
             .toList();
+    }
+
+    private List<MovieList> getAllMovieListsChunked() {
+        List<MovieList> allMovieLists = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page++, size));
+            allMovieLists.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
+        return allMovieLists;
     }
 } 

@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Optional;
 import java.math.BigDecimal;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 public class BookingService {
@@ -82,7 +85,13 @@ public class BookingService {
 
     // 모든 영화관 조회
     public List<CinemaDto> getAllCinemas() {
-        List<Cinema> cinemas = cinemaRepository.findAll();
+        List<Cinema> cinemas = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<Cinema> cinemaPage;
+        do {
+            cinemaPage = cinemaRepository.findAll(PageRequest.of(page++, size));
+            cinemas.addAll(cinemaPage.getContent());
+        } while (cinemaPage.hasNext());
         return cinemas.stream()
                 .map(cinema -> {
                     List<TheaterDto> theaterDtos = cinema.getTheaters().stream()

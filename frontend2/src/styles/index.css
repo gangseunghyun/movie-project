@@ -71,3 +71,38 @@ img {
   box-shadow: none !important;
   border: none !important;
 }
+
+/* 스크롤바 관련 스타일 */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #666 #333;
+}
+
+body {
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* 출연/제작 섹션은 가로 스크롤 허용 */
+.castSliderWrapper {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+/* Webkit 브라우저용 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #333;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #666;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}

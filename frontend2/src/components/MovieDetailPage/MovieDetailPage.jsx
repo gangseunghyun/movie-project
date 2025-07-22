@@ -24,7 +24,7 @@ export default function MovieDetailPage() {
     setError(null);
     
     try {
-      const response = await fetch(`http://localhost:80/data/api/movie-detail-dto?movieCd=${movieCd}`, {
+      const response = await fetch(`/api/movie-detail-dto?movieCd=${movieCd}`, {
         credentials: 'include',
       });
       
@@ -76,7 +76,7 @@ export default function MovieDetailPage() {
     if (!movieCd) return;
     setCommentLoading(true);
     setCommentError(null);
-    fetch(`http://localhost:80/api/reviews/movie/${movieCd}`, {
+    fetch(`/api/reviews/movie/${movieCd}`, {
       credentials: 'include',
     })
       .then(res => res.json())

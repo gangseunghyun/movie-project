@@ -44,7 +44,7 @@ public class TagDataService {
         log.info("기본 태그 생성 시작");
         
         // 실제 영화 데이터에서 장르 추출하여 태그 생성
-        List<MovieDetail> allMovies = movieRepository.findAll();
+        List<MovieDetail> allMovies = movieRepository.findAllWithTags();
         Set<String> actualGenres = new HashSet<>();
         
         log.info("전체 영화 수: {}", allMovies.size());
@@ -87,7 +87,7 @@ public class TagDataService {
      */
     private void mapTagsToMovies() {
         log.info("영화별 태그 매핑 시작");
-        List<MovieDetail> allMovies = movieRepository.findAll();
+        List<MovieDetail> allMovies = movieRepository.findAllWithTags();
         int mappedCount = 0;
         for (MovieDetail movie : allMovies) {
             try {
@@ -161,7 +161,7 @@ public class TagDataService {
     public void init() {
         try {
             log.info("TagDataService 초기화 시작");
-            setupTagData();
+            // setupTagData(); // 서버 기동 시 태그 매핑 비활성화
             log.info("TagDataService 초기화 완료");
         } catch (Exception e) {
             log.error("TagDataService 초기화 실패: {}", e.getMessage(), e);

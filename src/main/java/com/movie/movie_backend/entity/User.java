@@ -174,7 +174,8 @@ public class User implements UserDetails {
     public String getProfileImageUrl() {
         if (profileImageUrl == null || profileImageUrl.isEmpty()) return null;
         if (profileImageUrl.startsWith("http")) return profileImageUrl;
-        return "http://localhost:80" + profileImageUrl;
+        // 운영 환경에서는 서버 주소 없이 반환
+        return profileImageUrl;
     }
 
     @Override

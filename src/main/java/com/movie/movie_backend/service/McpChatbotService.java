@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 public class McpChatbotService {
@@ -525,7 +527,7 @@ public class McpChatbotService {
             System.out.println("상영중인 영화 검색 시작...");
             
             // 전체 MovieList의 상태별 개수 확인
-            List<MovieList> allMovies = movieListRepository.findAll();
+            List<MovieList> allMovies = getAllMovieListsChunked();
             System.out.println("전체 MovieList 수: " + allMovies.size());
             
             long nowPlayingCount = allMovies.stream().filter(m -> m.getStatus() == com.movie.movie_backend.constant.MovieStatus.NOW_PLAYING).count();
@@ -740,5 +742,16 @@ public class McpChatbotService {
             System.err.println("Error fetching horror movies: " + e.getMessage());
         }
         return movies;
+    }
+
+    private List<MovieList> getAllMovieListsChunked() {
+        List<MovieList> allMovieLists = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page++, size));
+            allMovieLists.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
+        return allMovieLists;
     }
 }

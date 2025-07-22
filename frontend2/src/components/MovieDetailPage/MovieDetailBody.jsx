@@ -38,6 +38,8 @@ const dummySimilar = [
   { id: 9, title: '비슷한 영화 6', posterUrl: banner2 },
 ];
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
 function SimilarMovieCard({ movie }) {
   const navigate = useNavigate();
   
@@ -55,7 +57,7 @@ function SimilarMovieCard({ movie }) {
   return (
     <div className={styles.similarMovieCard} onClick={handleClick}>
       <img 
-        src={movie.posterUrl || movie.posterImageUrl || banner1} 
+        src={movie.posterUrl ? (movie.posterUrl.startsWith('http') ? movie.posterUrl : `${SERVER_URL}${movie.posterUrl}`) : banner1} 
         alt={movie.title || movie.movieNm} 
         className={styles.similarPoster} 
       />
@@ -66,11 +68,16 @@ function SimilarMovieCard({ movie }) {
 function StillcutCard({ still }) {
   return (
     <div className={styles.stillcutCard}>
-      <img src={still.imageUrl} alt="스틸컷" className={styles.stillcutImg} />
+      <img src={still.imageUrl ? (still.imageUrl.startsWith('http') ? still.imageUrl : `${SERVER_URL}${still.imageUrl}`) : ''} alt="스틸컷" className={styles.stillcutImg} />
     </div>
   );
 }
 
+const getImageUrl = (url) => {
+  if (!url || url.trim() === '') return userIcon;
+  if (url.startsWith('http')) return url;
+  return url.replace('/api/profile/images/', '/uploads/profile-images/');
+};
 
 
 export default function MovieDetailBody({ actors, directors, stillcuts, movieCd, comments, setComments, commentLoading, commentError, fetchComments }) {
@@ -106,7 +113,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch('http://localhost:80/api/current-user', {
+        const response = await fetch('/api/current-user', {
           credentials: 'include'
         });
         if (response.ok) {
@@ -165,7 +172,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     if (!movieCd || !commentUserId) return null;
 
     try {
-      const response = await fetch(`http://localhost:80/api/ratings/${movieCd}`, {
+      const response = await fetch(`/api/ratings/${movieCd}`, {
         credentials: 'include',
       });
 
@@ -427,13 +434,13 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       let res;
       if (likedByMe) {
         // 좋아요 취소 (DELETE)
-        res = await fetch(`http://localhost:80/api/reviews/dto/${commentId}/like`, {
+        res = await fetch(`/api/reviews/dto/${commentId}/like`, {
           method: 'DELETE',
           credentials: 'include',
         });
       } else {
         // 좋아요 (POST)
-        res = await fetch(`http://localhost:80/api/reviews/dto/${commentId}/like`, {
+        res = await fetch(`/api/reviews/dto/${commentId}/like`, {
           method: 'POST',
           credentials: 'include',
         });
@@ -458,7 +465,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     setSimilarMoviesError(null);
     
     try {
-      const response = await fetch(`http://localhost:80/data/api/similar-genre-movies?movieCd=${movieCd}&page=0&size=20`, {
+      const response = await fetch(`/api/similar-genre-movies?movieCd=${movieCd}&page=0&size=20`, {
         credentials: 'include',
       });
       
@@ -595,7 +602,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                       key={person.id ? `person-${person.type ?? 'unknown'}-${person.id}` : `page-${pageIdx}-idx-${idx}`}
                     >
                       <Link to={personLink} style={{ display: 'block' }}>
-                        <img src={person.photoUrl} alt={person.peopleNm} className={styles.castImg} />
+                        <img src={getImageUrl(person.photoUrl)} alt={person.peopleNm} className={styles.castImg} />
                       </Link>
                       <div className={
                         styles.castInfo +
@@ -640,7 +647,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                     <Link to={`/mypage/${comment.userId}`} style={{ display: 'inline-block' }}>
                       <img
                         className={styles.commentUserProfileImage}
-                        src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
+                        src={getImageUrl(comment.userProfileImageUrl)}
                         alt="프로필"
                         style={{ cursor: 'pointer' }}
                       />
@@ -648,7 +655,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                   ) : (
                     <img
                       className={styles.commentUserProfileImage}
-                      src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
+                      src={getImageUrl(comment.userProfileImageUrl)}
                       alt="프로필"
                     />
                   )}
@@ -679,7 +686,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                   className={styles.commentCount}
                   onClick={e => {
                     e.stopPropagation();
-                    handleShowLikedUsers(comment.id);
+                    handleShowLikedUsers(comment.reviewId || comment.id);
                   }}
                 >
                   좋아요 {comment.likeCount ?? 0}
@@ -770,7 +777,7 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                 }}
                 onClick={() => handleStillcutClick(idx)}
               >
-                <img src={still.imageUrl} alt="스틸컷" className={styles.stillcutImg} />
+                <img src={getImageUrl(still.imageUrl)} alt="스틸컷" className={styles.stillcutImg} />
               </div>
             ))}
           </div>

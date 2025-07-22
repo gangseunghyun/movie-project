@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
             formData.append('newPasswordConfirm', password2);
             console.log('token:', token);
 
-            const res = await fetch('http://localhost:80/api/reset-password', {
+            const res = await fetch('/api/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData.toString(),

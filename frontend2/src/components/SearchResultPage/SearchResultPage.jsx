@@ -40,7 +40,7 @@ function UserCard({ user, onUserClick }) {
     const fetchFollowCounts = async () => {
       try {
         // 팔로워 수 가져오기
-        const followersResponse = await fetch(`http://localhost:80/api/users/${user.id}/followers`, {
+        const followersResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${user.id}/followers`, {
           credentials: 'include',
         });
         if (followersResponse.ok) {
@@ -52,7 +52,7 @@ function UserCard({ user, onUserClick }) {
         }
 
         // 팔로잉 수 가져오기
-        const followingResponse = await fetch(`http://localhost:80/api/users/${user.id}/following`, {
+        const followingResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${user.id}/following`, {
           credentials: 'include',
         });
         if (followingResponse.ok) {
@@ -74,7 +74,7 @@ function UserCard({ user, onUserClick }) {
       <div
         className={styles.userImg}
         style={{
-          backgroundImage: `url(${user.profileImageUrl ? user.profileImageUrl : userIcon})`,
+                          backgroundImage: `url(${user.profileImageUrl ? user.profileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
@@ -131,9 +131,9 @@ export default function SearchResultPage() {
 
     // 영화 검색, 인물 검색, 유저 검색을 병렬로 실행
     Promise.all([
-      fetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(search)}&page=0&size=20`),
-      fetch(`http://localhost:80/data/api/search-person?keyword=${encodeURIComponent(search)}`),
-      axios.get(`http://localhost:80/api/users/search?nickname=${encodeURIComponent(search)}`, {
+      fetch(`/api/movie-detail-dto/search?keyword=${encodeURIComponent(search)}&page=0&size=20`),
+      fetch(`/api/search-person?keyword=${encodeURIComponent(search)}`),
+      axios.get(`/api/users/search?nickname=${encodeURIComponent(search)}`, {
         withCredentials: true
       })
     ])
@@ -198,7 +198,7 @@ export default function SearchResultPage() {
   const handleSearch = () => {
     if (input.trim()) {
       // 최근검색어 저장
-      axios.post('http://localhost:80/api/search-history', null, {
+      axios.post('/api/search-history', null, {
         params: { keyword: input, searchResultCount: 0 },
         withCredentials: true
       }).catch(() => { });
@@ -212,7 +212,7 @@ export default function SearchResultPage() {
 
   const handleUserClick = (nickname) => {
     // 유저 정보 가져오기
-    axios.get(`http://localhost:80/api/users/nickname/${encodeURIComponent(nickname)}`, {
+    axios.get(`${process.env.REACT_APP_API_URL}/api/users/nickname/${encodeURIComponent(nickname)}`, {
       withCredentials: true
     })
     .then(response => {

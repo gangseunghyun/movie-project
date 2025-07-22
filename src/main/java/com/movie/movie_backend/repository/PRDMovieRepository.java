@@ -7,22 +7,29 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface PRDMovieRepository extends JpaRepository<MovieDetail, Long> {
+
+    @Query("SELECT DISTINCT m FROM MovieDetail m LEFT JOIN FETCH m.tags")
+    List<MovieDetail> findAllWithTags();
+
     Optional<MovieDetail> findByMovieCd(String movieCd);
     boolean existsByMovieCd(String movieCd);
     Optional<MovieDetail> findByMovieNmContaining(String movieNm);
     List<MovieDetail> findByMovieNmContainingIgnoreCase(String movieNm);
+    Page<MovieDetail> findByMovieNmContainingIgnoreCase(String movieNm, Pageable pageable);
     
     // 장르별 조회
     List<MovieDetail> findByGenreNmContaining(String genreNm);
     
     // 개봉일순 정렬 (최신순 - 내림차순)
-    List<MovieDetail> findAllByOrderByOpenDtDesc();
+    Page<MovieDetail> findAllByOrderByOpenDtDesc(Pageable pageable);
     
     // 이름순 정렬 (오름차순)
     List<MovieDetail> findAllByOrderByMovieNmAsc();
@@ -69,4 +76,8 @@ public interface PRDMovieRepository extends JpaRepository<MovieDetail, Long> {
     // 평점 높은 영화 TOP-N 조회 (MovieList와 JOIN)
     @Query("SELECT m FROM MovieDetail m JOIN MovieList ml ON m.movieCd = ml.movieCd WHERE m.averageRating IS NOT NULL AND m.averageRating >= :minRating ORDER BY m.averageRating DESC")
     List<MovieDetail> findTopRatedMoviesWithMovieList(@Param("minRating") Double minRating, org.springframework.data.domain.Pageable pageable);
+
+    // 기존: Page<MovieDetail> findByStatus(MovieStatus status, Pageable pageable);
+    @Query("SELECT m FROM MovieDetail m JOIN m.movieList ml WHERE ml.status = :status")
+    Page<MovieDetail> findByMovieListStatus(@Param("status") MovieStatus status, Pageable pageable);
 } 

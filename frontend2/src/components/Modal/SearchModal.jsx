@@ -43,7 +43,7 @@ export default function SearchModal({ onClose, top = 64, height = '80vh', open }
 
   // 최근 검색어 불러오기
   useEffect(() => {
-    axios.get('http://localhost:80/api/search-history', { withCredentials: true })
+    axios.get('/api/search-history', { withCredentials: true })
       .then(res => setRecentSearches(res.data))
       .catch(() => setRecentSearches([]));
   }, []);
@@ -52,7 +52,7 @@ export default function SearchModal({ onClose, top = 64, height = '80vh', open }
   useEffect(() => {
     setLoading(true);
     console.log('인기 검색어 조회 시작');
-    axios.get('http://localhost:80/api/popular-keywords', { withCredentials: true })
+    axios.get('/api/popular-keywords', { withCredentials: true })
       .then(res => {
         setPopularKeywords(res.data);
         console.log('인기 검색어 조회 성공:', res.data);
@@ -71,9 +71,9 @@ export default function SearchModal({ onClose, top = 64, height = '80vh', open }
       
       // 먼저 검색 결과 개수를 확인
       Promise.all([
-        fetch(`http://localhost:80/data/api/movie-detail-dto/search?keyword=${encodeURIComponent(search)}&page=0&size=20`),
-        fetch(`http://localhost:80/data/api/search-person?keyword=${encodeURIComponent(search)}`),
-        axios.get(`http://localhost:80/api/users/search?nickname=${encodeURIComponent(search)}`, {
+        fetch(`/api/movie-detail-dto/search?keyword=${encodeURIComponent(search)}&page=0&size=20`),
+        fetch(`/api/search-person?keyword=${encodeURIComponent(search)}`),
+        axios.get(`/api/users/search?nickname=${encodeURIComponent(search)}`, {
           withCredentials: true
         })
       ])
@@ -94,19 +94,19 @@ export default function SearchModal({ onClose, top = 64, height = '80vh', open }
         //console.log('검색 결과 개수:', { movieCount, personCount, userCount, totalResultCount });
         
         // 검색어 저장 (실제 결과 개수 전달)
-        return axios.post('http://localhost:80/api/search-history', null, {
+        return axios.post('/api/search-history', null, {
           params: { keyword: search, searchResultCount: totalResultCount },
           withCredentials: true
         });
       })
       .then((response) => {
         // 저장 후 최근 검색어 다시 불러오기
-        return axios.get('http://localhost:80/api/search-history', { withCredentials: true });
+        return axios.get('/api/search-history', { withCredentials: true });
       }).then(res => {
         console.log('최근 검색어 조회 성공:', res.data);
         setRecentSearches(res.data);
         // 인기 검색어도 다시 불러오기
-        return axios.get('http://localhost:80/api/popular-keywords', { withCredentials: true });
+        return axios.get('/api/popular-keywords', { withCredentials: true });
       }).then(res => {
         setPopularKeywords(res.data);
         console.log('인기 검색어 업데이트:', res.data);
@@ -126,7 +126,7 @@ export default function SearchModal({ onClose, top = 64, height = '80vh', open }
 
   // 개별 검색어 삭제
   const handleDelete = (keyword) => {
-    axios.delete('http://localhost:80/api/search-history', {
+    axios.delete('/api/search-history', {
       params: { keyword },
       withCredentials: true
     })
@@ -169,11 +169,11 @@ export default function SearchModal({ onClose, top = 64, height = '80vh', open }
                       onClick={() => {
                         setSearch(item.keyword);
                         // 바로 검색 실행
-                        axios.post('http://localhost:80/api/search-history', null, {
+                        axios.post('/api/search-history', null, {
                           params: { keyword: item.keyword, searchResultCount: 0 },
                           withCredentials: true
                         }).then(() => {
-                          return axios.get('http://localhost:80/api/search-history', { withCredentials: true });
+                          return axios.get('/api/search-history', { withCredentials: true });
                         }).then(res => setRecentSearches(res.data))
                           .catch(() => { });
                         navigate(`/search?query=${encodeURIComponent(item.keyword)}`);
@@ -207,11 +207,11 @@ export default function SearchModal({ onClose, top = 64, height = '80vh', open }
                       onClick={() => {
                         setSearch(item.keyword);
                         // 바로 검색 실행
-                        axios.post('http://localhost:80/api/search-history', null, {
+                        axios.post('/api/search-history', null, {
                           params: { keyword: item.keyword, searchResultCount: 0 },
                           withCredentials: true
                         }).then(() => {
-                          return axios.get('http://localhost:80/api/search-history', { withCredentials: true });
+                          return axios.get('/api/search-history', { withCredentials: true });
                         }).then(res => setRecentSearches(res.data))
                           .catch(() => { });
                         navigate(`/search?query=${encodeURIComponent(item.keyword)}`);

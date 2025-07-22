@@ -7,12 +7,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -31,7 +34,14 @@ public class TmdbPosterBatchService {
 
     @Transactional
     public void updatePosterUrlsForAllMovies() {
-        List<MovieList> movies = movieListRepository.findAll();
+        List<MovieList> movies = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page++, size));
+            movies.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
+
         int updated = 0, failed = 0;
 
         for (MovieList movie : movies) {
@@ -49,6 +59,18 @@ public class TmdbPosterBatchService {
             }
         }
         log.info("TMDB 포스터 자동 매칭 완료: 성공 {}건, 실패 {}건", updated, failed);
+    }
+
+    public List<MovieList> getAllMovieListsPaged(int chunkSize) {
+        List<MovieList> result = new ArrayList<>();
+        int page = 0;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(moviePage.getContent());
+            page++;
+        } while (!moviePage.isLast());
+        return result;
     }
 
     private String fetchPosterUrlFromTmdb(MovieList movie) {

@@ -16,6 +16,7 @@ export default function Header() {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
 
   // user 객체 전체 디버깅용 출력
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function Header() {
   const handleLogout = async () => {
     console.log('로그아웃 시작');
     try {
-      const response = await fetch('http://localhost:80/api/logout', {
+              const response = await fetch('/api/logout', {
         method: 'POST',
         credentials: 'include', // 세션/쿠키 인증 시 필요
       });
@@ -137,7 +138,9 @@ export default function Header() {
                   onMouseLeave={handleProfileLeave}
                 >
                   <img
-                    src={user.profileImageUrl && user.profileImageUrl.trim() !== '' ? user.profileImageUrl : userProfile}
+                                src={user.profileImageUrl && user.profileImageUrl.trim() !== ''
+              ? user.profileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/')
+              : userProfile}
                     alt="프로필"
                     className={styles.profileImg}
                     onError={e => { e.target.onerror = null; e.target.src = userProfile; }}
@@ -152,7 +155,9 @@ export default function Header() {
                   >
                     <div className={styles.profileTop}>
                       <img
-                        src={user.profileImageUrl && user.profileImageUrl.trim() !== '' ? user.profileImageUrl : userProfile}
+                        src={user.profileImageUrl && user.profileImageUrl.trim() !== '' 
+                          ? user.profileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/')
+                          : userProfile}
                         alt="프로필"
                         className={styles.menuProfileImg}
                       />

@@ -7,6 +7,8 @@ import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
 import banner1 from '../../assets/banner1.jpg';
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
 export default function ReviewCommentsModal({ isOpen, onClose, review, onCommentCountChange, handleLikeReview, handleReplyIconClick, user }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await fetch('http://localhost:80/api/current-user', {
+      const response = await fetch('/api/current-user', {
         credentials: 'include'
       });
       if (response.ok) {
@@ -81,8 +83,8 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     try {
       // 트리 구조로 댓글 가져오기 (대댓글 포함)
       const url = currentUser 
-        ? `http://localhost:80/api/comments/review/${review.id}/all?userId=${currentUser.id}`
-        : `http://localhost:80/api/comments/review/${review.id}/all`;
+        ? `/api/comments/review/${review.id}/all?userId=${currentUser.id}`
+        : `/api/comments/review/${review.id}/all`;
       
       const response = await fetch(url, {
         credentials: 'include'
@@ -184,7 +186,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     }
 
     try {
-      const response = await fetch(`http://localhost:80/api/comments/${editingCommentId}`, {
+      const response = await fetch(`/api/comments/${editingCommentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +223,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     }
 
     try {
-      const response = await fetch(`http://localhost:80/api/comments/${commentId}?userId=${currentUser.id}`, {
+      const response = await fetch(`/api/comments/${commentId}?userId=${currentUser.id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -281,7 +283,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
     }
 
     try {
-      const response = await fetch('http://localhost:80/api/comments', {
+      const response = await fetch('/api/comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -319,13 +321,13 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
       let res;
       if (likedByMe) {
         // 댓글 좋아요 취소 (DELETE)
-        res = await fetch(`http://localhost:80/api/comments/${commentId}/like?userId=${currentUser.id}`, {
+        res = await fetch(`/api/comments/${commentId}/like?userId=${currentUser.id}`, {
           method: 'DELETE',
           credentials: 'include',
         });
       } else {
         // 댓글 좋아요 (POST)
-        res = await fetch(`http://localhost:80/api/comments/${commentId}/like`, {
+        res = await fetch(`/api/comments/${commentId}/like`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -361,9 +363,9 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
           {comment.userId ? (
             <Link to={`/mypage/${comment.userId}`} style={{ display: 'inline-block' }}>
               <img
-                src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== ''
-                  ? comment.userProfileImageUrl
-                  : userIcon}
+                              src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== ''
+                ? comment.userProfileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/')
+                : userIcon}
                 alt="프로필"
                 onError={e => { e.target.src = userIcon; }}
                 style={{ cursor: 'pointer' }}
@@ -372,7 +374,7 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
           ) : (
             <img
               src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== ''
-                ? comment.userProfileImageUrl
+                ? comment.userProfileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/')
                 : userIcon}
               alt="프로필"
               onError={e => { e.target.src = userIcon; }}
@@ -520,14 +522,14 @@ export default function ReviewCommentsModal({ isOpen, onClose, review, onComment
             {review?.userId ? (
               <Link to={`/mypage/${review.userId}`} style={{ display: 'inline-block' }}>
                 <img
-                  src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl : userIcon}
+                  src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon}
                   alt="프로필"
                   style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', cursor: 'pointer', background: '#222' }}
                 />
               </Link>
             ) : (
               <img
-                src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl : userIcon}
+                src={review.userProfileImageUrl && review.userProfileImageUrl.trim() !== '' ? review.userProfileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon}
                 alt="프로필"
                 style={{ width: 32, height: 32, borderRadius: 50, objectFit: 'cover', background: '#222' }}
               />

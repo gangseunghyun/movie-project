@@ -76,7 +76,7 @@ export default function FilmerExtraInfoPage() {
 
   const handleRecommendNickname = async () => {
     try {
-      const response = await fetch('http://localhost:80/api/users/recommend-nickname');
+      const response = await fetch('/api/users/recommend-nickname');
       const data = await response.json();
       if (data.nicknames && data.nicknames.length > 0) {
         // 예시: 첫 번째 추천 닉네임을 입력란에 자동으로 넣기
@@ -98,7 +98,7 @@ export default function FilmerExtraInfoPage() {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:80/api/social-join-complete', {
+      const response = await fetch('/api/social-join-complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -114,7 +114,7 @@ export default function FilmerExtraInfoPage() {
 
       if (data.success) {
         // 소셜 회원가입 성공 후 현재 유저 정보 받아오기
-        fetch('http://localhost:80/api/current-user', { credentials: 'include' })
+        fetch('/api/current-user', { credentials: 'include' })
           .then(res => res.json())
           .then(currentUserData => {
             if (currentUserData.success && currentUserData.user) {

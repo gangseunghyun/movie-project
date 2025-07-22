@@ -4,9 +4,12 @@ import com.movie.movie_backend.entity.MovieDetail;
 import com.movie.movie_backend.repository.PRDMovieRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -46,8 +49,15 @@ public class PRDMovieService {
         movieRepository.findByMovieCd(movieCd).ifPresent(movieRepository::delete);
     }
 
-    public List<MovieDetail> getAllMovieDetails() {
-        return movieRepository.findAll();
+    public List<MovieDetail> getAllMoviesPaged(int chunkSize) {
+        List<MovieDetail> allMovies = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieDetail> moviePage;
+        do {
+            moviePage = movieRepository.findAll(PageRequest.of(page++, size));
+            allMovies.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
+        return allMovies;
     }
 
     public Optional<MovieDetail> getMovieDetailByCode(String movieCd) {

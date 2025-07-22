@@ -12,7 +12,7 @@ export default function FindIdPage() {
     e.preventDefault();
     setResult(null);
     try {
-      const response = await fetch('http://localhost:80/api/find-id', {
+      const response = await fetch('/api/find-id', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

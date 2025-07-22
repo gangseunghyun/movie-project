@@ -144,34 +144,34 @@ public class RatingController {
     /**
      * 평균 별점이 높은 영화 TOP-10 조회
      */
-    @GetMapping("/top-rated")
-    public ResponseEntity<Map<String, Object>> getTopRatedMovies(@RequestParam(defaultValue = "10") int limit) {
-        try {
-            log.info("평균 별점이 높은 영화 TOP-{} 조회", limit);
+    // @GetMapping("/api/ratings/top-rated")
+    // public ResponseEntity<?> getTopRatedMovies(@RequestParam int limit) {
+    //     try {
+    //         log.info("평균 별점이 높은 영화 TOP-{} 조회", limit);
             
-            List<MovieDetail> topRatedMovies = tmdbPosterService.getTopRatedMovies(limit);
-            User currentUser = getCurrentUser();
-            List<MovieDetailDto> movieDtos = topRatedMovies.stream()
-                    .map(md -> movieDetailMapper.toDto(
-                        md,
-                        likeRepository.countByMovieDetail(md),
-                        currentUser != null && likeRepository.existsByMovieDetailAndUser(md, currentUser)
-                    ))
-                    .toList();
+    //         List<MovieDetail> topRatedMovies = tmdbPosterService.getTopRatedMovies(limit);
+    //         User currentUser = getCurrentUser();
+    //         List<MovieDetailDto> movieDtos = topRatedMovies.stream()
+    //                 .map(md -> movieDetailMapper.toDto(
+    //                     md,
+    //                     likeRepository.countByMovieDetail(md),
+    //                     currentUser != null && likeRepository.existsByMovieDetailAndUser(md, currentUser)
+    //                 ))
+    //                 .toList();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", movieDtos);
-            response.put("count", movieDtos.size());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("평균 별점이 높은 영화 조회 실패", e);
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "평균 별점이 높은 영화 조회에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
+    //         Map<String, Object> response = new HashMap<>();
+    //         response.put("success", true);
+    //         response.put("data", movieDtos);
+    //         response.put("count", movieDtos.size());
+    //         return ResponseEntity.ok(response);
+    //     } catch (Exception e) {
+    //         log.error("평균 별점이 높은 영화 조회 실패", e);
+    //         Map<String, Object> response = new HashMap<>();
+    //         response.put("success", false);
+    //         response.put("message", "평균 별점이 높은 영화 조회에 실패했습니다: " + e.getMessage());
+    //         return ResponseEntity.badRequest().body(response);
+    //     }
+    // }
 
 
 

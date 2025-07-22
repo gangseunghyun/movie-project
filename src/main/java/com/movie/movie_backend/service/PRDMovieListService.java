@@ -14,6 +14,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import com.movie.movie_backend.constant.MovieStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Slf4j
 @Service
@@ -192,5 +194,28 @@ public class PRDMovieListService {
      */
     public long getMovieCountByStatus(MovieStatus status) {
         return movieListRepository.findByStatus(status).size();
+    }
+
+    public List<MovieList> getAllMovieListsPaged(int chunkSize) {
+        List<MovieList> result = new ArrayList<>();
+        int page = 0;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(moviePage.getContent());
+            page++;
+        } while (!moviePage.isLast());
+        return result;
+    }
+
+    private List<MovieList> getAllMovieListsChunked() {
+        List<MovieList> allMovieLists = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page++, size));
+            allMovieLists.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
+        return allMovieLists;
     }
 } 

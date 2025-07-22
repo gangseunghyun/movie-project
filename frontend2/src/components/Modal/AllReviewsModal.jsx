@@ -147,7 +147,7 @@ export default function AllReviewsModal({ open, onClose, movieId, onCommentClick
                 <div className={styles.commentHeader}>
                   <div className={styles.commentHeaderLeft}>
                     <img
-                      src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl : userIcon}
+                      src={comment.userProfileImageUrl && comment.userProfileImageUrl.trim() !== '' ? comment.userProfileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon}
                       alt="프로필"
                       className={styles.commentUserProfileImage}
                     />

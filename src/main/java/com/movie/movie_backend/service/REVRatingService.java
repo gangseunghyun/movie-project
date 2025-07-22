@@ -13,11 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -45,7 +48,7 @@ public class REVRatingService {
                 .orElseThrow(() -> new RuntimeException("영화를 찾을 수 없습니다: " + movieCd));
         
         // 기존 별점 조회
-        Optional<Rating> existingRating = ratingRepository.findAll().stream()
+        Optional<Rating> existingRating = getAllRatingsChunked().stream()
                 .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
                                 rating.getMovieDetail().getMovieCd().equals(movieCd))
                 .findFirst();
@@ -90,7 +93,7 @@ public class REVRatingService {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
         // 기존 별점 조회
-        Optional<Rating> existingRating = ratingRepository.findAll().stream()
+        Optional<Rating> existingRating = getAllRatingsChunked().stream()
                 .filter(rating -> rating.getUser().getId().equals(user.getId()) && 
                                 rating.getMovieDetail().getMovieCd().equals(movieCd))
                 .findFirst();
@@ -125,7 +128,7 @@ public class REVRatingService {
         }
         
         // 별점 조회
-        Optional<Rating> rating = ratingRepository.findAll().stream()
+        Optional<Rating> rating = getAllRatingsChunked().stream()
                 .filter(r -> r.getUser().getId().equals(user.getId()) && 
                            r.getMovieDetail().getMovieCd().equals(movieCd))
                 .findFirst();
@@ -145,7 +148,7 @@ public class REVRatingService {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         
         // 별점 조회
-        List<Rating> ratings = ratingRepository.findAll().stream()
+        List<Rating> ratings = getAllRatingsChunked().stream()
                 .filter(rating -> rating.getUser().getId().equals(user.getId()))
                 .toList();
         
@@ -168,6 +171,17 @@ public class REVRatingService {
     @Transactional(readOnly = true)
     public long getRatingCountByMovieDetail(String movieCd) {
         return ratingRepository.countByMovieDetailMovieCd(movieCd);
+    }
+
+    private List<Rating> getAllRatingsChunked() {
+        List<Rating> allRatings = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<Rating> ratingPage;
+        do {
+            ratingPage = ratingRepository.findAll(PageRequest.of(page++, size));
+            allRatings.addAll(ratingPage.getContent());
+        } while (ratingPage.hasNext());
+        return allRatings;
     }
     
     /**

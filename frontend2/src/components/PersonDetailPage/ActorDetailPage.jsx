@@ -19,10 +19,12 @@ export default function ActorDetailPage() {
   const [likedByMe, setLikedByMe] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
 
+  const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
   // 좋아요 상태 조회 함수 (useEffect 밖으로 이동)
   const fetchLikeStatus = async () => {
     try {
-      const res = await fetch(`http://localhost:80/api/person/actor/${id}/like-status`, {
+      const res = await fetch(`/api/person/actor/${id}/like-status`, {
         credentials: 'include',
       });
       if (res.ok) {
@@ -41,7 +43,7 @@ export default function ActorDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:80/api/person/actor/${id}`, {
+        const res = await fetch(`/api/person/actor/${id}`, {
           credentials: 'include',
         });
         if (!res.ok) throw new Error('배우 정보를 불러오지 못했습니다.');
@@ -76,7 +78,7 @@ export default function ActorDetailPage() {
 
     try {
       const method = prevLikedByMe ? 'DELETE' : 'POST';
-      const res = await fetch(`http://localhost:80/api/person/actor/${id}/like`, {
+      const res = await fetch(`/api/person/actor/${id}/like`, {
         method,
         credentials: 'include',
       });
@@ -111,7 +113,7 @@ export default function ActorDetailPage() {
       <div className={styles.actorCard}>
         <div className={styles.actorImg}>
           <img
-            src={actor.photoUrl ? actor.photoUrl : userIcon}
+            src={actor.photoUrl ? `${SERVER_URL}${actor.photoUrl}` : userIcon}
             alt={actor.name}
             className={styles.actorPhoto}
           />

@@ -10,6 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDate;
 
 @Repository
 public interface PRDMovieListRepository extends JpaRepository<MovieList, String> {
@@ -28,6 +31,11 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
      * 영화명으로 검색 (부분 일치)
      */
     List<MovieList> findByMovieNmContainingIgnoreCase(String movieNm);
+    
+    /**
+     * 영화명으로 검색 (부분 일치)
+     */
+    Page<MovieList> findByMovieNmContainingIgnoreCase(String movieNm, Pageable pageable);
     
     /**
      * 영화명으로 검색 (단어별 검색)
@@ -103,5 +111,8 @@ public interface PRDMovieListRepository extends JpaRepository<MovieList, String>
      */
     List<MovieList> findByKmdbIdIsNotNull();
     
+    Page<MovieList> findByStatusOrOpenDtAfter(com.movie.movie_backend.constant.MovieStatus status, java.time.LocalDate openDt, org.springframework.data.domain.Pageable pageable);
+    Page<MovieList> findByStatusOrOpenDtBetween(String status, LocalDate from, LocalDate to, Pageable pageable);
+    Page<MovieList> findByStatusOrOpenDtBefore(String status, LocalDate openDt, Pageable pageable);
 
 } 

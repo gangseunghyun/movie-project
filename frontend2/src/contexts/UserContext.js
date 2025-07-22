@@ -9,7 +9,7 @@ export function UserProvider({ children }) {
 
     useEffect(() => {
         // 앱이 처음 로드될 때 서버에서 유저 정보 불러오기
-        fetch(`http://localhost:80/api/current-user`, { credentials: 'include' })
+        fetch(`/api/current-user`, { credentials: 'include' })
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.user) {

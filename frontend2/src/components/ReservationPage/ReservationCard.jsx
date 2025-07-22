@@ -1,6 +1,14 @@
 import React from 'react';
 import styles from './ReservationPage.module.css';
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
+const getImageUrl = (url) => {
+  if (!url) return '/placeholder-actor.png';
+  if (url.startsWith('http')) return url;
+  return url;
+};
+
 const ReservationCard = ({ reservation, onClick, onCancelClick }) => {
   const { screening, cinema, theater, seats, payments, totalAmount, reservedAt } = reservation;
   const payment = payments?.[0];
@@ -45,7 +53,7 @@ const ReservationCard = ({ reservation, onClick, onCancelClick }) => {
       {/* 영화 포스터 */}
       <div className={styles.posterContainer}>
         <img
-          src={screening?.posterUrl || '/placeholder-actor.png'}
+          src={getImageUrl(screening?.posterUrl)}
           alt={screening?.movieNm || '영화 포스터'}
           className={styles.poster}
           onError={(e) => {

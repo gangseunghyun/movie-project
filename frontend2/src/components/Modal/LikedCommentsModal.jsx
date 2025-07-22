@@ -133,7 +133,7 @@ export default function LikedCommentsModal({
                 <div className={styles.commentHeader}>
                   <div className={styles.commentHeaderLeft}>
                     <img
-                      src={comment.authorProfileImageUrl && comment.authorProfileImageUrl.trim() !== '' ? comment.authorProfileImageUrl : userIcon}
+                      src={comment.authorProfileImageUrl && comment.authorProfileImageUrl.trim() !== '' ? comment.authorProfileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon}
                       alt="프로필"
                       className={styles.commentUserProfileImage}
                       onClick={e => {

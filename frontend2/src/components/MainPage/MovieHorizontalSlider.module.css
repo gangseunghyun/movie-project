@@ -8,8 +8,10 @@
   width: 100%;
   /* 카드 7개+gap */
   margin: 0 auto;
-  overflow: visible;
+  overflow: hidden !important;
   /* 중요! */
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .slider {
@@ -18,6 +20,8 @@
   gap: var(--card-gap);
   flex-direction: row;
   transition: transform 0.4s;
+  width: max-content;
+  max-width: none;
 }
 
 .first {

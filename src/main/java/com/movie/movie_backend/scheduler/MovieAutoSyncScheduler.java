@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import com.movie.movie_backend.entity.MovieList;
 import com.movie.movie_backend.repository.PRDMovieListRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import java.util.ArrayList;
 
 @Slf4j
 @Component
@@ -111,7 +114,14 @@ public class MovieAutoSyncScheduler {
             log.info("1. 관람등급이 누락된 영화 검색 시작...");
             
             // 모든 영화를 가져와서 관람등급이 null이거나 빈 문자열인 영화들 필터링
-            List<MovieList> allMovies = prdMovieListRepository.findAll();
+            List<MovieList> allMovies = new ArrayList<>();
+            int page = 0, size = 1000;
+            Page<MovieList> moviePage;
+            do {
+                moviePage = prdMovieListRepository.findAll(PageRequest.of(page++, size));
+                allMovies.addAll(moviePage.getContent());
+            } while (moviePage.hasNext());
+
             List<MovieList> moviesWithoutGrade = allMovies.stream()
                 .filter(movie -> movie.getWatchGradeNm() == null || movie.getWatchGradeNm().isEmpty())
                 .collect(java.util.stream.Collectors.toList());

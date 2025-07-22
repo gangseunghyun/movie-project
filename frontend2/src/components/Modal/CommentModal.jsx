@@ -61,7 +61,7 @@ const CommentModal = ({
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:80/api/comments', {
+      const response = await fetch('/api/comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

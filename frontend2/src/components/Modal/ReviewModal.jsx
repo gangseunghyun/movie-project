@@ -68,7 +68,7 @@ const ReviewModal = ({
       }
 
       try {
-        const response = await fetch(`http://localhost:80/api/reviews/movie/${movieCd}/check-user-review`, {
+        const response = await fetch(`/api/reviews/movie/${movieCd}/check-user-review`, {
           credentials: 'include',
         });
         const data = await response.json();
@@ -114,7 +114,7 @@ const ReviewModal = ({
 
     setRatingLoading(true);
     try {
-      const response = await fetch('http://localhost:80/api/ratings', {
+      const response = await fetch('/api/ratings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ const ReviewModal = ({
 
       // 별점 저장 성공/실패와 관계없이 항상 최신 별점 재조회
       try {
-        const ratingResponse = await fetch(`http://localhost:80/api/ratings/${movieCd}`, {
+        const ratingResponse = await fetch(`/api/ratings/${movieCd}`, {
           credentials: 'include',
         });
         if (ratingResponse.ok) {
@@ -284,7 +284,7 @@ const ReviewModal = ({
         }
       } else {
         // POST 요청 (작성) - MovieDetailHeader에서 설정한 별점 사용
-        const response = await fetch('http://localhost:80/api/reviews', {
+        const response = await fetch('/api/reviews', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

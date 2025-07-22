@@ -24,6 +24,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.movie.movie_backend.repository.USRUserRepository;
 import com.movie.movie_backend.constant.Provider;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/person")
@@ -50,6 +54,17 @@ public class PersonController {
         String grade = movie.getWatchGradeNm();
         if (grade == null || grade.isBlank()) return false;
         return FORBIDDEN_GRADES.stream().anyMatch(grade::contains);
+    }
+
+    private <T> List<T> getAllChunked(JpaRepository<T, ?> repository) {
+        List<T> all = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<T> pageResult;
+        do {
+            pageResult = repository.findAll(PageRequest.of(page++, size));
+            all.addAll(pageResult.getContent());
+        } while (pageResult.hasNext());
+        return all;
     }
 
     // 감독 상세 + 감독한 영화 리스트
