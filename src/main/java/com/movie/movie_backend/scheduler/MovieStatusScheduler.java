@@ -5,6 +5,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import com.movie.movie_backend.entity.Reservation;
+import com.movie.movie_backend.constant.ReservationStatus;
+import com.movie.movie_backend.repository.ReservationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Component
@@ -12,6 +17,9 @@ import org.springframework.stereotype.Component;
 public class MovieStatusScheduler {
 
     private final KobisApiService kobisApiService;
+
+    @Autowired
+    private ReservationRepository reservationRepository;
 
     /**
      * 영화 상태 자동 관리 스케줄러 (매일 새벽 2시)
@@ -37,5 +45,32 @@ public class MovieStatusScheduler {
         } catch (Exception e) {
             log.error("영화 상태 자동 관리 실패", e);
         }
+    }
+
+    /**
+     * 상영 종료 후 미사용 예매를 만료(EXPIRED)로 자동 변경 (매일 새벽 3시)
+     */
+    @Scheduled(cron = "0 0 3 * * *")
+    public void expireUnusedReservations() {
+        log.info("=== 상영 종료 후 미사용 예매 만료 처리 시작 ===");
+        int expiredCount = 0;
+        LocalDateTime now = LocalDateTime.now();
+        // 모든 예매 중, 상영 종료 && 예매상태 CONFIRMED 인 것만 만료 처리
+        for (Reservation reservation : reservationRepository.findAll()) {
+            try {
+                if (reservation.getStatus() == ReservationStatus.CONFIRMED
+                        && reservation.getScreening() != null
+                        && reservation.getScreening().getEndTime() != null
+                        && reservation.getScreening().getEndTime().isBefore(now)) {
+                    reservation.setStatus(ReservationStatus.EXPIRED);
+                    reservationRepository.save(reservation);
+                    expiredCount++;
+                    log.info("예매 만료 처리: reservationId={}, screeningId={}, endTime={}", reservation.getId(), reservation.getScreening().getId(), reservation.getScreening().getEndTime());
+                }
+            } catch (Exception e) {
+                log.error("예매 만료 처리 중 오류: reservationId={}, error={}", reservation.getId(), e.getMessage());
+            }
+        }
+        log.info("=== 상영 종료 후 미사용 예매 만료 처리 완료 ({}건) ===", expiredCount);
     }
 } 
