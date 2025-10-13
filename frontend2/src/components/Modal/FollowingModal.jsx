@@ -21,7 +21,7 @@ const FollowingModal = ({ followings, onClose }) => {
             followings.map((following) => (
               <div key={following.id} className={styles.followerItem}>
                 <img
-                  src={following.profileImageUrl || require("../../assets/user_icon.png")}
+                  src={following.profileImageUrl ? following.profileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : require("../../assets/user_icon.png")}
                   alt="프로필"
                   className={styles.profileImg}
                 />

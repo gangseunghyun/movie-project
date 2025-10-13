@@ -101,12 +101,10 @@ h2 {
 .castSliderWrapper {
   position: relative;
   width: 100%;
-  /* min-height: auto;  // 완전히 제거 */
-  /* height: auto;      // 필요 없다면 제거 */
   display: flex;
-  align-items: stretch; /* stretch로 변경 */
-  overflow: hidden;
-
+  align-items: stretch;
+  overflow-x: hidden; /* 가로 스크롤 숨김 */
+  overflow-y: hidden;
 }
 
 .castSliderTrack {

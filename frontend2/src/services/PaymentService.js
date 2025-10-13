@@ -3,7 +3,7 @@ import { PAYMENT_CONFIG, PAYMENT_METHODS } from './paymentConfig';
 
 class PaymentService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:80';
+    this.baseURL = process.env.REACT_APP_API_URL || '';
   }
 
   // 결제 요청 생성

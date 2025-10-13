@@ -107,3 +107,9 @@ ollama-latest.zip
 
 # 루트 디렉토리의 .sql 파일만 무시
 /*.sql
+*.drawio
+MCP_Chatbot_Guide.md
+NGINX_FLOW_DOCUMENTATION.md
+docker-compose.yml
+nginx-reverse-proxy.conf
+nginx-reverse-proxy.conf

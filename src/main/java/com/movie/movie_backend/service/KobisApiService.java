@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +59,7 @@ public class KobisApiService {
             log.info("=== TMDB로 MovieDetail 보완 시작 ===");
             
             // MovieList에서 MovieDetail이 없는 영화들 찾기
-            List<MovieList> allMovieLists = prdMovieListRepository.findAll();
+            List<MovieList> allMovieLists = getAllMovieListsChunked();
             List<String> missingMovieCds = new ArrayList<>();
             
             for (MovieList movieList : allMovieLists) {
@@ -118,6 +120,17 @@ public class KobisApiService {
         } catch (Exception e) {
             log.error("TMDB로 MovieDetail 보완 실패", e);
         }
+    }
+
+    private List<MovieList> getAllMovieListsChunked() {
+        List<MovieList> allMovieLists = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = prdMovieListRepository.findAll(PageRequest.of(page++, size));
+            allMovieLists.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
+        return allMovieLists;
     }
 
     /**

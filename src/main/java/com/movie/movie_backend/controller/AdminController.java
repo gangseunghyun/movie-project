@@ -34,6 +34,9 @@ import com.movie.movie_backend.repository.PRDDirectorRepository;
 import com.movie.movie_backend.repository.CastRepository;
 import com.movie.movie_backend.repository.PRDActorRepository;
 import com.movie.movie_backend.service.FileUploadService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 
 @Slf4j
@@ -143,30 +146,59 @@ public class AdminController {
     }
 
     /**
-     * 모든 영화 조회
+     * 모든 영화 조회 (페이징 적용)
      */
     @GetMapping("/movies")
-    public ResponseEntity<List<AdminMovieDto>> getAllMovies() {
-        List<AdminMovieDto> movies = adminMovieService.getAllMoviesAsDto();
-        return ResponseEntity.ok(movies);
+    public ResponseEntity<Map<String, Object>> getAllMovies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AdminMovieDto> movies = adminMovieService.getAllMoviesAsDto(pageable);
+        return ResponseEntity.ok(Map.of(
+            "data", movies.getContent(),
+            "total", movies.getTotalElements(),
+            "page", page,
+            "size", size,
+            "totalPages", movies.getTotalPages()
+        ));
     }
 
     /**
-     * 상태별 영화 조회
+     * 상태별 영화 조회 (페이징 적용)
      */
     @GetMapping("/movies/status/{status}")
-    public ResponseEntity<List<AdminMovieDto>> getMoviesByStatus(@PathVariable MovieStatus status) {
-        List<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(status);
-        return ResponseEntity.ok(movies);
+    public ResponseEntity<Map<String, Object>> getMoviesByStatus(
+            @PathVariable MovieStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(status, pageable);
+        return ResponseEntity.ok(Map.of(
+            "data", movies.getContent(),
+            "total", movies.getTotalElements(),
+            "page", page,
+            "size", size,
+            "totalPages", movies.getTotalPages()
+        ));
     }
 
     /**
-     * 영화명으로 검색
+     * 영화명으로 검색 (페이징 적용)
      */
     @GetMapping("/movies/search")
-    public ResponseEntity<List<AdminMovieDto>> searchMoviesByName(@RequestParam String movieNm) {
-        List<AdminMovieDto> movies = adminMovieService.searchMoviesByNameAsDto(movieNm);
-        return ResponseEntity.ok(movies);
+    public ResponseEntity<Map<String, Object>> searchMoviesByName(
+            @RequestParam String movieNm,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AdminMovieDto> movies = adminMovieService.searchMoviesByNameAsDto(movieNm, pageable);
+        return ResponseEntity.ok(Map.of(
+            "data", movies.getContent(),
+            "total", movies.getTotalElements(),
+            "page", page,
+            "size", size,
+            "totalPages", movies.getTotalPages()
+        ));
     }
 
     // ===== 박스오피스 관리 (왓챠피디아 스타일) =====
@@ -398,7 +430,7 @@ public class AdminController {
     @GetMapping("/movies/coming-soon")
     public ResponseEntity<List<AdminMovieDto>> getComingSoonMovies() {
         try {
-            List<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.COMING_SOON);
+            List<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.COMING_SOON, PageRequest.of(0, 1000)).getContent();
             return ResponseEntity.ok(movies);
         } catch (Exception e) {
             log.error("공개 예정작 조회 실패: {}", e.getMessage());
@@ -412,7 +444,7 @@ public class AdminController {
     @GetMapping("/movies/now-playing")
     public ResponseEntity<List<AdminMovieDto>> getNowPlayingMovies() {
         try {
-            List<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.NOW_PLAYING);
+            List<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.NOW_PLAYING, PageRequest.of(0, 1000)).getContent();
             return ResponseEntity.ok(movies);
         } catch (Exception e) {
             log.error("상영중인 영화 조회 실패: {}", e.getMessage());
@@ -426,7 +458,7 @@ public class AdminController {
     @GetMapping("/movies/ended")
     public ResponseEntity<List<AdminMovieDto>> getEndedMovies() {
         try {
-            List<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.ENDED);
+            List<AdminMovieDto> movies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.ENDED, PageRequest.of(0, 1000)).getContent();
             return ResponseEntity.ok(movies);
         } catch (Exception e) {
             log.error("상영 종료된 영화 조회 실패: {}", e.getMessage());
@@ -857,7 +889,7 @@ public class AdminController {
         try {
             log.info("2024년 영화 상태 정리 시작");
             
-            List<AdminMovieDto> comingSoonMovies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.COMING_SOON);
+            List<AdminMovieDto> comingSoonMovies = adminMovieService.getMoviesByStatusAsDto(MovieStatus.COMING_SOON, PageRequest.of(0, 1000)).getContent();
             int updatedCount = 0;
             
             for (AdminMovieDto movie : comingSoonMovies) {

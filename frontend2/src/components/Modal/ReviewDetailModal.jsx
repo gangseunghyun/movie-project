@@ -19,12 +19,12 @@ const ReviewDetailModal = ({ open, onClose, comment, reviewId, fetchComments, on
     try {
       let res;
       if (likedByMe) {
-        res = await fetch(`http://localhost:80/api/reviews/dto/${comment.id}/like`, {
+        res = await fetch(`/api/reviews/dto/${comment.id}/like`, {
           method: 'DELETE',
           credentials: 'include',
         });
       } else {
-        res = await fetch(`http://localhost:80/api/reviews/dto/${comment.id}/like`, {
+        res = await fetch(`/api/reviews/dto/${comment.id}/like`, {
           method: 'POST',
           credentials: 'include',
         });

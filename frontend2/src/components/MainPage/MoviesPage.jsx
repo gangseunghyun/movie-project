@@ -32,6 +32,7 @@ export default function MoviesPage() {
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [selectedSort, setSelectedSort] = useState('tmdb_popularity');
   const isFirstLoad = useRef(true);
+  // movieListRef 관련 코드 제거
 
   // 완전히 독립적인 fetchMovies
   const fetchFilteredMovies = async (targetPage = 0, genresArr = selectedGenres, sortType = selectedSort) => {
@@ -46,7 +47,8 @@ export default function MoviesPage() {
       const data = await res.json();
       const newMovies = data.data || [];
       setMovies(prev => targetPage === 0 ? newMovies : [...prev, ...newMovies]);
-      setHasMore(newMovies.length === 14);
+      // hasMore 계산을 page, totalPages 기반으로 변경
+      setHasMore((data.page + 1) < (data.totalPages || 1));
       setLoading(false);
     } catch (err) {
       setError('영화 목록을 불러오지 못했습니다.');
@@ -75,7 +77,7 @@ export default function MoviesPage() {
     }
   }, [page]);
 
-  // 무한스크롤 이벤트
+  // 무한스크롤 이벤트 (window에 붙임)
   useEffect(() => {
     const handleScroll = () => {
       if (

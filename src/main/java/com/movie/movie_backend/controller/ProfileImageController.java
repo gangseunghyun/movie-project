@@ -137,8 +137,8 @@ public class ProfileImageController {
     @GetMapping("/images/{filename}")
     public ResponseEntity<Resource> getProfileImage(@PathVariable String filename) {
         try {
-            // 파일 경로 설정 (application.properties에서 설정한 경로 사용)
-            Path filePath = Paths.get("/uploads/profile-images").resolve(filename);
+            // 파일 경로 설정 (운영 서버 경로 사용)
+            Path filePath = Paths.get("/home/ec2-user/movie-project/uploads/profile-images").resolve(filename);
             Resource resource = new UrlResource(filePath.toUri());
             
             if (resource.exists() && resource.isReadable()) {

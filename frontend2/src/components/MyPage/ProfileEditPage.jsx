@@ -26,7 +26,7 @@ export default function ProfileEditPage() {
     e.preventDefault();
     if (error) return;
     try {
-      const response = await fetch('http://localhost:80/api/update-nickname', {
+      const response = await fetch('/api/update-nickname', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

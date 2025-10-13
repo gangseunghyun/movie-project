@@ -47,7 +47,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     }
     try {
       // 팔로워 수 가져오기
-      const followersResponse = await fetch(`http://localhost:80/api/users/${userId}/followers`, {
+      const followersResponse = await fetch(`/api/users/${userId}/followers`, {
         credentials: 'include',
       });
       if (followersResponse.ok) {
@@ -57,7 +57,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         console.error('팔로워 정보를 가져오는데 실패했습니다.');
       }
       // 팔로잉 수 가져오기 (API 엔드포인트가 있다면)
-      const followingResponse = await fetch(`http://localhost:80/api/users/${userId}/following`, {
+      const followingResponse = await fetch(`/api/users/${userId}/following`, {
         credentials: 'include',
       });
       if (followingResponse.ok) {
@@ -75,7 +75,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     const userId = targetUser ? targetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
     if (!userId) return;
     try {
-      const response = await fetch(`http://localhost:80/api/users/${userId}/followers`, {
+      const response = await fetch(`/api/users/${userId}/followers`, {
         credentials: 'include',
       });
       if (response.ok) {
@@ -94,7 +94,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     const userId = targetUser ? targetUser.id : (localTempUserInfo ? localTempUserInfo.id : (targetUserId || user?.id));
     if (!userId) return;
     try {
-      const response = await fetch(`http://localhost:80/api/users/${userId}/following`, {
+      const response = await fetch(`/api/users/${userId}/following`, {
         credentials: 'include',
       });
       if (response.ok) {
@@ -143,7 +143,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
       }
 
       try {
-        const response = await fetch(`http://localhost:80/api/users/${userId}/preferred-genres`, {
+        const response = await fetch(`/api/users/${userId}/preferred-genres`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -175,7 +175,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     const checkFollowStatus = async () => {
       try {
         // 현재 로그인한 사용자가 해당 유저를 팔로우하고 있는지 확인
-        const response = await fetch(`http://localhost:80/api/users/${displayUserId}/followers`, {
+        const response = await fetch(`/api/users/${displayUserId}/followers`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -201,8 +201,8 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     setIsLoading(true);
     try {
       const url = isFollowing 
-        ? `http://localhost:80/api/users/${displayUserId}/unfollow`
-        : `http://localhost:80/api/users/${displayUserId}/follow`;
+        ? `/api/users/${displayUserId}/unfollow`
+        : `/api/users/${displayUserId}/follow`;
       
       const method = isFollowing ? 'DELETE' : 'POST';
       
@@ -230,7 +230,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:80/api/logout", {
+      const response = await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -240,7 +240,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         localStorage.removeItem("autoLogin");
         localStorage.removeItem("user");
         //("로그아웃 성공(test).");
-        window.location.href = "http://localhost:3000/login";
+        window.location.href = "/login";
       } else {
         alert(data.message || "로그아웃에 실패했습니다.");
       }
@@ -263,7 +263,7 @@ const MyPageHeader = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
     }
   }, [isOwnPage]);
 
-  const profileImageUrl = displayUser && displayUser.profileImageUrl ? displayUser.profileImageUrl : userProfile;
+  const profileImageUrl = displayUser && displayUser.profileImageUrl ? displayUser.profileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userProfile;
 
   if (loading) {
     return (

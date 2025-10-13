@@ -1380,8 +1380,26 @@ public class UserController {
     }
 
     private ResponseEntity<?> getSocialRecommendationInternal(Long userId) {
+        // userId 유효성 및 존재 여부 체크
+        if (userId == null) {
+            return ResponseEntity.ok(java.util.Map.of(
+                "success", false,
+                "message", "유효하지 않은 사용자 ID입니다.",
+                "recommender", null,
+                "movies", java.util.Collections.emptyList()
+            ));
+        }
+        var userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.ok(java.util.Map.of(
+                "success", false,
+                "message", "존재하지 않는 사용자입니다.",
+                "recommender", null,
+                "movies", java.util.Collections.emptyList()
+            ));
+        }
         var following = userService.getFollowing(userId);
-        if (following.isEmpty()) {
+        if (following == null || following.isEmpty()) {
             return ResponseEntity.ok(java.util.Map.of(
                 "success", true,
                 "message", "팔로잉한 유저가 없습니다.",
@@ -1395,10 +1413,17 @@ public class UserController {
             .filter(java.util.Objects::nonNull)
             .filter(f -> {
                 boolean hasLiked = f.getLikes() != null && !f.getLikes().isEmpty();
-                boolean hasHighRating = f.getRatings() != null && f.getRatings().stream().anyMatch(r -> r.getScore() >= 4.0);
+                boolean hasHighRating = f.getRatings() != null && f.getRatings().stream().anyMatch(r -> {
+                    try {
+                        Double score = r != null ? r.getScore() : null;
+                        return score != null && score >= 4.0;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                });
                 return hasLiked || hasHighRating;
             }).toList();
-        if (candidates.isEmpty()) {
+        if (candidates == null || candidates.isEmpty()) {
             return ResponseEntity.ok(java.util.Map.of(
                 "success", true,
                 "message", "추천할 만한 팔로잉 유저가 없습니다.",
@@ -1411,8 +1436,15 @@ public class UserController {
         int seed = (userId + minuteKey).hashCode();
         java.util.Random random = new java.util.Random(seed);
         var recommender = candidates.get(random.nextInt(candidates.size()));
-        List<MovieDetail> likedMovies = recommender.getLikes() == null ? java.util.Collections.emptyList() : recommender.getLikes().stream().map(like -> like.getMovieDetail()).toList();
-        List<MovieDetail> highRatedMovies = recommender.getRatings() == null ? java.util.Collections.emptyList() : recommender.getRatings().stream().filter(r -> r.getScore() >= 4.0).map(r -> r.getMovieDetail()).toList();
+        java.util.List<MovieDetail> likedMovies = recommender.getLikes() == null ? java.util.Collections.emptyList() : recommender.getLikes().stream().map(like -> like.getMovieDetail()).filter(java.util.Objects::nonNull).toList();
+        java.util.List<MovieDetail> highRatedMovies = recommender.getRatings() == null ? java.util.Collections.emptyList() : recommender.getRatings().stream().filter(r -> {
+            try {
+                Double score = r != null ? r.getScore() : null;
+                return score != null && score >= 4.0;
+            } catch (Exception e) {
+                return false;
+            }
+        }).map(r -> r.getMovieDetail()).filter(java.util.Objects::nonNull).toList();
         java.util.Set<MovieDetail> movieSet = new java.util.LinkedHashSet<>(likedMovies);
         movieSet.addAll(highRatedMovies);
         if (movieSet.isEmpty()) {
@@ -1426,7 +1458,7 @@ public class UserController {
                 "movies", java.util.Collections.emptyList()
             ));
         }
-        List<java.util.Map<String, Object>> movies = movieSet.stream()
+        java.util.List<java.util.Map<String, Object>> movies = movieSet.stream()
             .map(md -> {
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
                 m.put("movieCd", md.getMovieCd() != null ? md.getMovieCd() : "");

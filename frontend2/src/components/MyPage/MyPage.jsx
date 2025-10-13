@@ -23,7 +23,7 @@ const MyPage = () => {
 
       // userId로 사용자 정보 조회
       try {
-        const response = await fetch(`http://localhost:80/api/users/${userId}/info`, {
+        const response = await fetch(`/api/users/${userId}/info`, {
           credentials: 'include',
         });
         

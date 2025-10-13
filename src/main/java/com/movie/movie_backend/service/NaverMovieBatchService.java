@@ -15,11 +15,14 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -42,7 +45,13 @@ public class NaverMovieBatchService {
 
     @Transactional
     public void updatePosterAndDirectorFromNaver() {
-        List<MovieList> movieLists = movieListRepository.findAll();
+        List<MovieList> movieLists = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page++, size));
+            movieLists.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
         int posterUpdated = 0, directorUpdated = 0;
 
         for (MovieList movie : movieLists) {
@@ -139,5 +148,17 @@ public class NaverMovieBatchService {
             log.warn("네이버 감독 검색 오류: {} ({}) - {}", movie.getMovieNm(), movie.getOpenDt(), e.getMessage());
         }
         return null;
+    }
+
+    public List<MovieList> getAllMovieListsPaged(int chunkSize) {
+        List<MovieList> result = new ArrayList<>();
+        int page = 0;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(moviePage.getContent());
+            page++;
+        } while (!moviePage.isLast());
+        return result;
     }
 } 

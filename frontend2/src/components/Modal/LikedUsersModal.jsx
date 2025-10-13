@@ -14,7 +14,7 @@ export default function LikedUsersModal({ isOpen, onClose, reviewId }) {
     if (!isOpen || !reviewId) return;
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:80/api/reviews/${reviewId}/liked-users`, {
+          fetch(`/api/reviews/${reviewId}/liked-users`, {
       credentials: 'include',
     })
       .then(res => res.json())
@@ -32,7 +32,7 @@ export default function LikedUsersModal({ isOpen, onClose, reviewId }) {
   // 내 id 가져오기 (로그인 상태 확인)
   useEffect(() => {
     if (!isOpen) return;
-    fetch('http://localhost:80/api/current-user', { credentials: 'include' })
+            fetch('/api/current-user', { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data.success && data.user && data.user.id) {
@@ -54,7 +54,7 @@ export default function LikedUsersModal({ isOpen, onClose, reviewId }) {
     setFollowLoading(prev => ({ ...prev, [userId]: true }));
     try {
       const method = isFollowing ? 'DELETE' : 'POST';
-      const url = `http://localhost:80/api/users/${userId}/${isFollowing ? 'unfollow' : 'follow'}`;
+      const url = `/api/users/${userId}/${isFollowing ? 'unfollow' : 'follow'}`;
       const response = await fetch(url, {
         method,
         credentials: 'include',
@@ -89,7 +89,7 @@ export default function LikedUsersModal({ isOpen, onClose, reviewId }) {
               <div className={styles.userRow}>
                 <img
                   className={styles.profileImage}
-                  src={user.profileImageUrl || userIcon}
+                  src={user.profileImageUrl ? user.profileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon}
                   alt="프로필"
                   onError={e => { e.target.src = userIcon; }}
                 />

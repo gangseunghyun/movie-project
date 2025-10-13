@@ -15,7 +15,7 @@ export default function FindPasswordPage() {
         setLoading(true);
         setMessage('');
         try {
-            const res = await fetch('http://localhost:80/api/forgot-password', {
+            const res = await fetch('/api/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),

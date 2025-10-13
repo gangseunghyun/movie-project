@@ -49,7 +49,7 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
         .filter(id => id);
       
       if (selectedSeatIds.length > 0) {
-        await fetch('http://localhost:80/api/bookings/unlock-seats', {
+        await fetch('/api/bookings/unlock-seats', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const PaymentModal = ({ isOpen, onClose, bookingInfo, onPay }) => {
               })
               .filter(id => id);
             
-            await fetch('http://localhost:80/api/bookings/unlock-seats', {
+            await fetch('/api/bookings/unlock-seats', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

@@ -13,11 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -169,6 +172,17 @@ public class REVRatingService {
     @Transactional(readOnly = true)
     public long getRatingCountByMovieDetail(String movieCd) {
         return ratingRepository.countByMovieDetailMovieCd(movieCd);
+    }
+
+    private List<Rating> getAllRatingsChunked() {
+        List<Rating> allRatings = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<Rating> ratingPage;
+        do {
+            ratingPage = ratingRepository.findAll(PageRequest.of(page++, size));
+            allRatings.addAll(ratingPage.getContent());
+        } while (ratingPage.hasNext());
+        return allRatings;
     }
     
     /**

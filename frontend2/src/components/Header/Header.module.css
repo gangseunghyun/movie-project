@@ -270,7 +270,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
+  right: 0;
   z-index: 1000;
   background: var(--color-bg, #181c22);
   padding: 1.5rem 0;

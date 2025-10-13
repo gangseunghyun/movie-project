@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -41,7 +43,14 @@ public class TmdbStillcutService {
      */
     @Transactional
     public void updateStillcutsForAllMovies() {
-        List<MovieList> movieLists = movieListRepository.findAll();
+        List<MovieList> movieLists = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page++, size));
+            movieLists.addAll(moviePage.getContent());
+        } while (moviePage.hasNext());
+
         int updated = 0, failed = 0;
 
         for (MovieList movieList : movieLists) {
@@ -235,5 +244,17 @@ public class TmdbStillcutService {
         }
         
         return null;
+    }
+
+    public List<MovieList> getAllMovieListsPaged(int chunkSize) {
+        List<MovieList> result = new ArrayList<>();
+        int page = 0;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(moviePage.getContent());
+            page++;
+        } while (!moviePage.isLast());
+        return result;
     }
 } 

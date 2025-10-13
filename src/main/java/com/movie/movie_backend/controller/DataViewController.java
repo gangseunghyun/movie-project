@@ -58,10 +58,14 @@ import com.movie.movie_backend.repository.PRDDirectorRepository;
 import com.movie.movie_backend.repository.MovieDetailRepository;
 import java.util.HashSet;
 import java.util.Arrays;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 @Slf4j
 @Controller
-@RequestMapping("/data")
 @RequiredArgsConstructor
 @Tag(name = "Data View", description = "데이터 조회 및 관리 API")
 public class DataViewController {
@@ -91,7 +95,7 @@ public class DataViewController {
     /**
      * 데이터 조회 메인 페이지
      */
-    @GetMapping
+    @GetMapping("/data")
     public String dataViewMain() {
         return "data-view";
     }
@@ -167,21 +171,15 @@ public class DataViewController {
     public ResponseEntity<Map<String, Object>> getMovieListData(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
         try {
-            List<MovieList> movieList = movieListRepository.findAll();
-            int total = movieList.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
-            
-            List<MovieList> pagedList = new ArrayList<>(movieList.subList(start, end));
-            
+            Pageable pageable = PageRequest.of(page, size);
+            Page<MovieList> moviePage = movieListRepository.findAll(pageable);
             return ResponseEntity.ok(Map.of(
-                "data", pagedList,
-                "total", total,
+                "data", moviePage.getContent(),
+                "total", moviePage.getTotalElements(),
                 "page", page,
                 "size", size,
-                "totalPages", (int) Math.ceil((double) total / size)
+                "totalPages", moviePage.getTotalPages()
             ));
         } catch (Exception e) {
             log.error("MovieList 데이터 조회 실패", e);
@@ -215,20 +213,23 @@ public class DataViewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "date") String sort) {
-        
         try {
-            List<MovieDetail> movieDetails;
+            Pageable pageable;
+            Page<MovieDetail> moviePage = null;
+            List<MovieDetail> movieDetails = null;
             
-            // 정렬 옵션에 따라 데이터 조회
             switch (sort) {
                 case "date":
-                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 개봉일 최신순
+                    pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "openDt"));
+                    moviePage = movieRepository.findAll(pageable);
                     break;
                 case "nameAsc":
-                    movieDetails = movieRepository.findAllByOrderByMovieNmAsc(); // 이름 오름차순
+                    pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "movieNm"));
+                    moviePage = movieRepository.findAll(pageable);
                     break;
                 case "nameDesc":
-                    movieDetails = movieRepository.findAllByOrderByMovieNmDesc(); // 이름 내림차순
+                    pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "movieNm"));
+                    moviePage = movieRepository.findAll(pageable);
                     break;
                 case "rating":
                     movieDetails = movieRepository.findAll();
@@ -245,24 +246,32 @@ public class DataViewController {
                     });
                     
                     movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
-                    break;
+                    
+                    // 페이지네이션 적용
+                    int total = movieDetails.size();
+                    int start = page * size;
+                    int end = Math.min(start + size, total);
+                    List<MovieDetail> pagedList = start < total ? movieDetails.subList(start, end) : new ArrayList<>();
+                    
+                    return ResponseEntity.ok(Map.of(
+                        "data", pagedList,
+                        "total", total,
+                        "page", page,
+                        "size", size,
+                        "totalPages", (int) Math.ceil((double) total / size)
+                    ));
                 default:
-                    movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 기본값: 개봉일 최신순
+                    pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "openDt"));
+                    moviePage = movieRepository.findAll(pageable);
                     break;
             }
             
-            int total = movieDetails.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
-            
-            List<MovieDetail> pagedList = new ArrayList<>(movieDetails.subList(start, end));
-            
             return ResponseEntity.ok(Map.of(
-                "data", pagedList,
-                "total", total,
+                "data", moviePage.getContent(),
+                "total", moviePage.getTotalElements(),
                 "page", page,
                 "size", size,
-                "totalPages", (int) Math.ceil((double) total / size)
+                "totalPages", moviePage.getTotalPages()
             ));
         } catch (Exception e) {
             log.error("MovieDetail 데이터 조회 실패", e);
@@ -390,77 +399,89 @@ public class DataViewController {
             @RequestParam(defaultValue = "date") String sort,
             @RequestParam(required = false) String movieCd,
             HttpServletRequest request) {
-        
         try {
-            List<MovieDetail> movieDetails;
-            
-            // movieCd가 있으면 특정 영화만 조회
+            List<MovieDetail> movieDetails = List.of();
+            int total = 0;
+            int totalPages = 0;
             if (movieCd != null && !movieCd.trim().isEmpty()) {
                 MovieDetail movieDetail = movieRepository.findByMovieCd(movieCd).orElse(null);
                 if (movieDetail == null) {
-                    return ResponseEntity.ok(Map.of(
-                        "data", List.of(),
-                        "total", 0,
-                        "page", page,
-                        "size", size,
-                        "totalPages", 0
-                    ));
+                    return ResponseEntity.notFound().build();
                 }
                 movieDetails = List.of(movieDetail);
+                total = 1;
+                totalPages = 1;
             } else {
-                // 정렬 옵션에 따라 데이터 조회
+                Pageable pageable;
+                Page<MovieDetail> moviePage;
                 switch (sort) {
                     case "date":
-                        movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 개봉일 최신순
+                        pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "openDt"));
+                        moviePage = movieRepository.findAll(pageable);
+                        movieDetails = moviePage.getContent();
+                        total = (int) moviePage.getTotalElements();
+                        totalPages = moviePage.getTotalPages();
                         break;
                     case "nameAsc":
-                        movieDetails = movieRepository.findAllByOrderByMovieNmAsc(); // 이름 오름차순
+                        pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "movieNm"));
+                        moviePage = movieRepository.findAll(pageable);
+                        movieDetails = moviePage.getContent();
+                        total = (int) moviePage.getTotalElements();
+                        totalPages = moviePage.getTotalPages();
                         break;
                     case "nameDesc":
-                        movieDetails = movieRepository.findAllByOrderByMovieNmDesc(); // 이름 내림차순
+                        pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "movieNm"));
+                        moviePage = movieRepository.findAll(pageable);
+                        movieDetails = moviePage.getContent();
+                        total = (int) moviePage.getTotalElements();
+                        totalPages = moviePage.getTotalPages();
                         break;
                     case "rating":
-                        movieDetails = movieRepository.findAll();
+                        List<MovieDetail> allMovies = movieRepository.findAll();
                         // 배치 평점 조회로 성능 최적화
-                        List<String> movieCds = movieDetails.stream()
+                        List<String> movieCds = allMovies.stream()
                                 .map(MovieDetail::getMovieCd)
                                 .collect(Collectors.toList());
                         Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
                         
                         // 평점 정보를 MovieDetail에 설정
-                        movieDetails.forEach(movie -> {
+                        allMovies.forEach(movie -> {
                             Double rating = averageRatings.get(movie.getMovieCd());
                             movie.setAverageRating(rating);
                         });
                         
-                        movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                        allMovies.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                        
+                        // 페이지네이션 적용
+                        total = allMovies.size();
+                        totalPages = (int) Math.ceil((double) total / size);
+                        int start = page * size;
+                        int end = Math.min(start + size, total);
+                        movieDetails = start < total ? allMovies.subList(start, end) : new ArrayList<>();
                         break;
                     default:
-                        movieDetails = movieRepository.findAllByOrderByOpenDtDesc(); // 기본값: 개봉일 최신순
+                        pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "openDt"));
+                        moviePage = movieRepository.findAll(pageable);
+                        movieDetails = moviePage.getContent();
+                        total = (int) moviePage.getTotalElements();
+                        totalPages = moviePage.getTotalPages();
                         break;
                 }
             }
-            
-            int total = movieDetails.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
-            
-            List<MovieDetail> pagedList = new ArrayList<>(movieDetails.subList(start, end));
             User currentUser = getCurrentUser(request);
-            List<MovieDetailDto> dtoList = pagedList.stream()
+            List<MovieDetailDto> dtoList = movieDetails.stream()
                 .map(md -> movieDetailMapper.toDto(
                     md,
                     likeRepository.countByMovieDetail(md),
                     currentUser != null && likeRepository.existsByMovieDetailAndUser(md, currentUser)
                 ))
                 .collect(Collectors.toList());
-            
             return ResponseEntity.ok(Map.of(
                 "data", dtoList,
                 "total", total,
                 "page", page,
                 "size", size,
-                "totalPages", (int) Math.ceil((double) total / size)
+                "totalPages", totalPages
             ));
         } catch (Exception e) {
             log.error("MovieDetail DTO 데이터 조회 실패", e);
@@ -597,26 +618,16 @@ public class DataViewController {
     public ResponseEntity<Map<String, Object>> getMovieListDtoData(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
         try {
-            log.info("MovieList DTO API 호출됨");
-            List<MovieList> movieLists = movieListRepository.findAll();
-            log.info("MovieList 데이터 조회 완료: {}개", movieLists.size());
-            
-            int total = movieLists.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
-            
-            List<MovieList> pagedList = movieLists.subList(start, end);
-            List<MovieListDto> dtoList = movieListMapper.toDtoList(pagedList);
-            log.info("MovieList DTO 변환 완료: {}개", dtoList.size());
-            
+            Pageable pageable = PageRequest.of(page, size);
+            Page<MovieList> moviePage = movieListRepository.findAll(pageable);
+            List<MovieListDto> dtoList = movieListMapper.toDtoList(moviePage.getContent());
             return ResponseEntity.ok(Map.of(
                 "data", dtoList,
-                "total", total,
+                "total", moviePage.getTotalElements(),
                 "page", page,
                 "size", size,
-                "totalPages", (int) Math.ceil((double) total / size)
+                "totalPages", moviePage.getTotalPages()
             ));
         } catch (Exception e) {
             log.error("MovieList DTO 데이터 조회 실패", e);
@@ -726,87 +737,15 @@ public class DataViewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         try {
-            List<MovieList> allMovies = movieListRepository.findAll();
-            LocalDate today = LocalDate.now();
-            
-            List<MovieList> comingSoonMovies = allMovies.stream()
-                    .filter(movie -> {
-                        // status가 COMING_SOON이거나, 개봉일이 오늘보다 늦은 경우
-                        return MovieStatus.COMING_SOON.equals(movie.getStatus()) ||
-                               (movie.getOpenDt() != null && movie.getOpenDt().isAfter(today));
-                    })
-                    .sorted((m1, m2) -> {
-                        if (m1.getOpenDt() == null) return 1;
-                        if (m2.getOpenDt() == null) return -1;
-                        return m1.getOpenDt().compareTo(m2.getOpenDt());
-                    })
-                    .toList();
-            
-            log.info("개봉예정작 필터링 결과: {}개 (전체: {}개)", comingSoonMovies.size(), allMovies.size());
-            
-            int total = comingSoonMovies.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
-            
-            List<MovieList> pagedList = comingSoonMovies.subList(start, end);
-            
-            // MovieDetail 정보도 함께 가져오기
-            List<Map<String, Object>> enrichedData = new ArrayList<>();
-            for (MovieList movieList : pagedList) {
-                Map<String, Object> movieData = new HashMap<>();
-                
-                // MovieList 정보
-                movieData.put("movieCd", movieList.getMovieCd());
-                movieData.put("movieNm", movieList.getMovieNm());
-                movieData.put("movieNmEn", movieList.getMovieNmEn());
-                movieData.put("openDt", movieList.getOpenDt());
-                movieData.put("genreNm", movieList.getGenreNm());
-                movieData.put("nationNm", movieList.getNationNm());
-                movieData.put("watchGradeNm", movieList.getWatchGradeNm());
-                movieData.put("posterUrl", movieList.getPosterUrl());
-                movieData.put("status", movieList.getStatus());
-                
-                // MovieDetail 정보 추가
-                try {
-                    MovieDetail movieDetail = movieRepository.findByMovieCd(movieList.getMovieCd()).orElse(null);
-                    if (movieDetail != null) {
-                        movieData.put("description", movieDetail.getDescription());
-                        movieData.put("showTm", movieDetail.getShowTm());
-                        movieData.put("companyNm", movieDetail.getCompanyNm());
-                        movieData.put("averageRating", movieDetail.getAverageRating());
-                        
-                        // 감독 정보
-                        if (movieDetail.getDirector() != null) {
-                            movieData.put("directorName", movieDetail.getDirector().getName());
-                        } else {
-                            movieData.put("directorName", "");
-                        }
-                    } else {
-                        // MovieDetail이 없는 경우 기본값 설정
-                        movieData.put("description", "");
-                        movieData.put("showTm", 0);
-                        movieData.put("companyNm", "");
-                        movieData.put("averageRating", 0.0);
-                        movieData.put("directorName", "");
-                    }
-                } catch (Exception e) {
-                    log.warn("MovieDetail 조회 실패: {} - {}", movieList.getMovieCd(), e.getMessage());
-                    movieData.put("description", "");
-                    movieData.put("showTm", 0);
-                    movieData.put("companyNm", "");
-                    movieData.put("averageRating", 0.0);
-                    movieData.put("directorName", "");
-                }
-                
-                enrichedData.add(movieData);
-            }
-            
+            Pageable pageable = PageRequest.of(page, size);
+            Page<MovieList> moviePage = movieListRepository.findByStatusOrOpenDtAfter(MovieStatus.COMING_SOON, LocalDate.now(), pageable);
+            List<MovieList> pagedList = moviePage.getContent();
             return ResponseEntity.ok(Map.of(
-                "data", enrichedData,
-                "total", total,
+                "data", pagedList,
+                "total", moviePage.getTotalElements(),
                 "page", page,
                 "size", size,
-                "totalPages", (int) Math.ceil((double) total / size)
+                "totalPages", moviePage.getTotalPages()
             ));
         } catch (Exception e) {
             log.error("개봉예정작 조회 실패", e);
@@ -839,40 +778,17 @@ public class DataViewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         try {
-            List<MovieList> allMovies = movieListRepository.findAll();
+            Pageable pageable = PageRequest.of(page, size);
             LocalDate today = LocalDate.now();
             LocalDate threeMonthsAgo = today.minusMonths(3);
-            
-            List<MovieList> nowPlayingMovies = allMovies.stream()
-                    .filter(movie -> {
-                        // status가 NOW_PLAYING이거나, 개봉일이 3개월 이내인 경우
-                        return MovieStatus.NOW_PLAYING.equals(movie.getStatus()) ||
-                               (movie.getOpenDt() != null && 
-                                movie.getOpenDt().isBefore(today.plusDays(1)) && // 오늘까지 개봉
-                                movie.getOpenDt().isAfter(threeMonthsAgo)); // 3개월 이내 개봉
-                    })
-                    .sorted((m1, m2) -> {
-                        if (m1.getOpenDt() == null) return 1;
-                        if (m2.getOpenDt() == null) return -1;
-                        return m2.getOpenDt().compareTo(m1.getOpenDt());
-                    })
-                    .toList();
-            
-            log.info("개봉중인 영화 필터링 결과: {}개 (전체: {}개)", nowPlayingMovies.size(), allMovies.size());
-            
-            int total = nowPlayingMovies.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
-            
-            List<MovieList> pagedList = nowPlayingMovies.subList(start, end);
-            List<MovieListDto> dtoList = movieListMapper.toDtoList(pagedList);
-            
+            Page<MovieList> moviePage = movieListRepository.findByStatusOrOpenDtBetween("NOW_PLAYING", threeMonthsAgo, today, pageable);
+            List<MovieList> pagedList = moviePage.getContent();
             return ResponseEntity.ok(Map.of(
-                "data", dtoList,
-                "total", total,
+                "data", pagedList,
+                "total", moviePage.getTotalElements(),
                 "page", page,
                 "size", size,
-                "totalPages", (int) Math.ceil((double) total / size)
+                "totalPages", moviePage.getTotalPages()
             ));
         } catch (Exception e) {
             log.error("개봉중인 영화 조회 실패", e);
@@ -905,38 +821,16 @@ public class DataViewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         try {
-            List<MovieList> allMovies = movieListRepository.findAll();
-            LocalDate today = LocalDate.now();
-            LocalDate threeMonthsAgo = today.minusMonths(3);
-            
-            List<MovieList> endedMovies = allMovies.stream()
-                    .filter(movie -> {
-                        // status가 ENDED이거나, 개봉일이 3개월보다 오래 전인 경우
-                        return MovieStatus.ENDED.equals(movie.getStatus()) ||
-                               (movie.getOpenDt() != null && movie.getOpenDt().isBefore(threeMonthsAgo));
-                    })
-                    .sorted((m1, m2) -> {
-                        if (m1.getOpenDt() == null) return 1;
-                        if (m2.getOpenDt() == null) return -1;
-                        return m2.getOpenDt().compareTo(m1.getOpenDt());
-                    })
-                    .toList();
-            
-            log.info("상영종료된 영화 필터링 결과: {}개 (전체: {}개)", endedMovies.size(), allMovies.size());
-            
-            int total = endedMovies.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
-            
-            List<MovieList> pagedList = endedMovies.subList(start, end);
-            List<MovieListDto> dtoList = movieListMapper.toDtoList(pagedList);
-            
+            Pageable pageable = PageRequest.of(page, size);
+            LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+            Page<MovieList> moviePage = movieListRepository.findByStatusOrOpenDtBefore("ENDED", threeMonthsAgo, pageable);
+            List<MovieList> pagedList = moviePage.getContent();
             return ResponseEntity.ok(Map.of(
-                "data", dtoList,
-                "total", total,
+                "data", pagedList,
+                "total", moviePage.getTotalElements(),
                 "page", page,
                 "size", size,
-                "totalPages", (int) Math.ceil((double) total / size)
+                "totalPages", moviePage.getTotalPages()
             ));
         } catch (Exception e) {
             log.error("상영종료된 영화 조회 실패", e);
@@ -1208,6 +1102,17 @@ public class DataViewController {
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
+    }
+
+    private <T> List<T> getAllChunked(JpaRepository<T, ?> repository) {
+        List<T> all = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<T> pageResult;
+        do {
+            pageResult = repository.findAll(PageRequest.of(page++, size));
+            all.addAll(pageResult.getContent());
+        } while (pageResult.hasNext());
+        return all;
     }
 
     // 현재 로그인한 사용자 반환 (없으면 null)

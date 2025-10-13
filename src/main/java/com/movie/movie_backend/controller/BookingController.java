@@ -18,7 +18,14 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
+@CrossOrigin(origins = {
+    "http://localhost:3000",
+    "http://localhost",
+    "http://13.222.249.145",
+    "https://13.222.249.145",
+    "http://filmer-movie.duckdns.org",
+    "https://filmer-movie.duckdns.org"
+}, allowCredentials = "true")
 public class BookingController {
 
     @Autowired

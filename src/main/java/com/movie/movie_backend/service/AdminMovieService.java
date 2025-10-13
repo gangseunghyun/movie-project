@@ -38,6 +38,11 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 @Slf4j
 @Service
@@ -441,7 +446,7 @@ public class AdminMovieService {
      * 모든 영화 조회 (관리자용)
      */
     public List<MovieDetail> getAllMovies() {
-        return movieRepository.findAll();
+        return getAllChunked(movieRepository);
     }
 
     /**
@@ -462,7 +467,7 @@ public class AdminMovieService {
      * 모든 태그 조회
      */
     public List<Tag> getAllTags() {
-        return tagRepository.findAll();
+        return getAllChunked(tagRepository);
     }
 
     /**
@@ -548,7 +553,7 @@ public class AdminMovieService {
     public Map<String, Object> updateMovieGenresFromTmdb() {
         log.info("TMDB에서 장르 정보 업데이트 시작");
         
-        List<MovieDetail> allMovies = movieRepository.findAll();
+        List<MovieDetail> allMovies = getAllChunked(movieRepository);
         int updatedCount = 0;
         int failedCount = 0;
         
@@ -606,19 +611,23 @@ public class AdminMovieService {
     /**
      * 모든 영화 조회 (DTO 사용)
      */
-    public List<AdminMovieDto> getAllMoviesAsDto() {
-        return movieRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public Page<AdminMovieDto> getAllMoviesAsDto(Pageable pageable) {
+        Page<MovieDetail> moviePage = movieRepository.findAll(pageable);
+        List<AdminMovieDto> dtoList = moviePage.getContent().stream()
+            .map(this::convertToDto)
+            .toList();
+        return new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
     }
 
     /**
      * 상태별 영화 조회 (DTO 사용)
      */
-    public List<AdminMovieDto> getMoviesByStatusAsDto(MovieStatus status) {
-        return movieListRepository.findByStatus(status).stream()
-            .map(this::convertMovieListToDto)
-            .collect(java.util.stream.Collectors.toList());
+    public Page<AdminMovieDto> getMoviesByStatusAsDto(MovieStatus status, Pageable pageable) {
+        Page<MovieDetail> moviePage = movieRepository.findByMovieListStatus(status, pageable);
+        List<AdminMovieDto> dtoList = moviePage.getContent().stream()
+            .map(this::convertToDto)
+            .toList();
+        return new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
     }
 
     private AdminMovieDto convertMovieListToDto(MovieList movieList) {
@@ -639,10 +648,12 @@ public class AdminMovieService {
     /**
      * 영화명으로 검색 (DTO 사용)
      */
-    public List<AdminMovieDto> searchMoviesByNameAsDto(String movieNm) {
-        return movieRepository.findByMovieNmContainingIgnoreCase(movieNm).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public Page<AdminMovieDto> searchMoviesByNameAsDto(String movieNm, Pageable pageable) {
+        Page<MovieDetail> moviePage = movieRepository.findByMovieNmContainingIgnoreCase(movieNm, pageable);
+        List<AdminMovieDto> dtoList = moviePage.getContent().stream()
+            .map(this::convertToDto)
+            .toList();
+        return new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
     }
 
     /**
@@ -746,7 +757,7 @@ public class AdminMovieService {
         log.info("movie_detail의 genre_nm에서 장르 태그 생성 시작");
         
         Map<String, Object> result = new HashMap<>();
-        List<MovieDetail> allMovies = movieRepository.findAll();
+        List<MovieDetail> allMovies = getAllChunked(movieRepository);
         Set<String> allGenres = new HashSet<>();
         int moviesWithGenres = 0;
         
@@ -823,7 +834,7 @@ public class AdminMovieService {
     public Map<String, Object> updateMovieEnglishTitlesAndGenres() {
         log.info("기존 영화 데이터의 영어 제목과 장르 정보 보완 시작");
         
-        List<MovieDetail> allMovies = movieRepository.findAll();
+        List<MovieDetail> allMovies = getAllChunked(movieRepository);
         int updatedCount = 0;
         int failedCount = 0;
         
@@ -954,7 +965,7 @@ public class AdminMovieService {
         try {
             log.info("=== 애플리케이션 시작 시 기존 영화 데이터 자동 업데이트 시작 ===");
             
-            List<MovieDetail> allMovies = movieRepository.findAll();
+            List<MovieDetail> allMovies = getAllChunked(movieRepository);
             int updatedCount = 0;
             int failedCount = 0;
             
@@ -1009,7 +1020,7 @@ public class AdminMovieService {
      */
     @Transactional
     public Map<String, Object> syncMovieListWithDetail() {
-        List<MovieList> movieLists = movieListRepository.findAll();
+        List<MovieList> movieLists = getAllChunked(movieListRepository);
         int updatedCount = 0;
         int failedCount = 0;
         for (MovieList movieList : movieLists) {
@@ -1091,5 +1102,16 @@ public class AdminMovieService {
         Actor actor = new Actor();
         actor.setName(actorName);
         return actorRepository.save(actor);
+    }
+
+    private <T> List<T> getAllChunked(JpaRepository<T, ?> repository) {
+        List<T> all = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<T> pageResult;
+        do {
+            pageResult = repository.findAll(PageRequest.of(page++, size));
+            all.addAll(pageResult.getContent());
+        } while (pageResult.hasNext());
+        return all;
     }
 } 

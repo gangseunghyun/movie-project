@@ -12,6 +12,7 @@ export default function DefaultLayout({ children }) {
       flexDirection: 'column',
       minHeight: '100vh',
       background: 'var(--color-bg)',
+      position: 'relative',
     }}>
       <Header />
       <main style={{
@@ -19,6 +20,7 @@ export default function DefaultLayout({ children }) {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
+        position: 'relative',
         ...(isMainOrSearchPage ? {} : { alignItems: 'center' })
       }}>
         {children}

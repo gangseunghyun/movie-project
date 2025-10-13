@@ -47,7 +47,7 @@ const BookingPage = () => {
 
   // 영화관 목록 받아오기
   useEffect(() => {
-    fetch('http://localhost:80/api/cinemas', {
+    fetch('/api/cinemas', {
       credentials: 'include',
     })
       .then((res) => {
@@ -70,7 +70,7 @@ const BookingPage = () => {
       setSelectedTheater('');
       return;
     }
-    fetch(`http://localhost:80/api/cinemas/${selectedCinemaId}/theaters`, {
+    fetch(`/api/cinemas/${selectedCinemaId}/theaters`, {
       credentials: 'include',
     })
       .then((res) => {
@@ -97,7 +97,7 @@ const BookingPage = () => {
       return;
     }
     //console.log('상영 스케줄 API 호출:', { selectedTheater, movieId });
-    const url = `http://localhost:80/api/theaters/${selectedTheater}/screenings?movieId=${movieId}`;
+    const url = `/api/theaters/${selectedTheater}/screenings?movieId=${movieId}`;
     //console.log('요청 URL:', url);
     fetch(url, {
       credentials: 'include',
@@ -147,7 +147,7 @@ const BookingPage = () => {
       setSeatInfo([]);
       return;
     }
-    fetch(`http://localhost:80/api/screenings/${selectedScreeningId}/seats`, {
+    fetch(`/api/screenings/${selectedScreeningId}/seats`, {
       credentials: 'include',
     })
       .then((res) => {
@@ -209,7 +209,7 @@ const BookingPage = () => {
     try {
       setLoading(true);
       // 1. LOCKED API 먼저 호출 (좌석 홀드)
-      const lockRes = await axios.post('http://localhost:80/api/bookings/lock-seats', {
+      const lockRes = await axios.post('/api/bookings/lock-seats', {
         screeningId: selectedScreeningId,
         seatIds: selectedSeatIds
       }, { withCredentials: true });
@@ -248,11 +248,11 @@ const BookingPage = () => {
       };
 
       // 3. 예매 확정 API 호출
-      const response = await axios.post('http://localhost:80/api/bookings', bookingData, { withCredentials: true });
+      const response = await axios.post('/api/bookings', bookingData, { withCredentials: true });
       
       if (response.data.success) {
         // 4. 결제정보 저장 API 호출
-        await axios.post('http://localhost:80/api/payments/complete', {
+        await axios.post('/api/payments/complete', {
           imp_uid: paymentResult.imp_uid,
           merchant_uid: paymentResult.merchant_uid,
           userId: 1, // TODO: 실제 로그인 정보로 대체
@@ -273,7 +273,7 @@ const BookingPage = () => {
           .filter(seat => selectedSeats.includes(seat.seatNumber))
           .map(seat => seat.seatId);
         
-        await axios.post('http://localhost:80/api/bookings/unlock-seats', {
+        await axios.post('/api/bookings/unlock-seats', {
           screeningId: selectedScreeningId,
           seatIds: selectedSeatIds
         }, { withCredentials: true });

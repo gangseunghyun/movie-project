@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Slf4j
 @Service
@@ -333,7 +336,14 @@ public class BoxOfficeService {
     public void updateBoxOfficeMovieDetailIds() {
         log.info("BoxOffice movie_detail_id 업데이트 시작");
         
-        List<BoxOffice> boxOffices = boxOfficeRepository.findAll();
+        List<BoxOffice> boxOffices = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<BoxOffice> boxOfficePage;
+        do {
+            boxOfficePage = boxOfficeRepository.findAll(PageRequest.of(page++, size));
+            boxOffices.addAll(boxOfficePage.getContent());
+        } while (boxOfficePage.hasNext());
+        
         int updatedCount = 0;
         
         for (BoxOffice boxOffice : boxOffices) {
@@ -363,7 +373,13 @@ public class BoxOfficeService {
         log.info("박스오피스 데이터 정리 및 순위 재정렬 시작");
         
         // 1. 모든 박스오피스 데이터 조회
-        List<BoxOffice> allBoxOffices = boxOfficeRepository.findAll();
+        List<BoxOffice> allBoxOffices = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<BoxOffice> boxOfficePage;
+        do {
+            boxOfficePage = boxOfficeRepository.findAll(PageRequest.of(page++, size));
+            allBoxOffices.addAll(boxOfficePage.getContent());
+        } while (boxOfficePage.hasNext());
         log.info("전체 박스오피스 데이터: {}개", allBoxOffices.size());
         
         // 2. 날짜별로 그룹화

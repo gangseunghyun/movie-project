@@ -11,7 +11,7 @@ const TagEditModal = ({ initialSelected = [], onClose, onSave }) => {
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await fetch(`http://localhost:80/api/genre-tags`, {
+        const response = await fetch(`/api/genre-tags`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -40,7 +40,7 @@ const TagEditModal = ({ initialSelected = [], onClose, onSave }) => {
       }
 
       try {
-        const response = await fetch(`http://localhost:80/api/users/${user.id}/preferred-genres`, {
+        const response = await fetch(`/api/users/${user.id}/preferred-genres`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -73,7 +73,7 @@ const TagEditModal = ({ initialSelected = [], onClose, onSave }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:80/api/users/${user.id}/preferred-genres`, {
+      const response = await fetch(`/api/users/${user.id}/preferred-genres`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

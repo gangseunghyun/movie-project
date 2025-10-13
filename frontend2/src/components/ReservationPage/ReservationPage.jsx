@@ -33,7 +33,7 @@ const ReservationPage = () => {
   const fetchReservations = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:80/api/users/${user.id}/reservations`, {
+      const response = await axios.get(`/api/users/${user.id}/reservations`, {
         withCredentials: true
       });
       setReservations(response.data);
@@ -80,7 +80,7 @@ const ReservationPage = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:80/api/payments/cancel',
+        `/api/payments/cancel`,
         { imp_uid: impUid, reason: reason || '' },
         { withCredentials: true }
       );

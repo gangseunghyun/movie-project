@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @Slf4j
 @RestController
@@ -39,16 +42,23 @@ public class MovieFilterController {
             log.info("영화 필터링 요청: page={}, size={}, genres={}, search={}, sort={}", 
                     page, size, genres, search, sort);
 
-            List<MovieList> filteredMovies;
+            Pageable pageable = PageRequest.of(page, size);
+            Page<MovieList> moviePage;
 
-            // 1. 기본 데이터 조회
             if (search != null && !search.trim().isEmpty()) {
-                filteredMovies = movieListRepository.findByMovieNmContainingIgnoreCase(search.trim());
-                log.info("검색어 '{}'로 필터링된 영화: {}개", search, filteredMovies.size());
+                moviePage = movieListRepository.findByMovieNmContainingIgnoreCase(search.trim(), pageable);
+                log.info("검색어 '{}'로 필터링된 영화: {}개", search, moviePage.getTotalElements());
             } else {
-                filteredMovies = movieListRepository.findAll();
-                log.info("전체 영화 조회: {}개", filteredMovies.size());
+                List<MovieList> allMovies = new ArrayList<>();
+                int pageIdx = 0, chunkSize = 1000;
+                do {
+                    moviePage = movieListRepository.findAll(PageRequest.of(pageIdx++, chunkSize));
+                    allMovies.addAll(moviePage.getContent());
+                } while (moviePage.hasNext());
+                log.info("전체 영화 조회: {}개", allMovies.size());
             }
+
+            List<MovieList> filteredMovies = moviePage.getContent();
 
             // 포스터 URL이 없는 영화 제외
             filteredMovies = filteredMovies.stream()
@@ -58,87 +68,49 @@ public class MovieFilterController {
                     .collect(Collectors.toList());
             log.info("포스터 URL 필터링 후 영화: {}개", filteredMovies.size());
 
-            // 2. 장르 필터링
+            // 장르 필터링 (자바에서 처리)
             if (genres != null && !genres.trim().isEmpty()) {
-                List<String> genreList = Arrays.stream(genres.split(","))
+                Set<String> genreSet = Arrays.stream(genres.split(","))
                         .map(String::trim)
-                        .filter(g -> !g.isEmpty())
+                        .collect(Collectors.toSet());
+                filteredMovies = filteredMovies.stream()
+                        .filter(movie -> {
+                            if (movie.getGenreNm() == null) return false;
+                            Set<String> movieGenres = new HashSet<>(Arrays.asList(movie.getGenreNm().split(",")));
+                            return !Collections.disjoint(genreSet, movieGenres);
+                        })
                         .collect(Collectors.toList());
+                log.info("장르 필터링 후 영화: {}개", filteredMovies.size());
+            }
 
-                if (!genreList.isEmpty()) {
-                    filteredMovies = filteredMovies.stream()
-                            .filter(movie -> {
-                                if (movie.getGenreNm() == null) return false;
-                                // AND 조건: 선택된 모든 장르를 포함해야 함
-                                return genreList.stream().allMatch(genre -> movie.getGenreNm().contains(genre));
-                            })
-                            .collect(Collectors.toList());
-                    log.info("장르 '{}'로 필터링된 영화: {}개", genres, filteredMovies.size());
+            // 정렬 분기 추가
+            if (sort != null) {
+                switch (sort) {
+                    case "openDt":
+                        filteredMovies.sort(Comparator.comparing(MovieList::getOpenDt, Comparator.nullsLast(Comparator.reverseOrder())));
+                        break;
+                    case "name":
+                        filteredMovies.sort(Comparator.comparing(MovieList::getMovieNm, Comparator.nullsLast(Comparator.naturalOrder())));
+                        break;
+                    case "random":
+                        Collections.shuffle(filteredMovies);
+                        break;
+                    case "tmdb_popularity":
+                    default:
+                        filteredMovies.sort(Comparator.comparing(MovieList::getTmdbPopularity, Comparator.nullsLast(Comparator.reverseOrder())));
+                        break;
                 }
             }
 
-            // 3. 정렬
-            switch (sort) {
-                case "name":
-                    filteredMovies.sort((m1, m2) -> {
-                        String name1 = Optional.ofNullable(m1.getMovieNm()).orElse("");
-                        String name2 = Optional.ofNullable(m2.getMovieNm()).orElse("");
-                        return name1.compareToIgnoreCase(name2);
-                    });
-                    break;
-                case "random":
-                    Collections.shuffle(filteredMovies);
-                    log.info("랜덤순 정렬 완료");
-                    break;
-                case "tmdb_popularity":
-                    filteredMovies.sort((m1, m2) -> {
-                        Double popularity1 = m1.getTmdbPopularity();
-                        Double popularity2 = m2.getTmdbPopularity();
-                        if (popularity1 == null) return 1;
-                        if (popularity2 == null) return -1;
-                        return Double.compare(popularity2, popularity1); // 내림차순 (높은 인기도가 먼저)
-                    });
-                    log.info("TMDB 인기도순 정렬 완료");
-                    break;
-                case "openDt":
-                    filteredMovies.sort((m1, m2) -> {
-                        if (m1.getOpenDt() == null) return 1;
-                        if (m2.getOpenDt() == null) return -1;
-                        return m2.getOpenDt().compareTo(m1.getOpenDt()); // 내림차순 (최신 영화가 먼저)
-                    });
-                    log.info("개봉일순 정렬 완료");
-                    break;
-                case "date":
-                default:
-                    filteredMovies.sort((m1, m2) -> {
-                        if (m1.getOpenDt() == null) return 1;
-                        if (m2.getOpenDt() == null) return -1;
-                        return m2.getOpenDt().compareTo(m1.getOpenDt());
-                    });
-                    break;
-            }
+            // page/size에 맞게 슬라이싱
+            int fromIndex = Math.min(page * size, filteredMovies.size());
+            int toIndex = Math.min(fromIndex + size, filteredMovies.size());
+            List<MovieList> pagedMovies = filteredMovies.subList(fromIndex, toIndex);
 
-            // 4. 페이지네이션
             int total = filteredMovies.size();
-            int start = page * size;
-            int end = Math.min(start + size, total);
+            int totalPages = (int) Math.ceil((double) total / size);
 
-            if (start >= total) {
-                return ResponseEntity.ok(Map.of(
-                        "data", Collections.emptyList(),
-                        "total", total,
-                        "page", page,
-                        "size", size,
-                        "totalPages", (int) Math.ceil((double) total / size),
-                        "filters", Map.of(
-                                "genres", genres != null ? genres : "",
-                                "search", search != null ? search : "",
-                                "sort", sort
-                        )
-                ));
-            }
-
-            List<MovieListDto> dtoList = movieListMapper.toDtoList(filteredMovies.subList(start, end));
+            List<MovieListDto> dtoList = movieListMapper.toDtoList(pagedMovies);
             log.info("필터링 완료: 총 {}개 중 {} (페이지: {})", total, dtoList.size(), page);
 
             return ResponseEntity.ok(Map.of(
@@ -146,7 +118,7 @@ public class MovieFilterController {
                     "total", total,
                     "page", page,
                     "size", size,
-                    "totalPages", (int) Math.ceil((double) total / size),
+                    "totalPages", totalPages,
                     "filters", Map.of(
                             "genres", genres != null ? genres : "",
                             "search", search != null ? search : "",

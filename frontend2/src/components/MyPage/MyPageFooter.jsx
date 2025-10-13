@@ -75,7 +75,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   const fetchMyComments = () => {
     if (!displayUserId) return;
     setLoading(true);
-    fetch(`http://localhost:80/api/users/${displayUserId}/my-comments`, { credentials: 'include' })
+    fetch(`/api/users/${displayUserId}/my-comments`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         console.log('내가 작성한 코멘트 데이터:', data);
@@ -116,7 +116,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   const fetchLikedComments = () => {
     if (!displayUserId) return;
     setLikedLoading(true);
-    fetch(`http://localhost:80/api/users/${displayUserId}/liked-reviews`, { credentials: 'include' })
+    fetch(`/api/users/${displayUserId}/liked-reviews`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         console.log('내가 좋아요한 코멘트 데이터:', data);
@@ -192,7 +192,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
   // 코멘트 삭제 핸들러
   const handleDelete = (commentId) => {
     if (window.confirm('정말 삭제하시겠습니까?')) {
-      fetch(`http://localhost:80/api/reviews/${commentId}`, {
+      fetch(`/api/reviews/${commentId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -323,13 +323,13 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
       let res;
       if (likedByMe) {
         // 좋아요 취소 (DELETE)
-        res = await fetch(`http://localhost:80/api/reviews/dto/${commentId}/like`, {
+        res = await fetch(`/api/reviews/dto/${commentId}/like`, {
           method: 'DELETE',
           credentials: 'include',
         });
       } else {
         // 좋아요 (POST)
-        res = await fetch(`http://localhost:80/api/reviews/dto/${commentId}/like`, {
+        res = await fetch(`/api/reviews/dto/${commentId}/like`, {
           method: 'POST',
           credentials: 'include',
         });
@@ -374,7 +374,7 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <img
-            src={comment.authorProfileImageUrl && comment.authorProfileImageUrl.trim() !== '' ? comment.authorProfileImageUrl : userIcon}
+                            src={comment.authorProfileImageUrl && comment.authorProfileImageUrl.trim() !== '' ? comment.authorProfileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon}
             alt="프로필"
             className={styles.profileImage}
             style={{ 

@@ -25,6 +25,8 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -76,7 +78,13 @@ public class USRUserService {
     }
 
     public List<UserDto> getAllUsers() {
-        List<User> users = userRepository.findAll();
+        List<User> users = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<User> userPage;
+        do {
+            userPage = userRepository.findAll(PageRequest.of(page++, size));
+            users.addAll(userPage.getContent());
+        } while (userPage.hasNext());
         return users.stream()
                 .map(UserDto::fromEntity)
                 .collect(Collectors.toList());

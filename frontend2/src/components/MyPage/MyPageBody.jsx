@@ -7,6 +7,8 @@ import nextIcon from '../../assets/next_icon.png';
 import { useUser } from '../../contexts/UserContext';
 import { Link } from 'react-router-dom';
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
 // SearchResultPage.jsx에서 복사한 ActorCard, ActorHorizontalSlider
 function ActorCard({ actor }) {
   // 인물 상세페이지 링크 생성
@@ -19,7 +21,7 @@ function ActorCard({ actor }) {
         <div
           className={styles.actorImg}
           style={{
-            backgroundImage: actor.photoUrl ? `url(${actor.photoUrl})` : 'none',
+            backgroundImage: actor.photoUrl ? (actor.photoUrl.startsWith('http') ? `url(${actor.photoUrl})` : `url(${SERVER_URL}${actor.photoUrl})`) : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
@@ -120,7 +122,7 @@ const MyPageBody = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }) 
   useEffect(() => {
     if (!displayUserId) return;
     setLoading(true);
-    fetch(`http://localhost:80/api/users/${displayUserId}/liked-movies`)
+    fetch(`/api/users/${displayUserId}/liked-movies`)
       .then(res => res.json())
       .then(data => setLikedMovies(data.data || []))
       .catch(() => setLikedMovies([]))
@@ -130,7 +132,7 @@ const MyPageBody = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }) 
   useEffect(() => {
     if (!displayUserId) return;
     setDirectorsLoading(true);
-    fetch(`http://localhost:80/api/users/${displayUserId}/liked-directors`)
+    fetch(`/api/users/${displayUserId}/liked-directors`)
       .then(res => res.json())
       .then(data => setLikedDirectors(data.data || []))
       .catch(() => setLikedDirectors([]))
@@ -140,7 +142,7 @@ const MyPageBody = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }) 
   useEffect(() => {
     if (!displayUserId) return;
     setActorsLoading(true);
-    fetch(`http://localhost:80/api/users/${displayUserId}/liked-actors`)
+    fetch(`/api/users/${displayUserId}/liked-actors`)
       .then(res => res.json())
       .then(data => setLikedActors(data.data || []))
       .catch(() => setLikedActors([]))

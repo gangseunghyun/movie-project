@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ArrayList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -376,5 +379,50 @@ public class DataMigrationService {
         } catch (Exception e) {
             log.error("Cast 데이터 저장 테스트 실패: {}", e.getMessage(), e);
         }
+    }
+
+    public List<MovieDetail> getAllMovieDetailsPaged(int chunkSize) {
+        List<MovieDetail> result = new ArrayList<>();
+        int page = 0;
+        Page<MovieDetail> moviePage;
+        do {
+            moviePage = movieRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(moviePage.getContent());
+            page++;
+        } while (!moviePage.isLast());
+        return result;
+    }
+    public List<MovieList> getAllMovieListsPaged(int chunkSize) {
+        List<MovieList> result = new ArrayList<>();
+        int page = 0;
+        Page<MovieList> moviePage;
+        do {
+            moviePage = movieListRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(moviePage.getContent());
+            page++;
+        } while (!moviePage.isLast());
+        return result;
+    }
+    public List<Actor> getAllActorsPaged(int chunkSize) {
+        List<Actor> result = new ArrayList<>();
+        int page = 0;
+        Page<Actor> actorPage;
+        do {
+            actorPage = actorRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(actorPage.getContent());
+            page++;
+        } while (!actorPage.isLast());
+        return result;
+    }
+
+    private <T> List<T> getAllChunked(JpaRepository<T, ?> repository) {
+        List<T> all = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<T> pageResult;
+        do {
+            pageResult = repository.findAll(PageRequest.of(page++, size));
+            all.addAll(pageResult.getContent());
+        } while (pageResult.hasNext());
+        return all;
     }
 } 

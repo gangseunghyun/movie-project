@@ -87,7 +87,7 @@ export default function SignupPage() {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:80/api/users/join', {
+      const response = await fetch('/api/users/join', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -128,7 +128,7 @@ export default function SignupPage() {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:80/api/users/check-login-id?loginId=${encodeURIComponent(form.username)}`);
+      const response = await fetch(`/api/users/check-login-id?loginId=${encodeURIComponent(form.username)}`);
       const data = await response.json();
       if (data.available) {
         toast.success(data.message); // "사용 가능한 아이디입니다."
@@ -143,7 +143,7 @@ export default function SignupPage() {
   //닉네임 추천 호출
   const handleRecommendNickname = async () => {
     try {
-      const response = await fetch('http://localhost:80/api/users/recommend-nickname');
+      const response = await fetch('/api/users/recommend-nickname');
       const data = await response.json();
       if (data.nicknames && data.nicknames.length > 0) {
         // 예시: 첫 번째 추천 닉네임을 입력란에 자동으로 넣기
@@ -167,7 +167,7 @@ export default function SignupPage() {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:80/api/users/check-email?email=${encodeURIComponent(form.email)}`);
+      const response = await fetch(`/api/users/check-email?email=${encodeURIComponent(form.email)}`);
       const data = await response.json();
       if (data.available) {
         toast.success(data.message); // "사용 가능한 이메일입니다."
@@ -189,7 +189,7 @@ export default function SignupPage() {
       return;
     }
     try {
-      const response = await fetch('http://localhost:80/api/mail/send-verification', {
+      const response = await fetch('/api/mail/send-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email })
@@ -229,7 +229,7 @@ export default function SignupPage() {
       return;
     }
     try {
-      const response = await fetch('http://localhost:80/api/mail/verify', {
+      const response = await fetch('/api/mail/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

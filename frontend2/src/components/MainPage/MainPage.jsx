@@ -3,6 +3,7 @@ import styles from './MainPage.module.css';
 import BannerSlider from './BannerSlider';
 import MovieHorizontalSlider from './MovieHorizontalSlider';
 import { useUser } from '../../contexts/UserContext';
+import userIcon from '../../assets/user_icon.png';
 
 export default function MainPage() {
   const { user } = useUser();
@@ -32,7 +33,7 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:80/data/api/box-office-dto?page=0&size=20')
+    fetch('/api/box-office-dto?page=0&size=20')
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -50,7 +51,7 @@ export default function MainPage() {
       });
 
     // 평점 높은 영화 fetch
-    fetch('http://localhost:80/data/api/ratings/top-rated?limit=20')
+    fetch('/api/ratings/top-rated?limit=20')
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -74,7 +75,7 @@ export default function MainPage() {
     //     setPopularMovies(data.data || []);
     //   });
 
-    fetch('http://localhost:80/data/api/movies/coming-soon?page=0&size=20')
+    fetch('/api/movies/coming-soon?page=0&size=20')
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -92,7 +93,7 @@ export default function MainPage() {
         setComingSoonMovies([]);
       });
 
-    fetch('http://localhost:80/api/person/recommended-actor')
+    fetch('/api/person/recommended-actor')
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -123,7 +124,7 @@ export default function MainPage() {
         setActorInfo(null);
       });
 
-    fetch('http://localhost:80/api/person/recommended-director')
+    fetch('/api/person/recommended-director')
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -159,7 +160,7 @@ export default function MainPage() {
   // user가 있을 때 추천 영화 fetch
   useEffect(() => {
     if (user && user.id) {
-      fetch(`http://localhost:80/api/users/${user.id}/recommended-movies`, {
+      fetch(`/api/users/${user.id}/recommended-movies`, {
         credentials: 'include'
       })
         .then(res => {
@@ -177,7 +178,7 @@ export default function MainPage() {
           setRecommendedMovies({});
         });
       // 소셜 추천 영화 fetch
-      fetch(`http://localhost:80/api/users/${user.id}/daily-social-recommendation`, {
+      fetch(`/api/users/${user.id}/daily-social-recommendation`, {
         credentials: 'include'
       })
         .then(res => {
@@ -197,7 +198,7 @@ export default function MainPage() {
           setSocialRecommender(null);
         });
       // 새로운 장르 추천 fetch
-      fetch(`http://localhost:80/api/users/${user.id}/new-genre-recommendation`, {
+      fetch(`/api/users/${user.id}/new-genre-recommendation`, {
         credentials: 'include'
       })
         .then(res => {
@@ -215,7 +216,7 @@ export default function MainPage() {
           setNewGenreRecommendations([]);
         });
       // 개인 영화추천 fetch
-      fetch('http://localhost:80/api/recommendations/personalized/liked-people', {
+      fetch('/api/recommendations/personalized/liked-people', {
         credentials: 'include'
       })
         .then(res => {
@@ -294,7 +295,7 @@ export default function MainPage() {
             <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
               {socialRecommender?.profileImageUrl && (
                 <img
-                  src={socialRecommender.profileImageUrl}
+                  src={socialRecommender.profileImageUrl ? socialRecommender.profileImageUrl.replace('/api/profile/images/', '/uploads/profile-images/') : userIcon}
                   alt="프로필"
                   style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
                 />

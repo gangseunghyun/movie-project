@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,9 @@ import java.util.Map;
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     @Autowired
     private USRUserRepository userRepository;
+    
+    @Value("${app.frontend.url:http://filmer-movie.duckdns.org}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -68,14 +72,20 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             System.out.println("[DEBUG] SuccessHandler: 세션 업데이트 완료 - USER_LOGIN_ID: " + loginId);
         }
         
+        // 접속한 도메인(IP 또는 도메인)으로 리다이렉트
+        String baseUrl = request.getScheme() + "://" + request.getServerName();
+        int port = request.getServerPort();
+        if (port != 80 && port != 443) {
+            baseUrl += ":" + port;
+        }
         if (user == null || user.getNickname() == null || !user.isSocialJoinCompleted()) {
             System.out.println("[DEBUG] SuccessHandler: Redirecting to social-join page");
-            response.sendRedirect("http://localhost:3000/social-join");
+            response.sendRedirect(baseUrl + "/social-join");
         } else {
             System.out.println("[DEBUG] SuccessHandler: Redirecting to main page with nickname=" + user.getNickname());
             // 닉네임을 쿼리 파라미터로 포함하여 리다이렉트
             String nickname = user.getNickname() != null ? java.net.URLEncoder.encode(user.getNickname(), "UTF-8") : "";
-            response.sendRedirect("http://localhost:3000/?social=success&nickname=" + nickname);
+            response.sendRedirect(baseUrl + "/?social=success&nickname=" + nickname);
         }
     }
 } 

@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 import com.movie.movie_backend.util.MovieTitleUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -671,7 +673,14 @@ public class KobisPopularMovieService {
         log.info("기존 영화들의 캐릭터명을 한국어로 업데이트 시작");
         
         try {
-            List<MovieDetail> allMovies = movieRepository.findAll();
+            List<MovieDetail> allMovies = new ArrayList<>();
+            int page = 0, size = 1000;
+            Page<MovieDetail> moviePage;
+            do {
+                moviePage = movieRepository.findAll(PageRequest.of(page++, size));
+                allMovies.addAll(moviePage.getContent());
+            } while (moviePage.hasNext());
+            
             int updatedCount = 0;
             
             for (MovieDetail movie : allMovies) {

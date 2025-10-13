@@ -2,6 +2,8 @@ import React from 'react';
 import styles from './MovieCard.module.css';
 import { useNavigate } from 'react-router-dom';
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
 export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpenDt = true }) {
   const navigate = useNavigate();
   
@@ -21,6 +23,12 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
     if (diff < 0) return null; // 이미 개봉
     return `D-${diff}`;
   }
+
+  const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return url;
+  };
 
   // 카드 클릭 핸들러
   const handleCardClick = () => {
@@ -43,7 +51,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
           <span className={styles.posterRank}>{index}</span>
           {movie.posterUrl && (
             <img
-              src={movie.posterUrl}
+              src={getImageUrl(movie.posterUrl)}
               alt={movie.movieNm || '-'}
               className={styles.posterImg}
             />
@@ -71,7 +79,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
           {/* <span className={styles.posterRank}>{index}</span> 순위는 개봉예정작에서 숨김 */}
           {movie.posterUrl && (
             <img
-              src={movie.posterUrl}
+              src={getImageUrl(movie.posterUrl)}
               alt={movie.movieNm || '-'}
               className={styles.posterImg}
             />
@@ -96,7 +104,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
         <div className={styles.poster} style={{ position: 'relative' }}>
           {movie.posterUrl && (
             <img
-              src={movie.posterUrl}
+              src={getImageUrl(movie.posterUrl)}
               alt={movie.movieNm || '-'}
               className={styles.posterImg}
             />
@@ -126,7 +134,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
       <span className={styles.posterRank}>{index}</span>
         {movie.posterUrl && (
           <img
-            src={movie.posterUrl}
+            src={getImageUrl(movie.posterUrl)}
             alt={movie.movieNm || '-'}
             className={styles.posterImg}
           />
@@ -157,7 +165,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
 
         {movie.posterUrl && (
           <img
-            src={movie.posterUrl}
+            src={getImageUrl(movie.posterUrl)}
             alt={movie.movieNm || '-'}
             className={styles.posterImg}
           />
@@ -183,7 +191,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
    
         {movie.posterUrl && (
           <img
-            src={movie.posterUrl}
+            src={getImageUrl(movie.posterUrl)}
             alt={movie.movieNm || '-'}
             className={styles.posterImg}
           />

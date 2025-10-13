@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -369,6 +372,62 @@ public class MovieManagementService {
                 return movieDetailMapper.toDto(movie, likeCount, likedByMe);
             })
             .collect(java.util.stream.Collectors.toList());
+    }
+
+    public List<MovieDetail> getAllMovieDetailsPaged(int chunkSize) {
+        List<MovieDetail> result = new ArrayList<>();
+        int page = 0;
+        Page<MovieDetail> moviePage;
+        do {
+            moviePage = movieRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(moviePage.getContent());
+            page++;
+        } while (!moviePage.isLast());
+        return result;
+    }
+    public List<Like> getAllLikesPaged(int chunkSize) {
+        List<Like> result = new ArrayList<>();
+        int page = 0;
+        Page<Like> likePage;
+        do {
+            likePage = likeRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(likePage.getContent());
+            page++;
+        } while (!likePage.isLast());
+        return result;
+    }
+    public List<Rating> getAllRatingsPaged(int chunkSize) {
+        List<Rating> result = new ArrayList<>();
+        int page = 0;
+        Page<Rating> ratingPage;
+        do {
+            ratingPage = ratingRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(ratingPage.getContent());
+            page++;
+        } while (!ratingPage.isLast());
+        return result;
+    }
+    public List<Review> getAllReviewsPaged(int chunkSize) {
+        List<Review> result = new ArrayList<>();
+        int page = 0;
+        Page<Review> reviewPage;
+        do {
+            reviewPage = reviewRepository.findAll(PageRequest.of(page, chunkSize));
+            result.addAll(reviewPage.getContent());
+            page++;
+        } while (!reviewPage.isLast());
+        return result;
+    }
+
+    private <T> List<T> getAllChunked(JpaRepository<T, ?> repository) {
+        List<T> all = new ArrayList<>();
+        int page = 0, size = 1000;
+        Page<T> pageResult;
+        do {
+            pageResult = repository.findAll(PageRequest.of(page++, size));
+            all.addAll(pageResult.getContent());
+        } while (pageResult.hasNext());
+        return all;
     }
 
     /**

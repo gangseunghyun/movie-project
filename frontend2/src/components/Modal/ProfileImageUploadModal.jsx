@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import styles from './ProfileImageUploadModal.module.css';
 
+const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
+
 const ProfileImageUploadModal = ({ currentImageUrl, onImageUpdate, onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
@@ -48,7 +50,7 @@ const ProfileImageUploadModal = ({ currentImageUrl, onImageUpdate, onClose }) =>
     const formData = new FormData();
     formData.append('image', fileInputRef.current.files[0]);
     try {
-      const response = await axios.post('http://localhost:80/api/profile/upload-image', formData, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/profile/upload-image`, formData, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -77,7 +79,7 @@ const ProfileImageUploadModal = ({ currentImageUrl, onImageUpdate, onClose }) =>
     setIsUploading(true);
     setError('');
     try {
-      const response = await axios.delete('http://localhost:80/api/profile/delete-image', {
+      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/profile/delete-image`, {
         withCredentials: true,
       });
       if (response.data.success) {
@@ -97,7 +99,7 @@ const ProfileImageUploadModal = ({ currentImageUrl, onImageUpdate, onClose }) =>
   const getImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `http://localhost:80${url}`;
+    return url;
   };
 
   return (
