@@ -10,6 +10,7 @@ const CommentModal = ({
 }) => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForbiddenWordsModal, setShowForbiddenWordsModal] = useState(false);
   const maxLength = 1000;
 
   // open 상태 변경 추적
@@ -49,16 +50,20 @@ const CommentModal = ({
 
   const handleSave = async () => {
     if (!comment.trim()) {
-      alert('댓글 내용을 입력해주세요.');
+      //alert('댓글 내용을 입력해주세요.');
       return;
     }
 
     // 욕설 필터링
     if (containsForbiddenWords(comment)) {
-      const proceed = window.confirm('클린봇에 의해 게시가 제한될 수 있습니다. 그래도 작성하시겠습니까?');
-      if (!proceed) return;
+      setShowForbiddenWordsModal(true);
+      return;
     }
 
+    await saveComment();
+  };
+
+  const saveComment = async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/comments', {
@@ -77,7 +82,7 @@ const CommentModal = ({
       const data = await response.json();
       
       if (data.success) {
-        alert('댓글이 작성되었습니다!');
+        //alert('댓글이 작성되었습니다!');
         // 성공 시에만 onSave 호출하고 모달 닫기
         if (onSave) {
           onSave();
@@ -100,36 +105,73 @@ const CommentModal = ({
     onClose();
   };
 
+  const handleForbiddenWordsConfirm = () => {
+    setShowForbiddenWordsModal(false);
+    saveComment();
+  };
+
+  const handleForbiddenWordsCancel = () => {
+    setShowForbiddenWordsModal(false);
+  };
+
   if (!open) return null;
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContainer}>
-        <div className={styles.header}>
-          <span className={styles.title}>댓글</span>
-          <button className={styles.closeBtn} onClick={handleClose}>×</button>
-        </div>
-        <hr className={styles.divider} />
-        <textarea
-          className={styles.textarea}
-          placeholder="이 작품에 대한 생각을 자유롭게 표현해주세요."
-          value={comment}
-          onChange={e => setComment(e.target.value)}
-          maxLength={maxLength}
-          disabled={loading}
-        />
-        <div className={styles.footer}>
-          <span className={styles.length}>{comment.length}/{maxLength}</span>
-          <button
-            className={styles.saveBtn}
-            onClick={handleSave}
-            disabled={comment.length === 0 || loading}
-          >
-            {loading ? '작성 중...' : '저장'}
-          </button>
+    <>
+      <div className={styles.modalOverlay}>
+        <div className={styles.modalContainer}>
+          <div className={styles.header}>
+            <span className={styles.title}>댓글</span>
+            <button className={styles.closeBtn} onClick={handleClose}>×</button>
+          </div>
+          <hr className={styles.divider} />
+          <textarea
+            className={styles.textarea}
+            placeholder="이 작품에 대한 생각을 자유롭게 표현해주세요."
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            maxLength={maxLength}
+            disabled={loading}
+          />
+          <hr className={styles.divider} />
+          <div className={styles.footer}>
+            <span className={styles.length}>{comment.length}/{maxLength}</span>
+            <button
+              className={styles.saveBtn}
+              onClick={handleSave}
+              disabled={comment.length === 0 || loading}
+            >
+              {loading ? '작성 중...' : '저장'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* 욕설 필터링 확인 모달 */}
+      {showForbiddenWordsModal && (
+        <div className={styles.modalOverlay} onClick={handleForbiddenWordsCancel}>
+          <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <h3>클린봇 경고</h3>
+            <p>클린봇에 의해 게시가 제한될 수 있습니다.</p>
+            <p>그래도 작성하시겠습니까?</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.closeModalButton}
+                onClick={handleForbiddenWordsCancel}
+              >
+                취소
+              </button>
+              <button 
+                className={styles.confirmButton}
+                onClick={handleForbiddenWordsConfirm}
+              >
+                작성
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

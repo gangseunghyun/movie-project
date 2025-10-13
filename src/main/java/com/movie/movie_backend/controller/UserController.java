@@ -65,6 +65,7 @@ import com.movie.movie_backend.entity.Theater;
 import com.movie.movie_backend.repository.ReservationRepository;
 import com.movie.movie_backend.repository.ScreeningSeatRepository;
 import com.movie.movie_backend.repository.PaymentRepository;
+import com.movie.movie_backend.service.REVRatingService;
 import java.util.Set;
 
 @RestController
@@ -91,6 +92,7 @@ public class UserController {
     private final ReservationRepository reservationRepository;
     private final ScreeningSeatRepository screeningSeatRepository;
     private final PaymentRepository paymentRepository;
+    private final REVRatingService ratingService;
     
     // REST API - 회원가입
     @PostMapping("/api/users/join")
@@ -1059,6 +1061,9 @@ public class UserController {
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
                     reviewDto.put("commentCount", commentCount != null ? commentCount.intValue() : 0);
                     
+                    // 클린봇 차단 여부 추가
+                    reviewDto.put("blockedByCleanbot", review.isBlockedByCleanbot());
+                    
                     return reviewDto;
                 })
                 .collect(Collectors.toList());
@@ -1122,6 +1127,10 @@ public class UserController {
                     // 댓글 수 추가
                     Long commentCount = commentRepository.getCommentCountByReviewId(review.getId());
                     dto.put("commentCount", commentCount != null ? commentCount.intValue() : 0);
+                    
+                    // 클린봇 차단 여부 추가
+                    dto.put("blockedByCleanbot", review.isBlockedByCleanbot());
+                    
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -1188,6 +1197,9 @@ public class UserController {
                     int likeCount = commentLikeRepository.countByCommentId(comment.getId());
                     commentDto.put("likeCount", likeCount);
                     commentDto.put("likedByMe", true);
+                    
+                    // 클린봇 차단 여부 추가
+                    commentDto.put("isBlockedByCleanbot", comment.isBlockedByCleanbot());
                     
                     return commentDto;
                 })
@@ -1440,8 +1452,8 @@ public class UserController {
                 "success", true,
                 "message", "추천할 영화가 없습니다.",
                 "recommender", java.util.Map.of(
-                    "id", recommender.getId(),
-                    "nickname", recommender.getNickname()
+                    "id", recommender.getId() != null ? recommender.getId() : 0L,
+                    "nickname", recommender.getNickname() != null ? recommender.getNickname() : ""
                 ),
                 "movies", java.util.Collections.emptyList()
             ));
@@ -1449,18 +1461,18 @@ public class UserController {
         java.util.List<java.util.Map<String, Object>> movies = movieSet.stream()
             .map(md -> {
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
-                m.put("movieCd", md.getMovieCd());
-                m.put("movieNm", md.getMovieNm());
-                m.put("posterUrl", (md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null));
-                m.put("genreNm", md.getGenreNm());
-                m.put("openDt", md.getOpenDt());
+                m.put("movieCd", md.getMovieCd() != null ? md.getMovieCd() : "");
+                m.put("movieNm", md.getMovieNm() != null ? md.getMovieNm() : "");
+                m.put("posterUrl", (md.getMovieList() != null ? md.getMovieList().getPosterUrl() : ""));
+                m.put("genreNm", md.getGenreNm() != null ? md.getGenreNm() : "");
+                m.put("openDt", md.getOpenDt() != null ? md.getOpenDt() : "");
                 return m;
             })
             .collect(java.util.stream.Collectors.toList());
         var recommenderDto = java.util.Map.of(
             "id", recommender.getId(),
             "nickname", recommender.getNickname(),
-            "profileImageUrl", recommender.getProfileImageUrl()
+            "profileImageUrl", recommender.getProfileImageUrl() != null ? recommender.getProfileImageUrl() : ""
         );
         return ResponseEntity.ok(java.util.Map.of(
             "success", true,
@@ -1555,6 +1567,19 @@ public class UserController {
                 java.util.Collections.shuffle(movies);
             } else { // 평점순(기본)
                 movies = new ArrayList<>(movies); // 가변 리스트로 변환
+                
+                // 배치 평점 조회로 성능 최적화
+                List<String> movieCds = movies.stream()
+                        .map(MovieDetail::getMovieCd)
+                        .collect(java.util.stream.Collectors.toList());
+                Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+                
+                // 평점 정보를 MovieDetail에 설정
+                movies.forEach(movie -> {
+                    Double rating = averageRatings.get(movie.getMovieCd());
+                    movie.setAverageRating(rating);
+                });
+                
                 movies.sort((a, b) -> {
                     Double ar = a.getAverageRating() != null ? a.getAverageRating() : 0.0;
                     Double br = b.getAverageRating() != null ? b.getAverageRating() : 0.0;
@@ -1566,12 +1591,12 @@ public class UserController {
             // DTO 변환
             List<java.util.Map<String, Object>> movieDtos = topMovies.stream().map(md -> {
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
-                m.put("movieCd", md.getMovieCd());
-                m.put("movieNm", md.getMovieNm());
-                m.put("posterUrl", md.getMovieList() != null ? md.getMovieList().getPosterUrl() : null);
-                m.put("genreNm", md.getGenreNm());
-                m.put("openDt", md.getOpenDt());
-                m.put("averageRating", md.getAverageRating());
+                m.put("movieCd", md.getMovieCd() != null ? md.getMovieCd() : "");
+                m.put("movieNm", md.getMovieNm() != null ? md.getMovieNm() : "");
+                m.put("posterUrl", md.getMovieList() != null ? md.getMovieList().getPosterUrl() : "");
+                m.put("genreNm", md.getGenreNm() != null ? md.getGenreNm() : "");
+                m.put("openDt", md.getOpenDt() != null ? md.getOpenDt() : "");
+                m.put("averageRating", md.getAverageRating() != null ? md.getAverageRating() : 0.0);
                 return m;
             }).toList();
             genreResults.add(java.util.Map.of(

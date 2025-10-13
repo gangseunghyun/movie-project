@@ -11,6 +11,7 @@ import userProfile from '../../assets/user_profile.png';
 import previousIcon from '../../assets/previous_icon.png';
 import nextIcon from '../../assets/next_icon.png';
 import MovieHorizontalSlider from '../MainPage/MovieHorizontalSlider';
+import MovieCard from '../MainPage/MovieCard';
 import likeIcon from '../../assets/like_icon.png';
 import likeIconTrue from '../../assets/like_icon_true.png';
 import commentIcon2 from '../../assets/comment_icon2.png';
@@ -40,35 +41,37 @@ const dummySimilar = [
 
 const SERVER_URL = "https://ec2-13-222-249-145.compute-1.amazonaws.com";
 
+// SimilarMovieCard 컴포넌트 제거 - MovieCard 사용
+function StillcutCard({ still }) {
+  return (
+    <div className={styles.stillcutCard}>
+      <img src={still.imageUrl ? (still.imageUrl.startsWith('http') ? still.imageUrl : `${SERVER_URL}${still.imageUrl}`) : ''} alt="스틸컷" className={styles.stillcutImg} />
+    </div>
+  );
+}
+
+// SimilarMovieCard 컴포넌트 추가
 function SimilarMovieCard({ movie }) {
   const navigate = useNavigate();
   
-  // 포스터가 없는 영화는 렌더링하지 않음
-  if (!movie.posterUrl || movie.posterUrl.trim() === '' || movie.posterUrl === 'null') {
-    return null;
-  }
-  
   const handleClick = () => {
-    if (movie.movieCd) {
-      navigate(`/movie-detail/${movie.movieCd}`);
-    }
+    navigate(`/movie/${movie.movieCd}`);
   };
 
   return (
     <div className={styles.similarMovieCard} onClick={handleClick}>
       <img 
-        src={movie.posterUrl ? (movie.posterUrl.startsWith('http') ? movie.posterUrl : `${SERVER_URL}${movie.posterUrl}`) : banner1} 
-        alt={movie.title || movie.movieNm} 
-        className={styles.similarPoster} 
+        src={movie.posterUrl || movie.poster} 
+        alt={movie.movieNm || movie.title} 
+        className={styles.similarMoviePoster}
+        onError={(e) => {
+          e.target.src = banner1; // 기본 이미지로 대체
+        }}
       />
-      <div className={styles.similarTitle}>{movie.title || movie.movieNm}</div>
-    </div>
-  );
-}
-function StillcutCard({ still }) {
-  return (
-    <div className={styles.stillcutCard}>
-      <img src={still.imageUrl ? (still.imageUrl.startsWith('http') ? still.imageUrl : `${SERVER_URL}${still.imageUrl}`) : ''} alt="스틸컷" className={styles.stillcutImg} />
+      <div className={styles.similarMovieInfo}>
+        <h3 className={styles.similarMovieTitle}>{movie.movieNm || movie.title}</h3>
+        <p className={styles.similarMovieYear}>{movie.prdtYear || movie.year}</p>
+      </div>
     </div>
   );
 }
@@ -97,9 +100,8 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   const [commentDetailModalOpen, setCommentDetailModalOpen] = useState(false);
   const [detailModalClose, setDetailModalClose] = useState(false);
 
-  
-  // 코멘트별 별점 상태
-  const [commentRatings, setCommentRatings] = useState({});
+  // 리뷰별 최신 평점 상태 (현재 사용자의 평점만 관리)
+  const [myRating, setMyRating] = useState(null);
   
   // 비슷한 장르 영화 상태 추가
   const [similarMovies, setSimilarMovies] = useState([]);
@@ -167,10 +169,10 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
   // 전체 코멘트 개수
   const totalCommentCount = comments.length; // 필요시 props로 전달받거나 별도 fetch 필요
 
-  // 코멘트별 별점 조회 함수
-  const fetchCommentRating = async (commentUserId) => {
-    if (!movieCd || !commentUserId) return null;
-
+  // 현재 사용자의 평점 조회
+  const fetchMyRating = async () => {
+    if (!movieCd || !user) return;
+    
     try {
       const response = await fetch(`/api/ratings/${movieCd}`, {
         credentials: 'include',
@@ -179,14 +181,30 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          return data.data.score;
+          setMyRating(data.data.score);
+        } else {
+          setMyRating(null);
         }
       }
     } catch (error) {
-      console.error('별점 조회 실패:', error);
+      console.error('내 평점 조회 실패:', error);
+      setMyRating(null);
     }
-    return null;
   };
+
+  // 사용자 정보가 변경될 때 내 평점 조회
+  useEffect(() => {
+    if (user && movieCd) {
+      fetchMyRating();
+    }
+  }, [user, movieCd]);
+
+  // 리뷰 목록이 변경될 때 내 평점도 다시 조회 (평점 변경 시)
+  useEffect(() => {
+    if (user && movieCd && comments.length > 0) {
+      fetchMyRating();
+    }
+  }, [comments, user, movieCd]);
 
   // 전체 코멘트(무한스크롤/정렬) fetch 함수
   // 실제 API에 맞게 수정 필요
@@ -207,28 +225,6 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
     // data: { comments: [], totalCount: number }
     return data;
   };
-
-  // 코멘트 목록이 변경될 때 각 코멘트의 별점 조회
-  useEffect(() => {
-    const fetchAllCommentRatings = async () => {
-      const ratings = {};
-
-      for (const comment of comments) {
-        if (comment.userId) {
-          const rating = await fetchCommentRating(comment.userId);
-          if (rating !== null) {
-            ratings[comment.id] = rating;
-          }
-        }
-      }
-
-      setCommentRatings(ratings);
-    };
-
-    if (comments.length > 0) {
-      fetchAllCommentRatings();
-    }
-  }, [comments, movieCd]);
 
   // 작성시간을 상대적 시간으로 변환하는 함수
   const formatRelativeTime = (dateString) => {
@@ -663,7 +659,9 @@ export default function MovieDetailBody({ actors, directors, stillcuts, movieCd,
                   <span className={styles.commentDate}>{formatRelativeTime(comment.updatedAt || comment.date)}</span>
                 </div>
                 <span className={styles.commentRating}>
-                  ★ {comment.rating ? comment.rating.toFixed(1) : '-'}
+                  ★ {(user && comment.userId === user.id && myRating !== null) 
+                      ? myRating.toFixed(1) 
+                      : (comment.rating ? comment.rating.toFixed(1) : '-')}
                 </span>
               </div>
               <hr className={styles.commentDivider} />

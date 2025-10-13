@@ -80,15 +80,13 @@ export default function GenreModal({ isOpen, onClose, selectedGenres, onGenresCh
 
         <div className={styles.genreGrid}>
           {genres.map((genre) => (
-            <label key={genre} className={styles.genreLabel}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={tempSelectedGenres.includes(genre)}
-                onChange={() => handleGenreChange(genre)}
-              />
-              <span className={styles.genreText}>{genre}</span>
-            </label>
+            <span
+              key={genre}
+              className={`${styles.genreLabel} ${tempSelectedGenres.includes(genre) ? styles.selected : ''}`}
+              onClick={() => handleGenreChange(genre)}
+            >
+              {genre}
+            </span>
           ))}
         </div>
 

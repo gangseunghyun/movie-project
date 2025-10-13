@@ -20,6 +20,8 @@ export default function AllReviewsModal({ open, onClose, movieId, onCommentClick
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [user, setUser] = useState(null);
+  const [myRating, setMyRating] = useState(null);
   const observer = useRef();
   const COMMENTS_PER_PAGE = 10;
 
@@ -34,6 +36,72 @@ export default function AllReviewsModal({ open, onClose, movieId, onCommentClick
     });
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
+
+  // 현재 사용자 정보 가져오기
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('http://localhost:80/api/current-user', {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('사용자 정보 조회 실패:', error);
+      setUser(null);
+    }
+  };
+
+  // 현재 사용자의 평점 조회
+  const fetchMyRating = async () => {
+    if (!movieId || !user) return;
+    
+    try {
+      const response = await fetch(`http://localhost:80/api/ratings/${movieId}`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setMyRating(data.data.score);
+        } else {
+          setMyRating(null);
+        }
+      }
+    } catch (error) {
+      console.error('내 평점 조회 실패:', error);
+      setMyRating(null);
+    }
+  };
+
+  // 모달이 열릴 때 사용자 정보와 평점 조회
+  useEffect(() => {
+    if (open) {
+      fetchCurrentUser();
+    }
+  }, [open]);
+
+  // 사용자 정보가 변경될 때 내 평점 조회
+  useEffect(() => {
+    if (user && movieId) {
+      fetchMyRating();
+    }
+  }, [user, movieId]);
+
+  // 리뷰 목록이 변경될 때 내 평점도 다시 조회 (평점 변경 시)
+  useEffect(() => {
+    if (user && movieId && comments.length > 0) {
+      fetchMyRating();
+    }
+  }, [comments, user, movieId]);
 
   // API 호출 함수
   const fetchComments = useCallback(async (pageNum, sortType) => {
@@ -76,6 +144,8 @@ export default function AllReviewsModal({ open, onClose, movieId, onCommentClick
     setPage(0);
     setHasMore(true);
   }, [open, sort]);
+
+
 
   useEffect(() => {
     if (!open) return;
@@ -154,7 +224,11 @@ export default function AllReviewsModal({ open, onClose, movieId, onCommentClick
                     <span className={styles.commentUser}>{comment.userNickname || comment.user || '익명'}</span>
                     <span className={styles.commentDate}>{getRelativeDate(comment.updatedAt || comment.createdDate || comment.date)}</span>
                   </div>
-                  <span className={styles.commentRating}>★ {comment.rating ? comment.rating.toFixed(1) : '-'}</span>
+                  <span className={styles.commentRating}>
+                    ★ {(user && comment.userId === user.id && myRating !== null) 
+                        ? myRating.toFixed(1) 
+                        : (comment.rating ? comment.rating.toFixed(1) : '-')}
+                  </span>
                 </div>
                 <div className={styles.commentDivider}></div>
                 <div

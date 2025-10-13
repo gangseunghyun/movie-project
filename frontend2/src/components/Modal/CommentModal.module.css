@@ -2,29 +2,92 @@
 
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 5000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Pretendard', sans-serif;
 }
 
 .modalContainer {
-  background: #292929;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  background: #181818;
+    border-radius: 10px;
+    width: 550px;
+    max-width: 95vw;
+    padding: 24px 20px 20px 20px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    position: relative;
+    font-family: 'Pretendard', sans-serif;
+}
+
+/* 확인 모달 스타일 */
+.confirmModal {
+  background: #181818;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90vw;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
   position: relative;
-  animation: modalSlideIn 0.3s ease-out;
-  border: 1px solid #393943;
+  font-family: 'Pretendard', sans-serif;
+  text-align: center;
+}
+
+.confirmModal h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.confirmModal p {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.closeModalButton {
+  background: #393943;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.closeModalButton:hover {
+  background: #4a4a54;
+}
+
+.confirmButton {
+  background: #FFD600;
+  color: #232328;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.confirmButton:hover {
+  background: #FFE44D;
 }
 
 @keyframes modalSlideIn {
@@ -40,10 +103,12 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 24px 24px 16px 24px;
-  border-bottom: 1px solid #393943;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 12px;
 }
 
 .titleSection {
@@ -53,9 +118,8 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #fff;
+  display: flex;
+    align-items: center;
 }
 
 .movieTitle {
@@ -65,27 +129,24 @@
 }
 
 .closeBtn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #aaa;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  flex-shrink: 0;
+   background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: color 0.2s;
 }
 
 .closeBtn:hover {
-  background: #393943;
   color: #fff;
 }
 
 .divider {
-  border: none;
+  width: 100%;
   height: 1px;
   background: #393943;
-  margin: 0;
+  margin: 12px 0 12px 0;
+  border: none;
 }
 
 .reviewPreview {
@@ -114,15 +175,16 @@
 .textarea {
   width: 100%;
   min-height: 150px;
-  padding: 20px 24px;
+  background: #181818;
   border: none;
-  resize: vertical;
-  font-size: 16px;
-  line-height: 1.6;
-  color: #aaa;
-  background: transparent;
   outline: none;
-  font-family: inherit;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 350;
+  font-family: 'Pretendard', sans-serif;
+  resize: none;
+  margin-bottom: 16px;
 }
 
 .textarea::placeholder {
@@ -130,51 +192,55 @@
 }
 
 .textarea:focus {
-  background: #1f1f1f;
+  border-color: #FFD600;
 }
 
 .footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 24px 24px 24px;
-  gap: 16px;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .length {
-  font-size: 14px;
   color: #aaa;
-  white-space: nowrap;
+  font-size: 0.9rem;
 }
 
 .saveBtn {
-  background: #ff2f6e;
-  color: white;
+  background: #FFD600;
+  color: #232328;
   border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 8px 28px;
   cursor: pointer;
-  transition: all 0.2s;
-  min-width: 100px;
+  transition: background 0.2s;
+  width: 30%;
+  height: 40px;
+  font-family: 'Pretendard', sans-serif;
 }
 
 .saveBtn:hover:not(:disabled) {
-  background: #e0255f;
-  transform: translateY(-1px);
+  background: #FFE44D;
 }
 
 .saveBtn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
+  background: #555;
+  color: #aaa;
+  cursor: default;
 }
 
 /* 반응형 */
 @media (max-width: 768px) {
   .modalContainer {
     width: 95%;
+    margin: 20px;
+  }
+  
+  .confirmModal {
+    width: 90%;
     margin: 20px;
   }
   
@@ -192,5 +258,15 @@
   
   .footer {
     padding: 12px 20px 20px 20px;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .closeModalButton,
+  .confirmButton {
+    width: 100%;
   }
 } 

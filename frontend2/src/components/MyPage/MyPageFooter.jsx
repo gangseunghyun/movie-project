@@ -79,7 +79,34 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
       .then(res => res.json())
       .then(data => {
         console.log('내가 작성한 코멘트 데이터:', data);
-        setMyComments(data.data || []);
+        const comments = data.data || [];
+        
+        // 각 코멘트의 최신 평점을 별도로 조회
+        const fetchLatestRatings = async () => {
+          const updatedComments = await Promise.all(
+            comments.map(async (comment) => {
+              if (comment.movieCd) {
+                try {
+                  const ratingResponse = await fetch(`http://localhost:80/api/ratings/${comment.movieCd}`, {
+                    credentials: 'include',
+                  });
+                  if (ratingResponse.ok) {
+                    const ratingData = await ratingResponse.json();
+                    if (ratingData.success && ratingData.data) {
+                      return { ...comment, rating: ratingData.data.score };
+                    }
+                  }
+                } catch (error) {
+                  console.error('평점 조회 실패:', error);
+                }
+              }
+              return comment;
+            })
+          );
+          setMyComments(updatedComments);
+        };
+        
+        fetchLatestRatings();
       })
       .catch(() => setMyComments([]))
       .finally(() => setLoading(false));
@@ -93,7 +120,37 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
       .then(res => res.json())
       .then(data => {
         console.log('내가 좋아요한 코멘트 데이터:', data);
-        setLikedComments(data.data || [])
+        const comments = data.data || [];
+        
+        // 좋아요한 코멘트는 다른 사람이 작성한 것이므로 원래 평점을 유지
+        // 단, 내가 작성한 코멘트인 경우에만 최신 평점을 조회
+        const fetchLatestRatings = async () => {
+          const updatedComments = await Promise.all(
+            comments.map(async (comment) => {
+              // 내가 작성한 코멘트인 경우에만 최신 평점 조회
+              if (comment.movieCd && comment.authorId === displayUserId) {
+                try {
+                  const ratingResponse = await fetch(`http://localhost:80/api/ratings/${comment.movieCd}`, {
+                    credentials: 'include',
+                  });
+                  if (ratingResponse.ok) {
+                    const ratingData = await ratingResponse.json();
+                    if (ratingData.success && ratingData.data) {
+                      return { ...comment, rating: ratingData.data.score };
+                    }
+                  }
+                } catch (error) {
+                  console.error('평점 조회 실패:', error);
+                }
+              }
+              // 다른 사람이 작성한 코멘트는 원래 평점 유지
+              return comment;
+            })
+          );
+          setLikedComments(updatedComments);
+        };
+        
+        fetchLatestRatings();
       })
       .catch(() => setLikedComments([]))
       .finally(() => setLikedLoading(false));
@@ -495,15 +552,9 @@ const MyPageFooter = ({ targetUserId, tempUserInfo, targetUser: propTargetUser }
         initialRating={editTarget?.rating || 0}
         onEditSave={() => {
           setEditModalOpen(false);
-          // 수정 후 목록 갱신 (다시 fetch)
-          if (user?.id) {
-            setLoading(true);
-            fetch(`/api/users/${user.id}/my-comments`, { credentials: 'include' })
-              .then(res => res.json())
-              .then(data => setMyComments(data.data || []))
-              .catch(() => setMyComments([]))
-              .finally(() => setLoading(false));
-          }
+          // 수정 후 목록 갱신 (내가 작성한 코멘트와 좋아요한 코멘트 모두 갱신)
+          fetchMyComments();
+          fetchLikedComments();
         }}
         reviewId={editTarget?.id}
       />

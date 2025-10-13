@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
     return (
         <div className="pageWrapper">
             <div className={styles.outer}>
-                <h2 className={styles.heading}>비밀번호 재설정</h2>
+                <h3 className={styles.heading}>비밀번호 재설정</h3>
                 <p className={styles.descSub2}>
                     새 비밀번호를 입력해 주세요.
                     비밀번호는 8자 이상이어야 하며,<br /> 영문/숫자/특수문자를조합하는 것을 권장합니다.

@@ -272,7 +272,7 @@ export default function SignupPage() {
 
   return (
     <div className={styles.outer}>
-      <h2 className={styles.title}>Filmer 회원가입</h2>
+      <h3 className={styles.title}>Filmer 회원가입</h3>
       <p className={styles.subtitle}>아이디와 이메일로 간편하게 Filmer를 시작하세요!</p>
 
       <div className={styles.inputGroup}>

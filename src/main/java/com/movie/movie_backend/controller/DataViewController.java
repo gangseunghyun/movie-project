@@ -10,6 +10,7 @@ import com.movie.movie_backend.dto.MovieListDto;
 import com.movie.movie_backend.dto.TopRatedMovieDto;
 import com.movie.movie_backend.service.PRDMovieListService;
 import com.movie.movie_backend.service.PRDMovieService;
+import com.movie.movie_backend.service.REVRatingService;
 import com.movie.movie_backend.service.BoxOfficeService;
 import com.movie.movie_backend.service.TmdbPopularMovieService;
 import com.movie.movie_backend.service.KobisApiService;
@@ -89,6 +90,7 @@ public class DataViewController {
     private final PRDActorRepository actorRepository;
     private final PRDDirectorRepository directorRepository;
     private final MovieDetailRepository movieDetailRepository;
+    private final REVRatingService ratingService;
 
     /**
      * 데이터 조회 메인 페이지
@@ -213,7 +215,9 @@ public class DataViewController {
             @RequestParam(defaultValue = "date") String sort) {
         try {
             Pageable pageable;
-            Page<MovieDetail> moviePage;
+            Page<MovieDetail> moviePage = null;
+            List<MovieDetail> movieDetails = null;
+            
             switch (sort) {
                 case "date":
                     pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "openDt"));
@@ -228,23 +232,40 @@ public class DataViewController {
                     moviePage = movieRepository.findAll(pageable);
                     break;
                 case "rating":
-                    pageable = PageRequest.of(page, size); // 정렬은 자바에서
-                    moviePage = movieRepository.findAll(pageable);
-                    // 평점순 정렬은 자바에서
-                    List<MovieDetail> sorted = new ArrayList<>(moviePage.getContent());
-                    sorted.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                    movieDetails = movieRepository.findAll();
+                    // 배치 평점 조회로 성능 최적화
+                    List<String> movieCds = movieDetails.stream()
+                            .map(MovieDetail::getMovieCd)
+                            .collect(Collectors.toList());
+                    Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+                    
+                    // 평점 정보를 MovieDetail에 설정
+                    movieDetails.forEach(movie -> {
+                        Double rating = averageRatings.get(movie.getMovieCd());
+                        movie.setAverageRating(rating);
+                    });
+                    
+                    movieDetails.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                    
+                    // 페이지네이션 적용
+                    int total = movieDetails.size();
+                    int start = page * size;
+                    int end = Math.min(start + size, total);
+                    List<MovieDetail> pagedList = start < total ? movieDetails.subList(start, end) : new ArrayList<>();
+                    
                     return ResponseEntity.ok(Map.of(
-                        "data", sorted,
-                        "total", moviePage.getTotalElements(),
+                        "data", pagedList,
+                        "total", total,
                         "page", page,
                         "size", size,
-                        "totalPages", moviePage.getTotalPages()
+                        "totalPages", (int) Math.ceil((double) total / size)
                     ));
                 default:
                     pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "openDt"));
                     moviePage = movieRepository.findAll(pageable);
                     break;
             }
+            
             return ResponseEntity.ok(Map.of(
                 "data", moviePage.getContent(),
                 "total", moviePage.getTotalElements(),
@@ -416,13 +437,27 @@ public class DataViewController {
                         totalPages = moviePage.getTotalPages();
                         break;
                     case "rating":
-                        pageable = PageRequest.of(page, size);
-                        moviePage = movieRepository.findAll(pageable);
-                        List<MovieDetail> sorted = new ArrayList<>(moviePage.getContent());
-                        sorted.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
-                        movieDetails = sorted;
-                        total = (int) moviePage.getTotalElements();
-                        totalPages = moviePage.getTotalPages();
+                        List<MovieDetail> allMovies = movieRepository.findAll();
+                        // 배치 평점 조회로 성능 최적화
+                        List<String> movieCds = allMovies.stream()
+                                .map(MovieDetail::getMovieCd)
+                                .collect(Collectors.toList());
+                        Map<String, Double> averageRatings = ratingService.getAverageRatingsForMovies(movieCds);
+                        
+                        // 평점 정보를 MovieDetail에 설정
+                        allMovies.forEach(movie -> {
+                            Double rating = averageRatings.get(movie.getMovieCd());
+                            movie.setAverageRating(rating);
+                        });
+                        
+                        allMovies.sort((m1, m2) -> Double.compare(m2.getAverageRating() != null ? m2.getAverageRating() : 0.0, m1.getAverageRating() != null ? m1.getAverageRating() : 0.0));
+                        
+                        // 페이지네이션 적용
+                        total = allMovies.size();
+                        totalPages = (int) Math.ceil((double) total / size);
+                        int start = page * size;
+                        int end = Math.min(start + size, total);
+                        movieDetails = start < total ? allMovies.subList(start, end) : new ArrayList<>();
                         break;
                     default:
                         pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "openDt"));

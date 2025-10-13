@@ -2,30 +2,92 @@
 
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Pretendard', sans-serif;
 }
 
 .modalContainer {
-  background: #292929;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 700px;
-  min-height: 350px;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  background: #181818;
+    border-radius: 10px;
+    width: 550px;
+    max-width: 95vw;
+    padding: 32px 24px 24px 24px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    position: relative;
+    font-family: 'Pretendard', sans-serif;
+}
+
+/* 확인 모달 스타일 */
+.confirmModal {
+  background: #181818;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90vw;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
   position: relative;
-  animation: modalSlideIn 0.3s ease-out;
-  border: 1px solid #393943;
-  padding: 32px 40px 32px 40px;
+  font-family: 'Pretendard', sans-serif;
+  text-align: center;
+}
+
+.confirmModal h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.confirmModal p {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.closeModalButton {
+  background: #393943;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.closeModalButton:hover {
+  background: #4a4a54;
+}
+
+.confirmButton {
+  background: #FFD600;
+  color: #232328;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.confirmButton:hover {
+  background: #FFE44D;
 }
 
 @keyframes modalSlideIn {
@@ -41,10 +103,12 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px 24px 16px 24px;
-  border-bottom: 1px solid #393943;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 12px;
 }
 
 .title {
@@ -57,85 +121,89 @@
 }
 
 .star {
-  color: #ffc107;
-  font-size: 16px;
+  color: #FFD600;
+    font-size: 1.1rem;
+    margin-left: 8px;
+    font-weight: 400;
+    margin-top: 3px;
 }
 
 .closeBtn {
   background: none;
-  border: none;
-  font-size: 24px;
-  color: #aaa;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
+    border: none;
+    color: #aaa;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.2s;
 }
 
 .closeBtn:hover {
-  background: #393943;
   color: #fff;
 }
 
 .divider {
-  border: none;
+  width: 100%;
   height: 1px;
   background: #393943;
-  margin: 0;
+  margin: 16px 0 16px 0;
+  border: none;
 }
 
 .textarea {
   width: 100%;
-  min-height: 200px;
-  padding: 24px 28px;
+  min-height: 250px;
+  background: #181818;
   border: none;
-  resize: vertical;
-  font-size: 18px;
-  line-height: 1.7;
-  color: #aaa;
-  background: transparent;
   outline: none;
-  font-family: inherit;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 350;
+  font-family: 'Pretendard', sans-serif;
+  resize: none;
+  margin-bottom: 16px;
 }
 
 .textarea::placeholder {
   color: #666;
 }
 
-.textarea:focus {
+/*.textarea:focus {
   background: #1f1f1f;
-}
+}*/
 
 .footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 20px 28px 0 28px;
-  gap: 16px;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .starInputRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    justify-content: flex-start;
+    margin-right: auto;
 }
 
 .starInputLabel {
-  font-size: 14px;
   color: #aaa;
-  white-space: nowrap;
+    font-size: 0.95rem;
+    margin-right: 8px;
 }
 
 .starInputIcons {
   display: flex;
-  gap: 2px;
+    align-items: center;
+    gap: 0.1rem;
 }
 
 .starIcon {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  transition: transform 0.1s;
+  width: 1.5rem;
+    height: 1.5rem;
+    cursor: pointer;
 }
 
 .starIcon:hover {
@@ -143,44 +211,45 @@
 }
 
 .starIcon.disabled {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .loadingText {
-  font-size: 12px;
-  color: #aaa;
-  margin-left: 8px;
+   color: #aaa;
+    font-size: 0.9rem;
+    margin-left: 8px;
+    animation: pulse 1.5s ease-in-out infinite;
 }
 
 .length {
-  font-size: 14px;
   color: #aaa;
-  white-space: nowrap;
+    font-size: 0.95rem;
 }
 
 .saveBtn {
-  background: #ff2f6e;
-  color: white;
+  background: #FFD600;
+  color: #232328;
   border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 8px 28px;
   cursor: pointer;
-  transition: all 0.2s;
-  min-width: 80px;
+  transition: background 0.2s;
+  width: 30%;
+  height: 40px;
+  font-family: 'Pretendard', sans-serif;
 }
 
-.saveBtn:hover:not(:disabled) {
+/*.saveBtn:hover:not(:disabled) {
   background: #e0255f;
   transform: translateY(-1px);
-}
+}*/
 
 .saveBtn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
+  background: #555;
+    color: #aaa;
+    cursor: default;
 }
 
 /* 스포일러 토글 스타일 */
@@ -236,6 +305,11 @@ input:checked + .slider:before {
     margin: 20px;
   }
   
+  .confirmModal {
+    width: 90%;
+    margin: 20px;
+  }
+  
   .header {
     padding: 20px 20px 12px 20px;
   }
@@ -246,5 +320,15 @@ input:checked + .slider:before {
   
   .footer {
     padding: 12px 20px 20px 20px;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .closeModalButton,
+  .confirmButton {
+    width: 100%;
   }
 } 

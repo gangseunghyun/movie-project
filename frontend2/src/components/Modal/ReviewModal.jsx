@@ -278,6 +278,8 @@ const ReviewModal = ({
         if (data.success) {
           alert('리뷰가 수정되었습니다!');
           if (onEditSave) onEditSave(comment, latestRating);
+          // 평점 변경 시 페이지 새로고침으로 댓글 모달 업데이트
+          window.location.reload();
           onClose();
         } else {
           alert(data.message || '리뷰 수정에 실패했습니다.');
@@ -336,28 +338,28 @@ const ReviewModal = ({
         <hr className={styles.divider} />
         
         {/* 스포일러 옵션 */}
-        {!editMode && (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            padding: '0 20px 20px 20px',
-            gap: '8px'
-          }}>
-            <span style={{ fontSize: 24, marginRight: 8 }}>✗</span>
-            <span style={{ marginRight: 8 }}>스포일러</span>
-            <label className="switch">
-              <input 
-                type="checkbox" 
-                checked={spoiler} 
-                onChange={e => setSpoiler(e.target.checked)}
-                disabled={loading}
-              />
-              <span className="slider round"></span>
-            </label>
-          </div>
-        )}
+
 
         <div className={styles.footer}>
+            {!editMode && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginRight: 8
+                      }}>
+                        <span style={{ fontSize: 24, marginRight: 8 }}>✗</span>
+                        <span style={{ marginRight: 8 }}>스포일러</span>
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={spoiler}
+                            onChange={e => setSpoiler(e.target.checked)}
+                            disabled={loading}
+                          />
+                          <span className="slider round"></span>
+                        </label>
+                      </div>
+                    )}
           {editMode && (
             <div className={styles.starInputRow}>
               <label className={styles.starInputLabel}>평가하기 </label>

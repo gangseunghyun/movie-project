@@ -26,7 +26,7 @@
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  
+
 }
 
 .backButton {
@@ -112,10 +112,12 @@
   background: #0f1419;
   padding: 25px;
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   margin-bottom: 20px;
-  border: 1px solid #1a2332;
   width: 640px;
+  max-width: 640px;
+  box-sizing: border-box;
+  transform: translateZ(0); /* 하드웨어 가속 활성화 */
+  will-change: auto; /* 브라우저 최적화 */
 }
 
 .sectionTitle {
@@ -130,6 +132,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(180px, 1fr));
   gap: 12px;
+  box-sizing: border-box;
 }
 
 .theaterButton {
@@ -139,30 +142,46 @@
   padding: 10px 8px;
   text-align: left;
   cursor: pointer;
-  transition: all 0.2s;
   color: #fff;
   font-size: 15px;
+  box-sizing: border-box;
+  transform: translateZ(0); /* 하드웨어 가속 */
+  backface-visibility: hidden; /* 렌더링 최적화 */
 }
+
 .theaterButton:hover {
   border-color: #ff1744;
   background-color: #1a1a1f;
   color: #fff;
 }
+
 .theaterButton.selected {
-  border: 2px solid #ff3b3b;
-  background: #1a1a1f;
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
 }
+
+.theaterButton:active {
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
+  transition: transform 0.1s ease;
+}
+
 
 .theaterName {
   font-size: 15px;
   font-weight: 550;
   color: #ffffff;
   margin-bottom: 3px;
+  box-sizing: border-box;
+
 }
 
 .theaterLocation {
   font-size: 13px;
   color: #b0b8c1;
+  box-sizing: border-box;
+  transform: translateZ(0); /* 하드웨어 가속 */
+  backface-visibility: hidden; /* 렌더링 최적화 */
 }
 
 /* 날짜 선택 스타일 */
@@ -178,12 +197,12 @@
   border-radius: 8px;
   padding: 12px 20px;
   cursor: pointer;
-  transition: all 0.2s;
   font-size: 14px;
   font-weight: 500 !important;
   color: #fff;
-  
+  box-sizing: border-box;
 }
+
 .dateButton:hover {
   border-color: #ff1744;
   background-color: #1a1a1f;
@@ -191,10 +210,16 @@
 }
 
 .dateButton.selected {
-  border-color: #ff1744;
-  background-color: #ff1744;
-  color: white;
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
 }
+
+.dateButton:active {
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
+  transition: transform 0.1s ease;
+}
+
 
 /* 시간 선택 스타일 */
 .timeList {
@@ -209,12 +234,23 @@
   border-radius: 8px;
   padding: 10px 15px;
   cursor: pointer;
-  transition: all 0.2s;
   font-size: 14px;
   min-width: 80px;
   color: #fff;
   font-weight: 500 !important;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
 }
+
 .timeButton:hover {
   border-color: #ff1744;
   background-color: #1a1a1f;
@@ -222,10 +258,16 @@
 }
 
 .timeButton.selected {
-  border-color: #ff1744;
-  background-color: #ff1744;
-  color: white;
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
 }
+
+.timeButton:active {
+  border: 2px solid #ff3b3b !important;
+  background: #1a1a1f !important;
+  transition: transform 0.1s ease;
+}
+
 
 /* 좌석 선택 스타일 */
 .seatMap {
@@ -263,13 +305,24 @@
   background: #23232b;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-weight: 500 !important;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
 }
+
 .seat:hover {
   border-color: #ff1744;
   background-color: #1a1a1f;
@@ -277,9 +330,16 @@
 }
 
 .seat.selected {
-  border-color: #ff1744;
-  background-color: #ff1744;
-  color: white;
+  border-color: #ff1744 !important;
+  background-color: #ff1744 !important;
+  color: white !important;
+}
+
+.seat:active {
+  border-color: #ff1744 !important;
+  background-color: #ff1744 !important;
+  color: white !important;
+  transition: transform 0.1s ease;
 }
 
 .seat.reserved {
@@ -289,6 +349,7 @@
   cursor: not-allowed;
   position: relative;
 }
+
 .seat.disabled {
   background: #23272e;
   color: #888;
@@ -296,6 +357,7 @@
   cursor: not-allowed;
   position: relative;
 }
+
 .seat.disabled::after {
   content: '';
 }
@@ -360,6 +422,7 @@
   transition: background 0.2s, color 0.2s;
   margin-right: 12px;
 }
+
 .cancelButton:hover:not(:disabled) {
   background: #2a3441;
   color: #fff;
@@ -375,11 +438,13 @@
   align-items: center;
   justify-content: center;
 }
-.seatLegend > div {
+
+.seatLegend>div {
   display: flex;
   align-items: center;
   gap: 6px;
 }
+
 .seatLegend .seat {
   width: 22px;
   height: 22px;
@@ -400,32 +465,32 @@
   .container {
     padding: 0 15px;
   }
-  
+
   .movieInfo {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .poster {
     margin-right: 0;
     margin-bottom: 15px;
   }
-  
+
   .theaterList {
     grid-template-columns: 1fr;
   }
-  
+
   .dateList,
   .timeList {
     justify-content: center;
   }
-  
+
   .seat {
     width: 35px;
     height: 35px;
     font-size: 10px;
   }
-  
+
   .bookingButton {
     width: 100%;
     padding: 15px;
@@ -436,24 +501,24 @@
   .title {
     font-size: 24px;
   }
-  
+
   .section {
     padding: 20px;
   }
-  
+
   .seat {
     width: 30px;
     height: 30px;
     font-size: 9px;
   }
-} 
+}
 
 .bookingSummary {
   display: flex;
   align-items: center;
   background: #23232b;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   padding: 18px 20px;
   margin-top: 30px;
   margin-bottom: 28px;
@@ -462,20 +527,24 @@
   gap: 18px;
   width: 100%;
 }
+
 .summaryPoster img {
   width: 87px;
   height: 125px;
   border-radius: 6px;
   object-fit: cover;
 }
+
 .summaryInfo {
   flex: 1;
 }
+
 .summaryTitle {
   font-size: 20px;
   font-weight: bold;
   margin-bottom: 6px;
 }
+
 .summaryMeta {
   display: flex;
   gap: 10px;
@@ -483,12 +552,14 @@
   color: #b0b8c1;
   margin-bottom: 10px;
 }
+
 .summaryMeta span {
   background: #1a2332;
   padding: 2px 7px;
   border-radius: 4px;
 }
-.summaryDetail > div {
+
+.summaryDetail>div {
   font-size: 14px;
   margin-bottom: 3px;
   color: #e0e6ed;
@@ -514,57 +585,67 @@
   border-radius: 12px;
   padding: 32px 24px;
   color: #fff;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
+
 .paymentTitle {
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 8px;
   text-align: center;
 }
+
 .paymentSubTitle {
   color: #b0b8c1;
   font-size: 15px;
   text-align: center;
   margin-bottom: 24px;
 }
+
 .paymentSummaryBox {
   background: #23232b;
   border-radius: 8px;
   padding: 18px 20px;
   margin-bottom: 28px;
 }
+
 .paymentSummaryTitle {
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 10px;
 }
+
 .paymentSummaryRow {
   display: flex;
   justify-content: space-between;
   font-size: 15px;
   margin-bottom: 4px;
 }
+
 .paymentPrice {
   color: #ff3b3b;
   font-weight: bold;
   font-size: 17px;
 }
+
 .paymentPeriod {
   color: #b0b8c1;
   font-size: 13px;
   margin-left: 4px;
 }
+
 .paymentSectionTitle {
   font-size: 16px;
   font-weight: bold;
   margin-bottom: 10px;
 }
+
 .paymentMethodList {
   display: flex;
   gap: 10px;
   margin-bottom: 24px;
 }
+
 .paymentMethodBtn {
   flex: 1;
   background: #23232b;
@@ -577,24 +658,30 @@
   cursor: pointer;
   transition: border 0.2s, background 0.2s;
 }
-.paymentMethodBtn.selected, .paymentMethodBtn:hover {
+
+.paymentMethodBtn.selected,
+.paymentMethodBtn:hover {
   border: 2px solid #ff3b3b;
   background: #1a1a1f;
 }
+
 .paymentAgreement {
   margin-bottom: 18px;
 }
+
 .paymentAgreement label {
   font-size: 15px;
   font-weight: bold;
   cursor: pointer;
 }
+
 .paymentAgreementList {
   margin: 10px 0 0 0;
   padding-left: 18px;
   color: #b0b8c1;
   font-size: 14px;
 }
+
 .paymentNotice {
   color: #b0b8c1;
   font-size: 13px;
@@ -603,34 +690,46 @@
   max-height: 180px;
   overflow-y: auto;
 }
+
 .paymentButtonContainer {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-} 
-
-.theaterButton, .dateButton, .timeButton, .seat {
-  flex: 1;
-  background: #23232b;
-  color: #fff;
-  border: 2px solid #23232b;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: border 0.2s, background 0.2s;
 }
-.theaterButton.selected, .dateButton.selected, .timeButton.selected, .seat.selected,
+
+/* 공통 버튼 기본 스타일 - 개별 스타일로 대체됨 */
+/* .theaterButton.selected, .dateButton.selected, .timeButton.selected, .seat.selected,
 .theaterButton:hover, .dateButton:hover, .timeButton:hover, .seat:hover {
   border: 2px solid #ff3b3b;
   background: #1a1a1f;
   color: #fff;
-}
+} */
 
 /* 개별 버튼 크기/간격 등은 기존 스타일 유지 */
-.theaterButton { padding: 15px; text-align: left; }
-.dateButton { padding: 12px 20px; font-size: 14px; }
-.timeButton { padding: 10px 15px; font-size: 14px; min-width: 80px; }
-.seat { width: 40px; height: 40px; font-size: 12px; display: flex; align-items: center; justify-content: center; } 
+.theaterButton {
+  padding: 15px;
+  text-align: left;
+}
+
+.dateButton {
+  padding: 12px 20px;
+  font-size: 14px;
+}
+
+.timeButton {
+  padding: 10px 15px;
+  font-size: 14px;
+  min-width: 80px;
+}
+
+.seat {
+  width: 40px;
+  height: 40px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .movieInfoHeader {
   width: 100%;
@@ -640,7 +739,7 @@
   margin-bottom: 32px;
   background: linear-gradient(90deg, #10151e 60%, #181e29 100%);
   border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   border: 1.5px solid #1a2332;
   padding: 32px 0 32px 0;
 }
@@ -680,7 +779,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
 }
 
 .moviePoster {
@@ -710,7 +809,7 @@
   font-size: 1.1rem;
   color: #bdbdbd;
   margin-bottom: 4px;
-} 
+}
 
 .noScheduleMsg {
   color: #b0b8c1;
@@ -718,4 +817,137 @@
   width: 100%;
   padding: 6px 0;
   font-size: 15px;
-} 
+}
+
+.editTextarea {
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #181818;
+  color: #eee;
+  margin-top: 6px;
+  padding: 8px 10px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* 예매 완료 모달 스타일 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modalContent {
+  background: #0f1419;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid #1a2332;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modalHeader {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.modalHeader h3 {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.modalBody {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.modalBody p {
+  color: #b0b8c1;
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: center;
+}
+
+.modalButton {
+  background: #ff3b3b;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+.modalButton:hover {
+  background: #ff1744;
+}
+
+.modalButton:active {
+  transform: none !important;
+  outline: none !important;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 480px) {
+  .modalContent {
+    padding: 25px 20px;
+    width: 95%;
+  }
+  
+  .modalHeader h3 {
+    font-size: 20px;
+  }
+  
+  .modalBody p {
+    font-size: 14px;
+  }
+  
+  .modalButton {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}

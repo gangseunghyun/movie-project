@@ -96,7 +96,7 @@ export default function MovieCard({ movie, index, sectionKey, actorInfo, showOpe
   }
   // 배우 출연 영화 섹션이면 배우 정보와 대표작 표시
   if (sectionKey === 'actor' || sectionKey === 'director' || sectionKey === 'toprated' || 
-    sectionKey.startsWith('like-') || sectionKey === 'social-recommend' || sectionKey.startsWith('new-genre-')) {
+    sectionKey.startsWith('like-') || sectionKey === 'social-recommend' || sectionKey.startsWith('new-genre-') || sectionKey === 'similar') {
     return (
       <div className={styles.card} onClick={handleCardClick} style={{ cursor: movie.movieCd ? 'pointer' : 'default' }}>
         {/* 배우 정보 표시 */}

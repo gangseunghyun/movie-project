@@ -13,7 +13,7 @@
 }
 
 .modal {
-  background-color: #1a1a1a;
+  background-color: #181818;
   border-radius: 12px;
   padding: 32px;
   max-width: 700px;
@@ -21,7 +21,6 @@
   max-height: 85vh;
   overflow: auto;
   position: relative;
-  border: 1px solid #333;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -69,8 +68,8 @@
 
 .selectedCount {
   display: inline-block;
-  background-color: #8B5CF6;
-  color: #fff;
+  background-color: #F4BB1F;
+  color: #232428;
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -79,7 +78,7 @@
 
 .count {
   font-weight: 600;
-  color: #fff;
+  color: #232428;
 }
 
 .genreGrid {
@@ -90,15 +89,17 @@
 }
 
 .genreLabel {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background-color: #2a2a2a;
-  border: 1px solid #333;
-  transition: all 0.2s ease;
+  background: #2c2c2c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    padding: 12px 0px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-weight: 350;
+    width: 150px;
+    text-align: center;
 }
 
 .genreLabel:hover {
@@ -106,7 +107,7 @@
   border-color: #8B5CF6;
 }
 
-.genreLabel:has(.checkbox:checked) {
+/*.genreLabel:has(.checkbox:checked) {
   background-color: #8B5CF6;
   border-color: #8B5CF6;
 }
@@ -117,7 +118,7 @@
   margin-right: 12px;
   accent-color: #8B5CF6;
   cursor: pointer;
-}
+}*/
 
 .genreText {
   font-size: 0.9rem;
@@ -130,30 +131,44 @@
   font-weight: 600;
 }
 
+.selected {
+background: #F4BB1F;
+  color: #232428;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  padding: 12px 0;
+  cursor: pointer;
+  font-weight: 500;
+  width: 150px;
+}
+.selected:hover {
+  font-weight: 500;
+  background: #ffbb00;
+}
 .footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   padding-top: 24px;
-  border-top: 1px solid #333;
 }
 
 .resetButton {
-  padding: 10px 20px;
-  border: 1px solid #555;
-  border-radius: 8px;
-  background-color: transparent;
-  color: #aaa;
+  flex: 1;
+  background: none;
+  border: 1px solid #767676;
+  color: #a0a0a0;
+  font-size: 1.3rem;
+  border-radius: 10px;
+  padding: 16px 0;
+  margin-right: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  transition: border 0.2s, color 0.2s;
 }
 
 .resetButton:hover:not(:disabled) {
-  background-color: #333;
-  border-color: #666;
-  color: #fff;
+  border: 1px solid #dfdfdf;
+  color: #dfdfdf;
 }
 
 .resetButton:disabled {
@@ -162,20 +177,23 @@
 }
 
 .confirmButton {
-  padding: 10px 24px;
+flex: 1;
+  background: #F4BB1F;
   border: none;
-  border-radius: 8px;
-  background-color: #8B5CF6;
-  color: white;
+  color: #272727;
+  font-size: 1.3rem;
+  border-radius: 10px;
+  padding: 16px 0;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  margin-left: 8px;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
 }
 
 .confirmButton:hover {
-  background-color: #7C3AED;
-  transform: translateY(-1px);
+  background: #F4BB1F;
+  opacity: 1;
+  color: #1a1a1a;
 }
 
 /* 스크롤바 스타일링 */

@@ -5,6 +5,86 @@
   max-width: 1905px;
 }
 
+/* 모달 오버레이 */
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* 확인 모달 스타일 */
+.confirmModal {
+  background: #181818;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90vw;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  position: relative;
+  font-family: 'Pretendard', sans-serif;
+  text-align: center;
+}
+
+.confirmModal h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.confirmModal p {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.closeModalButton {
+  background: #393943;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.closeModalButton:hover {
+  background: #4a4a54;
+}
+
+.confirmButton {
+  background: #ff2f6e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.confirmButton:hover {
+  background: #e0255f;
+}
+
 section {
   margin-bottom: 48px;
 }
@@ -196,7 +276,6 @@ h2 {
   gap: 8px;
   color: #aaa;
   font-size: 0.9rem;
-  margin-left: auto;
 }
 
 .replyEditBtn {
@@ -208,13 +287,13 @@ h2 {
   margin-left: 8px;
   font-size: 0.8rem;
   cursor: pointer;
-  border: solid 1px #525252;
   transition: background 0.2s, color 0.2s;
 }
+
 .replyEditBtn:hover {
-  background: #FFD600;
-  color: #222;
+  background: #4a4a54;
 }
+
 .replyDeleteBtn {
   background: #222;
   color: #ff4d4f;
@@ -224,7 +303,6 @@ h2 {
   margin-left: 4px;
   font-size: 0.8rem;
   cursor: pointer;
-  border: solid 1px #525252;
   transition: background 0.2s, color 0.2s;
 }
 .replyDeleteBtn:hover {
@@ -232,221 +310,244 @@ h2 {
   color: #fff;
 }
 
-/* 비슷한 작품 카드 */
 .similarMovieCard {
-  width: 240px;
-  min-width: 240px;
-  height: 360px+120px;
-  background: --color-bg;
-
-  border-radius: 16px;
+  width: 200px;
+  min-width: 200px;
+  min-height: 320px;
+  background: #292929;
+  border-radius: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
   margin-bottom: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Pretendard', sans-serif;
   cursor: pointer;
+  transition: transform 0.2s;
 }
 
 .similarMovieCard:hover {
-  transform: translateY(-12px) scale(1.03);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 1.5px 6px rgba(0, 0, 0, 0.10);
-  z-index: 3;
+  transform: scale(1.05);
 }
 
-.similarPoster {
+.similarMoviePoster {
   width: 100%;
-  height: 360px;
-  /* 원하는 고정 높이 */
-  max-height: 360px;
-  background: #444;
-  border-radius: 14px;
+  height: 250px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.similarMovieInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.similarMovieTitle {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  margin-bottom: 4px;
+  width: 100%;
+  text-align: center;
+  min-height: 2.6em;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  /* 순위(번호) 배치용 */
-  overflow: hidden;
-  /* 이미지가 넘치면 잘리게 */
+}
+
+.similarMovieYear {
+  color: #aaa;
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+  width: 100%;
+}
+
+/* 기존 스타일들도 유지 */
+.similarPoster {
+  width: 100%;
+  height: 250px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-bottom: 8px;
 }
 
 .posterImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* 비율 유지하며 꽉 채우기, 넘치는 부분은 잘림 */
-  border-radius: 14px;
-  display: block;
+  border-radius: 8px;
 }
 
 .similarTitle {
-  margin-top: 0.5rem;
-  font-size: 1.4rem;
   color: #fff;
-  text-align: center;
+  font-size: 0.95rem;
   font-weight: 600;
-  white-space: nowrap;
-  /* 한 줄로만 표시 */
-  overflow: hidden;
-  /* 넘치는 부분 숨김 */
-  text-overflow: ellipsis;
-  /* ...으로 표시 */
+  text-align: center;
+  line-height: 1.3;
+  word-break: keep-all;
+  overflow: visible;
+  text-overflow: unset;
+  display: block;
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 12px;
   width: 100%;
-  /* 카드 너비에 맞춤 */
   box-sizing: border-box;
 }
 
-
-/* 스틸컷 카드 */
 .stillcutCard {
-  height: 534px;
   width: 1280px;
-  min-width: 1280px;
-  background: #222;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 720px;
+  background: #292929;
+  border-radius: 14px;
   padding: 0;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
   margin-bottom: 6px;
+  font-family: 'Pretendard', sans-serif;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s;
+  overflow: hidden;
 }
 
 .stillcutCard:hover {
   transform: scale(1.02);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .stillcutImg {
-  aspect-ratio: 2.39 / 1;
   width: 100%;
+  height: 100%;
+  border-radius: 14px;
   object-fit: cover;
-  border-radius: 12px;
-  display: block;
-  background: #444;
 }
 
 .castNavBtn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  background: rgba(0, 0, 0, 0.5);
   border: none;
-  z-index: 4;
-  cursor: pointer;
-  padding: 0.5rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 10;
 }
 
 .castNavBtn img {
-  width: 2rem;
-  height: 2rem;
+  width: 20px;
+  height: 20px;
   filter: brightness(0) invert(1);
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
+  transition: filter 0.2s;
 }
 
 .castNavBtn img:hover {
-  opacity: 1;
+  filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(45deg);
 }
 
 .castNavBtn.left {
-  left: 0.4rem;
+  left: 20px;
 }
 
 .castNavBtn.right {
-  right: 0.4rem;
+  right: 20px;
 }
-
 
 .castInfoWithBorder {
   position: relative;
 }
 
 .castInfoWithBorder::after {
-  content: "";
-  display: block;
+  content: '';
   position: absolute;
+  bottom: -8px;
   left: 0;
   right: 0;
-  height: 1.5px;
-  background: #575757;
-  bottom: -30px;
-  border-radius: 0;
+  height: 1px;
+  background: #393943;
 }
 
 .commentGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px 18px;
-  margin: 0 70px 32px 70px;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+  margin-left: 70px;
+  margin-right: 70px;
 }
 
 .StillsliderWrapper {
   position: relative;
   width: 100%;
-  overflow: visible;
+  overflow: hidden;
   margin-left: 70px;
+  margin-right: 70px;
 }
 
-/* 좌우 버튼 */
 .navBtn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  background: rgba(0, 0, 0, 0.5);
   border: none;
-  z-index: 40;
-  cursor: pointer;
-  padding: 0.5rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 10;
 }
 
 .navBtn img {
-  width: 2rem;
-  height: 2rem;
+  width: 20px;
+  height: 20px;
   filter: brightness(0) invert(1);
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
+  transition: filter 0.2s;
 }
 
 .navBtn:hover img {
-  opacity: 1;
+  filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(45deg);
 }
 
 .left {
-  left: -4rem;
+  left: 20px;
 }
 
 .right {
-  right: 5rem;
+  right: 80px;
 }
 
 .commentIconRow {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 12px;
-  margin-top: 6px;
-  margin-left: 2px;
+  gap: 16px;
+  margin-top: 8px;
 }
+
 .commentIcon {
-  width: 30px;
-  height: 30px;
-  opacity: 0.7;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s;
 }
+
 .commentIcon:hover {
-  opacity: 1;
+  transform: scale(1.1);
 }
 
 .commentSectionHeader {
@@ -457,23 +558,24 @@ h2 {
   margin-right: 70px;
   margin-bottom: 18px;
 }
+
 .commentSectionTitle {
-  margin: 0;
-  padding: 0;
   color: #fff;
   font-size: 1.7rem;
   font-weight: 700;
+  margin: 0;
+  padding-left: 12px;
 }
+
 .commentSectionMore {
   color: #aaa;
-  font-size: 0.9rem;
+  font-size: 1rem;
   cursor: pointer;
-  font-weight: 500;
   transition: color 0.2s;
 }
 
 .commentSectionMore:hover {
-  color: #fff;
+  color: #FFD600;
 }
 
 .commentUserProfileImage {
@@ -481,8 +583,23 @@ h2 {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  background: #222;
-  display: inline-block;
-  vertical-align: middle;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .confirmModal {
+    width: 90%;
+    margin: 20px;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .closeModalButton,
+  .confirmButton {
+    width: 100%;
+  }
 }
 
