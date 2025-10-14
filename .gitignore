@@ -52,6 +52,7 @@ build/
 
 # Maven
 target/
+target.tar.gz
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
