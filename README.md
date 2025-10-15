@@ -6,6 +6,9 @@
 MCP Server(Node.js)와 외부 영화 API(KOBIS, TMDB, KMDB, NAVER) 연동,  
 Redis 기반 세션/캐시, Docker 컨테이너 환경을 지원합니다.
 
+## Live
+- 서비스: https://filmer-movie.duckdns.org
+
 ## 📊 WBS (Work Breakdown Structure)
 
 ![WBS](./images/wbs%20readme.png)
